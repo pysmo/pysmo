@@ -42,7 +42,7 @@ class sacfile(object):
     2
     """
 
-    "Default (undefined) heade values"
+#    Default (undefined) header values
     _headerdefaults = {
         'f':    -12345.0,
         'i':    -12345,
@@ -51,7 +51,7 @@ class sacfile(object):
         '16s':  '-12345          '
     }
 
-    "Map of header values"
+#    Map of header values
     _headerpars = dict(
         delta=[0,4,'f'],
         depmin=[4,4,'f'],
@@ -188,7 +188,7 @@ class sacfile(object):
             kinst=[624,8,'8s']
     )
 
-    "Define enumerated header fields"
+#    Define enumerated header fields
     _enumlist = (_headerdefaults['i'], 'time', 'rlim', 'amph', 'xy',
             'unkn', 'disp', 'vel', 'acc', 'b', 'day', 'o', 'a',
             't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8',
@@ -203,12 +203,12 @@ class sacfile(object):
             'qb2', 'qbx', 'qmt', 'eq', 'eq1', 'eq2', 'me',
             'ex', 'nu', 'nc', 'o_', 'l', 'r', 't', 'u')
 
-    "Dictionary for looking up values of enumerated items"
+#   Dictionary for looking up values of enumerated items
     _index = [-12345]
-    _index.extend(range(1,87))
+    _index.extend(range(1, 87))
     enumdict = dict(izip(_enumlist, _index))
 
-    "Headerfields using enumerated items and legal values"
+#   Headerfields using enumerated items and legal values
     _enumhead = dict(
         iftype= ('time', 'rlim', 'amph', 'xy', 'xyz', _headerdefaults['i']),
         idep=   ('unkn', 'disp', 'vel', 'volts', 'acc', _headerdefaults['i']),
@@ -220,22 +220,24 @@ class sacfile(object):
         imagtype=('mb', 'ms', 'ml', 'mw', 'md', 'mx', _headerdefaults['i']),
         imagsrc=('neic', 'pde', 'isc', 'reb', 'usgs', 'brk', 'caltech',
              'llnl', 'evloc', 'jsop', 'user', 'unknown', _headerdefaults['i']),
-        ievtyp= ('unkn', 'nucl', 'pren', 'postn', 'quake', 'preq', 'postq', 'chem',
-             'qb', 'qb1', 'qb2', 'qbx', 'qbmt', 'eq', 'eq1', 'eq2', 'me', 'me',
-             'ex', 'nu', 'nc', 'o_', 'l', 'r', 't', 'u', 'other',
-             _headerdefaults['i']),
-        iqual=  ('good', 'glch', 'drop', 'lowsn', 'other', _headerdefaults['i']),
+        ievtyp= ('unkn', 'nucl', 'pren', 'postn', 'quake', 'preq', 'postq',
+                 'chem', 'qb', 'qb1', 'qb2', 'qbx', 'qbmt', 'eq', 'eq1', 'eq2',
+                 'me', 'me', 'ex', 'nu', 'nc', 'o_', 'l', 'r', 't', 'u',
+                 'other', _headerdefaults['i']),
+        iqual=  ('good', 'glch', 'drop', 'lowsn', 'other',
+                 _headerdefaults['i']),
         isynth= ('rldta', _headerdefaults['i'])
     )
 
-    _attributes = ['fh', 'mode', 'filename', '_file_byteorder', '_machine_byteorder']
+    _attributes = ['fh', 'mode', 'filename', '_file_byteorder',
+                   '_machine_byteorder']
 
     def __init__(self, filename, mode='ro', **kwargs):
         """
         Open the SAC file with mode read "ro", write "rw" or new "new".
         """
         if mode not in ('ro', 'rw', 'new'):
-                    raise ValueError, 'mode=%s not in (ro, rw, new)' % mode
+            raise ValueError, 'mode=%s not in (ro, rw, new)' % mode
         else:
             setattr(self, 'mode', mode)
             setattr(self, 'filename', filename)
@@ -288,13 +290,13 @@ class sacfile(object):
             cmd = 'self.%s = self.%s' % (headerpar, headerpar)
             try:
                 exec cmd
-            # we will get an error if the headerfield is undefined in the SAC file
+            # we will get an error if the headerfield is undefined in 
+            # the SAC file
             except ValueError:
-                type = (self._headerpars[headerpar])[-1]
-                default = self._headerdefaults[type]
                 cmd = 'self.%s = default' % headerpar
                 exec cmd
-        # update self._file_byteorder, which should now be the same as the machine byteorder
+        # update self._file_byteorder, which should now be the same
+        # as the machine byteorder
         self.__get_file_byteorder()
         # now that self._file_byteorder is set we can write the data to the file
         try:
@@ -417,7 +419,9 @@ class sacfile(object):
         self.npts = len(data)
         self.fh.truncate(632)
         self.fh.seek(632)
-        data1 = []; data2 = []; data3 = []
+        data1 = []
+        data2 = []
+        data3 = []
         for x in data:
             if dimensions == 1:
                 data1.append(x)
@@ -451,7 +455,7 @@ class sacfile(object):
         """
         Calculate and set header fields that describe the data.
         """
-        self.e = self.b + (self.npts -1) * self.delta
+        self.e = self.b + (self.npts - 1) * self.delta
         self.depmin = min(self.data)
         self.depmax = max(self.data)
         self.depmen = sum(self.data)/self.npts
