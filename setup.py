@@ -7,6 +7,6 @@ setup(
     description='Python module to read/write/manipulate SAC (Seismic Analysis Code) files',
     author='Simon Lloyd',
     author_email='smlloyd@gmail.com',
-    packages =['pysmo.sac'],
-    package_dir={'pysmo.sac': 'src/pysmo/sac'}
+    packages =['pysmo', 'pysmo.sac'],
+    package_dir={'pysmo.sac': 'src/pysmo/sac', 'pysmo': 'src/pysmo'}
     )
