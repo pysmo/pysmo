@@ -247,12 +247,12 @@ class sacfile(object):
             setattr(self, 'fh', open(filename, 'rb'))
             self.__get_file_byteorder()
         elif mode == 'rw':
-            f = open(filename, 'w+b')
+            f = open(filename, 'r+b')
             setattr(self, 'fh', f)
 
-            # self.__get_file_byteorder()
-            # if self._file_byteorder != self._machine_byteorder:
-            #     self.__convert_file_byteorder(self._machine_byteorder)
+            self.__get_file_byteorder()
+            if self._file_byteorder != self._machine_byteorder:
+                self.__convert_file_byteorder(self._machine_byteorder)
             self._file_byteorder = self._machine_byteorder
         elif mode == 'new':
             setattr(self, 'fh', open(filename, 'w+b'))
