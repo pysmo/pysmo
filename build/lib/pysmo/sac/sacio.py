@@ -248,8 +248,8 @@ class sacfile(object):
             self.__get_file_byteorder()
         elif mode == 'rw':
             f = open(filename, 'r+b')
+            print filename
             setattr(self, 'fh', f)
-
             self.__get_file_byteorder()
             if self._file_byteorder != self._machine_byteorder:
                 self.__convert_file_byteorder(self._machine_byteorder)
