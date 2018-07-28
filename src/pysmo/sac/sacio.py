@@ -205,8 +205,8 @@ class sacfile(object):
 
 #   Dictionary for looking up values of enumerated items
     _index = [-12345]
-    _index.extend(range(1, 87))
-    enumdict = dict(izip(_enumlist, _index))
+    _index.extend(list(range(1, 87)))
+    enumdict = dict(list(izip(_enumlist, _index)))
 
 #   Headerfields using enumerated items and legal values
     _enumhead = dict(
@@ -237,7 +237,7 @@ class sacfile(object):
         Open the SAC file with mode read "ro", write "rw" or new "new".
         """
         if mode not in ('ro', 'rw', 'new'):
-            raise ValueError, 'mode=%s not in (ro, rw, new)' % mode
+            raise ValueError('mode=%s not in (ro, rw, new)' % mode)
         else:
             setattr(self, 'mode', mode)
             setattr(self, 'filename', filename)
@@ -257,7 +257,7 @@ class sacfile(object):
             setattr(self, 'fh', open(filename, 'w+b'))
             self._file_byteorder = self._machine_byteorder
             self.__setupnew()
-        for name, value in kwargs.iteritems():
+        for name, value in list(kwargs.items()):
             setattr(self, name, value)
 
     def __get_file_byteorder(self):
@@ -287,15 +287,15 @@ class sacfile(object):
             except:
                 data = self.data
         # switch byteorder for all headervariables
-        for headerpar in self._headerpars.keys():
+        for headerpar in list(self._headerpars.keys()):
             cmd = 'self.%s = self.%s' % (headerpar, headerpar)
             try:
-                exec cmd
+                exec(cmd)
             # we will get an error if the headerfield is undefined in 
             # the SAC file
             except ValueError:
                 cmd = 'self.%s = default' % headerpar
-                exec cmd
+                exec(cmd)
         # update self._file_byteorder, which should now be the same
         # as the machine byteorder
         self.__get_file_byteorder()
@@ -324,7 +324,7 @@ class sacfile(object):
         self.__del__()
 
     def __getattr__(self, name):
-        if self._headerpars.has_key(name):
+        if name in self._headerpars:
             return self.__readhead(name)
         elif name == 'data':
             return self.__readdata(1)
@@ -333,10 +333,10 @@ class sacfile(object):
         elif name == 'data3D':
             return self.__readdata(3)
         else:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        if self._headerpars.has_key(name):
+        if name in self._headerpars:
             self.__writehead(name, value)
         elif name == 'data':
             self.__writedata(value, 1)
@@ -348,20 +348,25 @@ class sacfile(object):
         elif name in self._attributes:
             object.__setattr__(self, name, value)
         else:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __readhead(self, headerfield):
         """
         Read header field from SAC file. Enumerated
         header fields are automatically translated.
         """
-        pos, length, type = self._headerpars[headerfield]
+        pos, length, htype = self._headerpars[headerfield]
         self.fh.seek(pos)
         content = self.fh.read(length)
-        headervalue = unpack(self._file_byteorder+type, content)[0]
-        if headervalue == self._headerdefaults[type]:
-            raise ValueError,  'Header %s is undefined' % headerfield
-        if self._enumhead.has_key(headerfield):
+        headervalue = unpack(self._file_byteorder+htype, content)[0]
+        # py2 ignores difference between str '...' and bytes b'...'
+        # need to decode in py3 
+        # Cannot write decoded though. Decode outside of here.
+        #if type(headervalue) is bytes:
+        #    headervalue = headervalue.decode()
+        if headervalue == self._headerdefaults[htype]:
+            raise ValueError('Header %s is undefined' % headerfield)
+        if headerfield in self._enumhead:
             return self._enumlist[headervalue]
         else:
             return headervalue
@@ -372,15 +377,16 @@ class sacfile(object):
         header fields are automatically translated.
         """
         if self.mode == 'ro':
-            raise IOError, 'File %s is readonly' % self.filename
-        pos, length, type = self._headerpars[headerfield]
-        if self._enumhead.has_key(headerfield):
+            raise IOError('File %s is readonly' % self.filename)
+        pos, length, htype = self._headerpars[headerfield]
+        if headerfield in self._enumhead:
             if headervalue in self._enumhead[headerfield]:
                 headervalue = self.enumdict[headervalue]
             else:
-                raise ValueError, '%s not an allowed value for %s' % \
-                (headervalue, headerfield)
-        headervalue = pack(type, headervalue)
+                raise ValueError('%s not an allowed value for %s' % \
+                (headervalue, headerfield))
+        #print(htype, headervalue, headerfield)
+        headervalue = pack(htype, headervalue)
         self.fh.seek(pos)
         self.fh.write(headervalue)
 
@@ -416,7 +422,7 @@ class sacfile(object):
         Write 1D, 2D or 3D data to SAC file.
         """
         if self.mode == 'ro':
-            raise IOError, 'File %s is readonly' % self.filename
+            raise IOError('File %s is readonly' % self.filename)
         self.npts = len(data)
         self.fh.truncate(632)
         self.fh.seek(632)
@@ -440,9 +446,9 @@ class sacfile(object):
         """
         Setup new file and set required header fields to sane values.
         """
-        for headerfield in self._headerpars.keys():
-            pos, length, type = self._headerpars[headerfield]
-            default = self._headerdefaults[type]
+        for headerfield in list(self._headerpars.keys()):
+            pos, length, htype = self._headerpars[headerfield]
+            default = self._headerdefaults[htype]
             self.__writehead(headerfield, default)
         self.npts = 0
         self.nvhdr = 6
