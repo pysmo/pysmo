@@ -1,5 +1,6 @@
 build
 .DS_Store
-.pyc
-.so
-.swp
+*.pyc
+*.so
+*.swp
+__pycache__/
