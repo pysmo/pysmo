@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/pysmo/sac.svg?branch=master)](https://travis-ci.com/pysmo/sac)
+
 sac
 ===
 
