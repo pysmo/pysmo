@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-from distutils.core import setup
+
+from setuptools import setup, find_packages
 
 setup(
-    name='pysmo.sac',
+    name='pysmo_sac',
     version='0.5.1',
     description='Python module to read/write/manipulate SAC (Seismic Analysis Code) files',
+    long_description='',
     author='Simon Lloyd',
     author_email='smlloyd@gmail.com',
-    packages =['pysmo', 'pysmo.sac'],
-    package_dir={'pysmo.sac': 'src/pysmo/sac', 'pysmo': 'src/pysmo'}
-    )
+    license='GNU General Public License v3.0',
+    packages=find_packages(where='.'),
+    zip_safe=False,
+)
