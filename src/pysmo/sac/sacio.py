@@ -20,7 +20,6 @@ Python module for reading/writing SAC files.
 """
 
 from struct import pack, unpack
-from itertools  import izip
 from sys    import byteorder
 
 __copyright__ = """
@@ -206,7 +205,7 @@ class sacfile(object):
 #   Dictionary for looking up values of enumerated items
     _index = [-12345]
     _index.extend(list(range(1, 87)))
-    enumdict = dict(list(izip(_enumlist, _index)))
+    enumdict = dict(zip(_enumlist, _index))
 
 #   Headerfields using enumerated items and legal values
     _enumhead = dict(
@@ -257,7 +256,7 @@ class sacfile(object):
             setattr(self, 'fh', open(filename, 'w+b'))
             self._file_byteorder = self._machine_byteorder
             self.__setupnew()
-        for name, value in list(kwargs.items()):
+        for name, value in kwargs.items():
             setattr(self, name, value)
 
     def __get_file_byteorder(self):
@@ -385,7 +384,6 @@ class sacfile(object):
             else:
                 raise ValueError('%s not an allowed value for %s' % \
                 (headervalue, headerfield))
-        #print(htype, headervalue, headerfield)
         headervalue = pack(htype, headervalue)
         self.fh.seek(pos)
         self.fh.write(headervalue)
