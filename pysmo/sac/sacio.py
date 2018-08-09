@@ -19,8 +19,8 @@
 Python module for reading/writing SAC files.
 """
 
-from struct import pack, unpack
-from sys    import byteorder
+import struct
+from sys import byteorder
 
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
@@ -265,7 +265,7 @@ class sacfile(object):
         """
         # seek position of 'unused12', which should be -12345.0
         self.fh.seek(276)
-        if unpack('>f', (self.fh.read(4)))[-1] == -12345.0:
+        if struct.unpack('>f', (self.fh.read(4)))[-1] == -12345.0:
             self._file_byteorder = '>'
         else:
             self._file_byteorder = '<'
@@ -357,12 +357,9 @@ class sacfile(object):
         pos, length, htype = self._headerpars[headerfield]
         self.fh.seek(pos)
         content = self.fh.read(length)
-        headervalue = unpack(self._file_byteorder+htype, content)[0]
-        # py2 ignores difference between str '...' and bytes b'...'
-        # need to decode in py3 
-        # Cannot write decoded though. Decode outside of here.
-        #if type(headervalue) is bytes:
-        #    headervalue = headervalue.decode()
+        headervalue = struct.unpack(self._file_byteorder+htype, content)[0]
+        if type(headervalue) is bytes:
+            headervalue = headervalue.decode()
         if headervalue == self._headerdefaults[htype]:
             raise ValueError('Header %s is undefined' % headerfield)
         if headerfield in self._enumhead:
@@ -384,7 +381,9 @@ class sacfile(object):
             else:
                 raise ValueError('%s not an allowed value for %s' % \
                 (headervalue, headerfield))
-        headervalue = pack(htype, headervalue)
+        if type(headervalue) is str:
+            headervalue = headervalue.encode()
+        headervalue = struct.pack(htype, headervalue)
         self.fh.seek(pos)
         self.fh.write(headervalue)
 
@@ -397,13 +396,13 @@ class sacfile(object):
         length = self.npts * 4
         self.fh.seek(632)
         content  = self.fh.read(length)
-        sacdata1 = unpack(format, content)
+        sacdata1 = struct.unpack(format, content)
         if dimensions >= 2:
             content  = self.fh.read(length)
-            sacdata2 = unpack(format, content)
+            sacdata2 = struct.unpack(format, content)
         if dimensions == 3:
             content  = self.fh.read(length)
-            sacdata3 = unpack(format, content)
+            sacdata3 = struct.unpack(format, content)
         if dimensions == 1:
             for x1 in sacdata1:
                 data.append(x1)
@@ -438,7 +437,7 @@ class sacfile(object):
         data1.extend(data2)
         data1.extend(data3)
         for x in data1:
-            self.fh.write(pack('f', x))
+            self.fh.write(struct.pack('f', x))
 
     def __setupnew(self):
         """
