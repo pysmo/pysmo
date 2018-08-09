@@ -8,4 +8,4 @@ install:
 script:
   - python setup.py build
   - python setup.py install
-  - python tests/run_tests.py
+  - python tests/test_sacio.py
