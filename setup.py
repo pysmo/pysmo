@@ -11,5 +11,6 @@ setup(
     author_email='smlloyd@gmail.com',
     license='GNU General Public License v3.0',
     packages=find_packages(where='.'),
+    data_files = [('pysmo/sac', ['pysmo/sac/sacheader.yml'])],
     zip_safe=False,
 )
