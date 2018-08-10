@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # psymo is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
@@ -19,12 +19,61 @@
 Python module for reading/writing SAC files.
 """
 
-import struct
 from sys import byteorder
+import struct
+import os
+import yaml
 
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
+
+###
+# Load SAC header definitions from yaml file and store them in dicts
+###
+with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stream:
+    _header_defs = yaml.load(stream)
+_header_types = _header_defs.pop('header_types')
+_header_fields = _header_defs.pop('header_fields')
+_enumerated_header_values = _header_defs.pop('enumerated_header_values')
+# reverse dictionary to look up enumerated strings from ID
+_enumerated_header_ids = {v: k for k, v in _enumerated_header_values.items()}
+
+
+###
+# some lambdas and functions for increased readability further down
+###
+_get_header_start = lambda header_field: _header_fields[header_field]['start']
+_get_header_type = lambda header_field: _header_fields[header_field]['header_type']
+_get_enum_id = lambda header_value: _enumerated_header_values[header_value]
+_valid_enum_values = lambda header_field: _header_fields[header_field]['allowed_vals'].keys()
+_get_enumerated_str = lambda header_value: _enumerated_header_ids[header_value]
+_get_header_undefined = lambda header_field: _header_types[_get_header_type(header_field)]['undefined']
+_is_enumerated_field = lambda header_field: bool('allowed_vals' in _header_fields[header_field])
+
+def _get_header_length(header_field):
+    """
+    Return header length of a given field.
+    """
+    try:
+        return _header_fields[header_field]['length']
+    except KeyError:
+        header_type = _get_header_type(header_field)
+        return _header_types[header_type]['length']
+
+def _get_header_format(header_field):
+    """
+    Return header format of a given field. This is
+    used to read and write encoded values from the
+    binary file.
+    """
+    try:
+        return _header_fields[header_field]['format']
+    except KeyError:
+        header_type = _get_header_type(header_field)
+        return _header_types[header_type]['format']
+
+
 
 class sacfile(object):
     """
@@ -33,7 +82,7 @@ class sacfile(object):
 
     Example:
     >>> from pysmo.sac.sacio import sacfile
-    >>> sacobj = sacfile('file.sac', 'ro')
+    >>> sacobj = sacfile('file.sac', 'rw')
     >>> print sacobj.delta
     0.5
     >>> sacobj.delta = 2
@@ -41,195 +90,8 @@ class sacfile(object):
     2
     """
 
-#    Default (undefined) header values
-    _headerdefaults = {
-        'f':    -12345.0,
-        'i':    -12345,
-        'l':    -12345,
-        '8s':   '-12345  ',
-        '16s':  '-12345          '
-    }
-
-#    Map of header values
-    _headerpars = dict(
-        delta=[0,4,'f'],
-        depmin=[4,4,'f'],
-        depmax=[8,4,'f'],
-            scale=[12,4,'f'],
-            odelta=[16,4,'f'],
-            b=[20,4,'f'],
-            e=[24,4,'f'],
-            o=[28,4,'f'],
-            a=[32,4,'f'],
-            fmt=[36,4,'f'],
-            t0=[40,4,'f'],
-            t1=[44,4,'f'],
-            t2=[48,4,'f'],
-            t3=[52,4,'f'],
-            t4=[56,4,'f'],
-            t5=[60,4,'f'],
-            t6=[64,4,'f'],
-            t7=[68,4,'f'],
-            t8=[72,4,'f'],
-            t9=[76,4,'f'],
-            f=[80,4,'f'],
-            resp0=[84,4,'f'],
-            resp1=[88,4,'f'],
-            resp2=[92,4,'f'],
-            resp3=[96,4,'f'],
-            resp4=[100,4,'f'],
-            resp5=[104,4,'f'],
-            resp6=[108,4,'f'],
-            resp7=[112,4,'f'],
-            resp8=[116,4,'f'],
-            resp9=[120,4,'f'],
-            stla=[124,4,'f'],
-            stlo=[128,4,'f'],
-            stel=[132,4,'f'],
-            stdp=[136,4,'f'],
-            evla=[140,4,'f'],
-            evlo=[144,4,'f'],
-            evel=[148,4,'f'],
-            evdp=[152,4,'f'],
-            mag=[156,4,'f'],
-            user0=[160,4,'f'],
-            user1=[164,4,'f'],
-            user2=[168,4,'f'],
-            user3=[172,4,'f'],
-            user4=[176,4,'f'],
-            user5=[180,4,'f'],
-            user6=[184,4,'f'],
-            user7=[188,4,'f'],
-            user8=[192,4,'f'],
-            user9=[196,4,'f'],
-            dist=[200,4,'f'],
-            az=[204,4,'f'],
-            baz=[208,4,'f'],
-            gcarc=[212,4,'f'],
-            sb=[216,4,'f'],
-            sdelta=[220,4,'f'],
-            depmen=[224,4,'f'],
-            cmpaz=[228,4,'f'],
-            cmpinc=[232,4,'f'],
-            xminimum=[236,4,'f'],
-            xmaximum=[240,4,'f'],
-            yminimum=[244,4,'f'],
-            ymaximum=[248,4,'f'],
-            unused6=[252,4,'f'],
-            unused7=[256,4,'f'],
-            unused8=[260,4,'f'],
-            unused9=[264,4,'f'],
-            unused10=[268,4,'f'],
-            unused11=[272,4,'f'],
-            unused12=[276,4,'f'],
-            nzyear=[280,4,'i'],
-            nzjday=[284,4,'i'],
-            nzhour=[288,4,'i'],
-            nzmin=[292,4,'i'],
-            nzsec=[296,4,'i'],
-            nzmsec=[300,4,'i'],
-            nvhdr=[304,4,'i'],
-            norid=[308,4,'i'],
-            nevid=[312,4,'i'],
-            npts=[316,4,'i'],
-            nsnpts=[320,4,'i'],
-            nwfid=[324,4,'i'],
-            nxsize=[328,4,'i'],
-            nysize=[332,4,'i'],
-            unused15=[336,4,'i'],
-            iftype=[340,4,'i'],
-            idep=[344,4,'i'],
-            iztype=[348,4,'i'],
-            unused16=[352,4,'i'],
-            iinst=[356,4,'i'],
-            istreg=[360,4,'i'],
-            ievreg=[364,4,'i'],
-            ievtyp=[368,4,'i'],
-            iqual=[372,4,'i'],
-            isynth=[376,4,'i'],
-            imagtyp=[380,4,'i'],
-            imagsrc=[384,4,'i'],
-            unused19=[388,4,'i'],
-            unused20=[392,4,'i'],
-            unused21=[396,4,'i'],
-            unused22=[400,4,'l'],
-            unused23=[404,4,'i'],
-            unused24=[408,4,'i'],
-            unused25=[412,4,'i'],
-            unused26=[416,4,'i'],
-            leven=[420,4,'i'],
-            lpspol=[424,4,'i'],
-            lovrok=[428,4,'i'],
-            lcalda=[432,4,'i'],
-            unused27=[436,4,'i'],
-            kstnm=[440,8,'8s'],
-            kevnm=[448,16,'16s'],
-            khole=[464,8,'8s'],
-            ko=[472,8,'8s'],
-            ka=[480,8,'8s'],
-            kt0=[488,8,'8s'],
-            kt1=[496,8,'8s'],
-            kt2=[504,8,'8s'],
-            kt3=[512,8,'8s'],
-            kt4=[520,8,'8s'],
-            kt5=[528,8,'8s'],
-            kt6=[536,8,'8s'],
-            kt7=[544,8,'8s'],
-            kt8=[552,8,'8s'],
-            kt9=[560,8,'8s'],
-            kf=[568,8,'8s'],
-            kuser0=[576,8,'8s'],
-            kuser1=[584,8,'8s'],
-            kuser2=[592,8,'8s'],
-            kcmpnm=[600,8,'8s'],
-            knetwk=[608,8,'8s'],
-            kdatrd=[616,8,'8s'],
-            kinst=[624,8,'8s']
-    )
-
-#    Define enumerated header fields
-    _enumlist = (_headerdefaults['i'], 'time', 'rlim', 'amph', 'xy',
-            'unkn', 'disp', 'vel', 'acc', 'b', 'day', 'o', 'a',
-            't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8',
-            't9', 'radnv', 'tannv', 'radev', 'tanev', 'north',
-            'east', 'horza', 'down', 'up', 'lllbb', 'wwsn1',
-            'wwsn2', 'hglp', 'sro', 'nucl', 'pren', 'postn',
-            'quake', 'preq', 'postq', 'chem', 'other', 'good',
-            'glch', 'drop', 'lowsn', 'rldta', 'volts', 'xyz',
-            'mb', 'ms', 'ml', 'mw', 'md', 'mx', 'neic', 'pde',
-            'isc', 'reb', 'usgs', 'brk', 'caltech', 'llnl',
-            'evloc', 'jsop', 'user', 'unknown', 'qb', 'qb1',
-            'qb2', 'qbx', 'qmt', 'eq', 'eq1', 'eq2', 'me',
-            'ex', 'nu', 'nc', 'o_', 'l', 'r', 't', 'u')
-
-#   Dictionary for looking up values of enumerated items
-    _index = [-12345]
-    _index.extend(list(range(1, 87)))
-    enumdict = dict(zip(_enumlist, _index))
-
-#   Headerfields using enumerated items and legal values
-    _enumhead = dict(
-        iftype= ('time', 'rlim', 'amph', 'xy', 'xyz', _headerdefaults['i']),
-        idep=   ('unkn', 'disp', 'vel', 'volts', 'acc', _headerdefaults['i']),
-        iztype= ('unkn', 'b', 'day', 'o', 'a', 'at1', 'at2', 'at3', 'at4',
-             'at5', 'at6','at7', 'at8','at9', _headerdefaults['i']),
-        iinst=  ('', _headerdefaults['i']),
-        istreg= ('', _headerdefaults['i']),
-        ievreg= ('', _headerdefaults['i']),
-        imagtype=('mb', 'ms', 'ml', 'mw', 'md', 'mx', _headerdefaults['i']),
-        imagsrc=('neic', 'pde', 'isc', 'reb', 'usgs', 'brk', 'caltech',
-             'llnl', 'evloc', 'jsop', 'user', 'unknown', _headerdefaults['i']),
-        ievtyp= ('unkn', 'nucl', 'pren', 'postn', 'quake', 'preq', 'postq',
-                 'chem', 'qb', 'qb1', 'qb2', 'qbx', 'qbmt', 'eq', 'eq1', 'eq2',
-                 'me', 'me', 'ex', 'nu', 'nc', 'o_', 'l', 'r', 't', 'u',
-                 'other', _headerdefaults['i']),
-        iqual=  ('good', 'glch', 'drop', 'lowsn', 'other',
-                 _headerdefaults['i']),
-        isynth= ('rldta', _headerdefaults['i'])
-    )
-
-    _attributes = ['fh', 'mode', 'filename', '_file_byteorder',
-                   '_machine_byteorder']
+    # Extra attributes besides SAC headers and data
+    _attributes = ['fh', 'mode', 'filename', '_file_byteorder', '_machine_byteorder']
 
     def __init__(self, filename, mode='ro', **kwargs):
         """
@@ -250,7 +112,7 @@ class sacfile(object):
             setattr(self, 'fh', f)
             self.__get_file_byteorder()
             if self._file_byteorder != self._machine_byteorder:
-                self.__convert_file_byteorder(self._machine_byteorder)
+                self.__convert_file_byteorder()
             self._file_byteorder = self._machine_byteorder
         elif mode == 'new':
             setattr(self, 'fh', open(filename, 'w+b'))
@@ -269,43 +131,37 @@ class sacfile(object):
             self._file_byteorder = '>'
         else:
             self._file_byteorder = '<'
-    
-    def __convert_file_byteorder(self, byteorder):
+
+    def __convert_file_byteorder(self):
         """
         Change the file byte order to the system byte order.
         This works (or should work), because we read the file
-        in the detected file byteorder, and write in the 
-        machine byteorder.
+        in the detected file byteorder, and automatically
+        write in machine byteorder.
         """
-        # read the data first and save it 
+        # read the data first and save it
         try:
-            data = self.data3D
+            data = self.__readdata(3)
         except:
             try:
-                data = self.data2D
+                data = self.__readdata(2)
             except:
-                data = self.data
+                data = self.__readdata(1)
         # switch byteorder for all headervariables
-        for headerpar in list(self._headerpars.keys()):
-            cmd = 'self.%s = self.%s' % (headerpar, headerpar)
+        for header_field in _header_fields.keys():
             try:
-                exec(cmd)
-            # we will get an error if the headerfield is undefined in 
-            # the SAC file
+                header_value = self.__readhead(header_field)
             except ValueError:
-                cmd = 'self.%s = default' % headerpar
-                exec(cmd)
-        # update self._file_byteorder, which should now be the same
-        # as the machine byteorder
+                header_value = _get_header_undefined(header_field)
+            self.__writehead(header_field, header_value)
         self.__get_file_byteorder()
-        # now that self._file_byteorder is set we can write the data to the file
         try:
-            self.data3D = data
+            self.__writedata(data, 3)
         except:
             try:
-                self.data2D = data
+                self.__writedata(data, 2)
             except:
-                self.data = data
+                self.__writedata(data, 1)
 
     def __get_machine_byteorder(self):
         """
@@ -320,10 +176,13 @@ class sacfile(object):
         self.fh.close()
 
     def close(self):
+        """
+        Close file.
+        """
         self.__del__()
 
     def __getattr__(self, name):
-        if name in self._headerpars:
+        if name in _header_fields.keys():
             return self.__readhead(name)
         elif name == 'data':
             return self.__readdata(1)
@@ -335,7 +194,7 @@ class sacfile(object):
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        if name in self._headerpars:
+        if name in _header_fields.keys():
             self.__writehead(name, value)
         elif name == 'data':
             self.__writedata(value, 1)
@@ -349,60 +208,71 @@ class sacfile(object):
         else:
             raise AttributeError(name)
 
-    def __readhead(self, headerfield):
+    def __readhead(self, header_field):
         """
         Read header field from SAC file. Enumerated
         header fields are automatically translated.
         """
-        pos, length, htype = self._headerpars[headerfield]
-        self.fh.seek(pos)
-        content = self.fh.read(length)
-        headervalue = struct.unpack(self._file_byteorder+htype, content)[0]
-        if type(headervalue) is bytes:
-            headervalue = headervalue.decode()
-        if headervalue == self._headerdefaults[htype]:
-            raise ValueError('Header %s is undefined' % headerfield)
-        if headerfield in self._enumhead:
-            return self._enumlist[headervalue]
-        else:
-            return headervalue
+        header_start = _get_header_start(header_field)
+        header_length = _get_header_length(header_field)
+        header_format = _get_header_format(header_field)
+        header_type = _get_header_type(header_field)
+        header_undefined = _header_types[header_type]['undefined']
+        self.fh.seek(header_start)
+        content = self.fh.read(header_length)
+        header_value = struct.unpack(self._file_byteorder+header_format, content)[0]
+        if isinstance(header_value, bytes):
+            header_value = header_value.decode().rstrip()
+        if header_value == header_undefined:
+            raise ValueError('Header %s is undefined' % header_field)
+        if _is_enumerated_field(header_field):
+            return _get_enumerated_str(header_value)
+        return header_value
 
-    def __writehead(self, headerfield, headervalue):
+    def __writehead(self, header_field, header_value):
         """
         Write header field to SAC file. Enumerated
         header fields are automatically translated.
         """
         if self.mode == 'ro':
             raise IOError('File %s is readonly' % self.filename)
-        pos, length, htype = self._headerpars[headerfield]
-        if headerfield in self._enumhead:
-            if headervalue in self._enumhead[headerfield]:
-                headervalue = self.enumdict[headervalue]
+        header_start = _get_header_start(header_field)
+        header_format = _get_header_format(header_field)
+        header_undefined = _get_header_undefined(header_field)
+        if _is_enumerated_field(header_field) and header_value != header_undefined:
+            if header_value in _valid_enum_values(header_field):
+                header_value = _get_enum_id(header_value)
             else:
                 raise ValueError('%s not an allowed value for %s' % \
-                (headervalue, headerfield))
-        if type(headervalue) is str:
-            headervalue = headervalue.encode()
-        headervalue = struct.pack(htype, headervalue)
-        self.fh.seek(pos)
-        self.fh.write(headervalue)
+                (header_value, header_field))
+        try:
+            # python2
+            if isinstance(header_value, unicode):
+                header_value = header_value.encode()
+        except NameError:
+            # python3 str type represents unicode strings
+            if isinstance(header_value, str):
+                header_value = header_value.encode()
+        header_value = struct.pack(header_format, header_value)
+        self.fh.seek(header_start)
+        self.fh.write(header_value)
 
     def __readdata(self, dimensions):
         """
         Read 1D, 2D or 3D data from SAC file.
         """
-        data  = []
-        format = self._file_byteorder + str(self.npts) + 'f'
+        data = []
+        data_format = self._file_byteorder + str(self.npts) + 'f'
         length = self.npts * 4
         self.fh.seek(632)
-        content  = self.fh.read(length)
-        sacdata1 = struct.unpack(format, content)
+        content = self.fh.read(length)
+        sacdata1 = struct.unpack(data_format, content)
         if dimensions >= 2:
-            content  = self.fh.read(length)
-            sacdata2 = struct.unpack(format, content)
+            content = self.fh.read(length)
+            sacdata2 = struct.unpack(data_format, content)
         if dimensions == 3:
-            content  = self.fh.read(length)
-            sacdata3 = struct.unpack(format, content)
+            content = self.fh.read(length)
+            sacdata3 = struct.unpack(data_format, content)
         if dimensions == 1:
             for x1 in sacdata1:
                 data.append(x1)
@@ -420,7 +290,7 @@ class sacfile(object):
         """
         if self.mode == 'ro':
             raise IOError('File %s is readonly' % self.filename)
-        self.npts = len(data)
+        self.__writehead('npts', len(data))
         self.fh.truncate(632)
         self.fh.seek(632)
         data1 = []
@@ -443,23 +313,22 @@ class sacfile(object):
         """
         Setup new file and set required header fields to sane values.
         """
-        for headerfield in list(self._headerpars.keys()):
-            pos, length, htype = self._headerpars[headerfield]
-            default = self._headerdefaults[htype]
-            self.__writehead(headerfield, default)
-        self.npts = 0
-        self.nvhdr = 6
-        self.b = 0
-        self.e = 0
-        self.iftype = 'time'
-        self.leven = 1
-        self.delta = 1
+        for header_field in _header_fields.keys():
+            header_undefined = _get_header_undefined(header_field)
+            self.__writehead(header_field, header_undefined)
+        self.__writehead('npts', 0)
+        self.__writehead('nvhdr', 6)
+        self.__writehead('b', 0)
+        self.__writehead('e', 0)
+        self.__writehead('iftype', 'time')
+        self.__writehead('leven', 1)
+        self.__writehead('delta', 1)
 
     def __sanitycheck(self):
         """
         Calculate and set header fields that describe the data.
         """
-        self.e = self.b + (self.npts - 1) * self.delta
-        self.depmin = min(self.data)
-        self.depmax = max(self.data)
-        self.depmen = sum(self.data)/self.npts
+        self.__writehead('e', self.b + (self.npts - 1) * self.delta)
+        self.__writehead('depmin', min(self.data))
+        self.__writehead('depmax', max(self.data))
+        self.__writehead('depmen', sum(self.data)/self.npts)
