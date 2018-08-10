@@ -1,0 +1,904 @@
+---
+header_types:
+  f:
+    definition: floating
+    undefined: -12345.0
+    description: Single Precision.
+    length: 4
+    format: f
+
+  n:
+    definition: integer
+    undefined: -12345
+    description: Name begins with an "N".
+    length: 4
+    format: i
+
+  i:
+    definition: enumerated
+    undefined: -12345
+    description: >
+      Name begins with an "I". Has a limited set of integer
+      values. Each value is given a specific name. Each value
+      represents a specific condition. Subroutines use
+      the equivalent alphanumeric name.
+    length: 4
+    format: i
+
+  l:
+    definition: logical
+    undefined: FALSE
+    description: Name begins with an "L". Value is either TRUE or FALSE.
+    length: 1
+    format: '?'
+
+  k:
+    definition: alphanumeric
+    undefined: "-12345"
+    description: Name begins with a "K". Either 8 or 16 characters long.
+    length: 8
+    format: 8s
+
+  a:
+    definition: auxilary
+    undefined: ''
+    description: Not really in the header. Derived from other header fields.
+
+
+header_fields:
+  delta:
+    description: Increment between evenly spaced samples (nominal value).
+    start: 0
+    header_type: f
+    required: true
+
+  depmin:
+    description: Minimum value of dependent variable.
+    start: 4
+    header_type: f
+
+  depmax:
+    description: Maximum value of dependent variable.
+    start: 8
+    header_type: f
+
+  scale:
+    description: Multiplying scale factor for dependent variable (not currently used)
+    start: 12
+    header_type: f
+
+  odelta:
+    description: Observed increment if different from nominal value.
+    start: 16
+    header_type: f
+
+  b:
+    required: true
+    start: 20
+    header_type: f
+    description: Beginning value of the independent variable.
+
+  e:
+    description: Ending value of the independent variable.
+    start: 24
+    header_type: f
+    required: true
+
+  o:
+    description: Event origin time (seconds relative to reference time.)
+    start: 28
+    header_type: f
+
+  a:
+    description: First arrival time (seconds relative to reference time.)
+    start: 32
+    header_type: f
+
+  fmt:
+    description: Internal
+    start: 36
+    header_type: f
+
+  t0:
+    description: User defined time pick or marker 0 (seconds relative to reference time).
+    start: 40
+    header_type: f
+
+  t1:
+    description: User defined time pick or marker 1 (seconds relative to reference time).
+    start: 44
+    header_type: f
+
+  t2:
+    description: User defined time pick or marker 2 (seconds relative to reference time).
+    start: 48
+    header_type: f
+
+  t3:
+    description: User defined time pick or marker 3 (seconds relative to reference time).
+    start: 52
+    header_type: f
+
+  t4:
+    description: User defined time pick or marker 4 (seconds relative to reference time).
+    start: 56
+    header_type: f
+
+  t5:
+    description: User defined time pick or marker 5 (seconds relative to reference time).
+    start: 60
+    header_type: f
+
+  t6:
+    description: User defined time pick or marker 6 (seconds relative to reference time).
+    start: 64
+    header_type: f
+
+  t7:
+    description: User defined time pick or marker 7 (seconds relative to reference time).
+    start: 68
+    header_type: f
+
+  t8:
+    description: User defined time pick or marker 8 (seconds relative to reference time).
+    start: 72
+    header_type: f
+
+  t9:
+    description: User defined time pick or marker 9 (seconds relative to reference time).
+    start: 76
+    header_type: f
+
+  f:
+    description: Fini or end of event time (seconds relative to reference time.)
+    start: 80
+    header_type: f
+
+  resp0:
+    description: Instrument response parameter 0 (not currently used)
+    start: 84
+    header_type: f
+
+  resp1:
+    description: Instrument response parameter 1 (not currently used)
+    start: 88
+    header_type: f
+
+  resp2:
+    description: Instrument response parameter 2 (not currently used)
+    start: 92
+    header_type: f
+
+  resp3:
+    description: Instrument response parameter 3 (not currently used)
+    start: 96
+    header_type: f
+
+  resp4:
+    description: Instrument response parameter 4 (not currently used)
+    start: 100
+    header_type: f
+
+  resp5:
+    description: Instrument response parameter 5 (not currently used)
+    start: 104
+    header_type: f
+
+  resp6:
+    description: Instrument response parameter 6 (not currently used)
+    start: 108
+    header_type: f
+
+  resp7:
+    description: Instrument response parameter 7 (not currently used)
+    start: 112
+    header_type: f
+
+  resp8:
+    description: Instrument response parameter 8 (not currently used)
+    start: 116
+    header_type: f
+
+  resp9:
+    description: Instrument response parameter 9 (not currently used)
+    start: 120
+    header_type: f
+
+  stla:
+    description: Station latitude (degrees, north positive)
+    start: 124
+    header_type: f
+
+  stlo:
+    description: Station longitude (degrees, east positive).
+    start: 128
+    header_type: f
+
+  stel:
+    description: Station elevation above sea level (meters). (not currently used)
+    start: 132
+    header_type: f
+
+  stdp:
+    description: Station depth below surface (meters). (not currently used)
+    start: 136
+    header_type: f
+
+  evla:
+    description: Event latitude (degrees, north positive).
+    start: 140
+    header_type: f
+
+  evlo:
+    description: Event longitude (degrees, east positive).
+    start: 144
+    header_type: f
+
+  evel:
+    description: Event elevation (meters). [not currently used]
+    start: 148
+    header_type: f
+
+  evdp:
+    description: Event depth below surface (kilometers -- previously meters)
+    start: 152
+    header_type: f
+
+  mag:
+    description: Event magnitude.
+    start: 156
+    header_type: f
+
+  user0:
+    description: User defined variable storage area
+    start: 160
+    header_type: f
+
+  user1:
+    description: User defined variable storage area
+    start: 164
+    header_type: f
+
+  user2:
+    description: User defined variable storage area
+    start: 168
+    header_type: f
+
+  user3:
+    description: User defined variable storage area
+    start: 172
+    header_type: f
+
+  user4:
+    description: User defined variable storage area
+    start: 176
+    header_type: f
+
+  user5:
+    description: User defined variable storage area
+    start: 180
+    header_type: f
+
+  user6:
+    description: User defined variable storage area
+    start: 184
+    header_type: f
+
+  user7:
+    description: User defined variable storage area
+    start: 188
+    header_type: f
+
+  user8:
+    description: User defined variable storage area
+    start: 192
+    header_type: f
+
+  user9:
+    description: User defined variable storage area
+    start: 196
+    header_type: f
+
+  dist:
+    description: Station to event distance (km).
+    start: 200
+    header_type: f
+
+  az:
+    description: Event to station azimuth (degrees).
+    start: 204
+    header_type: f
+
+  baz:
+    description: Station to event azimuth (degrees).
+    start: 208
+    header_type: f
+
+  gcarc:
+    description: Station to event great circle arc length (degrees).
+    start: 212
+    header_type: f
+
+  sb:
+    description: Internal.
+    start: 216
+    header_type: f
+
+  sdelta:
+    description: Internal.
+    start: 220
+    header_type: f
+
+  depmen:
+    description: Mean value of dependent variable.
+    start: 224
+    header_type: f
+
+  cmpaz:
+    description: Component azimuth (degrees clockwise from north).
+    start: 228
+    header_type: f
+
+  cmpinc:
+    description: Component incident angle (degrees from vertical).
+    start: 232
+    header_type: f
+
+  xminimum:
+    description: Minimum value of X (Spectral files only)
+    start: 236
+    header_type: f
+
+  xmaximum:
+    description: Maximum value of X (Spectral files only)
+    start: 240
+    header_type: f
+
+  yminimum:
+    description: Minimum value of Y (Spectral files only)
+    start: 244
+    header_type: f
+
+  ymaximum:
+    description: Maximum value of Y (Spectral files only)
+    start: 248
+    header_type: f
+
+  unused6:
+    description: Unused.
+    start: 254
+    header_type: f
+
+  unused7:
+    description: Unused.
+    start: 258
+    header_type: f
+
+  unused8:
+    description: Unused.
+    start: 262
+    header_type: f
+
+  unused9:
+    description: Unused.
+    start: 264
+    header_type: f
+
+  unused10:
+    description: Unused.
+    start: 268
+    header_type: f
+
+  unused11:
+    description: Unused.
+    start: 272
+    header_type: f
+
+  unused12:
+    description: Unused.
+    start: 276
+    header_type: f
+
+  nzyear:
+    description: GMT year corresponding to reference (zero) time in file.
+    start: 280
+    header_type: i
+
+  nzjday:
+    description: GMT julian day.
+    start: 284
+    header_type: i
+
+  nzhour:
+    description: GMT hour.
+    start: 288
+    header_type: i
+
+  nzmin:
+    description: GMT minute.
+    start: 292
+    header_type: i
+
+  nzsec:
+    description: GMT second.
+    start: 296
+    header_type: i
+
+  nzmsec:
+    description: GMT millisecond.
+    start: 300
+    header_type: i
+
+  nvhdr:
+    description: Header version number.
+    start: 304
+    header_type: i
+    required: true
+
+  norid:
+    description: Origin ID (CSS 3.0)
+    start: 308
+    header_type: i
+
+  nevid:
+    description: Event ID (CSS 3.0)
+    start: 312
+    header_type: i
+
+  npts:
+    description: Number of points per data component
+    start: 316
+    header_type: i
+    required: true
+
+  nsnpts:
+    description: Internal.
+    start: 320
+    header_type: i
+
+  nwfid:
+    description: Waveform ID (CSS 3.0)
+    start: 324
+    header_type: i
+
+  nxsize:
+    description: Spectral Length (Spectral files only)
+    start: 328
+    header_type: i
+
+  nysize:
+    description: Spectral Length (Spectral files only)
+    start: 332
+    header_type: i
+
+  unused15:
+    description: Unused.
+    start: 336
+    header_type: i
+
+  iftype:
+    description: Type of file
+    start: 340
+    header_type: i
+    required: true
+    allowed_vals:
+      time: Time series file
+      rlim: Spectral file---real and imaginary
+      amph: Spectral file---amplitude and phase
+      xy: General x versus y data
+      xyz: General XYZ (3-D) file
+
+  idep:
+    description: Type of dependent variable
+    start: 344
+    header_type: i
+    allowed_vals:
+      unkn: Unknown
+      dsp: Displacement in nm
+      vel: Velocity in nm/sec
+      volts: Velocity in volts
+      acc: Acceleration in nm/sec/sec
+
+  iztype:
+    description: Reference time equivalence
+    start: 348
+    header_type: i
+    allowed_vals:
+      unkn: Unknown
+      b: Begin time
+      day: Midnight of refernece GMT day
+      o: Event origin time
+      a: First arrival time
+      t0: User defined time pick 0
+      t1: User defined time pick 1
+      t2: User defined time pick 2
+      t3: User defined time pick 3
+      t4: User defined time pick 4
+      t5: User defined time pick 5
+      t6: User defined time pick 6
+      t7: User defined time pick 7
+      t8: User defined time pick 8
+      t9: User defined time pick 9
+
+  unused16:
+    description: Unused.
+    start: 352
+    header_type: i
+
+
+  iinst:
+    description: Type of recording instrument. [not currently used]
+    start: 356
+    header_type: i
+
+  istreg:
+    description: Station geographic region. [not currently used]
+    start: 360
+    header_type: i
+
+  ievreg:
+    description: Event geographic region. [not currently used]
+    start: 364
+    header_type: i
+
+  ievtyp:
+    description: Type of event
+    start: 368
+    header_type: i
+    allowed_vals:
+      unkn: Unknown
+      nucl: Nuclear event
+      pren: Nuclear pre-shot event
+      postn: Nuclear post-shot event
+      quake: Earthquake
+      preq: Foreshock
+      postq: Aftershock
+      chem: Chemical explosion
+      qb: Quarry or mine blast confirmed by quarry
+      qb1: Quarry/mine blast with designed shot info-ripple fired
+      qb2: Quarry/mine blast with observed shot info-ripple fired
+      qbx: Quarry or mine blast - single shot
+      qmt: 'Quarry/mining-induced events: tremors and rockbursts'
+      eq: Earthquake
+      eq1: Earthquakes in a swarm or aftershock sequence
+      eq2: Felt earthquake
+      me: Marine explosion
+      ex: Other explosion
+      nu: Nuclear explosion
+      nc: Nuclear cavity collapse
+      o: Other source of known origin
+      l: Local event of unknown origin
+      r: Regional event of unknown origin
+      t: Teleseismic event of unknown origin
+      u: Undetermined or conflicting information
+      other: Other
+
+  iqual:
+    description: Quality of data [not currently used]
+    start: 372
+    header_type: i
+    allowed_vals:
+      good: Good data
+      glch: Glitches
+      drop: Dropouts
+      lowsn: Low signal to noise ratio
+      other: Other
+
+  isynth:
+    description: Synthetic data flag [not currently used]
+    start: 376
+    header_type: i
+    allowed_vals:
+      rldta: Real data
+
+  imagtyp:
+    description: Magnitude type
+    start: 380
+    header_type: i
+    allowed_vals:
+      mb: Bodywave Magnitude
+      ms: Surfacewave Magnitude
+      ml: Local Magnitude
+      mw: Moment Magnitude
+      md: Duration Magnitude
+      mx: User Defined Magnitude
+
+  imagsrc:
+    description: Source of magnitude information
+    start: 384
+    header_type: i
+    allowed_vals:
+      neic: National Earthquake Information Center
+      pde: Preliminary Determination of Epicenter
+      isc: Internation Seismological Centre
+      reb: Reviewed Event Bulletin
+      usgs: US Geological Survey
+      brk: UC Berkeley
+      caltec: California Institute of Technology
+      llnl: Lawrence Livermore National Laboratory
+      evloc: Event Location (computer program)
+      jsop: Joint Seismic Observation Program
+      user: The individual using SAC2000
+      unknown: unknown
+
+  unused19:
+    description: Unused
+    start: 388
+    header_type: i
+
+  unused20:
+    description: Unused
+    start: 392
+    header_type: i
+
+  unused21:
+    description: Unused
+    start: 396
+    header_type: i
+
+  unused22:
+    description: Unused
+    start: 400
+    header_type: i
+
+  unused23:
+    description: Unused
+    start: 404
+    header_type: i
+
+  unused24:
+    description: Unused
+    start: 408
+    header_type: i
+
+  unused25:
+    description: Unused
+    start: 412
+    header_type: i
+
+  unused26:
+    description: Unused
+    start: 416
+    header_type: i
+
+  leven:
+    description: TRUE if data is evenly spaced
+    start: 420
+    header_type: l
+    required: true
+
+  lpspol:
+    description: TRUE if station components have a positive polarity (left-hand rule).
+    start: 424
+    header_type: l
+
+  lovrok:
+    description: TRUE if it is okay to overwrite this file on disk.
+    start: 428
+    header_type: l
+
+  lcalda:
+    description: TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and event coordinates.
+    start: 432
+    header_type: l
+
+  unused27:
+    description: Unused
+    start: 436
+    header_type: l
+
+  kstnm:
+    description: Station name.
+    start: 440
+    header_type: k
+
+  kevnm:
+    description: Event name.
+    start: 448
+    length: 16
+    format: 16s
+    header_type: k
+
+  khole:
+    description: 'Nuclear: hole identifier; Other: location identifier.'
+    start: 464
+    header_type: k
+
+  ko:
+    description: Event origin time identification.
+    start: 472
+    header_type: k
+
+  ka:
+    description: First arrival time identification.
+    start: 480
+    header_type: k
+
+  kt0:
+    description: User defined time pick identification.
+    start: 488
+    header_type: k
+
+  kt1:
+    description: User defined time pick identification.
+    start: 496
+    header_type: k
+
+  kt2:
+    description: User defined time pick identification.
+    start: 504
+    header_type: k
+
+  kt3:
+    description: User defined time pick identification.
+    start: 512
+    header_type: k
+
+  kt4:
+    description: User defined time pick identification.
+    start: 520
+    header_type: k
+
+  kt5:
+    description: User defined time pick identification.
+    start: 528
+    header_type: k
+
+  kt6:
+    description: User defined time pick identification.
+    start: 536
+    header_type: k
+
+  kt7:
+    description: User defined time pick identification.
+    start: 544
+    header_type: k
+
+  kt8:
+    description: User defined time pick identification.
+    start: 552
+    header_type: k
+
+  kt9:
+    description: User defined time pick identification.
+    start: 560
+    header_type: k
+
+  kf:
+    description: Fini identification.
+    start: 568
+    header_type: k
+
+  kuser0:
+    description: User defined variable storage area.
+    start: 576
+    header_type: k
+
+  kuser1:
+    description: User defined variable storage area.
+    start: 584
+    header_type: k
+
+  kuser2:
+    description: User defined variable storage area.
+    start: 592
+    header_type: k
+
+  kcmpnm:
+    description: Channel name. SEED volumes use three character names, and the third is the component/orientation. For horizontals, the current trend is to use 1 and 2 instead of N and E.
+    start: 600
+    header_type: k
+
+  knetwk:
+    description: Name of seismic network.
+    start: 608
+    header_type: k
+
+  kdatrd:
+    description: Date data was read onto computer.
+    start: 616
+    header_type: k
+
+  kinst:
+    description: Generic name of recording instrument.
+    start: 624
+    header_type: k
+
+enumerated_header_values:
+  time: 01
+  rlim: 02
+  amph: 03
+  xy: 04
+  unkn: 05
+  disp: 06
+  vel: 07
+  acc: 08
+  b: 09
+  day: 10
+  o: 11
+  a: 12
+  t0: 13
+  t1: 14
+  t2: 15
+  t3: 16
+  t4: 17
+  t5: 18
+  t6: 19
+  t7: 20
+  t8: 21
+  t9: 22
+  radnv: 23
+  tannv: 24
+  radev: 25
+  tanev: 26
+  north: 27
+  east: 28
+  horza: 29
+  down: 30
+  up: 31
+  lllbb: 32
+  wwsn1: 33
+  wwsn2: 34
+  hglp: 35
+  sro: 36
+  nucl: 37
+  pren: 38
+  postn: 39
+  quake: 40
+  preq: 41
+  postq: 42
+  chem: 43
+  other: 44
+  good: 45
+  glch: 46
+  drop: 47
+  lowsn: 48
+  rldta: 49
+  volts: 50
+  mb: 52
+  ms: 53
+  ml: 54
+  mw: 55
+  md: 56
+  mx: 57
+  neic: 58
+  pdeq: 59
+  pdew: 60
+  pde: 61
+  isc: 62
+  reb: 63
+  usgs: 64
+  brk: 65
+  caltech: 66
+  llnl: 67
+  evloc: 68
+  jsop: 69
+  user: 70
+  unknown: 71
+  qb: 72
+  qb1: 73
+  qb2: 74
+  qbx: 75
+  qmt: 76
+  eq: 77
+  eq1: 78
+  eq2: 79
+  me: 80
+  ex: 81
+  nu: 82
+  nc: 83
+  o_: 84
+  l: 85
+  r: 86
+  t: 87
+  u: 88
+  eq3: 89
+  eq0: 90
+  ex0: 91
+  qc: 92
+  qb0: 93
+  gey: 94
+  lit: 95
+  met: 96
+  odor: 97
+  os: 103

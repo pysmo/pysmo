@@ -68,7 +68,7 @@ class sacioTestCase(unittest.TestCase):
         with self.assertRaises(ValueError): self.ro_sacobj.resp8
         with self.assertRaises(ValueError): self.ro_sacobj.resp9
         with self.assertRaises(ValueError): self.ro_sacobj.kdatrd
-        self.assertEqual(self.ro_sacobj.kstnm, 'MEL01   ')
+        self.assertEqual(self.ro_sacobj.kstnm, 'MEL01')
         self.assertAlmostEqual(self.ro_sacobj.cmpaz, 0)
         self.assertAlmostEqual(self.ro_sacobj.cmpinc, 90)
         with self.assertRaises(ValueError): self.ro_sacobj.istreg
@@ -76,14 +76,14 @@ class sacioTestCase(unittest.TestCase):
         self.assertAlmostEqual(self.ro_sacobj.stlo, -73.74272155761719)
         with self.assertRaises(ValueError): self.ro_sacobj.stel
         with self.assertRaises(ValueError): self.ro_sacobj.stdp
-        self.assertEqual(self.ro_sacobj.kevnm, '043550359BHN    ')
+        self.assertEqual(self.ro_sacobj.kevnm, '043550359BHN')
         with self.assertRaises(ValueError): self.ro_sacobj.ievreg
         self.assertAlmostEqual(self.ro_sacobj.evla, -15.265999794006348)
         self.assertAlmostEqual(self.ro_sacobj.evlo, -75.20800018310547)
         with self.assertRaises(ValueError): self.ro_sacobj.evel
         self.assertAlmostEqual(self.ro_sacobj.evdp, 30.899999618530273)
         self.assertEqual(self.ro_sacobj.ievtyp, 'quake')
-        self.assertEqual(self.ro_sacobj.khole, '        ')
+        self.assertEqual(self.ro_sacobj.khole, '')
         self.assertAlmostEqual(self.ro_sacobj.dist, 3172.399658203125)
         self.assertAlmostEqual(self.ro_sacobj.az, 177.77978515625)
         self.assertAlmostEqual(self.ro_sacobj.baz, 357.0372619628906)
@@ -118,8 +118,8 @@ class sacioTestCase(unittest.TestCase):
         with self.assertRaises(ValueError): self.ro_sacobj.iinst
         self.assertTrue(self.ro_sacobj.lpspol)
         self.assertTrue(self.ro_sacobj.lcalda)
-        self.assertEqual(self.ro_sacobj.kcmpnm, 'BHN     ')
-        self.assertEqual(self.ro_sacobj.knetwk, 'YJ      ')
+        self.assertEqual(self.ro_sacobj.kcmpnm, 'BHN')
+        self.assertEqual(self.ro_sacobj.knetwk, 'YJ')
         with self.assertRaises(ValueError): self.ro_sacobj.mag
         with self.assertRaises(ValueError): self.ro_sacobj.imagtyp
         with self.assertRaises(ValueError): self.ro_sacobj.imagsrc
