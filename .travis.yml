@@ -4,8 +4,9 @@ python:
   - "3.6"
 cache: pip
 install:
-  - pip install -r requirements.txt
+  - pip install -r requirements-travis.txt
 script:
   - python setup.py build
   - python setup.py install
   - python tests/test_sacio.py
+  - py.test -v --mpl tests/test_sacfunc.py

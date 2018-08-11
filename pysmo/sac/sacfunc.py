@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # psymo is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
@@ -33,26 +33,31 @@ __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
 
-def sac2xy(sacobj):
+def sac2xy(sacobj, retarray=False):
     """
-    Return time and amplitude from a sacfile
-    
+    Return time and amplitude from a sacfile.
+
+    Default is to return a python list. With
+    kwarg retarray=True a numpy array is returned
+
     Example:
     >>> import pysmo.sac.sacio as sacio
     >>> import pysmo.sac.sacfunc as sacfunc
     >>> sacobj = sacio.sacfile('file.sac')
-    time, vals = sacfunc.sac2xy(sacobj)
+    >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     """
-    import pylab as pl
+    import numpy as np
     data = sacobj.data
     b = sacobj.b
     delta = sacobj.delta
     npts = sacobj.npts
     e = b + (npts-1)*delta
-    t = pl.linspace(b, e, npts)
-    return t, data
-    
-def plotsac(sacobj):
+    t = np.linspace(b, e, npts)
+    if retarray:
+        return t, np.array(data)
+    return t.tolist(), data
+
+def plotsac(sacobj, outfile=None, showfig=True):
     """
     Simple plot of a single sac file.
 
@@ -62,11 +67,14 @@ def plotsac(sacobj):
     >>> sacobj = sacio.sacfile('file.sac')
     >>> sacfunc.plotsac(sacobj)
     """
-    import pylab as pl
+    import matplotlib.pyplot as plt
     t, data = sac2xy(sacobj)
-    pl.plot(t, data)
-    pl.xlabel('Time[s]')
-    pl.show()
+    plt.plot(t, data)
+    plt.xlabel('Time[s]')
+    if outfile is not None:
+        plt.savefig(outfile)
+    if showfig:
+        plt.show()
 
 def resample(sacobj, delta_new):
     """
@@ -81,11 +89,11 @@ def resample(sacobj, delta_new):
     >>> data_new = sacfunc.resample(sac, delta_new)
     """
     import scipy.signal
-    data_old   = sacobj.data
-    npts_old   = sacobj.npts
-    delta_old  = sacobj.delta
-    npts_new   = int(npts_old * delta_old / delta_new)
-    data_new   = scipy.signal.resample(data_old, npts_new)
+    data_old = sacobj.data
+    npts_old = sacobj.npts
+    delta_old = sacobj.delta
+    npts_new = int(npts_old * delta_old / delta_new)
+    data_new = scipy.signal.resample(data_old, npts_new)
     return data_new
 
 def detrend(sacobj):
@@ -117,9 +125,9 @@ def calc_az(sacobj, ellps='WGS84'):
     >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
     >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
-    return __azdist(sacobj,  ellps)[0]
+    return __azdist(sacobj, ellps)[0]
 
-def calc_baz(sacobj,  ellps='WGS84'):
+def calc_baz(sacobj, ellps='WGS84'):
     """
     Return backazimuth (in DEG) from sacfile. The default
     ellipse used is 'WGS84', but others may be specified. For
@@ -135,9 +143,9 @@ def calc_baz(sacobj,  ellps='WGS84'):
     >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
     >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
-    return __azdist(sacobj,  ellps)[1]
+    return __azdist(sacobj, ellps)[1]
 
-def calc_dist(sacobj,  ellps='WGS84'):
+def calc_dist(sacobj, ellps='WGS84'):
     """
     Return great circle distance (in km) from sacfile. The default
     ellipse used is 'WGS84', but others may be specified. For
@@ -153,9 +161,9 @@ def calc_dist(sacobj,  ellps='WGS84'):
     >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
     >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
-    return __azdist(sacobj,  ellps)[2]
+    return __azdist(sacobj, ellps)[2]
 
-def __azdist(sacobj,  ellps):
+def __azdist(sacobj, ellps):
     """
     Return forward/backazimuth and distance using
     pyproj (proj4 bindings)
@@ -164,16 +172,16 @@ def __azdist(sacobj,  ellps):
     g = Geod(ellps=ellps)
     stla, stlo = sacobj.stla, sacobj.stlo
     evla, evlo = sacobj.evla, sacobj.evlo
-    az,  baz,  dist = g.inv(evlo,  evla,  stlo,  stla)
+    az, baz, dist = g.inv(evlo, evla, stlo, stla)
     # convert units so that they show the same as SAC
     if az < 0:
         az += 360
     if baz < 0:
         baz += 360
     dist /= 1000
-    return az,  baz,  dist
+    return az, baz, dist
 
-def envelope(sacobj, Tn , alpha):
+def envelope(sacobj, Tn, alpha):
     """
     Return data vector of the envelope of gaussian filtered seismogram.
     Example:
@@ -195,7 +203,7 @@ def gauss(sacobj, Tn, alpha):
     >>> sacobj = sacio.sacfile('file.sac')
     >>> Tn = 50 # Center Gaussian filter at 50s period
     >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-    >>> envelope = sacfunc.gauss(sacobj, Tn, alpha)
+    >>> data = sacfunc.gauss(sacobj, Tn, alpha)
     """
     return __gauss(sacobj, Tn, alpha)[1]
 
@@ -203,22 +211,22 @@ def __gauss(sacobj, Tn, alpha):
     """
     Return envelope and gaussian filtered data
     """
-    import pylab as pl
-    data = pl.array(sacobj.data)
+    import numpy as np
+    data = np.array(sacobj.data)
     delta = sacobj.delta
     Wn = 1 / float(Tn)
     Nyq = 1 / (2 * delta)
     old_size = data.size
-    pad_size = 2**(int(pl.log2(old_size))+1)
+    pad_size = 2**(int(np.log2(old_size))+1)
     data.resize(pad_size)
-    spec = pl.fft(data)
+    spec = np.fft.fft(data)
     spec.resize(pad_size)
-    W = pl.array(pl.linspace(0, Nyq, pad_size))
-    Hn = spec * pl.exp(-1 * alpha * ((W-Wn)/Wn)**2)
-    Qn = complex(0,1) * Hn.real - Hn.imag
-    hn = pl.ifft(Hn).real
-    qn = pl.ifft(Qn).real
-    an = pl.sqrt(hn**2 + qn**2)
+    W = np.array(np.linspace(0, Nyq, pad_size))
+    Hn = spec * np.exp(-1 * alpha * ((W-Wn)/Wn)**2)
+    Qn = complex(0, 1) * Hn.real - Hn.imag
+    hn = np.fft.ifft(Hn).real
+    qn = np.fft.ifft(Qn).real
+    an = np.sqrt(hn**2 + qn**2)
     an.resize(old_size)
     hn = hn[0:old_size]
     return(an, hn)
