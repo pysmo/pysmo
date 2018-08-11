@@ -50,7 +50,8 @@ def test_sac2xy_array(ro_sacobj):
     assert pytest.approx(time[6]) == 53.18000
     assert pytest.approx(vals[6]) == -1591.0
 
-@image_comparison(baseline_images=['plotsac'], extensions=['png'])
+@image_comparison(baseline_images=['plotsac'], extensions=['png'],
+                  remove_text = True)
 def test_plotsac():
     testfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
     sacobj = sacio.sacfile(testfile, 'ro')
