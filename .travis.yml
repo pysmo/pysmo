@@ -9,3 +9,4 @@ script:
   - python setup.py build
   - python setup.py install
   - python tests/test_sacio.py
+  - py.test -v tests/test_sacfunc.py
