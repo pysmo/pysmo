@@ -1,12 +1,12 @@
 from pysmo.sac import sacio, sacfunc
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib.testing.decorators import image_comparison
 import os
+import pytest
 import tempfile
 import shutil
 import numpy as np
-import pytest
+import matplotlib.pyplot as plt
 
 @pytest.fixture()
 def tmpdir():
@@ -50,12 +50,11 @@ def test_sac2xy_array(ro_sacobj):
     assert pytest.approx(time[6]) == 53.18000
     assert pytest.approx(vals[6]) == -1591.0
 
-@image_comparison(baseline_images=['plotsac'], extensions=['png'],
-                  remove_text = True)
-def test_plotsac():
-    testfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
-    sacobj = sacio.sacfile(testfile, 'ro')
-    sacfunc.plotsac(sacobj, showfig=False)
+@pytest.mark.mpl_image_compare
+def test_plotsac(ro_sacobj):
+    fig = plt.figure()
+    sacfunc.plotsac(ro_sacobj, showfig=False)
+    return fig
 
 def test_resample(ro_sacobj):
     delta_old = ro_sacobj.delta

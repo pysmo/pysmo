@@ -69,7 +69,6 @@ def plotsac(sacobj, outfile=None, showfig=True):
     """
     import matplotlib.pyplot as plt
     t, data = sac2xy(sacobj)
-    fig = plt.figure()
     plt.plot(t, data)
     plt.xlabel('Time[s]')
     if outfile is not None:
