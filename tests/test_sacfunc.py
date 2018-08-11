@@ -50,7 +50,7 @@ def test_sac2xy_array(ro_sacobj):
     assert pytest.approx(time[6]) == 53.18000
     assert pytest.approx(vals[6]) == -1591.0
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(tolerance=20)
 def test_plotsac(ro_sacobj):
     fig = plt.figure()
     sacfunc.plotsac(ro_sacobj, showfig=False)
