@@ -1,4 +1,6 @@
 from pysmo.sac import sacio, sacfunc
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.testing.decorators import image_comparison
 import os
 import tempfile
