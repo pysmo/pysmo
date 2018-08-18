@@ -19,6 +19,9 @@
 Python module for reading/writing SAC files.
 """
 
+from __future__ import absolute_import, division, print_function
+from builtins import (bytes, str, open, super, range,
+                      zip, round, input, int, pow, object)
 from sys import byteorder
 import struct
 import os
@@ -245,14 +248,8 @@ class sacfile(object):
             else:
                 raise ValueError('%s not an allowed value for %s' % \
                 (header_value, header_field))
-        try:
-            # python2
-            if isinstance(header_value, unicode):
-                header_value = header_value.encode()
-        except NameError:
-            # python3 str type represents unicode strings
-            if isinstance(header_value, str):
-                header_value = header_value.encode()
+        if isinstance(header_value, str):
+            header_value = header_value.encode()
         header_value = struct.pack(header_format, header_value)
         self.fh.seek(header_start)
         self.fh.write(header_value)
