@@ -18,12 +18,12 @@
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
-from sacio import sacfile
+from sacio import SacFile
 import sacfunc as sf
 
-class sacfile_extended(sacfile):
+class SacFileExt(SacFile):
     """
-    Inherited class to do more then basic IO on a sacfile object.
+    Inherited class to do more then basic IO on a SacFile object.
     Basically this is to provide an alternative way of using the
     funtions in sacfunc.py
     """
@@ -55,3 +55,6 @@ class sacfile_extended(sacfile):
             self.dist = sf.calc_dist(self, ellps)
         except:
             pass
+
+# This is for compatibility
+sacfile_extended = SacFileExt
