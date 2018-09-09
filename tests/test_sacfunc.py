@@ -30,28 +30,28 @@ def testfile():
 
 @pytest.fixture()
 def ro_sacobj(tmpdir, testfile):
-    """Return read-only sacfile object"""
+    """Return read-only SacFile object"""
     ro_file = os.path.join(tmpdir, 'readonly.sac')
     shutil.copyfile(testfile, ro_file)
-    return sacio.sacfile(ro_file)
+    return sacio.SacFile(ro_file)
 
 @pytest.fixture()
 def rw_sacobj(tmpdir, testfile):
-    """Return read-write sacfile object"""
+    """Return read-write SacFile object"""
     rw_file = os.path.join(tmpdir, 'readwrite.sac')
     shutil.copyfile(testfile, rw_file)
-    return sacio.sacfile(rw_file, 'rw')
+    return sacio.SacFile(rw_file, 'rw')
 
 @pytest.fixture()
 def new_sacobj(tmpdir, testfile):
-    """Return new sacfile object"""
+    """Return new SacFile object"""
     new_file = os.path.join(tmpdir, 'new.sac')
     shutil.copyfile(testfile, new_file)
-    return sacio.sacfile(new_file, 'new')
+    return sacio.SacFile(new_file, 'new')
 
 def test_sac2xy_list(ro_sacobj):
     """
-    Get time and data as lists from sacfile object
+    Get time and data as lists from SacFile object
     and verify their contents.
     """
     time, vals = sacfunc.sac2xy(ro_sacobj)
@@ -62,7 +62,7 @@ def test_sac2xy_list(ro_sacobj):
 
 def test_sac2xy_array(ro_sacobj):
     """
-    Get time and data as numpy arrays from sacfile
+    Get time and data as numpy arrays from SacFile
     object and verify their contents.
     """
     time, vals = sacfunc.sac2xy(ro_sacobj, retarray=True)
@@ -82,21 +82,21 @@ def test_plotsac(ro_sacobj):
     return fig
 
 def test_resample(ro_sacobj):
-    """Resample sacfile object and verify resampled data."""
+    """Resample SacFile object and verify resampled data."""
     delta_old = ro_sacobj.delta
     delta_new = delta_old * 2
     data_new = sacfunc.resample(ro_sacobj, delta_new)
     assert pytest.approx(data_new[6]) == -1558.4662660
 
 def test_detrend(ro_sacobj):
-    """Detrend sacfile object and verify mean is 0."""
+    """Detrend SacFile object and verify mean is 0."""
     detrended_data = sacfunc.detrend(ro_sacobj)
     assert np.mean(ro_sacobj.data) != 0
     assert pytest.approx(np.mean(detrended_data)) == 0
 
 def test_calcaz(ro_sacobj):
     """
-    Calculate azimuth from sacfile object and verify
+    Calculate azimuth from SacFile object and verify
     the calculated values. The reference values were
     obtained from previous runs of this function and
     verified against values obtained using the 'sac'
@@ -109,7 +109,7 @@ def test_calcaz(ro_sacobj):
 
 def test_calcbaz(ro_sacobj):
     """
-    Calculate back azimuth from sacfile object and verify
+    Calculate back azimuth from SacFile object and verify
     the calculated values. The reference values were
     obtained from previous runs of this function and
     verified against values obtained using the 'sac'
@@ -122,7 +122,7 @@ def test_calcbaz(ro_sacobj):
 
 def test_calcdist(ro_sacobj):
     """
-    Calculate distance from sacfile object and verify
+    Calculate distance from SacFile object and verify
     the calculated values. The reference values were
     obtained from previous runs of this function and
     verified against values obtained using the 'sac'
@@ -135,7 +135,7 @@ def test_calcdist(ro_sacobj):
 
 def test_envelope(ro_sacobj):
     """
-    Calculate gaussian envelope from sacfile object and verify
+    Calculate gaussian envelope from SacFile object and verify
     the calculated values. The reference values were
     obtained from previous runs of this function.
     """
@@ -146,7 +146,7 @@ def test_envelope(ro_sacobj):
 
 def test_gauss(ro_sacobj):
     """
-    Calculate gaussian filtered data from sacfile object and
+    Calculate gaussian filtered data from SacFile object and
     verify the calculated values. The reference values were
     obtained from previous runs of this function.
     """
