@@ -30,14 +30,14 @@ Copyright (c) 2012 Simon Lloyd
 """
 
 
-class sacfile(object):
+class SacFile(object):
     """
     Python class for accessing SAC files. Set or read headerfields
     or data.
 
     Example:
-    >>> from pysmo.sac.sacio import sacfile
-    >>> sacobj = sacfile('file.sac', 'rw')
+    >>> from pysmo.sac.sacio import SacFile
+    >>> sacobj = SacFile('file.sac', 'rw')
     >>> print sacobj.delta
     0.5
     >>> sacobj.delta = 2
@@ -334,3 +334,6 @@ class sacfile(object):
         self.depmin = min(self.data)
         self.depmax = max(self.data)
         self.depmen = sum(self.data)/self.npts
+
+# Set this for compatibility
+sacfile = SacFile
