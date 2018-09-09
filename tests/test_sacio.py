@@ -17,9 +17,9 @@ class sacioTestCase(unittest.TestCase):
         new_file = os.path.join(self.tmpdir, 'new.sac')
         shutil.copyfile(testfile, ro_file)
         shutil.copyfile(testfile, rw_file)
-        self.ro_sacobj = sacio.sacfile(ro_file, 'ro')
-        self.rw_sacobj = sacio.sacfile(rw_file, 'rw')
-        self.new_sacobj = sacio.sacfile(new_file, 'new')
+        self.ro_sacobj = sacio.SacFile(ro_file, 'ro')
+        self.rw_sacobj = sacio.SacFile(rw_file, 'rw')
+        self.new_sacobj = sacio.SacFile(new_file, 'new')
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
@@ -132,7 +132,7 @@ class sacioTestCase(unittest.TestCase):
         Test changing header values
         """
 
-        # readonly sacfile object should raise an error
+        # readonly SacFile object should raise an error
         with self.assertRaises(IOError):
             self.ro_sacobj.delta = 2
 
@@ -154,7 +154,7 @@ class sacioTestCase(unittest.TestCase):
         """
         newdata = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
 
-        # readonly sacfile object should raise an error
+        # readonly SacFile object should raise an error
         with self.assertRaises(IOError):
             self.ro_sacobj.data = newdata
 
