@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='pysmo_sac',
-    version='0.5.1',
+    name='pysmo',
+    version='0.6.0',
     description='Python module to read/write/manipulate SAC (Seismic Analysis Code) files',
     long_description='',
     author='Simon Lloyd',
