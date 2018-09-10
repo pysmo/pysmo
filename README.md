@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.com/pysmo/sac.svg?branch=master)](https://travis-ci.com/pysmo/sac)
 
-sac
-===
+pysmo
+=====
 
 Python module to read/write/manipulate SAC (Seismic Analysis Code) files.
 
