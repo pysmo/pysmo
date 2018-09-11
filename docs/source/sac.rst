@@ -1,25 +1,23 @@
-pysmo.sac
-=========
-
+Working with SAC files
+======================
 
 .. automodule:: pysmo.sac
     :members:
     :undoc-members:
     :show-inheritance:
 
-Submodules
-----------
 
-pysmo.sac.sacio module
-----------------------
+pysmo.sac.sacio
+---------------
 
 .. automodule:: pysmo.sac.sacio
     :members:
     :undoc-members:
     :show-inheritance:
 
-pysmo.sac.sacfunc module
-------------------------
+
+pysmo.sac.sacfunc
+-----------------
 
 .. automodule:: pysmo.sac.sacfunc
     :members:
