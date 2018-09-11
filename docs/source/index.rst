@@ -11,8 +11,10 @@ Welcome to Pysmo's documentation!
    :caption: Contents:
 
    intro
-   pysmo.sac
+   installation
+   sac
    tools
+   contrib
 
 
 Indices and tables
