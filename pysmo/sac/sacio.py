@@ -35,7 +35,8 @@ class SacFile(object):
     Python class for accessing SAC files. Set or read headerfields
     or data.
 
-    Example:
+    Example usage:
+
     >>> from pysmo.sac.sacio import SacFile
     >>> sacobj = SacFile('file.sac', 'rw')
     >>> print sacobj.delta
