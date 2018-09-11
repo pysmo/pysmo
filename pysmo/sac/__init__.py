@@ -1,2 +1,5 @@
+"""
+psymo.sac provides ...
+"""
 from __future__ import division, absolute_import, print_function
 name = 'sac'

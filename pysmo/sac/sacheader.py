@@ -66,6 +66,7 @@ class SacHeader(object):
             self.length = header_fields[header_field]['length']
         except KeyError:
             self.length = header_types[self.header_type]['length']
+        self.__doc__ = header_fields[header_field]['description']
 
 
     @staticmethod
