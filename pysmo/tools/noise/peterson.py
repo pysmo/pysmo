@@ -16,12 +16,6 @@
 ###
 
 """
-Python module for calculating random noise based on the Peterson
-noise models NHLM and NLNM.
-
-Reference:
-Peterson, J., 1993. Observations and modelling of background seismic noise.
-Open-file report 93-322, U. S. Geological Survey, Albuquerque, New Mexico. 
 """
 
 __copyright__ = """
@@ -29,8 +23,6 @@ Copyright (c) 2013 Simon Lloyd
 """
 
 import numpy as np
-from numpy.fft import irfft
-from numpy.random import rand
 from scipy.interpolate import interp1d
 from scipy.integrate import cumtrapz
 
@@ -65,10 +57,10 @@ def _genNoise(delta, npts, NM, velocity):
     spectrum[1:NPTS] = np.sqrt(10**(Pxx/10) * NPTS / delta * 2)
 
     # phase is randomly generated
-    phase = (rand(NPTS) - 0.5) * np.pi * 2
+    phase = (np.random.rand(NPTS) - 0.5) * np.pi * 2
 
     NewX = spectrum * (np.cos(phase) + 1j * np.sin(phase))
-    acceleration = irfft(NewX)
+    acceleration = np.fft.irfft(NewX)
 
     start = int((NPTS-npts)/2)
     end = start + npts
@@ -86,6 +78,21 @@ def genNoiseNLNM(delta, npts, velocity=False):
     """
     Generate a random signal that matches Peterson's
     new low noise model NLNM.
+
+    :param delta: Sampling rate of generated noise
+    :type delta: float
+    :param npts: Number of points of generated noise
+    :type npts: int
+    :param velocity: Return velocity instead of acceleration.
+    :type velocity: bool
+    :returns: numpy array containing synthetic data
+
+    Example usage::
+
+        >>> import pysmo.tools.noise as noise
+        >>> delta = 0.05
+        >>> npts = 5000
+        >>> low_noise = noise.genNoiseNLNM(delta, npts)
     """
     return _genNoise(delta, npts, NLNM, velocity)
 
@@ -93,5 +100,20 @@ def genNoiseNHNM(delta, npts, velocity=False):
     """
     Generate a random signal that matches Peterson's
     new high noise model NHNM.
+
+    :param delta: Sampling rate of generated noise
+    :type delta: float
+    :param npts: Number of points of generated noise
+    :type npts: int
+    :param velocity: Return velocity instead of acceleration.
+    :type velocity: bool
+    :returns: numpy array containing synthetic data
+
+    Example usage::
+
+        >>> import pysmo.tools.noise as noise
+        >>> delta = 0.05
+        >>> npts = 5000
+        >>> high_noise = noise.genNoiseNHNM(delta, npts)
     """
     return _genNoise(delta, npts, NHNM, velocity)
