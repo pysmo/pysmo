@@ -16,7 +16,7 @@
 ###
 
 """
-Python module for reading/writing SAC files.
+Python module for reading/writing SAC files using the :class:`SacFile` class.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -32,18 +32,36 @@ Copyright (c) 2012 Simon Lloyd
 
 class SacFile(object):
     """
-    Python class for accessing SAC files. Set or read headerfields
-    or data.
+    Python class for accessing SAC files. This class reads and writes directly to a SAC file,
+    meaning that any changes to an instance of this module are also immediately written
+    to the SAC file. 
 
-    Example usage::
+    The :class:SacFile class focuses only on reading/writing data and header values to and 
+    from a SAC file. Usage is therefore also quite simple, as shown in the examples below.
+
+    Reading and print data::
 
         >>> from pysmo.sac.sacio import SacFile
-        >>> sacobj = SacFile('file.sac', 'rw')
-        >>> print sacobj.delta
-        0.5
-        >>> sacobj.delta = 2
-        >>> print sacobj.delta
-        2
+        >>> my_sac = SacFile('file.sac', 'rw')
+        >>> data = my_sac.data
+        >>> data
+        [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
+
+    Read the sampling rate::
+
+        >>> delta = my_sac.delta
+        >>> delta
+        0.019999999552965164
+
+    Change the sampling rate::
+
+        >>> newdelta = 0.05
+        >>> my_sac.delta = newdelta
+        >>> my_sac.delta
+        0.05
+
+    There are a lot of header fields in a SAC file, which are all called the same way when using :class:`Sacfile`.
+    They are all listed below.
     """
 
     # Descriptors for all header fields
@@ -195,7 +213,7 @@ class SacFile(object):
             self.fh = open(filename, 'rb')
         elif mode == 'rw':
             self.fh = open(filename, 'r+b')
-            if self.file_byteorder != self.machine_byteorder:
+            if self._file_byteorder != self._machine_byteorder:
                 self.__convert_file_byteorder()
         elif mode == 'new':
             self.fh = open(filename, 'w+b')
@@ -239,7 +257,7 @@ class SacFile(object):
         self.__del__()
 
     @property
-    def file_byteorder(self):
+    def _file_byteorder(self):
         """
         Check the byte order of a SAC file
         """
@@ -252,7 +270,7 @@ class SacFile(object):
         return '>'
 
     @property
-    def machine_byteorder(self):
+    def _machine_byteorder(self):
         """
         Return machine byteorder to use with pack/unpack.
         """
@@ -274,7 +292,7 @@ class SacFile(object):
         """
         start1 = 632
         length = self.npts * 4
-        data_format = self.file_byteorder + str(self.npts) + 'f'
+        data_format = self._file_byteorder + str(self.npts) + 'f'
         self.fh.seek(start1)
         data1 = struct.unpack(data_format, self.fh.read(length))
         try:
