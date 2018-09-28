@@ -8,10 +8,10 @@ import shutil
 import pytest
 import numpy as np
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pysmo.sac import sacio, sacfunc
 
-matplotlib.use('Agg')
 
 @pytest.fixture()
 def tmpdir():
