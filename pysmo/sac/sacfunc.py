@@ -16,59 +16,66 @@
 ###
 
 """
-Python module for manipulating SAC file objects.
-
-Public functions:
- - plot_single_sac(sacobj)          create and show simple plot of one trace
- - resample(sacobj, delta_new)      resample data
- - detrend(sacobj)                  detrend
- - calc_az(sacobj, ellps='WGS84')   azimuth
- - calc_baz(sacobj, ellps='WGS84')  backazimuth
- - calc_dist(sacobj, ellps='WGS84') great circle distance
- - envelope(sacobj, Tn, alpha)      return data vector of the envelope of gaussian shaped filtered
- - gauss(sacobj, Tn, alpha)         return data vector of gaussian filtered seismogram
+Useful functions to use with SacFile objects.
 """
 
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
 
-def sac2xy(sacobj, retarray=False):
+def sac2xy(name, retarray=False):
     """
-    Return time and amplitude from a SacFile.
+    Return time and amplitude from a SacFile object.
 
-    Default is to return a python list. With
-    kwarg retarray=True a numpy array is returned
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param retarray:
+        * True: return numpy array
+        * False: return list (default)
+    :type retarray: bool
+    :returns: Time and amplitude of a SacFile object.
+    :rtype: numpy.array or list
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     """
     import numpy as np
-    data = sacobj.data
-    b = sacobj.b
-    delta = sacobj.delta
-    npts = sacobj.npts
+    data = name.data
+    b = name.b
+    delta = name.delta
+    npts = name.npts
     e = b + (npts-1)*delta
     t = np.linspace(b, e, npts)
     if retarray:
         return t, np.array(data)
     return t.tolist(), data
 
-def plotsac(sacobj, outfile=None, showfig=True):
+
+def plotsac(name, outfile=None, showfig=True):
     """
     Simple plot of a single sac file.
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> sacfunc.plotsac(sacobj)
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param outfile: If specified, save figure to this file.
+    :type outfile: string
+    :param showfig: Specifies if figure should be displayed.
+    :type outfile: bool
+
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> sacfunc.plotsac(sacobj)
     """
+
     import matplotlib.pyplot as plt
-    t, data = sac2xy(sacobj)
+    t, data = sac2xy(name)
     plt.plot(t, data)
     plt.xlabel('Time[s]')
     if outfile is not None:
@@ -76,102 +83,146 @@ def plotsac(sacobj, outfile=None, showfig=True):
     if showfig:
         plt.show()
 
-def resample(sacobj, delta_new):
-    """
-    Resample the data using Fourier method.
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac', 'rw')
-    >>> delta_old = sacobj.delta
-    >>> delta_new = delta_old * 2
-    >>> data_new = sacfunc.resample(sac, delta_new)
+def resample(name, delta_new):
+    """
+    Resample SacFile object data using Fourier method.
+
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param delta_new: New sampling rate.
+    :type new_delta: float
+    :returns: Resampled data.
+    :rtype: numpy.array
+
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac', 'rw')
+        >>> delta_old = sacobj.delta
+        >>> delta_new = delta_old * 2
+        >>> data_new = sacfunc.resample(sac, delta_new)
     """
     import scipy.signal
-    data_old = sacobj.data
-    npts_old = sacobj.npts
-    delta_old = sacobj.delta
+    data_old = name.data
+    npts_old = name.npts
+    delta_old = name.delta
     npts_new = int(npts_old * delta_old / delta_new)
     data_new = scipy.signal.resample(data_old, npts_new)
     return data_new
 
-def detrend(sacobj):
-    """
-    Remove linear and/or constant trends from data.
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac', 'rw')
-    >>> detrended_data = sacfunc.detrend(sacobj)
+def detrend(name):
     """
+    Remove linear and/or constant trends from SacFile object data.
+
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :returns: Detrended data.
+    :rtype: numpy.array
+
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac', 'rw')
+        >>> detrended_data = sacfunc.detrend(sacobj)
+    """
+
     import scipy.signal
-    return scipy.signal.detrend(sacobj.data)
+    return scipy.signal.detrend(name.data)
 
-def calc_az(sacobj, ellps='WGS84'):
+
+def calc_az(name, ellps='WGS84'):
     """
-    Return azimuth (in DEG) from SacFile. The default
+    Calculate azimuth (in DEG) from a SacFile object. The default
     ellipse used is 'WGS84', but others may be specified. For
     more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
-    >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
-    """
-    return __azdist(sacobj, ellps)[0]
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param ellps: Ellipsoid to use for azimuth calculation
+    :type ellps: string
+    :returns: Azimuth
+    :rtype: float
 
-def calc_baz(sacobj, ellps='WGS84'):
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
+        >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
-    Return backazimuth (in DEG) from SacFile. The default
+    return __azdist(name, ellps)[0]
+
+
+def calc_baz(name, ellps='WGS84'):
+    """
+    Calculate backazimuth (in DEG) from a SacFile object. The default
     ellipse used is 'WGS84', but others may be specified. For
     more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
-    >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
-    """
-    return __azdist(sacobj, ellps)[1]
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param ellps: Ellipsoid to use for backazimuth calculation
+    :type ellps: string
+    :returns: Backazimuth
+    :rtype: float
 
-def calc_dist(sacobj, ellps='WGS84'):
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
+        >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
-    Return great circle distance (in km) from SacFile. The default
-    ellipse used is 'WGS84', but others may be specified. For
-    more information see:
+    return __azdist(name, ellps)[1]
+
+
+def calc_dist(name, ellps='WGS84'):
+    """
+    Calculate the great circle distance (in km) from a SacFile object. The default
+    ellipse used is 'WGS84', but others may be specified. For more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = pysmo.sac.sacio.SacFile('file.sac')
-    >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
-    >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
-    """
-    return __azdist(sacobj, ellps)[2]
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param ellps: Ellipsoid to use for distance calculation
+    :type ellps: string
+    :returns: Great Circle Distance
+    :rtype: float
 
-def __azdist(sacobj, ellps):
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = pysmo.sac.sacio.SacFile('file.sac')
+        >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
+        >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
+    """
+    return __azdist(name, ellps)[2]
+
+
+def __azdist(name, ellps):
     """
     Return forward/backazimuth and distance using
     pyproj (proj4 bindings)
     """
     from pyproj import Geod
     g = Geod(ellps=ellps)
-    stla, stlo = sacobj.stla, sacobj.stlo
-    evla, evlo = sacobj.evla, sacobj.evlo
+    stla, stlo = name.stla, name.stlo
+    evla, evlo = name.evla, name.evlo
     az, baz, dist = g.inv(evlo, evla, stlo, stla)
     # convert units so that they show the same as SAC
     if az < 0:
@@ -181,36 +232,56 @@ def __azdist(sacobj, ellps):
     dist /= 1000
     return az, baz, dist
 
-def envelope(sacobj, Tn, alpha):
-    """
-    Return data vector of the envelope of gaussian filtered seismogram.
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> Tn = 50 # Center Gaussian filter at 50s period
-    >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-    >>> envelope = sacfunc.envelope(sacobj, Tn, alpha)
-    """
-    return __gauss(sacobj, Tn, alpha)[0]
 
-def gauss(sacobj, Tn, alpha):
+def envelope(name, Tn, alpha):
+    """
+    Calculate the envelope of a gaussian filtered seismogram.
+    
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param Tn: Center period of Gaussian filter [in seconds]
+    :type Tn: float
+    :param alpha: Set alpha (which determines filterwidth)
+    :type alpha: float
+    :returns: numpy array containing the envelope
+
+    Example::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
+        >>> envelope = sacfunc.envelope(sacobj, Tn, alpha)
+    """
+    return __gauss(name, Tn, alpha)[0]
+
+
+def gauss(name, Tn, alpha):
     """
     Return data vector of a gaussian filtered seismogram.
-    Example:
-    >>> import pysmo.sac.sacio as sacio
-    >>> import pysmo.sac.sacfunc as sacfunc
-    >>> sacobj = sacio.SacFile('file.sac')
-    >>> Tn = 50 # Center Gaussian filter at 50s period
-    >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-    >>> data = sacfunc.gauss(sacobj, Tn, alpha)
+
+    :param name: Name of the SacFile object passed to this function.
+    :type name: SacFile
+    :param Tn: Center period of Gaussian filter [in seconds]
+    :type Tn: float
+    :param alpha: Set alpha (which determines filterwidth)
+    :type alpha: float
+    :returns: numpy array containing filtered data
+
+    Example usage::
+
+        >>> import pysmo.sac.sacio as sacio
+        >>> import pysmo.sac.sacfunc as sacfunc
+        >>> sacobj = sacio.SacFile('file.sac')
+        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
+        >>> data = sacfunc.gauss(sacobj, Tn, alpha)
     """
-    return __gauss(sacobj, Tn, alpha)[1]
+    return __gauss(name, Tn, alpha)[1]
+
 
 def __gauss(sacobj, Tn, alpha):
-    """
-    Return envelope and gaussian filtered data
-    """
     import numpy as np
     data = np.array(sacobj.data)
     delta = sacobj.delta

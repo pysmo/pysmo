@@ -43,7 +43,8 @@ enumerated_header_ids = {v: k for k, v in enumerated_header_values.items()}
 
 class SacHeader(object):
     """
-    Python descriptor class for SAC file headers.
+    Python descriptor class for SAC file headers. Mainly for use
+    inside the SacFile class.
     """
 
     def __init__(self, header_field):
@@ -66,6 +67,7 @@ class SacHeader(object):
             self.length = header_fields[header_field]['length']
         except KeyError:
             self.length = header_types[self.header_type]['length']
+        self.__doc__ = header_fields[header_field]['description']
 
 
     @staticmethod
@@ -90,7 +92,7 @@ class SacHeader(object):
         """
         instance.fh.seek(self.start)
         content = instance.fh.read(self.length)
-        header_value = struct.unpack(instance.file_byteorder+self.format, content)[0]
+        header_value = struct.unpack(instance._file_byteorder+self.format, content)[0]
         if isinstance(header_value, bytes):
             header_value = header_value.decode().rstrip()
         if header_value == self.undefined:
