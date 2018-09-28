@@ -1,12 +1,12 @@
-[![Build Status](https://travis-ci.com/pysmo/sac.svg?branch=master)](https://travis-ci.com/pysmo/sac)
+[![Build Status](https://travis-ci.com/pysmo/pysmo.svg?branch=master)](https://travis-ci.com/pysmo/pysmo)
+[![Documentation Status](https://readthedocs.org/projects/pysmo/badge/?version=latest)](https://pysmo.readthedocs.io/en/latest/?badge=latest)
 
-pysmo
+Pysmo
 =====
 
-Python module to read/write/manipulate SAC (Seismic Analysis Code) files.
+Python package to read/write/manipulate SAC (Seismic Analysis Code) files.
 
-Build
------
+Documentation
+-------------
 
-    sudo python setup.py build
-    sudo python setup.py install
+The complete pysmo documentation is available at https://pysmo.readthedocs.io/
