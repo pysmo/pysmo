@@ -16,7 +16,7 @@
 ###
 
 """
-Python module for reading/writing SAC files using the :class:`SacFile` class.
+Python module for reading/writing SAC files using the :class:`SacIO` class.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -30,19 +30,19 @@ Copyright (c) 2012 Simon Lloyd
 """
 
 
-class SacFile(object):
+class SacIO(object):
     """
     Python class for accessing SAC files. This class reads and writes directly to a SAC file,
     meaning that any changes to an instance of this module are also immediately written
     to the SAC file. 
 
-    The :class:SacFile class focuses only on reading/writing data and header values to and 
+    The :class:SacIO class focuses only on reading/writing data and header values to and 
     from a SAC file. Usage is therefore also quite simple, as shown in the examples below.
 
     Reading and print data::
 
-        >>> from pysmo.sac.sacio import SacFile
-        >>> my_sac = SacFile('file.sac', 'rw')
+        >>> from pysmo.core.sac import SacIO
+        >>> my_sac = SacIO.from_file('file.sac')
         >>> data = my_sac.data
         >>> data
         [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
@@ -199,84 +199,110 @@ class SacFile(object):
     kdatrd = SacHeader("kdatrd")
     kinst = SacHeader("kinst")
 
-    def __init__(self, filename, mode='ro', **kwargs):
+    def __init__(self, **kwargs):
         """
-        Open the SAC file with mode read "ro", write "rw" or new "new".
+        Initialise a SAC object.
         """
-        if mode not in ('ro', 'rw', 'new'):
-            raise ValueError('mode=%s not in (ro, rw, new)' % mode)
-        else:
-            self.mode = mode
-            self.filename = filename
 
-        if mode == 'ro':
-            self.fh = open(filename, 'rb')
-        elif mode == 'rw':
-            self.fh = open(filename, 'r+b')
-            if self._file_byteorder != self._machine_byteorder:
-                self.__convert_file_byteorder()
-        elif mode == 'new':
-            self.fh = open(filename, 'w+b')
-            self.__setupnew()
-
+        self._data = []
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-    def __convert_file_byteorder(self):
+    def read(self, filename):
         """
-        Change the file byte order to the system byte order.
-        This works (or should work), because we read the file
-        in the detected file byteorder, and automatically
-        write in machine byteorder.
+        Read data and header values from a SAC file into an
+        existing SacIO instance.
         """
-        # read data in old byteorder first and save it
-        tmpdata = self.data
 
-        # switch byteorder for all headervariables except for
-        # unused12, which we use for detecting endianness
-        for header_field in header_fields.keys():
-            if header_field == 'unused12':
-                continue
+        with open(filename, 'rb') as self.fh:
+
+            # Guess the file endianness first using the unused12 header field.
+            # It's value should be -12345.0
+
+            # This is where unused12 is located
+            self.fh.seek(276)
+
+            # try reading with little endianness
+            if struct.unpack('<f', (self.fh.read(4)))[-1] == -12345.0:
+                self._file_byteorder = '<'
+            # otherwise assume big endianness.
+            else:
+                self._file_byteorder = '>'
+
+            # Loop over all header fields and store them in the SAC object.
+            for header_field in header_fields:
+                desc = getattr(type(self), header_field)
+                self.fh.seek(desc.start)
+                content = self.fh.read(desc.length)
+                value = struct.unpack(self._file_byteorder+desc.format, content)[0]
+                if isinstance(value, bytes):
+                    value = value.decode().rstrip()
+                setattr(self, header_field, (value, True))
+
+
+            # Read first data block
+            start1 = 632
+            length = self.npts * 4
+            data_format = self._file_byteorder + str(self.npts) + 'f'
+            self.fh.seek(start1)
+            data1 = struct.unpack(data_format, self.fh.read(length))
+
+            # Try reading second data block and combine both blocks 
+            # to a list of tuples. If it fails return only the first
+            # data block as a list
             try:
-                header_value = getattr(self, header_field)
-            except ValueError:
-                header_value = SacHeader.header_undefined_value(header_field)
-            setattr(self, header_field, header_value)
-        # With all other headers change to native byteorder, we change
-        # change unused12 before writing back data
-        self.unused12 = SacHeader.header_undefined_value('unused12')
-        self.data = tmpdata
+                data2 = struct.unpack(data_format, self.fh.read(length))
+                data = []
+                for x1, x2 in zip(data1, data2):
+                    data.append((x1, x2))
+                self._data = data
+            except:
+                self._data = list(data1)
 
-    def __del__(self):
-        self.fh.close()
+    @classmethod
+    def from_file(cls, filename):
+        """
+        Create a new SacIO instance from a SAC file.
+        """
+        newinstance = SacIO()
+        newinstance.read(filename)
+        return newinstance
 
-    def close(self):
+    def write(self, filename):
         """
-        Close file.
+        Write data and header values to a SAC file
         """
-        self.__del__()
+        with open(filename, 'wb') as self.fh:
+            # loop over all valid header fields and write them to the file
+            for header_field in header_fields:
+                desc = getattr(type(self), header_field)
+                self.fh.seek(desc.start)
+                value = desc._value
+                if isinstance(value, str):
+                    value = value.encode()
+                value = struct.pack(desc.format, value)
+                self.fh.write(value)
 
-    @property
-    def _file_byteorder(self):
-        """
-        Check the byte order of a SAC file
-        """
-        self.fh.seek(276) # this is where unused12 is located
 
-        # try reading with little endianness
-        if struct.unpack('<f', (self.fh.read(4)))[-1] == -12345.0:
-            return '<'
-        # guess we weren't able to read that, so we assume big endianness.
-        return '>'
+            # write data
+            start1 = 632
+            self.fh.truncate(start1)
+            self.fh.seek(start1)
+    
+            data = self._data
+            # do we need to write 1 or 2 data sections?
+            if isinstance(data[0], tuple):
+                data1 = []
+                data2 = []
+                for x in data:
+                    data1.append(x[0])
+                    data2.append(x[1])
+                    data1.extend(data2)
+            else:
+                data1 = data
+            for x in data1:
+                self.fh.write(struct.pack('f', x))
 
-    @property
-    def _machine_byteorder(self):
-        """
-        Return machine byteorder to use with pack/unpack.
-        """
-        if byteorder == 'little':
-            return '<'
-        return '>'
 
     @property
     def data(self):
@@ -289,70 +315,41 @@ class SacFile(object):
             - independent variable unevenly spaced
             - phase
             - imaginary component
+
+        If there is only one data section, it is returned as a list of floats.
+        Two data sections result in returning a list of tuples.
         """
-        start1 = 632
-        length = self.npts * 4
-        data_format = self._file_byteorder + str(self.npts) + 'f'
-        self.fh.seek(start1)
-        data1 = struct.unpack(data_format, self.fh.read(length))
-        try:
-            data2 = struct.unpack(data_format, self.fh.read(length))
-            data = []
-            for x1, x2 in zip(data1, data2):
-                data.append((x1, x2))
-                return data
-        except:
-            return list(data1)
+        return self._data
 
     @data.setter
     def data(self, data):
-        if self.mode == 'ro':
-            raise IOError('File %s is readonly' % self.filename)
-        self.npts = len(data)
-        start1 = 632
-        # do we need to write 1 or 2 data sections?
+        """
+        Set the data and additionally write it to
+        a SAC file if there is an open filehandle.
+        """
+
+        # Data is stored as _data inside the object
+        self._data = data
+
+        # Update header values that depend on the 
+        # data. The tuple is used to allow setting
+        # of quasi-immutable header values (i.e. ones
+        # that depend on the data)
+
+        # Calculate number of points from the length of the data vector
+        self.npts = (len(data), True)
+
+        # This triggers recalculating end time
+        self.b = self.b
+
+        # Determine if data has one or two data sections
+        # and calculate trace stats
         if isinstance(data[0], tuple):
-            dimesions = 2
+            self.depmin = (min(data)[0] , True)
+            self.depmax = (max(data)[0] , True)
+            # TODO: Can we do more here than just set it as undefined?
+            self.depmen = ('undefined', True)
         else:
-            dimensions = 1
-        data1 = []
-        data2 = []
-        for x in data:
-            if dimensions == 1:
-                data1.append(x)
-            elif dimensions == 2:
-                data1.append(x[0])
-                data2.append(x[1])
-        data1.extend(data2)
-        self.fh.truncate(start1)
-        self.fh.seek(start1)
-        for x in data1:
-            self.fh.write(struct.pack('f', x))
-        self.__sanitycheck()
-
-    def __setupnew(self):
-        """
-        Setup new file and set required header fields to sane values.
-        """
-        for header_field in header_fields.keys():
-            header_value = SacHeader.header_undefined_value(header_field)
-            setattr(self, header_field, header_value)
-        self.npts = 0
-        self.nvhdr = 6
-        self.b = 0
-        self.e = 0
-        self.iftype = 'time'
-        self.leven = 1
-        self.delta = 1
-
-    def __sanitycheck(self):
-        """
-        Calculate and set header fields that describe the data.
-        """
-        self.e = self.b + (self.npts - 1) * self.delta
-        self.depmin = min(self.data)
-        self.depmax = max(self.data)
-        self.depmen = sum(self.data)/self.npts
-
-# Set this for compatibility
-sacfile = SacFile
+            self.depmin = (min(data), True)
+            self.depmax = (max(data), True)
+            self.depmen = (sum(data)/self.npts, True)
