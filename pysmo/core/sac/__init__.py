@@ -6,3 +6,4 @@ The psymo.sac package consists of two modules, which provide:
 """
 from __future__ import division, absolute_import, print_function
 name = 'sac'
+from .sacio import SacIO
