@@ -210,7 +210,8 @@ class SacIO(object):
 
     def read(self, filename):
         """
-        Read data and header values from a SAC file.
+        Read data and header values from a SAC file into an
+        existing SacIO instance.
         """
 
         with open(filename, 'rb') as self.fh:
@@ -260,6 +261,9 @@ class SacIO(object):
 
     @classmethod
     def from_file(cls, filename):
+        """
+        Create a new SacIO instance from a SAC file.
+        """
         newinstance = SacIO()
         newinstance.read(filename)
         return newinstance
