@@ -38,9 +38,9 @@ def sac2xy(name, retarray=False):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     """
     import numpy as np
@@ -68,9 +68,9 @@ def plotsac(name, outfile=None, showfig=True):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> sacfunc.plotsac(sacobj)
     """
 
@@ -97,9 +97,9 @@ def resample(name, delta_new):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac', 'rw')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> delta_old = sacobj.delta
         >>> delta_new = delta_old * 2
         >>> data_new = sacfunc.resample(sac, delta_new)
@@ -124,9 +124,9 @@ def detrend(name):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac', 'rw')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> detrended_data = sacfunc.detrend(sacobj)
     """
 
@@ -152,9 +152,9 @@ def calc_az(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
         >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
@@ -179,9 +179,9 @@ def calc_baz(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
         >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
@@ -205,9 +205,9 @@ def calc_dist(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = pysmo.sac.sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
         >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
     """
@@ -247,9 +247,9 @@ def envelope(name, Tn, alpha):
 
     Example::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope = sacfunc.envelope(sacobj, Tn, alpha)
@@ -271,9 +271,9 @@ def gauss(name, Tn, alpha):
 
     Example usage::
 
-        >>> import pysmo.sac.sacio as sacio
-        >>> import pysmo.sac.sacfunc as sacfunc
-        >>> sacobj = sacio.SacFile('file.sac')
+        >>> from pysmo.core.sac import SacIO
+        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> data = sacfunc.gauss(sacobj, Tn, alpha)

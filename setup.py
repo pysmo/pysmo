@@ -14,7 +14,7 @@ setup(
     author_email='smlloyd@gmail.com',
     license='GNU General Public License v3.0',
     packages=find_packages(where='.', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
-    data_files = [('pysmo/sac', ['pysmo/sac/sacheader.yml'])],
+    data_files = [('pysmo/core/sac', ['pysmo/core/sac/sacheader.yml'])],
     zip_safe=False,
     url='https://github.com/pysmo/pysmo',
     install_requires=[

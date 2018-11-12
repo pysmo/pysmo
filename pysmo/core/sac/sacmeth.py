@@ -18,14 +18,14 @@
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
-from sacio import SacFile
-import sacfunc as sf
+from pysmo.core.sac import SacIO
+import pysmo.core.sac.sacfunc as sf
 
-class SacFileExt(SacFile):
+class SacIOExt(SacIO):
     """
     Inherited class to do more then basic IO on a SacFile object.
     Basically this is to provide an alternative way of using the
-    funtions in sacfunc.py
+    funtions in sacfunc.py.
     """
 
     def plot_single_sac(self):
@@ -55,6 +55,3 @@ class SacFileExt(SacFile):
             self.dist = sf.calc_dist(self, ellps)
         except:
             pass
-
-# This is for compatibility
-sacfile_extended = SacFileExt
