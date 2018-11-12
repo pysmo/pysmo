@@ -56,11 +56,13 @@ header_fields:
     description: Minimum value of dependent variable.
     start: 4
     header_type: f
+    protected: true
 
   depmax:
     description: Maximum value of dependent variable.
     start: 8
     header_type: f
+    protected: true
 
   scale:
     description: Multiplying scale factor for dependent variable (not currently used)
@@ -83,6 +85,7 @@ header_fields:
     start: 24
     header_type: f
     required: true
+    protected: true
 
   o:
     description: Event origin time (seconds relative to reference time.)
@@ -333,6 +336,7 @@ header_fields:
     description: Mean value of dependent variable.
     start: 224
     header_type: f
+    protected: true
 
   cmpaz:
     description: Component azimuth (degrees clockwise from north).
@@ -450,6 +454,7 @@ header_fields:
     start: 316
     header_type: i
     required: true
+    protected: true
 
   nsnpts:
     description: Internal.
@@ -486,7 +491,8 @@ header_fields:
       rlim: Spectral file---real and imaginary
       amph: Spectral file---amplitude and phase
       xy: General x versus y data
-      xyz: General XYZ (3-D) file
+      ## xyz does not have a matching numerical ID!!!!
+      #xyz: General XYZ (3-D) file
 
   idep:
     description: Type of dependent variable
@@ -494,7 +500,7 @@ header_fields:
     header_type: i
     allowed_vals:
       unkn: Unknown
-      dsp: Displacement in nm
+      disp: Displacement in nm
       vel: Velocity in nm/sec
       volts: Velocity in volts
       acc: Acceleration in nm/sec/sec
@@ -614,7 +620,7 @@ header_fields:
       reb: Reviewed Event Bulletin
       usgs: US Geological Survey
       brk: UC Berkeley
-      caltec: California Institute of Technology
+      caltech: California Institute of Technology
       llnl: Lawrence Livermore National Laboratory
       evloc: Event Location (computer program)
       jsop: Joint Seismic Observation Program
