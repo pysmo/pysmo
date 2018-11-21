@@ -17,12 +17,5 @@ setup(
     data_files = [('pysmo/core/sac', ['pysmo/core/sac/sacheader.yml'])],
     zip_safe=False,
     url='https://github.com/pysmo/pysmo',
-    install_requires=[
-        'numpy',
-        'scipy',
-        'pyyaml',
-        'pyproj',
-        'matplotlib',
-        'future'
-    ],
+    install_requires=[i.strip() for i in open("requirements.txt").readlines()],
 )
