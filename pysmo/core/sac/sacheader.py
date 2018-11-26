@@ -145,9 +145,10 @@ class SacHeader(object):
             raise ValueError('Header %s is undefined' % self.name)
         elif self.is_enumerated:
             return  enumerated_header_key2val[self._value]
-        elif isinstance(self._value, str):
+        try:
             return self._value.rstrip()
-        return self._value
+        except:
+            return self._value
 
     def __set__(self, instance, value):
         """
