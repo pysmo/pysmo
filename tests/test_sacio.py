@@ -149,6 +149,12 @@ class sacioTestCase(unittest.TestCase):
         self.assertEqual(self.old_sacobj.iftype, iftype_valid)
         with self.assertRaises(ValueError): self.old_sacobj.iftype = iftype_invalid
 
+        # Try writing a boolean to a header field that should only accept strings
+        with self.assertRaises(ValueError): self.old_sacobj.kuser0 = True
+
+        # Try writing a string that is too long
+        with self.assertRaises(ValueError): self.old_sacobj.kuser0 = 'too long string'
+
     def test_change_data_and_write_to_file(self):
         """
         Test changing data values
