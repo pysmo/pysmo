@@ -141,11 +141,12 @@ class SacHeader(object):
         # instance attribute accessed on class, return self
         if instance is None:
             return self
-
-        if self._value == self.undefined:
+        elif self._value == self.undefined:
             raise ValueError('Header %s is undefined' % self.name)
-        if self.is_enumerated:
+        elif self.is_enumerated:
             return  enumerated_header_key2val[self._value]
+        elif isinstance(self._value, str):
+            return self._value.rstrip()
         return self._value
 
     def __set__(self, instance, value):
@@ -169,9 +170,11 @@ class SacHeader(object):
         if self.protected and not force:
             raise ValueError('%s may not be set manualy' % self.name)
 
+
         # Set header field to type specific undefined value if required.
         elif value == 'undefined' or value == self.undefined:
             self._value = self.undefined
+
 
         # Save integer corresponding to enumerated value internally.
         elif self.is_enumerated:
@@ -180,11 +183,58 @@ class SacHeader(object):
             elif value in self.valid_enum_keys:
                 self._value = value
             else:
-                raise ValueError('%s not a valid value for %s' % \
-                (value, self.name))
+                raise ValueError('%s not a valid value for %s' % (value, self.name))
+
+
+        # Save headers of type 'f' as a float.
+        elif self.header_type == 'f':
+            try:
+                self._value = float(value)
+            except ValueError:
+                raise ValueError('Unable to set %s to %s - must be of type float.' % \
+                                 (self.name, value))
+
+
+        # Save headers of type 'n' as an int.
+        elif self.header_type == 'n':
+            try:
+                self._value = int(value)
+            except ValueError:
+                raise ValueError('Unable to set %s to %s - must be of type int.' % \
+                                 (self.name, value))
+
+
+        # Save headers of type 'l' - raise an error if value is not a bool.
+        elif self.header_type == 'l':
+            if isinstance(value, bool):
+                self._value = value
+            else:
+                raise ValueError('Unable to set %s to %s - must be of type int.' % \
+                                 (self.name, value))
+
+
+        # Save headers of type 'k' as a string. Also check length is not exceeded.
+        # Strings are also padded with spaces to match the sac header length.
+        elif self.header_type == 'k':
+            if isinstance(value, bool):
+                raise ValueError('Value for %s may not be a bool.' % self.name)
+            try:
+                self._value = str(value)
+            except ValueError:
+                raise ValueError('Unable to set %s to %s - must be of type str.' % \
+                                 (self.name, value))
+            if len(self._value) > self.length:
+                raise ValueError('%s is too long - maximum length is %s' % \
+                                 (self._value, self.length))
+            else:
+                self._value = '{0: <{1}}'.format(self._value, self.length)
+                                
+        # Catchall
         else:
-            self._value = value
-            if self.name == 'b' and not force:
-                npts = instance.npts
-                delta = instance.delta
-                instance.e = (value + (npts - 1) * delta, True)
+            raise ValueError("%s - I don't know what to do with that header!" % self.name)
+
+        # Calculate new end time 'e' when 'b' is changed.
+        if self.name == 'b' and not force:
+            npts = instance.npts
+            delta = instance.delta
+            instance.e = (value + (npts - 1) * delta, True)
