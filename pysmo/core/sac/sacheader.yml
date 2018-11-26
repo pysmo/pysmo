@@ -406,80 +406,80 @@ header_fields:
   nzyear:
     description: GMT year corresponding to reference (zero) time in file.
     start: 280
-    header_type: i
+    header_type: n
 
   nzjday:
     description: GMT julian day.
     start: 284
-    header_type: i
+    header_type: n
 
   nzhour:
     description: GMT hour.
     start: 288
-    header_type: i
+    header_type: n
 
   nzmin:
     description: GMT minute.
     start: 292
-    header_type: i
+    header_type: n
 
   nzsec:
     description: GMT second.
     start: 296
-    header_type: i
+    header_type: n
 
   nzmsec:
     description: GMT millisecond.
     start: 300
-    header_type: i
+    header_type: n
 
   nvhdr:
     description: Header version number.
     start: 304
-    header_type: i
+    header_type: n
     required: true
 
   norid:
     description: Origin ID (CSS 3.0)
     start: 308
-    header_type: i
+    header_type: n
 
   nevid:
     description: Event ID (CSS 3.0)
     start: 312
-    header_type: i
+    header_type: n
 
   npts:
     description: Number of points per data component
     start: 316
-    header_type: i
+    header_type: n
     required: true
     protected: true
 
   nsnpts:
     description: Internal.
     start: 320
-    header_type: i
+    header_type: n
 
   nwfid:
     description: Waveform ID (CSS 3.0)
     start: 324
-    header_type: i
+    header_type: n
 
   nxsize:
     description: Spectral Length (Spectral files only)
     start: 328
-    header_type: i
+    header_type: n
 
   nysize:
     description: Spectral Length (Spectral files only)
     start: 332
-    header_type: i
+    header_type: n
 
   unused15:
     description: Unused.
     start: 336
-    header_type: i
+    header_type: n
 
   iftype:
     description: Type of file
