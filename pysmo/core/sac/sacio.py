@@ -60,7 +60,7 @@ class SacIO(object):
         >>> my_sac.delta
         0.05
 
-    There are a lot of header fields in a SAC file, which are all called the same way when using :class:`Sacfile`.
+    There are a lot of header fields in a SAC file, which are all called the same way when using :class:`SacIO`.
     They are all listed below.
     """
 
