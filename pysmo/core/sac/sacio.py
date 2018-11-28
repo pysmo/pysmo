@@ -36,7 +36,7 @@ class SacIO(object):
     meaning that any changes to an instance of this module are also immediately written
     to the SAC file. 
 
-    The :class:SacIO class focuses only on reading/writing data and header values to and 
+    The :class:`SacIO` class focuses only on reading/writing data and header values to and 
     from a SAC file. Usage is therefore also quite simple, as shown in the examples below.
 
     Reading and print data::
