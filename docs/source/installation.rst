@@ -11,13 +11,13 @@ and allows a user to install pysmo with all it's dependencies in their home dire
 Virtualenvwrapper
 ~~~~~~~~~~~~~~~~~
 
-`Virtuelenvwrapper <https://virtualenvwrapper.readthedocs.io/en/latest/>`_ is a convenient tool
+`Virtualenvwrapper <https://virtualenvwrapper.readthedocs.io/en/latest/>`_ is a convenient tool
 for creating and managing virtual environments. It is frequently available via
 the package manager in Linux distributions, but can also conveniently be installed with pip::
 
    $ sudo pip install virtualenvwrapper
 
-Virtuelenvwrapper is a set of shell functions defined in a file that needs to be sourced in the
+Virtualenvwrapper is a set of shell functions defined in a file that needs to be sourced in the
 shell startup file (e.g. ``.bashrc``). Additionally the directories where the virtual environments
 and projects live should be defined. For example::
 
