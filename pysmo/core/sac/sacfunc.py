@@ -16,7 +16,7 @@
 ###
 
 """
-Useful functions to use with SacFile objects.
+Useful functions to use with SacIO objects.
 """
 
 __copyright__ = """
@@ -25,15 +25,15 @@ Copyright (c) 2012 Simon Lloyd
 
 def sac2xy(name, retarray=False):
     """
-    Return time and amplitude from a SacFile object.
+    Return time and amplitude from a SacIO object.
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param retarray:
         * True: return numpy array
         * False: return list (default)
     :type retarray: bool
-    :returns: Time and amplitude of a SacFile object.
+    :returns: Time and amplitude of a SacIO object.
     :rtype: numpy.array or list
 
     Example usage::
@@ -59,8 +59,8 @@ def plotsac(name, outfile=None, showfig=True):
     """
     Simple plot of a single sac file.
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param outfile: If specified, save figure to this file.
     :type outfile: string
     :param showfig: Specifies if figure should be displayed.
@@ -86,10 +86,10 @@ def plotsac(name, outfile=None, showfig=True):
 
 def resample(name, delta_new):
     """
-    Resample SacFile object data using Fourier method.
+    Resample SacIO object data using Fourier method.
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param delta_new: New sampling rate.
     :type new_delta: float
     :returns: Resampled data.
@@ -115,10 +115,10 @@ def resample(name, delta_new):
 
 def detrend(name):
     """
-    Remove linear and/or constant trends from SacFile object data.
+    Remove linear and/or constant trends from SacIO object data.
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :returns: Detrended data.
     :rtype: numpy.array
 
@@ -136,15 +136,15 @@ def detrend(name):
 
 def calc_az(name, ellps='WGS84'):
     """
-    Calculate azimuth (in DEG) from a SacFile object. The default
+    Calculate azimuth (in DEG) from a SacIO object. The default
     ellipse used is 'WGS84', but others may be specified. For
     more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param ellps: Ellipsoid to use for azimuth calculation
     :type ellps: string
     :returns: Azimuth
@@ -163,15 +163,15 @@ def calc_az(name, ellps='WGS84'):
 
 def calc_baz(name, ellps='WGS84'):
     """
-    Calculate backazimuth (in DEG) from a SacFile object. The default
+    Calculate backazimuth (in DEG) from a SacIO object. The default
     ellipse used is 'WGS84', but others may be specified. For
     more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param ellps: Ellipsoid to use for backazimuth calculation
     :type ellps: string
     :returns: Backazimuth
@@ -190,14 +190,14 @@ def calc_baz(name, ellps='WGS84'):
 
 def calc_dist(name, ellps='WGS84'):
     """
-    Calculate the great circle distance (in km) from a SacFile object. The default
+    Calculate the great circle distance (in km) from a SacIO object. The default
     ellipse used is 'WGS84', but others may be specified. For more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param ellps: Ellipsoid to use for distance calculation
     :type ellps: string
     :returns: Great Circle Distance
@@ -237,8 +237,8 @@ def envelope(name, Tn, alpha):
     """
     Calculate the envelope of a gaussian filtered seismogram.
     
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param Tn: Center period of Gaussian filter [in seconds]
     :type Tn: float
     :param alpha: Set alpha (which determines filterwidth)
@@ -261,8 +261,8 @@ def gauss(name, Tn, alpha):
     """
     Return data vector of a gaussian filtered seismogram.
 
-    :param name: Name of the SacFile object passed to this function.
-    :type name: SacFile
+    :param name: Name of the SacIO object passed to this function.
+    :type name: SacIO
     :param Tn: Center period of Gaussian filter [in seconds]
     :type Tn: float
     :param alpha: Set alpha (which determines filterwidth)
