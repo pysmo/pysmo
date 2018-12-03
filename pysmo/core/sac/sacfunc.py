@@ -38,8 +38,7 @@ def sac2xy(name, retarray=False):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     """
@@ -68,8 +67,7 @@ def plotsac(name, outfile=None, showfig=True):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> sacfunc.plotsac(sacobj)
     """
@@ -97,8 +95,7 @@ def resample(name, delta_new):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> delta_old = sacobj.delta
         >>> delta_new = delta_old * 2
@@ -124,8 +121,7 @@ def detrend(name):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> detrended_data = sacfunc.detrend(sacobj)
     """
@@ -152,8 +148,7 @@ def calc_az(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
         >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
@@ -179,8 +174,7 @@ def calc_baz(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
         >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
@@ -205,8 +199,7 @@ def calc_dist(name, ellps='WGS84'):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
         >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
@@ -247,8 +240,7 @@ def envelope(name, Tn, alpha):
 
     Example::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
@@ -271,8 +263,7 @@ def gauss(name, Tn, alpha):
 
     Example usage::
 
-        >>> from pysmo.core.sac import SacIO
-        >>> import pysmo.core.sac.sacfunc as sacfunc
+        >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
