@@ -41,7 +41,7 @@ class SacIO(object):
 
     Reading and print data::
 
-        >>> from pysmo.core.sac import SacIO
+        >>> from pysmo import SacIO
         >>> my_sac = SacIO.from_file('file.sac')
         >>> data = my_sac.data
         >>> data
