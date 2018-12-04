@@ -3,12 +3,23 @@ Run tests for the SacIO class
 """
 
 import os
+import tempfile
 import shutil
 import pytest
 import copy
 from pysmo import SacIO
 
 
+# Note: this fixture is only needed for python2
+@pytest.fixture()
+def tmpdir():
+    """
+    Create a temporary directory for tests and
+    remove it when done.
+    """
+    tmp = tempfile.mkdtemp()
+    yield tmp
+    shutil.rmtree(tmp)
 
 @pytest.fixture()
 def tmpfiles(tmpdir):
