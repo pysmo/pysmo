@@ -21,9 +21,8 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 
 from __future__ import absolute_import, division, print_function
 from builtins import (str, open, zip, object)
-from sys import byteorder
 import struct
-from .sacheader import SacHeader, header_fields
+from .sacheader import SacHeader, HEADER_FIELDS
 
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
@@ -32,10 +31,11 @@ Copyright (c) 2012 Simon Lloyd
 
 class SacIO(object):
     """
-    The :class:`SacIO` class reads and writes data and header values to and from a SAC file. Additonal
-    class attributes may be set, but are not written to a SAC file (because there is no space reserved
-    for them there). Class attributes with corresponding header fields in a SAC file (for example the 
-    begin time `b`) are checked for a valid format before being saved in the :class:`SacIO` instance.
+    The :class:`SacIO` class reads and writes data and header values to and from a SAC file.
+    Additonal class attributes may be set, but are not written to a SAC file (because
+    there is no space reserved for them there). Class attributes with corresponding header
+    fields in a SAC file (for example the begin time `b`) are checked for a valid format
+    before being saved in the :class:`SacIO` instance.
 
 
     Read and print data::
@@ -59,8 +59,8 @@ class SacIO(object):
         >>> my_sac.delta
         0.05
 
-    There are a lot of header fields in a SAC file, which are all called the same way when using :class:`SacIO`.
-    They are all listed below.
+    There are a lot of header fields in a SAC file, which are all called the same way
+    when using :class:`SacIO`. They are all listed below.
     """
 
     # Descriptors for all header fields
@@ -200,7 +200,7 @@ class SacIO(object):
 
     def __init__(self, **kwargs):
         """
-        Initialise a SAC object. 
+        Initialise a SAC object.
         """
 
         self._data = []
@@ -213,27 +213,27 @@ class SacIO(object):
         existing SacIO instance.
         """
 
-        with open(filename, 'rb') as self.fh:
+        with open(filename, 'rb') as file_handle:
 
             # Guess the file endianness first using the unused12 header field.
             # It's value should be -12345.0
 
             # This is where unused12 is located
-            self.fh.seek(276)
+            file_handle.seek(276)
 
             # try reading with little endianness
-            if struct.unpack('<f', (self.fh.read(4)))[-1] == -12345.0:
-                self._file_byteorder = '<'
+            if struct.unpack('<f', (file_handle.read(4)))[-1] == -12345.0:
+                file_byteorder = '<'
             # otherwise assume big endianness.
             else:
-                self._file_byteorder = '>'
+                file_byteorder = '>'
 
             # Loop over all header fields and store them in the SAC object.
-            for header_field in header_fields:
+            for header_field in HEADER_FIELDS:
                 desc = getattr(type(self), header_field)
-                self.fh.seek(desc.start)
-                content = self.fh.read(desc.length)
-                value = struct.unpack(self._file_byteorder+desc.format, content)[0]
+                file_handle.seek(desc.start)
+                content = file_handle.read(desc.length)
+                value = struct.unpack(file_byteorder+desc.format, content)[0]
                 if isinstance(value, bytes):
                     value = value.decode().rstrip()
                 setattr(self, header_field, (value, True))
@@ -242,15 +242,15 @@ class SacIO(object):
             # Read first data block
             start1 = 632
             length = self.npts * 4
-            data_format = self._file_byteorder + str(self.npts) + 'f'
-            self.fh.seek(start1)
-            data1 = struct.unpack(data_format, self.fh.read(length))
+            data_format = file_byteorder + str(self.npts) + 'f'
+            file_handle.seek(start1)
+            data1 = struct.unpack(data_format, file_handle.read(length))
 
-            # Try reading second data block and combine both blocks 
+            # Try reading second data block and combine both blocks
             # to a list of tuples. If it fails return only the first
             # data block as a list
             try:
-                data2 = struct.unpack(data_format, self.fh.read(length))
+                data2 = struct.unpack(data_format, file_handle.read(length))
                 data = []
                 for x1, x2 in zip(data1, data2):
                     data.append((x1, x2))
@@ -271,11 +271,11 @@ class SacIO(object):
         """
         Write data and header values to a SAC file
         """
-        with open(filename, 'wb') as self.fh:
+        with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
-            for header_field in header_fields:
+            for header_field in HEADER_FIELDS:
                 desc = getattr(type(self), header_field)
-                self.fh.seek(desc.start)
+                file_handle.seek(desc.start)
                 try:
                     value = getattr(self, header_field)
                 except ValueError:
@@ -291,14 +291,14 @@ class SacIO(object):
                 if isinstance(value, str):
                     value = value.encode()
                 value = struct.pack(desc.format, value)
-                self.fh.write(value)
+                file_handle.write(value)
 
 
             # write data
             start1 = 632
-            self.fh.truncate(start1)
-            self.fh.seek(start1)
-    
+            file_handle.truncate(start1)
+            file_handle.seek(start1)
+
             data = self._data
             # do we need to write 1 or 2 data sections?
             if isinstance(data[0], tuple):
@@ -311,7 +311,7 @@ class SacIO(object):
             else:
                 data1 = data
             for x in data1:
-                self.fh.write(struct.pack('f', x))
+                file_handle.write(struct.pack('f', x))
 
 
     @property
@@ -341,7 +341,7 @@ class SacIO(object):
         # Data is stored as _data inside the object
         self._data = data
 
-        # Update header values that depend on the 
+        # Update header values that depend on the
         # data. The tuple is used to allow setting
         # of quasi-immutable header values (i.e. ones
         # that depend on the data)
@@ -355,8 +355,8 @@ class SacIO(object):
         # Determine if data has one or two data sections
         # and calculate trace stats
         if isinstance(data[0], tuple):
-            self.depmin = (min(data)[0] , True)
-            self.depmax = (max(data)[0] , True)
+            self.depmin = (min(data)[0], True)
+            self.depmax = (max(data)[0], True)
             # TODO: Can we do more here than just set it as undefined?
             self.depmen = ('undefined', True)
         else:
