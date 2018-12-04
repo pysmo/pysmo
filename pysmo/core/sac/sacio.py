@@ -32,14 +32,13 @@ Copyright (c) 2012 Simon Lloyd
 
 class SacIO(object):
     """
-    Python class for accessing SAC files. This class reads and writes directly to a SAC file,
-    meaning that any changes to an instance of this module are also immediately written
-    to the SAC file. 
+    The :class:`SacIO` class reads and writes data and header values to and from a SAC file. Additonal
+    class attributes may be set, but are not written to a SAC file (because there is no space reserved
+    for them there). Class attributes with corresponding header fields in a SAC file (for example the 
+    begin time `b`) are checked for a valid format before being saved in the :class:`SacIO` instance.
 
-    The :class:`SacIO` class focuses only on reading/writing data and header values to and 
-    from a SAC file. Usage is therefore also quite simple, as shown in the examples below.
 
-    Reading and print data::
+    Read and print data::
 
         >>> from pysmo import SacIO
         >>> my_sac = SacIO.from_file('file.sac')
@@ -201,7 +200,7 @@ class SacIO(object):
 
     def __init__(self, **kwargs):
         """
-        Initialise a SAC object.
+        Initialise a SAC object. 
         """
 
         self._data = []
@@ -277,7 +276,18 @@ class SacIO(object):
             for header_field in header_fields:
                 desc = getattr(type(self), header_field)
                 self.fh.seek(desc.start)
-                value = desc._value
+                try:
+                    value = getattr(self, header_field)
+                except ValueError:
+                    value = desc.undefined
+
+                # convert enumerated headers to corresponding string
+                if desc.is_enumerated:
+                    try:
+                        value = SacHeader.enumerated_str2int(value)
+                    except KeyError:
+                        value = desc.undefined
+
                 if isinstance(value, str):
                     value = value.encode()
                 value = struct.pack(desc.format, value)
