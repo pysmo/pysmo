@@ -4,7 +4,7 @@ import unittest
 import os
 import tempfile
 import shutil
-from pysmo.core.sac import SacIO
+from pysmo import SacIO
 
 class sacioTestCase(unittest.TestCase):
     """Tests for `sacio.py`."""
