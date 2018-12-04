@@ -18,8 +18,8 @@
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
-from pysmo.core.sac import SacIO
-import pysmo.core.sac.sacfunc as sf
+from pysmo import SacIO
+import pysmo.sacfunc as sf
 
 class SacIOExt(SacIO):
     """
