@@ -1,191 +1,208 @@
-#!/usr/bin/env python
+"""
+Run tests for the SacIO class
+"""
 
-import unittest
 import os
-import tempfile
 import shutil
+import pytest
+import copy
 from pysmo import SacIO
 
-class sacioTestCase(unittest.TestCase):
-    """Tests for `sacio.py`."""
 
-    def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
-        testfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
-        self.old_file = os.path.join(self.tmpdir, 'old.sac')
-        self.new_file = os.path.join(self.tmpdir, 'new.sac')
-        shutil.copyfile(testfile, self.old_file)
-        self.old_sacobj = SacIO()
-        self.old_sacobj.read(self.old_file)
 
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir)
+@pytest.fixture()
+def tmpfiles(tmpdir):
+    """Copy reference sac file to tmpdir"""
+    orgfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
+    tmpfile1 = os.path.join(tmpdir, 'tmpfile1.sac')
+    tmpfile2 = os.path.join(tmpdir, 'tmpfile2.sac')
+    tmpfile3 = os.path.join(tmpdir, 'tmpfile2.sac')
+    shutil.copyfile(orgfile, tmpfile1)
+    shutil.copyfile(orgfile, tmpfile2)
+    return tmpfile1, tmpfile2, tmpfile3
 
-    def test_add_data_to_new_instance(self):
-        newdata = [132, 232, 3465, 111]
-        empty_sacobj = SacIO()
-        empty_sacobj.data = newdata
-        self.assertEqual(empty_sacobj.data, newdata)
-        self.assertEqual(empty_sacobj.b, 0.0)
+@pytest.fixture()
+def instances(tmpfiles):
+    """Copy reference sac file to tmpdir"""
+    tmpfile1, tmpfile2, _ = tmpfiles
+    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2)
 
-    def test_read_headers(self):
-        """
-        Read header values in our test file and
-        check if they match the expected value.
-        """
-        self.assertEqual(self.old_sacobj.npts, 180000)
-        self.assertAlmostEqual(self.old_sacobj.b, 53.060001373291016)
-        self.assertAlmostEqual(self.old_sacobj.e, 3653.0400390625)
-        self.assertEqual(self.old_sacobj.iftype, 'time')
-        self.assertTrue(self.old_sacobj.leven)
-        self.assertAlmostEqual(self.old_sacobj.delta, 0.02)
-        with self.assertRaises(ValueError): self.old_sacobj.odelta
-        self.assertEqual(self.old_sacobj.idep, 'unkn')
-        self.assertAlmostEqual(self.old_sacobj.depmin, -8293.0)
-        self.assertAlmostEqual(self.old_sacobj.depmax, 3302.0)
-        self.assertAlmostEqual(self.old_sacobj.depmen, -572.200439453125)
-        self.assertAlmostEqual(self.old_sacobj.o, 0.0)
-        with self.assertRaises(ValueError): self.old_sacobj.a
-        with self.assertRaises(ValueError): self.old_sacobj.t0
-        with self.assertRaises(ValueError): self.old_sacobj.t1
-        with self.assertRaises(ValueError): self.old_sacobj.t2
-        with self.assertRaises(ValueError): self.old_sacobj.t3
-        with self.assertRaises(ValueError): self.old_sacobj.t4
-        with self.assertRaises(ValueError): self.old_sacobj.t5
-        with self.assertRaises(ValueError): self.old_sacobj.t6
-        with self.assertRaises(ValueError): self.old_sacobj.t7
-        with self.assertRaises(ValueError): self.old_sacobj.t8
-        with self.assertRaises(ValueError): self.old_sacobj.t9
-        with self.assertRaises(ValueError): self.old_sacobj.f
-        # kzdate is a derived header
-        # kztime is a derived header
-        self.assertEqual(self.old_sacobj.iztype, 'o')
-        with self.assertRaises(ValueError): self.old_sacobj.kinst
-        with self.assertRaises(ValueError): self.old_sacobj.resp0
-        with self.assertRaises(ValueError): self.old_sacobj.resp1
-        with self.assertRaises(ValueError): self.old_sacobj.resp2
-        with self.assertRaises(ValueError): self.old_sacobj.resp3
-        with self.assertRaises(ValueError): self.old_sacobj.resp4
-        with self.assertRaises(ValueError): self.old_sacobj.resp5
-        with self.assertRaises(ValueError): self.old_sacobj.resp6
-        with self.assertRaises(ValueError): self.old_sacobj.resp7
-        with self.assertRaises(ValueError): self.old_sacobj.resp8
-        with self.assertRaises(ValueError): self.old_sacobj.resp9
-        with self.assertRaises(ValueError): self.old_sacobj.kdatrd
-        self.assertEqual(self.old_sacobj.kstnm, 'MEL01')
-        self.assertAlmostEqual(self.old_sacobj.cmpaz, 0)
-        self.assertAlmostEqual(self.old_sacobj.cmpinc, 90)
-        with self.assertRaises(ValueError): self.old_sacobj.istreg
-        self.assertAlmostEqual(self.old_sacobj.stla, -43.855464935302734)
-        self.assertAlmostEqual(self.old_sacobj.stlo, -73.74272155761719)
-        with self.assertRaises(ValueError): self.old_sacobj.stel
-        with self.assertRaises(ValueError): self.old_sacobj.stdp
-        self.assertEqual(self.old_sacobj.kevnm, '043550359BHN')
-        with self.assertRaises(ValueError): self.old_sacobj.ievreg
-        self.assertAlmostEqual(self.old_sacobj.evla, -15.265999794006348)
-        self.assertAlmostEqual(self.old_sacobj.evlo, -75.20800018310547)
-        with self.assertRaises(ValueError): self.old_sacobj.evel
-        self.assertAlmostEqual(self.old_sacobj.evdp, 30.899999618530273)
-        self.assertEqual(self.old_sacobj.ievtyp, 'quake')
-        self.assertEqual(self.old_sacobj.khole, '')
-        self.assertAlmostEqual(self.old_sacobj.dist, 3172.399658203125)
-        self.assertAlmostEqual(self.old_sacobj.az, 177.77978515625)
-        self.assertAlmostEqual(self.old_sacobj.baz, 357.0372619628906)
-        self.assertAlmostEqual(self.old_sacobj.gcarc, 28.522098541259766)
-        self.assertTrue(self.old_sacobj.lovrok)
-        with self.assertRaises(ValueError): self.old_sacobj.iqual
-        with self.assertRaises(ValueError): self.old_sacobj.isynth
-        with self.assertRaises(ValueError): self.old_sacobj.user0
-        with self.assertRaises(ValueError): self.old_sacobj.user1
-        with self.assertRaises(ValueError): self.old_sacobj.user2
-        with self.assertRaises(ValueError): self.old_sacobj.user3
-        with self.assertRaises(ValueError): self.old_sacobj.user4
-        with self.assertRaises(ValueError): self.old_sacobj.user5
-        with self.assertRaises(ValueError): self.old_sacobj.user6
-        with self.assertRaises(ValueError): self.old_sacobj.user7
-        self.assertAlmostEqual(self.old_sacobj.user8, 4.900000095367432)
-        self.assertAlmostEqual(self.old_sacobj.user9, 5.000000)
-        with self.assertRaises(ValueError): self.old_sacobj.kuser0
-        with self.assertRaises(ValueError): self.old_sacobj.kuser1
-        with self.assertRaises(ValueError): self.old_sacobj.kuser2
-        with self.assertRaises(ValueError): self.old_sacobj.nxsize
-        with self.assertRaises(ValueError): self.old_sacobj.xminimum
-        with self.assertRaises(ValueError): self.old_sacobj.xmaximum
-        with self.assertRaises(ValueError): self.old_sacobj.nysize
-        with self.assertRaises(ValueError): self.old_sacobj.yminimum
-        with self.assertRaises(ValueError): self.old_sacobj.ymaximum
-        self.assertEqual(self.old_sacobj.nvhdr, 6)
-        with self.assertRaises(ValueError): self.old_sacobj.scale
-        self.assertEqual(self.old_sacobj.norid, 0)
-        self.assertEqual(self.old_sacobj.nevid, 0)
-        self.assertEqual(self.old_sacobj.nwfid, 13)
-        with self.assertRaises(ValueError): self.old_sacobj.iinst
-        self.assertTrue(self.old_sacobj.lpspol)
-        self.assertTrue(self.old_sacobj.lcalda)
-        self.assertEqual(self.old_sacobj.kcmpnm, 'BHN')
-        self.assertEqual(self.old_sacobj.knetwk, 'YJ')
-        with self.assertRaises(ValueError): self.old_sacobj.mag
-        with self.assertRaises(ValueError): self.old_sacobj.imagtyp
-        with self.assertRaises(ValueError): self.old_sacobj.imagsrc
 
-        # try reading non-existing header
-        with self.assertRaises(AttributeError): self.old_sacobj.nonexistingheader
+@pytest.mark.dependancy()
+def test_is_sacio_type(instances):
+    sac1, sac2 = instances
+    assert isinstance(sac1, SacIO)
+    assert isinstance(sac2, SacIO)
 
-    def test_read_data(self):
-        """
-        Read data and check first 10 values
-        """
-        self.assertEqual(self.old_sacobj.data[:10], [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, -1591.0, -1604.0, -1601.0, -1611.0])
 
-    def test_change_headers(self):
-        """
-        Test changing header values
-        """
+
+@pytest.mark.dependancy(depends=['test_is_sacio_type'])
+def test_read_headers(instances):
+    """
+    Read all SAC headers from a test file
+    """
+    sac, _ = instances
+    assert sac.npts == 180000
+    assert sac.b == pytest.approx(53.060001373291016)
+    assert sac.e == pytest.approx(3653.0400390625)
+    assert sac.iftype == 'time'
+    assert sac.leven == True
+    assert sac.delta == pytest.approx(0.02)
+    with pytest.raises(ValueError): sac.odelta
+    assert sac.idep == 'unkn'
+    assert sac.depmin == pytest.approx(-8293.0)
+    assert sac.depmax == pytest.approx(3302.0)
+    assert sac.depmen == pytest.approx(-572.200439453125)
+    assert sac.o == pytest.approx(0.0)
+    with pytest.raises(ValueError): sac.a
+    with pytest.raises(ValueError): sac.t0
+    with pytest.raises(ValueError): sac.t1
+    with pytest.raises(ValueError): sac.t2
+    with pytest.raises(ValueError): sac.t3
+    with pytest.raises(ValueError): sac.t4
+    with pytest.raises(ValueError): sac.t5
+    with pytest.raises(ValueError): sac.t6
+    with pytest.raises(ValueError): sac.t7
+    with pytest.raises(ValueError): sac.t8
+    with pytest.raises(ValueError): sac.t9
+    with pytest.raises(ValueError): sac.f
+    # kzdate is a derived header
+    # kztime is a derived header
+    assert sac.iztype == 'o'
+    with pytest.raises(ValueError): sac.kinst
+    with pytest.raises(ValueError): sac.resp0
+    with pytest.raises(ValueError): sac.resp1
+    with pytest.raises(ValueError): sac.resp2
+    with pytest.raises(ValueError): sac.resp3
+    with pytest.raises(ValueError): sac.resp4
+    with pytest.raises(ValueError): sac.resp5
+    with pytest.raises(ValueError): sac.resp6
+    with pytest.raises(ValueError): sac.resp7
+    with pytest.raises(ValueError): sac.resp8
+    with pytest.raises(ValueError): sac.resp9
+    with pytest.raises(ValueError): sac.kdatrd
+    assert sac.kstnm == 'MEL01'
+    assert sac.cmpaz == pytest.approx(0)
+    assert sac.cmpinc == pytest.approx(90)
+    with pytest.raises(ValueError): sac.istreg
+    assert sac.stla == pytest.approx(-43.855464935302734)
+    assert sac.stlo == pytest.approx(-73.74272155761719)
+    with pytest.raises(ValueError): sac.stel
+    with pytest.raises(ValueError): sac.stdp
+    assert sac.kevnm == '043550359BHN'
+    with pytest.raises(ValueError): sac.ievreg
+    assert sac.evla == pytest.approx(-15.265999794006348)
+    assert sac.evlo == pytest.approx(-75.20800018310547)
+    with pytest.raises(ValueError): sac.evel
+    assert sac.evdp == pytest.approx(30.899999618530273)
+    assert sac.ievtyp == 'quake'
+    assert sac.khole == ''
+    assert sac.dist == pytest.approx(3172.399658203125)
+    assert sac.az == pytest.approx(177.77978515625)
+    assert sac.baz == pytest.approx(357.0372619628906)
+    assert sac.gcarc == pytest.approx(28.522098541259766)
+    assert sac.lovrok == True
+    with pytest.raises(ValueError): sac.iqual
+    with pytest.raises(ValueError): sac.isynth
+    with pytest.raises(ValueError): sac.user0
+    with pytest.raises(ValueError): sac.user1
+    with pytest.raises(ValueError): sac.user2
+    with pytest.raises(ValueError): sac.user3
+    with pytest.raises(ValueError): sac.user4
+    with pytest.raises(ValueError): sac.user5
+    with pytest.raises(ValueError): sac.user6
+    with pytest.raises(ValueError): sac.user7
+    assert sac.user8 == pytest.approx(4.900000095367432)
+    assert sac.user9 == pytest.approx(5.000000)
+    with pytest.raises(ValueError): sac.kuser0
+    with pytest.raises(ValueError): sac.kuser1
+    with pytest.raises(ValueError): sac.kuser2
+    with pytest.raises(ValueError): sac.nxsize
+    with pytest.raises(ValueError): sac.xminimum
+    with pytest.raises(ValueError): sac.xmaximum
+    with pytest.raises(ValueError): sac.nysize
+    with pytest.raises(ValueError): sac.yminimum
+    with pytest.raises(ValueError): sac.ymaximum
+    assert sac.nvhdr == 6
+    with pytest.raises(ValueError): sac.scale
+    assert sac.norid == 0
+    assert sac.nevid == 0
+    assert sac.nwfid == 13
+    with pytest.raises(ValueError): sac.iinst
+    assert sac.lpspol == True
+    assert sac.lcalda == True
+    assert sac.kcmpnm == 'BHN'
+    assert sac.knetwk == 'YJ'
+    with pytest.raises(ValueError): sac.mag
+    with pytest.raises(ValueError): sac.imagtyp
+    with pytest.raises(ValueError): sac.imagsrc
+    # try reading non-existing header
+    with pytest.raises(AttributeError): sac.nonexistingheader
+
+
+@pytest.mark.dependancy(depends=['test_is_sacio_type'])
+def test_read_data(instances):
+    sac, _ = instances
+    assert sac.data[:10] == [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, -1591.0, -1604.0, -1601.0, -1611.0]
+
+
+@pytest.mark.dependancy(depends=['test_read_headers'])
+def test_change_headers(instances):
+    """
+    Test changing header values
+    """
     
-        olddelta = self.old_sacobj.delta
-        newdelta = 0.123
+    sac1, sac2 = instances
+
+    iftype_valid = 'time'
+    iftype_invalid = 'asdfasdf'
     
-        iftype_valid = 'time'
-        iftype_invalid = 'asdfasdf'
-        
-        self.old_sacobj.delta = newdelta
-        self.assertAlmostEqual(self.old_sacobj.delta, newdelta)
-        self.old_sacobj.delta = olddelta
-    
-        self.old_sacobj.iftype = iftype_valid
-        self.assertEqual(self.old_sacobj.iftype, iftype_valid)
-        with self.assertRaises(ValueError): self.old_sacobj.iftype = iftype_invalid
+    # set iftype to a valid value
+    sac1.iftype = iftype_valid
+    assert sac1.iftype == iftype_valid
 
-        # Try writing a boolean to a header field that should only accept strings
-        with self.assertRaises(ValueError): self.old_sacobj.kuser0 = True
+    # set iftype to an invalid value
+    with pytest.raises(ValueError): sac1.iftype = iftype_invalid
 
-        # Try writing a string that is too long
-        with self.assertRaises(ValueError): self.old_sacobj.kuser0 = 'too long string'
+    # Try setting a header that should only accept strings to a boolean
+    with pytest.raises(ValueError): sac1.kuser0 = True
 
-    def test_change_data_and_write_to_file(self):
-        """
-        Test changing data values
-        """
-        newdata = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    
-        delta = self.old_sacobj.delta
-        begining = self.old_sacobj.b
-        newend =  begining + 9 * delta
-        orgdata = self.old_sacobj.data
-        self.old_sacobj.data = newdata
-        self.assertEqual(self.old_sacobj.data, newdata)
-        self.assertAlmostEqual(self.old_sacobj.e, newend, places=5)
-    
-        # write changes to new sac file
-        self.old_sacobj.write(self.new_file)
+    # Try setting a string that is too long
+    with pytest.raises(ValueError): sac1.kuser0 = 'too long string'
 
-        # open the new file to a new sac object
-        self.new_sacobj = SacIO.from_file(self.new_file)
-        self.assertEqual(self.new_sacobj.data, newdata)
-        self.assertAlmostEqual(self.new_sacobj.depmin, 1.0)
-        self.assertAlmostEqual(self.new_sacobj.depmax, 10.0)
-        self.assertAlmostEqual(self.new_sacobj.depmen, 5.5)
+    # Are trailing spaces removed?
+    sac1.kuser0 = 'aaaa   '
+    assert sac1.kuser0 == 'aaaa'
+
+    # Does changing header fields in one instance effect another?
+    delta_old = sac1.delta
+    sac1.delta = 2 * delta_old
+    assert sac1.delta == pytest.approx(2 * delta_old)
+    assert sac2.delta == pytest.approx(delta_old)
+
+    # has the end time changed by changing delta?
+    assert sac1.e != sac2.e
+
+@pytest.mark.dependancy(depends=['test_read_headers', 'test_read_data'])
+def test_change_data(instances):
+    """
+    Test changing data
+    """
+    sac1, _ = instances
+    newdata = [132, 232, 3465, 111]
+    olddata = sac1.data
+    sac1.data = newdata
+    assert sac1.data == newdata
+    assert sac1.depmin == min(newdata)
+    assert sac1.depmax == max(newdata)
+    assert sac1.depmen == sum(newdata)/sac1.npts
 
 
-if __name__ == '__main__':
-    unittest.main()
+@pytest.mark.dependancy(depends=['test_change_headers', 'test_change_data'])
+def test_write_to_file(instances, tmpfiles):
+    sac1, _ = instances
+    _, _, tmpfile3 = tmpfiles
+    sac1.write(tmpfile3)
+    sac3 = SacIO.from_file(tmpfile3)
+    assert sac1.data == sac3.data
+    assert sac1.b == sac3.b
