@@ -21,6 +21,13 @@ class sacioTestCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
+    def test_add_data_to_new_instance(self):
+        newdata = [132, 232, 3465, 111]
+        empty_sacobj = SacIO()
+        empty_sacobj.data = newdata
+        self.assertEqual(empty_sacobj.data, newdata)
+        self.assertEqual(empty_sacobj.b, 0.0)
+
     def test_read_headers(self):
         """
         Read header values in our test file and
