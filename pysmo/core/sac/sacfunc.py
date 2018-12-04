@@ -229,7 +229,7 @@ def __azdist(name, ellps):
 def envelope(name, Tn, alpha):
     """
     Calculate the envelope of a gaussian filtered seismogram.
-    
+
     :param name: Name of the SacIO object passed to this function.
     :type name: SacIO
     :param Tn: Center period of Gaussian filter [in seconds]
