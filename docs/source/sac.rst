@@ -7,8 +7,8 @@ Working with SAC files
     :show-inheritance:
 
 
-pysmo.core.sac.SacIO
---------------------
+pysmo.SacIO
+-----------
 
 .. automodule:: pysmo.core.sac.sacio
     :members:
@@ -16,8 +16,8 @@ pysmo.core.sac.SacIO
     :show-inheritance:
 
 
-pysmo.core.sac.sacfunc
-----------------------
+pysmo.sacfunc
+-------------
 
 .. automodule:: pysmo.core.sac.sacfunc
     :members:
