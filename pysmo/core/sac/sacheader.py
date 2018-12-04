@@ -35,21 +35,21 @@ with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stre
 
 # Create dictionary of different header types (float, integer, enumerated, logical,
 # alphanumeric, auxilary). This provides respective defaults etc.
-HEADER_TYPES = _HEADER_DEFS.pop('header_types')
+_HEADER_TYPES = _HEADER_DEFS.pop('header_types')
 
 
 # Create dictionary of all header fields. This provides start position in the
 # SAC file, header type, etc.
-HEADER_FIELDS = _HEADER_DEFS.pop('header_fields')
+_HEADER_FIELDS = _HEADER_DEFS.pop('header_fields')
 
 # Each enumrated header value has a corresponding integer key.
 # This creates a dictionary mapping for these values
-ENUMERATED_STR2INT = _HEADER_DEFS.pop('enumerated_header_values')
+_ENUMERATED_STR2INT = _HEADER_DEFS.pop('enumerated_header_values')
 # Add the undefined key/value pair to the dictionary
-ENUMERATED_STR2INT['undefined'] = HEADER_TYPES['i']['undefined']
+_ENUMERATED_STR2INT['undefined'] = _HEADER_TYPES['i']['undefined']
 
 # Reverse dictionary to look up enumerated strings from ID.
-ENUMERATED_INT2STR = {v: k for k, v in ENUMERATED_STR2INT.items()}
+_ENUMERATED_INT2STR = {v: k for k, v in _ENUMERATED_STR2INT.items()}
 
 
 class SacHeader(object):
@@ -63,25 +63,25 @@ class SacHeader(object):
         self.name = header_field
 
         # Start position in the binary sac file
-        self.start = HEADER_FIELDS[header_field]['start']
+        self.start = _HEADER_FIELDS[header_field]['start']
 
         # Set the type of sac header
         self.header_type = SacHeader.get_header_type(header_field)
 
         # Is this a mandatory header field?
         try:
-            self.required = HEADER_FIELDS[header_field]['required']
+            self.required = _HEADER_FIELDS[header_field]['required']
         except KeyError:
             self.required = False
 
         # Is this a protected header field (npts, e, depmin, ...)?
         try:
-            self.protected = HEADER_FIELDS[header_field]['protected']
+            self.protected = _HEADER_FIELDS[header_field]['protected']
         except KeyError:
             self.protected = False
 
         # Set the undefined value for the header field.
-        self.undefined = HEADER_TYPES[self.header_type]['undefined']
+        self.undefined = _HEADER_TYPES[self.header_type]['undefined']
 
         self.values = WeakKeyDictionary()
 
@@ -95,35 +95,35 @@ class SacHeader(object):
 
         # Enumerated header fields have the allowed_vals key in their dictionary, so
         # we can set this boolean using that.
-        self.is_enumerated = bool('allowed_vals' in HEADER_FIELDS[header_field])
+        self.is_enumerated = bool('allowed_vals' in _HEADER_FIELDS[header_field])
         if self.is_enumerated:
             # Valid 'fancy' values for this header field
-            self.valid_enum_values = HEADER_FIELDS[header_field]['allowed_vals'].keys()
+            self.valid_enum_values = _HEADER_FIELDS[header_field]['allowed_vals'].keys()
             # Valid internal values for this header field
-            self.valid_enum_keys = [ENUMERATED_STR2INT[i] for i in self.valid_enum_values]
+            self.valid_enum_keys = [_ENUMERATED_STR2INT[i] for i in self.valid_enum_values]
 
 
         # Save valid values for enumerated header fields.
         if self.is_enumerated:
             # list of valid values
-            self.valid_enum_values = HEADER_FIELDS[header_field]['allowed_vals'].keys()
+            self.valid_enum_values = _HEADER_FIELDS[header_field]['allowed_vals'].keys()
 
         # Some header fields have their own format that is specified in the dictionary.
         try:
-            self.format = HEADER_FIELDS[header_field]['format']
+            self.format = _HEADER_FIELDS[header_field]['format']
         # If there is none such header field specific format use default one for that type.
         except KeyError:
-            self.format = HEADER_TYPES[self.header_type]['format']
+            self.format = _HEADER_TYPES[self.header_type]['format']
 
         # Some header fields have their own length that is specified in the dictionary.
         try:
-            self.length = HEADER_FIELDS[header_field]['length']
+            self.length = _HEADER_FIELDS[header_field]['length']
         # If there is none such header field specific length use default one for that type.
         except KeyError:
-            self.length = HEADER_TYPES[self.header_type]['length']
+            self.length = _HEADER_TYPES[self.header_type]['length']
 
         # Store the header description in the docstring.
-        self.__doc__ = HEADER_FIELDS[header_field]['description']
+        self.__doc__ = _HEADER_FIELDS[header_field]['description']
 
 
     @staticmethod
@@ -131,7 +131,7 @@ class SacHeader(object):
         """
         Return SAC header type.
         """
-        return HEADER_FIELDS[header_field]['header_type']
+        return _HEADER_FIELDS[header_field]['header_type']
 
     @staticmethod
     def get_header_undefined_value(header_field):
@@ -139,14 +139,14 @@ class SacHeader(object):
         Return SAC header default value.
         """
         header_type = SacHeader.get_header_type(header_field)
-        return HEADER_TYPES[header_type]['undefined']
+        return _HEADER_TYPES[header_type]['undefined']
 
     @staticmethod
     def enumerated_str2int(value):
         """
         Return integer corresponding to enumerated header
         """
-        return ENUMERATED_STR2INT[value]
+        return _ENUMERATED_STR2INT[value]
 
     def __get__(self, instance, owner):
         """
@@ -162,7 +162,7 @@ class SacHeader(object):
         if _value == self.undefined:
             raise ValueError('Header %s is undefined' % self.name)
         elif self.is_enumerated:
-            return  ENUMERATED_INT2STR[_value]
+            return  _ENUMERATED_INT2STR[_value]
         try:
             return _value.rstrip()
         except AttributeError:
@@ -198,7 +198,7 @@ class SacHeader(object):
         # Save integer corresponding to enumerated value internally.
         elif self.is_enumerated:
             if value in self.valid_enum_values:
-                self.values[instance] = ENUMERATED_STR2INT[value]
+                self.values[instance] = _ENUMERATED_STR2INT[value]
             elif value in self.valid_enum_keys:
                 self.values[instance] = value
             else:

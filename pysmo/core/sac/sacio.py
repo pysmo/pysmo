@@ -22,7 +22,7 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 from __future__ import absolute_import, division, print_function
 from builtins import (str, open, zip, object)
 import struct
-from .sacheader import SacHeader, HEADER_FIELDS
+from .sacheader import SacHeader, _HEADER_FIELDS
 
 __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
@@ -229,7 +229,7 @@ class SacIO(object):
                 file_byteorder = '>'
 
             # Loop over all header fields and store them in the SAC object.
-            for header_field in HEADER_FIELDS:
+            for header_field in _HEADER_FIELDS:
                 desc = getattr(type(self), header_field)
                 file_handle.seek(desc.start)
                 content = file_handle.read(desc.length)
@@ -273,7 +273,7 @@ class SacIO(object):
         """
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
-            for header_field in HEADER_FIELDS:
+            for header_field in _HEADER_FIELDS:
                 desc = getattr(type(self), header_field)
                 file_handle.seek(desc.start)
                 try:
