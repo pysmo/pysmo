@@ -21,6 +21,7 @@ Python module for reading/writing SAC files.
 
 from __future__ import absolute_import, division, print_function
 from builtins import (bytes, str, open, object)
+from weakref import WeakKeyDictionary
 import struct
 import os
 import yaml
@@ -43,7 +44,7 @@ header_types = _header_defs.pop('header_types')
 header_fields = _header_defs.pop('header_fields')
 
 # Each enumrated header value has a corresponding integer key. 
-# This creates a dictionary mapping these values
+# This creates a dictionary mapping for these values
 enumerated_header_val2key = _header_defs.pop('enumerated_header_values')
 # Add the undefined key/value pair to the dictionary
 enumerated_header_val2key['undefined'] = header_types['i']['undefined']
@@ -80,9 +81,17 @@ class SacHeader(object):
         except KeyError:
             self.protected = False
 
-        # Initially set header field value to the undefined value of that header type.
+        # Set the undefined value for the header field.
         self.undefined = header_types[self.header_type]['undefined']
-        self._value = self.undefined
+
+        self.values = WeakKeyDictionary()
+
+        # Initially set header field value to 0 for b, npts and delta
+        # All others are set the undefined value of that header type.
+        if self.name in ['b', 'npts', 'delta']:
+            self.default = 0
+        else:
+            self.default = self.undefined
 
 
         # Enumerated header fields have the allowed_vals key in their dictionary, so
@@ -133,6 +142,13 @@ class SacHeader(object):
         header_type = SacHeader.header_type(header_field)
         return header_types[header_type]['undefined']
 
+    @staticmethod
+    def enumerated_str2int(value):
+        """
+        Return integer corresponding to enumerated header
+        """
+        return enumerated_header_val2key[value]
+
     def __get__(self, instance, owner):
         """
         Read header field from SAC file. Enumerated header fields are automatically
@@ -141,14 +157,17 @@ class SacHeader(object):
         # instance attribute accessed on class, return self
         if instance is None:
             return self
-        elif self._value == self.undefined:
+        else:
+            _value = self.values.get(instance, self.default)
+
+        if _value == self.undefined:
             raise ValueError('Header %s is undefined' % self.name)
         elif self.is_enumerated:
-            return  enumerated_header_key2val[self._value]
+            return  enumerated_header_key2val[_value]
         try:
-            return self._value.rstrip()
+            return _value.rstrip()
         except:
-            return self._value
+            return _value
 
     def __set__(self, instance, value):
         """
@@ -174,15 +193,15 @@ class SacHeader(object):
 
         # Set header field to type specific undefined value if required.
         elif value == 'undefined' or value == self.undefined:
-            self._value = self.undefined
+            self.values[instance] = self.undefined
 
 
         # Save integer corresponding to enumerated value internally.
         elif self.is_enumerated:
             if value in self.valid_enum_values:
-                self._value = enumerated_header_val2key[value]
+                self.values[instance] = enumerated_header_val2key[value]
             elif value in self.valid_enum_keys:
-                self._value = value
+                self.values[instance] = value
             else:
                 raise ValueError('%s not a valid value for %s' % (value, self.name))
 
@@ -190,7 +209,7 @@ class SacHeader(object):
         # Save headers of type 'f' as a float.
         elif self.header_type == 'f':
             try:
-                self._value = float(value)
+                self.values[instance] = float(value)
             except ValueError:
                 raise ValueError('Unable to set %s to %s - must be of type float.' % \
                                  (self.name, value))
@@ -199,7 +218,7 @@ class SacHeader(object):
         # Save headers of type 'n' as an int.
         elif self.header_type == 'n':
             try:
-                self._value = int(value)
+                self.values[instance] = int(value)
             except ValueError:
                 raise ValueError('Unable to set %s to %s - must be of type int.' % \
                                  (self.name, value))
@@ -208,9 +227,9 @@ class SacHeader(object):
         # Save headers of type 'l' - raise an error if value is not a bool.
         elif self.header_type == 'l':
             if isinstance(value, bool):
-                self._value = value
+                self.values[instance] = value
             else:
-                raise ValueError('Unable to set %s to %s - must be of type int.' % \
+                raise ValueError('Unable to set %s to %s - must be of type bool.' % \
                                  (self.name, value))
 
 
@@ -220,22 +239,26 @@ class SacHeader(object):
             if isinstance(value, bool):
                 raise ValueError('Value for %s may not be a bool.' % self.name)
             try:
-                self._value = str(value)
+                value = str(value)
             except ValueError:
                 raise ValueError('Unable to set %s to %s - must be of type str.' % \
                                  (self.name, value))
-            if len(self._value) > self.length:
+            if len(value) > self.length:
                 raise ValueError('%s is too long - maximum length is %s' % \
-                                 (self._value, self.length))
+                                 (value, self.length))
             else:
-                self._value = '{0: <{1}}'.format(self._value, self.length)
+                self.values[instance] = '{0: <{1}}'.format(value, self.length)
                                 
         # Catchall
         else:
             raise ValueError("%s - I don't know what to do with that header!" % self.name)
 
-        # Calculate new end time 'e' when 'b' is changed.
-        if self.name == 'b' and not force:
+        # Calculate new end time 'e' when 'b' or 'delta' are changed.
+        if self.name == 'b' or self.name == 'delta' and not force:
+            b = instance.b
             npts = instance.npts
             delta = instance.delta
-            instance.e = (value + (npts - 1) * delta, True)
+            instance.e = (b + (npts - 1) * delta, True)
+
+    def __delete__(self, instance):
+         del self.values[instance]
