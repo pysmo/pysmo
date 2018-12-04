@@ -55,7 +55,7 @@ enumerated_header_key2val = {v: k for k, v in enumerated_header_val2key.items()}
 class SacHeader(object):
     """
     Python descriptor class for SAC file headers. Mainly for use
-    inside the SacFile class.
+    inside the SacIO class.
     """
 
     def __init__(self, header_field):
