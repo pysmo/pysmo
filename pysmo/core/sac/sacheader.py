@@ -160,9 +160,11 @@ class SacHeader(object):
         _value = self.values.get(instance, self.default)
 
         if _value == self.undefined:
-            raise ValueError('Header %s is undefined' % self.name)
-        elif self.is_enumerated:
+            return None
+
+        if self.is_enumerated:
             return  _ENUMERATED_INT2STR[_value]
+
         try:
             return _value.rstrip()
         except AttributeError:
@@ -170,28 +172,23 @@ class SacHeader(object):
 
     def __set__(self, instance, value):
         """
-        Write header field to SAC file. Enumerated header fields are
-        automatically translated. Some header fields should not be altered,
+        Set SAC header field. Enumerated header fields are automatically
+        translated. Some header fields should not be altered,
         as they depend on others (e.g. npts has to be the number of points
         in the data vector, so it doesn't make sense to change it).
         """
 
         # Since we sometimes DO need to change protected header fields
         # (e.g. when changing the data), we allow force setting the
-        # header field if the value is a tuple, with the 2nd item
-        # set to 'True'. This typically should not have to be used
-        # outside of sacfile.py
-        if isinstance(value, tuple):
-            value, force = value
-        else:
-            force = False
+        # header field if the instance.force == True. This typically
+        # should not have to be used outside of sacfile.py
 
-        if self.protected and not force:
+        if self.protected and not instance.force:
             raise ValueError('%s may not be set manualy' % self.name)
 
 
         # Set header field to type specific undefined value if required.
-        elif value in ('undefined', self.undefined):
+        elif value in ('undefined', self.undefined, None):
             self.values[instance] = self.undefined
 
 
@@ -253,11 +250,14 @@ class SacHeader(object):
             raise ValueError("%s - I don't know what to do with that header!" % self.name)
 
         # Calculate new end time 'e' when 'b' or 'delta' are changed.
-        if self.name in ('b', 'delta') and not force:
+        # Only do this when instance.force is False, because we do not
+        # want to trigger this when e.g. reading from a sac file.
+        if self.name in ('b', 'delta') and not instance.force:
             b = instance.b
             npts = instance.npts
             delta = instance.delta
-            instance.e = (b + (npts - 1) * delta, True)
+            with instance.force_set_header():
+                instance.e = b + (npts - 1) * delta
 
     def __delete__(self, instance):
         del self.values[instance]

@@ -22,6 +22,7 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 from __future__ import absolute_import, division, print_function
 from builtins import (str, open, zip, object)
 import struct
+from contextlib import contextmanager
 from .sacheader import SacHeader, _HEADER_FIELDS
 
 __copyright__ = """
@@ -204,8 +205,32 @@ class SacIO(object):
         """
 
         self._data = []
+        self.force = False
         for name, value in kwargs.items():
             setattr(self, name, value)
+
+    def __getstate__(self):
+        return_dict = self.__dict__.copy()
+        for header_field in _HEADER_FIELDS:
+            return_dict[header_field] = getattr(self, header_field)
+        return return_dict
+
+    def __setstate__(self, d):
+        with self.force_set_header():
+            for header_field in _HEADER_FIELDS:
+                setattr(self, header_field, d.pop(header_field))
+        self.__dict__ = d
+
+    @contextmanager
+    def force_set_header(self):
+        """
+        This provides a context to force setting otherwise unsettable
+        sac header fields (e.g. npts, which is usually determined from
+        the length of the data vector)
+        """
+        self.force = True
+        yield
+        self.force = False
 
     def read(self, filename):
         """
@@ -229,14 +254,15 @@ class SacIO(object):
                 file_byteorder = '>'
 
             # Loop over all header fields and store them in the SAC object.
-            for header_field in _HEADER_FIELDS:
-                desc = getattr(type(self), header_field)
-                file_handle.seek(desc.start)
-                content = file_handle.read(desc.length)
-                value = struct.unpack(file_byteorder+desc.format, content)[0]
-                if isinstance(value, bytes):
-                    value = value.decode().rstrip()
-                setattr(self, header_field, (value, True))
+            with self.force_set_header():
+                for header_field in _HEADER_FIELDS:
+                    desc = getattr(type(self), header_field)
+                    file_handle.seek(desc.start)
+                    content = file_handle.read(desc.length)
+                    value = struct.unpack(file_byteorder+desc.format, content)[0]
+                    if isinstance(value, bytes):
+                        value = value.decode().rstrip()
+                    setattr(self, header_field, value)
 
 
             # Read first data block
@@ -276,9 +302,8 @@ class SacIO(object):
             for header_field in _HEADER_FIELDS:
                 desc = getattr(type(self), header_field)
                 file_handle.seek(desc.start)
-                try:
-                    value = getattr(self, header_field)
-                except ValueError:
+                value = getattr(self, header_field)
+                if value is None:
                     value = desc.undefined
 
                 # convert enumerated headers to corresponding string
@@ -313,7 +338,6 @@ class SacIO(object):
             for x in data1:
                 file_handle.write(struct.pack('f', x))
 
-
     @property
     def data(self):
         """
@@ -346,20 +370,20 @@ class SacIO(object):
         # of quasi-immutable header values (i.e. ones
         # that depend on the data)
 
-        # Calculate number of points from the length of the data vector
-        self.npts = (len(data), True)
-
         # This triggers recalculating end time
         self.b = self.b
 
-        # Determine if data has one or two data sections
-        # and calculate trace stats
-        if isinstance(data[0], tuple):
-            self.depmin = (min(data)[0], True)
-            self.depmax = (max(data)[0], True)
-            # TODO: Can we do more here than just set it as undefined?
-            self.depmen = ('undefined', True)
-        else:
-            self.depmin = (min(data), True)
-            self.depmax = (max(data), True)
-            self.depmen = (sum(data)/self.npts, True)
+        with self.force_set_header():
+            # Calculate number of points from the length of the data vector
+            self.npts = len(data)
+            # Determine if data has one or two data sections
+            # and calculate trace stats
+            if isinstance(data[0], tuple):
+                self.depmin = min(data)[0]
+                self.depmax = max(data)[0]
+                # TODO: Can we do more here than just set it as undefined?
+                self.depmen = None
+            else:
+                self.depmin = min(data)
+                self.depmax = max(data)
+                self.depmen = sum(data)/self.npts
