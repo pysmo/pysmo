@@ -5,9 +5,9 @@ Run tests for the SacIO class
 import os
 import tempfile
 import shutil
-import pytest
 import copy
 import pickle
+import pytest
 from pysmo import SacIO
 
 
@@ -48,6 +48,9 @@ def instances(tmpfiles):
 
 @pytest.mark.dependancy()
 def test_is_sacio_type(instances):
+    """
+    Test if a SacIO instance is created.
+    """
     sac1, sac2 = instances
     assert isinstance(sac1, SacIO)
     assert isinstance(sac2, SacIO)
@@ -62,7 +65,7 @@ def test_read_headers(instances):
     assert sac.b == pytest.approx(53.060001373291016)
     assert sac.e == pytest.approx(3653.0400390625)
     assert sac.iftype == 'time'
-    assert sac.leven == True
+    assert sac.leven is True
     assert sac.delta == pytest.approx(0.02)
     assert sac.odelta is None
     assert sac.idep == 'unkn'
@@ -83,7 +86,9 @@ def test_read_headers(instances):
     assert sac.t9 is None
     assert sac.f is None
     # kzdate is a derived header
+    assert sac.kzdate == '2004-12-21'
     # kztime is a derived header
+    assert sac.kztime == '03:58:43.800'
     assert sac.iztype == 'o'
     assert sac.kinst is None
     assert sac.resp0 is None
@@ -117,7 +122,7 @@ def test_read_headers(instances):
     assert sac.az == pytest.approx(177.77978515625)
     assert sac.baz == pytest.approx(357.0372619628906)
     assert sac.gcarc == pytest.approx(28.522098541259766)
-    assert sac.lovrok == True
+    assert sac.lovrok is True
     assert sac.iqual is None
     assert sac.isynth is None
     assert sac.user0 is None
@@ -145,44 +150,52 @@ def test_read_headers(instances):
     assert sac.nevid == 0
     assert sac.nwfid == 13
     assert sac.iinst is None
-    assert sac.lpspol == True
-    assert sac.lcalda == True
+    assert sac.lpspol is True
+    assert sac.lcalda is True
     assert sac.kcmpnm == 'BHN'
     assert sac.knetwk == 'YJ'
     assert sac.mag is None
     assert sac.imagtyp is None
     assert sac.imagsrc is None
     # try reading non-existing header
-    with pytest.raises(AttributeError): sac.nonexistingheader
+    with pytest.raises(AttributeError):
+        _ = sac.nonexistingheader
 
 @pytest.mark.dependancy(depends=['test_is_sacio_type'])
 def test_read_data(instances):
+    """
+    Test reading data.
+    """
     sac, _ = instances
-    assert sac.data[:10] == [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, -1591.0, -1604.0, -1601.0, -1611.0]
+    assert sac.data[:10] == [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0,\
+                             -1565.0, -1591.0, -1604.0, -1601.0, -1611.0]
 
 @pytest.mark.dependancy(depends=['test_read_headers'])
 def test_change_headers(instances):
     """
     Test changing header values
     """
-    
+
     sac1, sac2 = instances
 
     iftype_valid = 'time'
     iftype_invalid = 'asdfasdf'
-    
+
     # set iftype to a valid value
     sac2.iftype = iftype_valid
     assert sac2.iftype == iftype_valid
 
     # set iftype to an invalid value
-    with pytest.raises(ValueError): sac2.iftype = iftype_invalid
+    with pytest.raises(ValueError):
+        sac2.iftype = iftype_invalid
 
     # Try setting a header that should only accept strings to a boolean
-    with pytest.raises(ValueError): sac2.kuser0 = True
+    with pytest.raises(ValueError):
+        sac2.kuser0 = True
 
     # Try setting a string that is too long
-    with pytest.raises(ValueError): sac2.kuser0 = 'too long string'
+    with pytest.raises(ValueError):
+        sac2.kuser0 = 'too long string'
 
     # Are trailing spaces removed?
     sac2.kuser0 = 'aaaa   '
@@ -204,7 +217,6 @@ def test_change_data(instances):
     """
     _, sac2 = instances
     newdata = [132, 232, 3465, 111]
-    olddata = sac2.data
     sac2.data = newdata
     assert sac2.data == newdata
     assert sac2.depmin == min(newdata)
