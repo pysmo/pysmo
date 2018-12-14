@@ -22,6 +22,7 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 from __future__ import absolute_import, division, print_function
 from builtins import (str, open, zip, object)
 import struct
+import datetime
 from contextlib import contextmanager
 from .sacheader import SacHeader, _HEADER_FIELDS
 
@@ -203,12 +204,15 @@ class SacIO(object):
         """
         Initialise a SAC object.
         """
-
         self._data = []
         self.force = False
         for name, value in kwargs.items():
             setattr(self, name, value)
 
+
+    # Because SAC header values are stored in the dictionary of the descriptor, and _not_ in
+    # the SacIO instance dictionary we need to copy and restore them manually in order for
+    # pickling (and thus deepcopy) to work.
     def __getstate__(self):
         return_dict = self.__dict__.copy()
         for header_field in _HEADER_FIELDS:
@@ -216,13 +220,13 @@ class SacIO(object):
         return return_dict
 
     def __setstate__(self, d):
-        with self.force_set_header():
+        with self._force_set_header():
             for header_field in _HEADER_FIELDS:
                 setattr(self, header_field, d.pop(header_field))
         self.__dict__ = d
 
     @contextmanager
-    def force_set_header(self):
+    def _force_set_header(self):
         """
         This provides a context to force setting otherwise unsettable
         sac header fields (e.g. npts, which is usually determined from
@@ -254,12 +258,15 @@ class SacIO(object):
                 file_byteorder = '>'
 
             # Loop over all header fields and store them in the SAC object.
-            with self.force_set_header():
+            # Since we are reading them from file instead of manually
+            # setting them we also need to set otherwise protected headers
+            # such as the end time 'e'
+            with self._force_set_header():
                 for header_field in _HEADER_FIELDS:
-                    desc = getattr(type(self), header_field)
-                    file_handle.seek(desc.start)
-                    content = file_handle.read(desc.length)
-                    value = struct.unpack(file_byteorder+desc.format, content)[0]
+                    header_properties = getattr(type(self), header_field)
+                    file_handle.seek(header_properties.start)
+                    content = file_handle.read(header_properties.length)
+                    value = struct.unpack(file_byteorder+header_properties.format, content)[0]
                     if isinstance(value, bytes):
                         value = value.decode().rstrip()
                     setattr(self, header_field, value)
@@ -300,22 +307,22 @@ class SacIO(object):
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
             for header_field in _HEADER_FIELDS:
-                desc = getattr(type(self), header_field)
-                file_handle.seek(desc.start)
+                header_properties = getattr(type(self), header_field)
+                file_handle.seek(header_properties.start)
                 value = getattr(self, header_field)
                 if value is None:
-                    value = desc.undefined
+                    value = header_properties.undefined
 
                 # convert enumerated headers to corresponding string
-                if desc.is_enumerated:
+                if header_properties.enumerated:
                     try:
                         value = SacHeader.enumerated_str2int(value)
                     except KeyError:
-                        value = desc.undefined
+                        value = header_properties.undefined
 
                 if isinstance(value, str):
                     value = value.encode()
-                value = struct.pack(desc.format, value)
+                value = struct.pack(header_properties.format, value)
                 file_handle.write(value)
 
 
@@ -373,7 +380,7 @@ class SacIO(object):
         # This triggers recalculating end time
         self.b = self.b
 
-        with self.force_set_header():
+        with self._force_set_header():
             # Calculate number of points from the length of the data vector
             self.npts = len(data)
             # Determine if data has one or two data sections
@@ -387,3 +394,25 @@ class SacIO(object):
                 self.depmin = min(data)
                 self.depmax = max(data)
                 self.depmen = sum(data)/self.npts
+
+    @property
+    def kzdate(self):
+        """
+        ISO 8601 format of GMT reference date.
+        """
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)
+        return _kzdate.isoformat()
+
+
+    @property
+    def kztime(self):
+        """
+        Alphanumeric form of GMT reference time.
+        """
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
+        # TODO datetime in python2 doesn't allow specifying miliseconds instead of nanoseconds
+        # this try/except can be removed once we stop also supporting python2...
+        try:
+            return _kztime.isoformat(timespec='milliseconds')
+        except TypeError:
+            return _kztime.isoformat()
