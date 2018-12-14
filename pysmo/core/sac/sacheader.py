@@ -62,84 +62,120 @@ class SacHeader(object):
         # Set the name to the header field name
         self.name = header_field
 
-        # Start position in the binary sac file
-        self.start = _HEADER_FIELDS[header_field]['start']
-
-        # Set the type of sac header
-        self.header_type = SacHeader.get_header_type(header_field)
-
-        # Is this a mandatory header field?
-        try:
-            self.required = _HEADER_FIELDS[header_field]['required']
-        except KeyError:
-            self.required = False
-
-        # Is this a protected header field (npts, e, depmin, ...)?
-        try:
-            self.protected = _HEADER_FIELDS[header_field]['protected']
-        except KeyError:
-            self.protected = False
-
-        # Set the undefined value for the header field.
-        self.undefined = _HEADER_TYPES[self.header_type]['undefined']
-
+        # Values are stored in a weak key dictionary with the instance as key.
         self.values = WeakKeyDictionary()
 
+        self.__doc__ =  _HEADER_FIELDS[header_field]['description']
+
+
+
+    @property
+    def default(self):
         # Initially set header field value to 0 for b, npts and delta
         # All others are set the undefined value of that header type.
         if self.name in ['b', 'npts', 'delta']:
-            self.default = 0
+            return 0
         else:
-            self.default = self.undefined
+            return self.undefined
 
 
-        # Enumerated header fields have the allowed_vals key in their dictionary, so
-        # we can set this boolean using that.
-        self.is_enumerated = bool('allowed_vals' in _HEADER_FIELDS[header_field])
-        if self.is_enumerated:
-            # Valid 'fancy' values for this header field
-            self.valid_enum_values = _HEADER_FIELDS[header_field]['allowed_vals'].keys()
-            # Valid internal values for this header field
-            self.valid_enum_keys = [_ENUMERATED_STR2INT[i] for i in self.valid_enum_values]
-
-
-        # Save valid values for enumerated header fields.
-        if self.is_enumerated:
-            # list of valid values
-            self.valid_enum_values = _HEADER_FIELDS[header_field]['allowed_vals'].keys()
-
-        # Some header fields have their own format that is specified in the dictionary.
+    @property
+    def required(self):
+        """
+        True if this is a required header field, False otherwise.
+        """
+        # Is this a mandatory header field?
         try:
-            self.format = _HEADER_FIELDS[header_field]['format']
-        # If there is none such header field specific format use default one for that type.
+            required = _HEADER_FIELDS[header_field]['required']
+            if required in ['true', '1', 't', 'y', 'yes', 'True', 'TRUE']:
+                return True
         except KeyError:
-            self.format = _HEADER_TYPES[self.header_type]['format']
+            pass
+        return False
 
-        # Some header fields have their own length that is specified in the dictionary.
+
+    @property
+    def protected(self):
+        # Is this a protected header field (npts, e, depmin, ...)?
         try:
-            self.length = _HEADER_FIELDS[header_field]['length']
-        # If there is none such header field specific length use default one for that type.
+            protected = _HEADER_FIELDS[self.name]['protected']
+            if protected in ['true', '1', 't', 'y', 'yes', 'True', 'TRUE']:
+                return True
         except KeyError:
-            self.length = _HEADER_TYPES[self.header_type]['length']
-
-        # Store the header description in the docstring.
-        self.__doc__ = _HEADER_FIELDS[header_field]['description']
+            pass
+        return False
 
 
-    @staticmethod
-    def get_header_type(header_field):
+    @property
+    def header_type(self):
         """
         Return SAC header type.
         """
-        return _HEADER_FIELDS[header_field]['header_type']
+        return _HEADER_FIELDS[self.name]['header_type']
 
-    @staticmethod
-    def get_header_undefined_value(header_field):
+
+    @property
+    def undefined(self):
         """
-        Return SAC header default value.
+        Returns the value of an undefined header field as stored in a SAC file.
         """
-        header_type = SacHeader.get_header_type(header_field)
-        return _HEADER_TYPES[header_type]['undefined']
+        return _HEADER_TYPES[self.header_type]['undefined']
+
+
+    @property
+    def enumerated(self):
+        """
+        Returns a True if the header field is a boolean, otherwise returns False.
+        """
+        # Enumerated header fields have the allowed_vals key in their dictionary, so
+        # we can set this boolean using that.
+        return bool('allowed_vals' in _HEADER_FIELDS[self.name])
+
+
+    @property
+    def valid_enum_values(self):
+        """
+        Return valid 'fancy' values for enumerated header fields
+        """
+        return _HEADER_FIELDS[self.name]['allowed_vals'].keys()
+
+
+    @property
+    def valid_enum_keys(self):
+        """
+        Return valid internal values for enumerated header fields.
+        """
+        return [_ENUMERATED_STR2INT[i] for i in self.valid_enum_values]
+
+
+
+    @property
+    def start(self):
+        """
+        Start position in the binary sac file.
+        """
+        return _HEADER_FIELDS[self.name]['start']
+
+
+    @property
+    def format(self):
+        # Some header fields have their own format that is specified in the dictionary.
+        try:
+            return _HEADER_FIELDS[self.name]['format']
+        # If there is none such header field specific format use default one for that type.
+        except KeyError:
+            return  _HEADER_TYPES[self.header_type]['format']
+
+
+    @property
+    def length(self):
+        # Some header fields have their own length that is specified in the dictionary.
+        try:
+            return _HEADER_FIELDS[self.name]['length']
+        # If there is none such header field specific length use default one for that type.
+        except KeyError:
+            return _HEADER_TYPES[self.header_type]['length']
+
 
     @staticmethod
     def enumerated_str2int(value):
@@ -147,6 +183,7 @@ class SacHeader(object):
         Return integer corresponding to enumerated header
         """
         return _ENUMERATED_STR2INT[value]
+
 
     def __get__(self, instance, owner):
         """
@@ -162,13 +199,14 @@ class SacHeader(object):
         if _value == self.undefined:
             return None
 
-        if self.is_enumerated:
+        if self.enumerated:
             return  _ENUMERATED_INT2STR[_value]
 
         try:
             return _value.rstrip()
         except AttributeError:
             return _value
+
 
     def __set__(self, instance, value):
         """
@@ -193,7 +231,7 @@ class SacHeader(object):
 
 
         # Save integer corresponding to enumerated value internally.
-        elif self.is_enumerated:
+        elif self.enumerated:
             if value in self.valid_enum_values:
                 self.values[instance] = _ENUMERATED_STR2INT[value]
             elif value in self.valid_enum_keys:
@@ -256,7 +294,7 @@ class SacHeader(object):
             b = instance.b
             npts = instance.npts
             delta = instance.delta
-            with instance.force_set_header():
+            with instance._force_set_header():
                 instance.e = b + (npts - 1) * delta
 
     def __delete__(self, instance):
