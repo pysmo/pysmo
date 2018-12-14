@@ -88,7 +88,8 @@ def test_read_headers(instances):
     # kzdate is a derived header
     assert sac.kzdate == '2004-12-21'
     # kztime is a derived header
-    assert sac.kztime == '03:58:43.800'
+    # TODO datetime in python2 doesn't allow specifying miliseconds instead of nanoseconds
+    assert sac.kztime in ['03:58:43.800', '03:58:43.800000']
     assert sac.iztype == 'o'
     assert sac.kinst is None
     assert sac.resp0 is None

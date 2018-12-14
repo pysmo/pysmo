@@ -410,4 +410,9 @@ class SacIO(object):
         Alphanumeric form of GMT reference time.
         """
         _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
-        return _kztime.isoformat(timespec='milliseconds')
+        # TODO datetime in python2 doesn't allow specifying miliseconds instead of nanoseconds
+        # this try/except can be removed once we stop also supporting python2...
+        try:
+            return _kztime.isoformat(timespec='milliseconds')
+        except TypeError:
+            return _kztime.isoformat()
