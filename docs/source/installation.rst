@@ -1,19 +1,44 @@
+============
 Installation
 ============
 
-Python virtualenv
------------------
+Install pysmo with pip
+----------------------
 
-We recommend installing pysmo in a `Python virtualenv <https://virtualenv.pypa.io/en/latest/>`_.
-This ensures the system python remains isolated from packages installed via e.g. ``pip`` or ``easy_install``,
-and allows a user to install pysmo with all it's dependencies in their home directory.
+Simple installation in a users home directory
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The simplest way to install Pysmo and all dependencies not already present
+is via the `pip` command::
+
+   $ pip install --user pysmo
+
+This installs pysmo a users home directory. Similarly, to upgrade pysmo with `pip` run::
+
+   $ pip install --user pysmo -U
+
+.. caution:: We do not recommend running these commands as root or with sudo. While it may be
+   tempting to install python packages system wide via pip, it is generally considered to be a
+   bad idea. Installing them this way could interfere with the system in unpredictable, even
+   harmful ways!
+
+
+
+Installation inside a virtual environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Experienced users already familiar with `Python virtualenv <https://virtualenv.pypa.io/en/latest/>`_ may
+want to install pysmo in its own isolated virtual environment.  Much like the above method, this ensures
+the system python remains isolated from packages installed via ``pip``. Additionally different versions
+of pysmo can be installed alongside eachother (for example the currently stable and development versions).
+
 
 Virtualenvwrapper
-~~~~~~~~~~~~~~~~~
+"""""""""""""""""
 
-`Virtualenvwrapper <https://virtualenvwrapper.readthedocs.io/en/latest/>`_ is a convenient tool
-for creating and managing virtual environments. It is frequently available via
-the package manager in Linux distributions, but can also conveniently be installed with pip::
+`Virtualenvwrapper <https://virtualenvwrapper.readthedocs.io/en/latest/>`_ is a convenient tool for
+creating and managing virtual environments. It is frequently available via the package manager in
+Linux distributions, but can also conveniently be installed with pip::
 
    $ sudo pip install virtualenvwrapper
 
@@ -36,21 +61,34 @@ and activate it::
 
    $ workon testenv
 
+Once inside the virtual environment, pysmo can be installed and updated using pip without the ``--user`` flag::
+
+   (testenv) $ pip install pysmo
+
+
 .. note:: To end a session and use the system python run ``deactivate`` in your shell.
 
 
-Install pysmo with pip
-----------------------
+Conda
+"""""
 
-The simplest way to install pysmo is with pip::
+For anaconda users, we recommend creating a virtual environment with `conda`. For example,
+to create a python-3.6 virtual environment::
 
-   (testenv)$ pip install pysmo
+   $ conda create -n pysmo python=3.6
 
-This will download and install pysmo, as well as all packages it depends on.
+Then enter the environment and install pysmo::
+
+   $ conda activate pysmo
+   $ pip install pysmo
+
+Exit the pysmo virtual environment and switch back to the default anaconda installation::
+
+   $ conda deactivate
 
 
-Install pysmo from GitHub
--------------------------
+Installation from GitHub
+------------------------
 
 If you prefer to install pysmo from GitHub, e.g. because you want to run the latest development version::
 
