@@ -9,3 +9,4 @@ result_images/
 *.pyc
 *.so
 *.swp
+.python-version
