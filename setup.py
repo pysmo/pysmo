@@ -23,5 +23,20 @@ setup(
         'matplotlib',
         'pyyaml',
         'pyproj'
+    ],
+    python_requires='>=3.5',
+    classifiers=[
+        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering',
+        'Operating System :: OS Independent',
+        'Development Status :: 4 - Beta',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ]
 )
