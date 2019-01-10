@@ -1,3 +1,4 @@
+.PHONY: docs
 
 init:
 	pip install pipenv
@@ -6,6 +7,5 @@ init:
 test:
 	pipenv run py.test -v tests
 
-.PHONY: docs
 docs:
-	cd docs && make html
+	cd docs && pipenv run make html
