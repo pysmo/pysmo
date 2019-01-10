@@ -14,25 +14,26 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../pysmo'))
+from importlib import reload
+sys.path.insert(0, os.path.abspath('../..'))
 
 
 # -- Project information -----------------------------------------------------
 
-from pkg_resources import get_distribution
+import pkg_resources
+pkg_resources = reload(pkg_resources)   # This seems to be required to pick up the path defined above...
 
 project = u'Pysmo'
-copyright = u'2018, Pysmo Project'
+copyright = u'2019, Pysmo Project'
 author = u'Pysmo Project'
 
 # The full version, including alpha/beta/rc tags
 #release = u''
-release = get_distribution('pysmo').version
+release = pkg_resources.get_distribution('pysmo').version
 
 # The short X.Y version
 #version = u''
 version = '.'.join(release.split('.')[:2])
-
 
 # -- General configuration ---------------------------------------------------
 
