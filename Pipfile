@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+Sphinx = "*"
+sphinx-rtd-theme = "*"
+
+[packages]
+scipy = "~=1.2"
+numpy = "~=1.15"
+matplotlib = "~=3.0"
+pyproj = "~=1.9.6"
+PyYAML = "~=3.13"
+
+[requires]
+python_version = "3.7"
