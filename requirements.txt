@@ -1,6 +1,0 @@
-scipy==1.1
-numpy~=1.15
-matplotlib~=2.2
-pyyaml~=3.13
-pyproj>=1.9.5
-future>=0.16.0

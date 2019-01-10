@@ -1,15 +1,19 @@
 language: python
 python:
-  - "2.7"
-  - "3.6"
-cache: pip
-install:
-  - pip install -r requirements-travis.txt
+  - 3.5
+  - 3.6
+
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
+
+install: "make"
+
 script:
-  - python setup.py build
-  - python setup.py install
-  - py.test -v tests/test_sacio.py
-  - py.test -v --mpl tests/test_sacfunc.py
+  - make test
+
 notifications:
   webhooks:
     urls:
