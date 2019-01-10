@@ -17,5 +17,11 @@ setup(
     packages=find_packages(where='.', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     zip_safe=False,
     url='https://github.com/pysmo/pysmo',
-    install_requires=[i.strip() for i in open("requirements.txt").readlines()],
+    install_requires=[
+        'scipy',
+        'numpy',
+        'matplotlib',
+        'pyyaml',
+        'pyproj'
+    ]
 )
