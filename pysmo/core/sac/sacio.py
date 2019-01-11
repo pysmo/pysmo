@@ -19,8 +19,6 @@
 Python module for reading/writing SAC files using the :class:`SacIO` class.
 """
 
-from __future__ import absolute_import, division, print_function
-from builtins import (str, open, zip, object)
 import struct
 import datetime
 from contextlib import contextmanager
@@ -31,7 +29,7 @@ Copyright (c) 2012 Simon Lloyd
 """
 
 
-class SacIO(object):
+class SacIO():
     """
     The :class:`SacIO` class reads and writes data and header values to and from a SAC file.
     Additonal class attributes may be set, but are not written to a SAC file (because
@@ -410,9 +408,4 @@ class SacIO(object):
         Alphanumeric form of GMT reference time.
         """
         _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
-        # TODO datetime in python2 doesn't allow specifying miliseconds instead of nanoseconds
-        # this try/except can be removed once we stop also supporting python2...
-        try:
-            return _kztime.isoformat(timespec='milliseconds')
-        except TypeError:
-            return _kztime.isoformat()
+        return _kztime.isoformat(timespec='milliseconds')
