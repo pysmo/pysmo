@@ -29,7 +29,7 @@ Copyright (c) 2018 Simon Lloyd
 
 # Load SAC header definitions from yaml file and store them in dicts
 with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stream:
-    _HEADER_DEFS = yaml.load(stream)
+    _HEADER_DEFS = yaml.safe_load(stream)
 
 # Create dictionary of different header types (float, integer, enumerated, logical,
 # alphanumeric, auxilary). This provides respective defaults etc.
