@@ -19,8 +19,6 @@
 Python module for reading/writing SAC files.
 """
 
-from __future__ import absolute_import, division, print_function
-from builtins import (str, open, object)
 from weakref import WeakKeyDictionary
 import os
 import yaml
@@ -52,7 +50,7 @@ _ENUMERATED_STR2INT['undefined'] = _HEADER_TYPES['i']['undefined']
 _ENUMERATED_INT2STR = {v: k for k, v in _ENUMERATED_STR2INT.items()}
 
 
-class SacHeader(object):
+class SacHeader():
     """
     Python descriptor class for SAC file headers. Mainly for use
     inside the SacIO class.
@@ -65,7 +63,7 @@ class SacHeader(object):
         # Values are stored in a weak key dictionary with the instance as key.
         self.values = WeakKeyDictionary()
 
-        self.__doc__ =  _HEADER_FIELDS[header_field]['description']
+        self.__doc__ = _HEADER_FIELDS[header_field]['description']
 
 
 
@@ -75,8 +73,7 @@ class SacHeader(object):
         # All others are set the undefined value of that header type.
         if self.name in ['b', 'npts', 'delta']:
             return 0
-        else:
-            return self.undefined
+        return self.undefined
 
 
     @property
@@ -86,7 +83,7 @@ class SacHeader(object):
         """
         # Is this a mandatory header field?
         try:
-            required = _HEADER_FIELDS[header_field]['required']
+            required = _HEADER_FIELDS[self.name]['required']
             if required in ['true', '1', 't', 'y', 'yes', 'True', 'TRUE']:
                 return True
         except KeyError:

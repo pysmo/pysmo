@@ -44,7 +44,7 @@ class SacIOExt(SacIO):
         except:
             pass
 
-    def calc_az(self, ellps='WGS84'):
+    def calc_baz(self, ellps='WGS84'):
         try:
             self.baz = sf.calc_baz(self, ellps)
         except:

@@ -6,6 +6,5 @@ It's core components are an interface to the commonly used
 functions that work with this interface, and some additional useful tools.
 """
 
-from __future__ import division, absolute_import, print_function
 from . import sac
 from .sac import *
