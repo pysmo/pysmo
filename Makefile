@@ -1,7 +1,11 @@
 .PHONY: docs dist clean test
 
+PIPENV := $(shell command -v pipenv 2> /dev/null)
+
 init:
+ifndef PIPENV
 	pip install pipenv
+endif
 	pipenv install --dev
 
 test:
