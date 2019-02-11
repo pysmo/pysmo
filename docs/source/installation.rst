@@ -72,19 +72,14 @@ Once inside the virtual environment, pysmo can be installed and updated using pi
 Conda
 """""
 
-For anaconda users, we recommend creating a virtual environment with `conda`. For example,
-to create a python-3.6 virtual environment::
+We currently do not provide a conda package for pysmo. For anaconda users, we recommend
+first installing dependencies with ``conda``::
 
-   $ conda create -n pysmo python=3.6
+   $ conda install scipy numpy matplotlib pyproj pyyaml
 
-Then enter the environment and install pysmo::
+Then install pysmo with ``pip``::
 
-   $ conda activate pysmo
    $ pip install pysmo
-
-Exit the pysmo virtual environment and switch back to the default anaconda installation::
-
-   $ conda deactivate
 
 
 Installation from GitHub
