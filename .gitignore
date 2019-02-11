@@ -10,3 +10,4 @@ result_images/
 *.so
 *.swp
 .python-version
+.vscode
