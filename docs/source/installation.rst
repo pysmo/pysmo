@@ -69,8 +69,8 @@ Once inside the virtual environment, pysmo can be installed and updated using pi
 .. note:: To end a session and use the system python run ``deactivate`` in your shell.
 
 
-Conda
-"""""
+Conda Users
+-----------
 
 We currently do not provide a conda package for pysmo. For anaconda users, we recommend
 first installing dependencies with ``conda``::
