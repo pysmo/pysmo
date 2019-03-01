@@ -8,6 +8,7 @@ Welcome to Pysmo's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
    :caption: Contents:
 
    intro
@@ -15,6 +16,7 @@ Welcome to Pysmo's documentation!
    sac
    tools
    contrib
+   developing
 
 
 Indices and tables
