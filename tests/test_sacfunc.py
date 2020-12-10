@@ -23,10 +23,12 @@ def tmpdir():
     yield tmp
     shutil.rmtree(tmp)
 
+
 @pytest.fixture()
 def testfile():
     """Determine absolute path of the test SAC file."""
     return os.path.join(os.path.dirname(__file__), 'testfile.sac')
+
 
 @pytest.fixture()
 def sacobj(tmpdir, testfile):
@@ -34,6 +36,7 @@ def sacobj(tmpdir, testfile):
     tmpfile = os.path.join(tmpdir, 'tmpfile.sac')
     shutil.copyfile(testfile, tmpfile)
     return SacIO.from_file(tmpfile)
+
 
 def test_sac2xy_list(sacobj):
     """
@@ -43,8 +46,9 @@ def test_sac2xy_list(sacobj):
     time, vals = sacfunc.sac2xy(sacobj)
     assert isinstance(time, list)
     assert isinstance(vals, list)
-    assert pytest.approx(time[6]) == 53.18000
-    assert pytest.approx(vals[6]) == -1591.0
+    assert pytest.approx(time[6]) == -63.2200001552701
+    assert pytest.approx(vals[6]) == 2378.0
+
 
 def test_sac2xy_array(sacobj):
     """
@@ -54,10 +58,11 @@ def test_sac2xy_array(sacobj):
     time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     assert isinstance(time, np.ndarray)
     assert isinstance(vals, np.ndarray)
-    assert pytest.approx(time[6]) == 53.18000
-    assert pytest.approx(vals[6]) == -1591.0
+    assert pytest.approx(time[6]) == -63.2200001552701
+    assert pytest.approx(vals[6]) == 2378.0
 
-@pytest.mark.mpl_image_compare(tolerance=20)
+
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_plotsac(sacobj):
     """
     Plot SAC object and compare it to
@@ -67,18 +72,21 @@ def test_plotsac(sacobj):
     sacfunc.plotsac(sacobj, showfig=False)
     return fig
 
+
 def test_resample(sacobj):
     """Resample SacFile object and verify resampled data."""
     delta_old = sacobj.delta
     delta_new = delta_old * 2
     data_new = sacfunc.resample(sacobj, delta_new)
-    assert pytest.approx(data_new[6]) == -1558.4662660
+    assert pytest.approx(data_new[6]) == 2202.0287804516634
+
 
 def test_detrend(sacobj):
     """Detrend SacFile object and verify mean is 0."""
     detrended_data = sacfunc.detrend(sacobj)
     assert np.mean(sacobj.data) != 0
     assert pytest.approx(np.mean(detrended_data)) == 0
+
 
 def test_calcaz(sacobj):
     """
@@ -90,8 +98,9 @@ def test_calcaz(sacobj):
     """
     azimuth_wgs84 = sacfunc.calc_az(sacobj)
     azimuth_clrk66 = sacfunc.calc_az(sacobj, ellps='clrk66')
-    assert pytest.approx(azimuth_wgs84) == 177.78131677492817
-    assert pytest.approx(azimuth_clrk66) == 177.7811794213202
+    assert pytest.approx(azimuth_wgs84) == 181.9199258637492
+    assert pytest.approx(azimuth_clrk66) == 181.92001941872516
+
 
 def test_calcbaz(sacobj):
     """
@@ -103,8 +112,9 @@ def test_calcbaz(sacobj):
     """
     azimuth_wgs84 = sacfunc.calc_baz(sacobj)
     azimuth_clrk66 = sacfunc.calc_baz(sacobj, ellps='clrk66')
-    assert pytest.approx(azimuth_wgs84) == 357.03522613169105
-    assert pytest.approx(azimuth_clrk66) == 357.0350879498619
+    assert pytest.approx(azimuth_wgs84) == 2.4677533885335947
+    assert pytest.approx(azimuth_clrk66) == 2.467847115319614
+
 
 def test_calcdist(sacobj):
     """
@@ -114,10 +124,11 @@ def test_calcdist(sacobj):
     verified against values obtained using the 'sac'
     binary itself.
     """
-    azimuth_wgs84 = sacfunc.calc_dist(sacobj)
-    azimuth_clrk66 = sacfunc.calc_dist(sacobj, ellps='clrk66')
-    assert pytest.approx(azimuth_wgs84) == 3172.3886678422036
-    assert pytest.approx(azimuth_clrk66) == 3172.276277170811
+    dist_wgs84 = sacfunc.calc_dist(sacobj)
+    dist_clrk66 = sacfunc.calc_dist(sacobj, ellps='clrk66')
+    assert pytest.approx(dist_wgs84) == 1889.1549940066523
+    assert pytest.approx(dist_clrk66) == 1889.1217781364019
+
 
 def test_envelope(sacobj):
     """
@@ -125,10 +136,11 @@ def test_envelope(sacobj):
     the calculated values. The reference values were
     obtained from previous runs of this function.
     """
-    Tn = 50 # Center Gaussian filter at 50s period
-    alpha = 50 # Set alpha (which determines filterwidth) to 50
+    Tn = 50  # Center Gaussian filter at 50s period
+    alpha = 50  # Set alpha (which determines filterwidth) to 50
     envelope = sacfunc.envelope(sacobj, Tn, alpha)
-    assert pytest.approx(envelope[6]) == 62.83288829293575
+    assert pytest.approx(envelope[100]) == 6.109130497913114
+
 
 def test_gauss(sacobj):
     """
@@ -136,7 +148,23 @@ def test_gauss(sacobj):
     verify the calculated values. The reference values were
     obtained from previous runs of this function.
     """
-    Tn = 50 # Center Gaussian filter at 50s period
-    alpha = 50 # Set alpha (which determines filterwidth) to 50
+    Tn = 50  # Center Gaussian filter at 50s period
+    alpha = 50  # Set alpha (which determines filterwidth) to 50
     data = sacfunc.gauss(sacobj, Tn, alpha)
-    assert pytest.approx(data[6]) == 26.17474984719684
+    assert pytest.approx(data[100]) == -5.639860165811819
+
+
+@pytest.mark.depends(on=['test_envelope', 'test_gauss'])
+@pytest.mark.mpl_image_compare(remove_text=True)
+def test_plot_gauss_env(sacobj):
+    Tn = 50  # Center Gaussian filter at 50s period
+    alpha = 50  # Set alpha (which determines filterwidth) to 50
+    time, vals = sacfunc.sac2xy(sacobj, retarray=False)
+    vals = vals - np.mean(vals)
+    fig = plt.figure()
+    plt.plot(time, vals, linewidth=0.01, color='black')
+    plt.plot(time, sacfunc.envelope(sacobj, Tn, alpha), color='blue')
+    plt.plot(time, sacfunc.gauss(sacobj, Tn, alpha), color='red')
+    plt.xlabel('Time[s]')
+    plt.xlim([100, 1200])
+    return(fig)
