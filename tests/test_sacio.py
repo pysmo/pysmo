@@ -22,6 +22,7 @@ def tmpdir():
     yield tmp
     shutil.rmtree(tmp)
 
+
 @pytest.fixture()
 def tmpfiles(tmpdir):
     """
@@ -40,13 +41,14 @@ def tmpfiles(tmpdir):
     shutil.copyfile(orgfile, tmpfile2)
     return tmpfile1, tmpfile2, tmpfile3, tmpfile4
 
+
 @pytest.fixture()
 def instances(tmpfiles):
     """Copy reference sac file to tmpdir"""
     tmpfile1, tmpfile2, _, _ = tmpfiles
     return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2)
 
-@pytest.mark.dependancy()
+
 def test_is_sacio_type(instances):
     """
     Test if a SacIO instance is created.
@@ -55,23 +57,24 @@ def test_is_sacio_type(instances):
     assert isinstance(sac1, SacIO)
     assert isinstance(sac2, SacIO)
 
-@pytest.mark.dependancy(depends=['test_is_sacio_type'])
+
+@pytest.mark.depends(on=['test_is_sacio_type', 'test_read_data'])
 def test_read_headers(instances):
     """
     Read all SAC headers from a test file
     """
     sac, _ = instances
     assert sac.npts == 180000
-    assert sac.b == pytest.approx(53.060001373291016)
-    assert sac.e == pytest.approx(3653.0400390625)
+    assert sac.b == pytest.approx(-63.34000015258789)
+    assert sac.e == pytest.approx(3536.639892578125)
     assert sac.iftype == 'time'
     assert sac.leven is True
-    assert sac.delta == pytest.approx(0.02)
+    assert pytest.approx(sac.delta) == 0.02
     assert sac.odelta is None
     assert sac.idep == 'unkn'
-    assert sac.depmin == pytest.approx(-8293.0)
-    assert sac.depmax == pytest.approx(3302.0)
-    assert sac.depmen == pytest.approx(-572.200439453125)
+    assert sac.depmin == 451
+    assert sac.depmax == 4178
+    assert sac.depmen == pytest.approx(2323.753022222222)
     assert sac.o == pytest.approx(0.0)
     assert sac.a is None
     assert sac.t0 is None
@@ -86,10 +89,9 @@ def test_read_headers(instances):
     assert sac.t9 is None
     assert sac.f is None
     # kzdate is a derived header
-    assert sac.kzdate == '2004-12-21'
+    assert sac.kzdate == '2005-03-02'
     # kztime is a derived header
-    # TODO datetime in python2 doesn't allow specifying miliseconds instead of nanoseconds
-    assert sac.kztime in ['03:58:43.800', '03:58:43.800000']
+    assert sac.kztime == '07:24:05.500'
     assert sac.iztype == 'o'
     assert sac.kinst is None
     assert sac.resp0 is None
@@ -103,26 +105,26 @@ def test_read_headers(instances):
     assert sac.resp8 is None
     assert sac.resp9 is None
     assert sac.kdatrd is None
-    assert sac.kstnm == 'MEL01'
-    assert sac.cmpaz == pytest.approx(0)
-    assert sac.cmpinc == pytest.approx(90)
+    assert sac.kstnm == 'VOH01'
+    assert sac.cmpaz == 0
+    assert sac.cmpinc == 0
     assert sac.istreg is None
-    assert sac.stla == pytest.approx(-43.855464935302734)
-    assert sac.stlo == pytest.approx(-73.74272155761719)
+    assert sac.stla == pytest.approx(-48.46787643432617)
+    assert sac.stlo == pytest.approx(-72.56145477294922)
     assert sac.stel is None
     assert sac.stdp is None
-    assert sac.kevnm == '043550359BHN'
+    assert sac.kevnm == '050600723BHZ'
     assert sac.ievreg is None
-    assert sac.evla == pytest.approx(-15.265999794006348)
-    assert sac.evlo == pytest.approx(-75.20800018310547)
+    assert sac.evla == pytest.approx(-31.465999603271484)
+    assert sac.evlo == pytest.approx(-71.71800231933594)
     assert sac.evel is None
-    assert sac.evdp == pytest.approx(30.899999618530273)
+    assert sac.evdp == 26
     assert sac.ievtyp == 'quake'
     assert sac.khole == ''
-    assert sac.dist == pytest.approx(3172.399658203125)
-    assert sac.az == pytest.approx(177.77978515625)
-    assert sac.baz == pytest.approx(357.0372619628906)
-    assert sac.gcarc == pytest.approx(28.522098541259766)
+    assert sac.dist is None
+    assert sac.az is None
+    assert sac.baz is None
+    assert sac.gcarc is None
     assert sac.lovrok is True
     assert sac.iqual is None
     assert sac.isynth is None
@@ -134,7 +136,7 @@ def test_read_headers(instances):
     assert sac.user5 is None
     assert sac.user6 is None
     assert sac.user7 is None
-    assert sac.user8 == pytest.approx(4.900000095367432)
+    assert sac.user8 == pytest.approx(5.199999809265137)
     assert sac.user9 == pytest.approx(5.000000)
     assert sac.kuser0 is None
     assert sac.kuser1 is None
@@ -149,11 +151,11 @@ def test_read_headers(instances):
     assert sac.scale is None
     assert sac.norid == 0
     assert sac.nevid == 0
-    assert sac.nwfid == 13
+    assert sac.nwfid is None
     assert sac.iinst is None
     assert sac.lpspol is True
     assert sac.lcalda is True
-    assert sac.kcmpnm == 'BHN'
+    assert sac.kcmpnm == 'BHZ'
     assert sac.knetwk == 'YJ'
     assert sac.mag is None
     assert sac.imagtyp is None
@@ -162,16 +164,18 @@ def test_read_headers(instances):
     with pytest.raises(AttributeError):
         _ = sac.nonexistingheader
 
-@pytest.mark.dependancy(depends=['test_is_sacio_type'])
+
+@pytest.mark.depends(on=['test_is_sacio_type'])
 def test_read_data(instances):
     """
     Test reading data.
     """
     sac, _ = instances
-    assert sac.data[:10] == [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0,\
-                             -1565.0, -1591.0, -1604.0, -1601.0, -1611.0]
+    assert sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0,
+                             2378.0, 2358.0, 2398.0, 2331.0]
 
-@pytest.mark.dependancy(depends=['test_read_headers'])
+
+@pytest.mark.depends(on=['test_read_headers'])
 def test_change_headers(instances):
     """
     Test changing header values
@@ -211,7 +215,8 @@ def test_change_headers(instances):
     # has the end time changed by changing delta?
     assert sac1.e != sac2.e
 
-@pytest.mark.dependancy(depends=['test_read_headers', 'test_read_data'])
+
+@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_change_data(instances):
     """
     Test changing data
@@ -224,7 +229,8 @@ def test_change_data(instances):
     assert sac2.depmax == max(newdata)
     assert sac2.depmen == sum(newdata)/sac2.npts
 
-@pytest.mark.dependancy(depends=['test_change_headers', 'test_change_data'])
+
+@pytest.mark.depends(on=['test_change_headers', 'test_change_data'])
 def test_write_to_file(instances, tmpfiles):
     sac1, _ = instances
     _, _, tmpfile3, _ = tmpfiles
@@ -233,7 +239,8 @@ def test_write_to_file(instances, tmpfiles):
     assert sac1.data == sac3.data
     assert sac1.b == sac3.b
 
-@pytest.mark.dependancy(depends=['test_read_headers', 'test_read_data'])
+
+@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_pickling(instances, tmpfiles):
     sac1, _ = instances
     _, _, _, tmpfile4 = tmpfiles
@@ -244,7 +251,8 @@ def test_pickling(instances, tmpfiles):
     assert sac1.data == sac4.data
     assert sac1.b == sac4.b
 
-@pytest.mark.dependancy(depends=['test_read_headers', 'test_read_data'])
+
+@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_deepcopy(instances):
     sac1, _ = instances
     sac5 = copy.deepcopy(sac1)

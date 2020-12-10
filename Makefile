@@ -1,21 +1,30 @@
-.PHONY: docs dist clean test
+.PHONY: init install test-figs tests docs build clean shell
 
-PIPENV := $(shell command -v pipenv 2> /dev/null)
+POETRY := $(shell command -v poetry 2> /dev/null)
 
 init:
-ifndef PIPENV
-	pip install pipenv
+ifndef POETRY
+	pip install poetry
 endif
-	pipenv install --dev
+	poetry init
 
-test:
-	pipenv run py.test -v tests
+install:
+	poetry install
 
-docs: dist
-	cd docs && pipenv run make html
+test-figs:
+	poetry run py.test --mpl-generate-path=tests/baseline
 
-dist: clean
-	pipenv run python setup.py sdist bdist_wheel
+tests:
+	poetry run py.test --cov=pysmo --mpl -v tests
+
+docs: install
+	poetry run make -C docs html
+
+build: clean
+	poetry build
 
 clean:
 	rm -rf build dist .egg pysmo.egg-info docs/build
+
+shell:
+	poetry shell
