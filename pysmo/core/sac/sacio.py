@@ -204,13 +204,13 @@ class SacIO():
         """
         self._data = []
         self.force = False
+
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-
-    # Because SAC header values are stored in the dictionary of the descriptor, and _not_ in
-    # the SacIO instance dictionary we need to copy and restore them manually in order for
-    # pickling (and thus deepcopy) to work.
+    # Because SAC header values are stored in the dictionary of the descriptor,
+    # and _not_ in the SacIO instance dictionary we need to copy and restore
+    # them manually in order for pickling (and thus deepcopy) to work.
     def __getstate__(self):
         return_dict = self.__dict__.copy()
         for header_field in _HEADER_FIELDS:
@@ -269,7 +269,6 @@ class SacIO():
                         value = value.decode().rstrip()
                     setattr(self, header_field, value)
 
-
             # Read first data block
             start1 = 632
             length = self.npts * 4
@@ -288,6 +287,14 @@ class SacIO():
                 self._data = data
             except:
                 self._data = list(data1)
+                if self.depmen is None:
+                    self.depmen = sum(data1)/self.npts
+
+            if self.depmin is None:
+                self.depmin = min(data1)
+
+            if self.depmax is None:
+                self.depmax = max(data1)
 
     @classmethod
     def from_file(cls, filename):
@@ -322,7 +329,6 @@ class SacIO():
                     value = value.encode()
                 value = struct.pack(header_properties.format, value)
                 file_handle.write(value)
-
 
             # write data
             start1 = 632
@@ -400,7 +406,6 @@ class SacIO():
         """
         _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)
         return _kzdate.isoformat()
-
 
     @property
     def kztime(self):

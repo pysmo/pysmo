@@ -1,16 +1,21 @@
 language: python
 
+cache: pip
+
 matrix:
   include:
     - python: 3.6
     - python: 3.7
-      dist: xenial
-      sudo: true
+    - python: 3.8
+    - python: 3.9
 
-install: "make"
+install:
+  - make
+  - pip install poetry
+  - poetry install
 
 script:
-  - make test
+  - make tests
 
 notifications:
   webhooks:

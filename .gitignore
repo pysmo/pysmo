@@ -11,3 +11,4 @@ result_images/
 *.swp
 .python-version
 .vscode
+.coverage

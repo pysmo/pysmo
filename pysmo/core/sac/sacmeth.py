@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # psymo is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
@@ -20,6 +20,7 @@ Copyright (c) 2012 Simon Lloyd
 """
 from pysmo import SacIO
 import pysmo.sacfunc as sf
+
 
 class SacIOExt(SacIO):
     """
@@ -40,7 +41,7 @@ class SacIOExt(SacIO):
 
     def calc_az(self, ellps='WGS84'):
         try:
-            self.az  = sf.calc_az(self, ellps)
+            self.az = sf.calc_az(self, ellps)
         except:
             pass
 
