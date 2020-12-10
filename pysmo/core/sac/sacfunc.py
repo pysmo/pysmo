@@ -23,6 +23,7 @@ __copyright__ = """
 Copyright (c) 2012 Simon Lloyd
 """
 
+
 def sac2xy(name, retarray=False):
     """
     Return time and amplitude from a SacIO object.
@@ -151,7 +152,7 @@ def calc_az(name, ellps='WGS84'):
         >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> azimuth = sacfunc.calc_az(sacobj) # Use default WGS84.
-        >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
+        >>> azimuth = sacfunc.calc_az(sacobj, ellps='clrk66') # Use Clarke 1966
     """
     return __azdist(name, ellps)[0]
 
@@ -184,8 +185,9 @@ def calc_baz(name, ellps='WGS84'):
 
 def calc_dist(name, ellps='WGS84'):
     """
-    Calculate the great circle distance (in km) from a SacIO object. The default
-    ellipse used is 'WGS84', but others may be specified. For more information see:
+    Calculate the great circle distance (in km) from a SacIO object. The
+    default ellipse used is 'WGS84', but others may be specified. For
+    more information see:
 
     http://trac.osgeo.org/proj/
     http://code.google.com/p/pyproj/
@@ -277,18 +279,13 @@ def __gauss(sacobj, Tn, alpha):
     data = np.array(sacobj.data)
     delta = sacobj.delta
     Wn = 1 / float(Tn)
-    Nyq = 1 / (2 * delta)
-    old_size = data.size
-    pad_size = 2**(int(np.log2(old_size))+1)
-    data.resize(pad_size)
+    Nyq = 0.5 / delta
+    npts = data.size
     spec = np.fft.fft(data)
-    spec.resize(pad_size)
-    W = np.array(np.linspace(0, Nyq, pad_size))
+    W = np.array(np.linspace(0, Nyq, npts))
     Hn = spec * np.exp(-1 * alpha * ((W-Wn)/Wn)**2)
     Qn = complex(0, 1) * Hn.real - Hn.imag
     hn = np.fft.ifft(Hn).real
     qn = np.fft.ifft(Qn).real
-    an = np.sqrt(hn**2 + qn**2)
-    an.resize(old_size)
-    hn = hn[0:old_size]
+    an = np.sqrt(hn**2 + qn**2)  # envelope
     return(an, hn)
