@@ -1,5 +1,7 @@
 language: python
 
+cache: pip
+
 matrix:
   include:
     - python: 3.6
@@ -10,10 +12,9 @@ matrix:
 install:
   - make
   - pip install poetry
+  - poetry install
 
 script:
-  - python --version
-  - poetry install
   - make tests
 
 notifications:
