@@ -15,7 +15,7 @@ else
 	@echo "Found ${POETRY_VERSION}";
 endif
 
-install: check-poetry ## Install this project and it's dependancies in a virtual environment.
+install: check-poetry ## Install this project and its dependencies in a virtual environment.
 	poetry install
 
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
