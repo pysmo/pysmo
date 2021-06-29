@@ -26,11 +26,12 @@ def tmpdir():
 @pytest.fixture()
 def tmpfiles(tmpdir):
     """
-    Define 3 tempfiles for testing.
+    Define temporary files for testing.
     - tmpfile1: copy of reference file, which is not modified during test
     - tmpfile2: copy of reference file, which is modified during test
     - tmpfile3: used to write a new sac file
     - tmpfile4: used to test pickling
+    - tmpfile_special_IB: copy of sacfile with IZTYPE=IB
     """
     orgfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
     tmpfile1 = os.path.join(tmpdir, 'tmpfile1.sac')
@@ -39,23 +40,27 @@ def tmpfiles(tmpdir):
     tmpfile4 = os.path.join(tmpdir, 'tmpfile4.pickle')
     shutil.copyfile(orgfile, tmpfile1)
     shutil.copyfile(orgfile, tmpfile2)
-    return tmpfile1, tmpfile2, tmpfile3, tmpfile4
+    orgfile_special_IB = os.path.join(os.path.dirname(__file__),
+                                      'testfile_iztype_is_IB.sac')
+    tmpfile_special_IB = os.path.join(tmpdir, 'tmpfile4.pickle')
+    shutil.copyfile(orgfile_special_IB, tmpfile_special_IB)
+    return tmpfile1, tmpfile2, tmpfile3, tmpfile4, tmpfile_special_IB
 
 
 @pytest.fixture()
 def instances(tmpfiles):
     """Copy reference sac file to tmpdir"""
-    tmpfile1, tmpfile2, _, _ = tmpfiles
-    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2)
+    tmpfile1, tmpfile2, _, _, tmpfile_special_IB = tmpfiles
+    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2),\
+        SacIO.from_file(tmpfile_special_IB)
 
 
 def test_is_sacio_type(instances):
     """
     Test if a SacIO instance is created.
     """
-    sac1, sac2 = instances
-    assert isinstance(sac1, SacIO)
-    assert isinstance(sac2, SacIO)
+    for sac_instance in instances:
+        assert isinstance(sac_instance, SacIO)
 
 
 @pytest.mark.depends(on=['test_is_sacio_type', 'test_read_data'])
@@ -63,7 +68,7 @@ def test_read_headers(instances):
     """
     Read all SAC headers from a test file
     """
-    sac, _ = instances
+    sac, *_ = instances
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
@@ -170,7 +175,7 @@ def test_read_data(instances):
     """
     Test reading data.
     """
-    sac, _ = instances
+    sac, *_ = instances
     assert sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0,
                              2378.0, 2358.0, 2398.0, 2331.0]
 
@@ -181,7 +186,7 @@ def test_change_headers(instances):
     Test changing header values
     """
 
-    sac1, sac2 = instances
+    sac1, sac2, *_ = instances
 
     iftype_valid = 'time'
     iftype_invalid = 'asdfasdf'
@@ -221,7 +226,7 @@ def test_change_data(instances):
     """
     Test changing data
     """
-    _, sac2 = instances
+    _, sac2, *_ = instances
     newdata = [132, 232, 3465, 111]
     sac2.data = newdata
     assert sac2.data == newdata
@@ -232,8 +237,8 @@ def test_change_data(instances):
 
 @pytest.mark.depends(on=['test_change_headers', 'test_change_data'])
 def test_write_to_file(instances, tmpfiles):
-    sac1, _ = instances
-    _, _, tmpfile3, _ = tmpfiles
+    sac1, *_ = instances
+    _, _, tmpfile3, *_ = tmpfiles
     sac1.write(tmpfile3)
     sac3 = SacIO.from_file(tmpfile3)
     assert sac1.data == sac3.data
@@ -242,8 +247,8 @@ def test_write_to_file(instances, tmpfiles):
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_pickling(instances, tmpfiles):
-    sac1, _ = instances
-    _, _, _, tmpfile4 = tmpfiles
+    sac1, *_ = instances
+    _, _, _, tmpfile4, *_ = tmpfiles
     with open(tmpfile4, "wb") as output_file:
         pickle.dump(sac1, output_file)
     with open(tmpfile4, "rb") as input_file:
@@ -254,7 +259,7 @@ def test_pickling(instances, tmpfiles):
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_deepcopy(instances):
-    sac1, _ = instances
+    sac1, *_ = instances
     sac5 = copy.deepcopy(sac1)
     assert sac1.data == sac5.data
     assert sac1.e == sac5.e
