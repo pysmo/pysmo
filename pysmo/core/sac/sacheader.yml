@@ -811,15 +811,15 @@ header_fields:
     header_type: k
 
 enumerated_header_values:
-  time: 01
-  rlim: 02
-  amph: 03
-  xy: 04
-  unkn: 05
-  disp: 06
-  vel: 07
-  acc: 08
-  b: 09
+  time: 1
+  rlim: 2
+  amph: 3
+  xy: 4
+  unkn: 5
+  disp: 6
+  vel: 7
+  acc: 8
+  b: 9
   day: 10
   o: 11
   a: 12
