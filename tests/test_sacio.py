@@ -68,7 +68,7 @@ def test_read_headers(instances):
     """
     Read all SAC headers from a test file
     """
-    sac, *_ = instances
+    sac, *_, sac_iztype_IS_IB = instances
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
@@ -98,6 +98,7 @@ def test_read_headers(instances):
     # kztime is a derived header
     assert sac.kztime == '07:24:05.500'
     assert sac.iztype == 'o'
+    assert sac_iztype_IS_IB.iztype == 'b'
     assert sac.kinst is None
     assert sac.resp0 is None
     assert sac.resp1 is None
