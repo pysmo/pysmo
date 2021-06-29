@@ -189,7 +189,7 @@ class SacHeader():
             return None
 
         if self.enumerated:
-            return _ENUMERATED_INT2STR[_value]
+            return _ENUMERATED_INT2STR[int(_value)]
 
         try:
             return _value.rstrip()
