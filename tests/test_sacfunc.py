@@ -85,7 +85,7 @@ def test_detrend(sacobj):
     """Detrend SacFile object and verify mean is 0."""
     detrended_data = sacfunc.detrend(sacobj)
     assert np.mean(sacobj.data) != 0
-    assert pytest.approx(np.mean(detrended_data)) == 0
+    assert pytest.approx(np.mean(detrended_data),abs=1e-6) == 0
 
 
 def test_calcaz(sacobj):
