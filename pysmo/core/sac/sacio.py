@@ -31,11 +31,12 @@ Copyright (c) 2012 Simon Lloyd
 
 class SacIO():
     """
-    The :class:`SacIO` class reads and writes data and header values to and from a SAC file.
-    Additonal class attributes may be set, but are not written to a SAC file (because
-    there is no space reserved for them there). Class attributes with corresponding header
-    fields in a SAC file (for example the begin time `b`) are checked for a valid format
-    before being saved in the :class:`SacIO` instance.
+    The :class:`SacIO` class reads and writes data and header values to and
+    from a SAC file. Additonal class attributes may be set, but are not written
+    to a SAC file (because there is no space reserved for them there). Class
+    attributes with corresponding header fields in a SAC file (for example the
+    begin time `b`) are checked for a valid format before being saved in
+    the :class:`SacIO` instance.
 
 
     Read and print data::
@@ -59,8 +60,8 @@ class SacIO():
         >>> my_sac.delta
         0.05
 
-    There are a lot of header fields in a SAC file, which are all called the same way
-    when using :class:`SacIO`. They are all listed below.
+    There are a lot of header fields in a SAC file, which are all called the
+    same way when using :class:`SacIO`. They are all listed below.
     """
 
     # Descriptors for all header fields
@@ -264,7 +265,8 @@ class SacIO():
                     header_properties = getattr(type(self), header_field)
                     file_handle.seek(header_properties.start)
                     content = file_handle.read(header_properties.length)
-                    value = struct.unpack(file_byteorder+header_properties.format, content)[0]
+                    value = struct.unpack(file_byteorder +
+                                          header_properties.format, content)[0]
                     if isinstance(value, bytes):
                         value = value.decode().rstrip()
                     setattr(self, header_field, value)
@@ -404,7 +406,8 @@ class SacIO():
         """
         ISO 8601 format of GMT reference date.
         """
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)
+        _kzdate = datetime.date(self.nzyear, 1, 1) +\
+            datetime.timedelta(self.nzjday)
         return _kzdate.isoformat()
 
     @property
@@ -412,5 +415,6 @@ class SacIO():
         """
         Alphanumeric form of GMT reference time.
         """
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec,
+                                self.nzmsec * 1000)
         return _kztime.isoformat(timespec='milliseconds')
