@@ -339,7 +339,8 @@ class SacIO():
         length = self.npts * 4
         end1 = start1+length
         data_format = file_byteorder + str(self.npts) + 'f'
-        if end1 >= len(input_data):
+        if end1 > len(input_data):
+            self.npts = 0
             return
 
         content = input_data[start1:end1]

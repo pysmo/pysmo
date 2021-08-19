@@ -374,3 +374,4 @@ def test_file_and_data(tmpdir):
     assert from_file.mag == from_data.mag
     assert from_file.imagtyp == from_data.imagtyp
     assert from_file.imagsrc == from_data.imagsrc
+    assert from_file.data == from_data.data
