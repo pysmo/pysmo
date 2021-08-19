@@ -298,6 +298,74 @@ class SacIO():
             if self.depmax is None:
                 self.depmax = max(data1)
 
+    def read_data(self, input_data):
+        """
+        Read data and header values from a SAC byte buffer into an
+        existing SacIO instance.
+        """
+
+        # Guess the file endianness first using the unused12 header field.
+        # It's value should be -12345.0
+
+        # This is where unused12 is located
+
+        # try reading with little endianness
+        if struct.unpack('<f', input_data[276:280])[-1] == -12345.0:
+            file_byteorder = '<'
+        # otherwise assume big endianness.
+        else:
+            file_byteorder = '>'
+
+        # Loop over all header fields and store them in the SAC object.
+        # Since we are reading them from file instead of manually
+        # setting them we also need to set otherwise protected headers
+        # such as the end time 'e'
+        with self._force_set_header():
+            for header_field in _HEADER_FIELDS:
+                header_properties = getattr(type(self), header_field)
+                start = header_properties.start
+                end = start + header_properties.length
+                if end >= len(input_data):
+                    continue
+                content = input_data[start:end]
+                value = struct.unpack(file_byteorder +
+                                      header_properties.format, content)[0]
+                if isinstance(value, bytes):
+                    value = value.decode().rstrip()
+                setattr(self, header_field, value)
+
+        # Read first data block
+        start1 = 632
+        length = self.npts * 4
+        end1 = start1+length
+        data_format = file_byteorder + str(self.npts) + 'f'
+        if end1 >= len(input_data):
+            return
+
+        content = input_data[start1:end1]
+        data1 = struct.unpack(data_format, content)
+
+        # Try reading second data block and combine both blocks
+        # to a list of tuples. If it fails return only the first
+        # data block as a list
+        try:
+            content = input_data[start1+length:end1+length]
+            data2 = struct.unpack(data_format, content)
+            data = []
+            for x1, x2 in zip(data1, data2):
+                data.append((x1, x2))
+            self._data = data
+        except:
+            self._data = list(data1)
+            if self.depmen is None:
+                self.depmen = sum(data1)/self.npts
+
+        if self.depmin is None:
+            self.depmin = min(data1)
+
+        if self.depmax is None:
+            self.depmax = max(data1)
+
     @classmethod
     def from_file(cls, filename):
         """
@@ -305,6 +373,15 @@ class SacIO():
         """
         newinstance = SacIO()
         newinstance.read(filename)
+        return newinstance
+
+    @classmethod
+    def from_data(cls, data):
+        """
+        Create a new SacIO instance from a SAC data buffer.
+        """
+        newinstance = SacIO()
+        newinstance.read_data(data)
         return newinstance
 
     def write(self, filename):
