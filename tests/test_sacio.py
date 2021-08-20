@@ -268,7 +268,7 @@ def test_deepcopy(instances):
     assert sac1.e != sac5.e
 
 
-def test_file_and_data(tmpdir):
+def test_file_and_buffer(tmpdir):
     orgfile_special_IB = os.path.join(os.path.dirname(__file__),
                                       'testfile_iztype_is_IB.sac')
     tmpfile5 = os.path.join(tmpdir, 'tmpfile5.sac')
@@ -276,102 +276,117 @@ def test_file_and_data(tmpdir):
 
     from_file = SacIO.from_file(tmpfile5)
     with open(tmpfile5, "rb") as f:
-        from_data = SacIO.from_data(f.read())
+        from_buffer = SacIO.from_buffer(f.read())
 
-    assert from_file.npts == from_data.npts
-    assert from_file.b == from_data.b
-    assert from_file.e == from_data.e
-    assert from_file.iftype == from_data.iftype
-    assert from_file.leven == from_data.leven
-    assert from_file.delta == from_data.delta
-    assert from_file.odelta == from_data.odelta
-    assert from_file.idep == from_data.idep
-    assert from_file.depmin == from_data.depmin
-    assert from_file.depmax == from_data.depmax
-    assert from_file.depmen == from_data.depmen
-    assert from_file.o == from_data.o
-    assert from_file.a == from_data.a
-    assert from_file.t0 == from_data.t0
-    assert from_file.t1 == from_data.t1 
-    assert from_file.t2 == from_data.t2 
-    assert from_file.t3 == from_data.t3 
-    assert from_file.t4 == from_data.t4 
-    assert from_file.t5 == from_data.t5 
-    assert from_file.t6 == from_data.t6 
-    assert from_file.t7 == from_data.t7 
-    assert from_file.t8 == from_data.t8 
-    assert from_file.t9 == from_data.t9 
-    assert from_file.f == from_data.f
+    assert from_file.npts == from_buffer.npts
+    assert from_file.b == from_buffer.b
+    assert from_file.e == from_buffer.e
+    assert from_file.iftype == from_buffer.iftype
+    assert from_file.leven == from_buffer.leven
+    assert from_file.delta == from_buffer.delta
+    assert from_file.odelta == from_buffer.odelta
+    assert from_file.idep == from_buffer.idep
+    assert from_file.depmin == from_buffer.depmin
+    assert from_file.depmax == from_buffer.depmax
+    assert from_file.depmen == from_buffer.depmen
+    assert from_file.o == from_buffer.o
+    assert from_file.a == from_buffer.a
+    assert from_file.t0 == from_buffer.t0
+    assert from_file.t1 == from_buffer.t1 
+    assert from_file.t2 == from_buffer.t2 
+    assert from_file.t3 == from_buffer.t3 
+    assert from_file.t4 == from_buffer.t4 
+    assert from_file.t5 == from_buffer.t5 
+    assert from_file.t6 == from_buffer.t6 
+    assert from_file.t7 == from_buffer.t7 
+    assert from_file.t8 == from_buffer.t8 
+    assert from_file.t9 == from_buffer.t9 
+    assert from_file.f == from_buffer.f
     # kzdate is a derived header
-    assert from_file.kzdate == from_data.kzdate
+    assert from_file.kzdate == from_buffer.kzdate
     # kztime is a derived header
-    assert from_file.kztime == from_data.kztime
-    assert from_file.iztype == from_data.iztype
-    assert from_file.kinst == from_data.kinst
-    assert from_file.resp0 == from_data.resp0
-    assert from_file.resp1 == from_data.resp1
-    assert from_file.resp2 == from_data.resp2 
-    assert from_file.resp3 == from_data.resp3
-    assert from_file.resp4 == from_data.resp4
-    assert from_file.resp5 == from_data.resp5
-    assert from_file.resp6 == from_data.resp6
-    assert from_file.resp7 == from_data.resp7
-    assert from_file.resp8 == from_data.resp8
-    assert from_file.resp9 == from_data.resp9
-    assert from_file.kdatrd == from_data.kdatrd
-    assert from_file.kstnm == from_data.kstnm
-    assert from_file.cmpaz == from_data.cmpaz
-    assert from_file.cmpinc == from_data.cmpinc
-    assert from_file.istreg == from_data.istreg
-    assert from_file.stla == from_data.stla
-    assert from_file.stlo == from_data.stlo
-    assert from_file.stel == from_data.stel
-    assert from_file.stdp == from_data.stdp
-    assert from_file.kevnm == from_data.kevnm
-    assert from_file.ievreg == from_data.ievreg
-    assert from_file.evla == from_data.evla
-    assert from_file.evlo == from_data.evlo
-    assert from_file.evel == from_data.evel
-    assert from_file.evdp == from_data.evdp
-    assert from_file.ievtyp == from_data.ievtyp
-    assert from_file.khole == from_data.khole
-    assert from_file.dist == from_data.dist
-    assert from_file.az == from_data.az
-    assert from_file.baz == from_data.baz
-    assert from_file.gcarc == from_data.gcarc
-    assert from_file.lovrok == from_data.lovrok
-    assert from_file.iqual == from_data.iqual
-    assert from_file.isynth == from_data.isynth
-    assert from_file.user0 == from_data.user0
-    assert from_file.user1 == from_data.user1
-    assert from_file.user2 == from_data.user2
-    assert from_file.user3 == from_data.user3
-    assert from_file.user4 == from_data.user4
-    assert from_file.user5 == from_data.user5
-    assert from_file.user6 == from_data.user6
-    assert from_file.user7 == from_data.user7
-    assert from_file.user8 == from_data.user8
-    assert from_file.user9 == from_data.user9
-    assert from_file.kuser0 == from_data.kuser0
-    assert from_file.kuser1 == from_data.kuser1
-    assert from_file.kuser2 == from_data.kuser2
-    assert from_file.nxsize == from_data.nxsize
-    assert from_file.xminimum == from_data.xminimum
-    assert from_file.xmaximum == from_data.xmaximum
-    assert from_file.nysize == from_data.nysize
-    assert from_file.yminimum == from_data.yminimum
-    assert from_file.ymaximum == from_data.ymaximum
-    assert from_file.nvhdr == from_data.nvhdr
-    assert from_file.scale == from_data.scale
-    assert from_file.norid == from_data.norid
-    assert from_file.nevid == from_data.nevid
-    assert from_file.nwfid == from_data.nwfid
-    assert from_file.iinst == from_data.iinst
-    assert from_file.lpspol == from_data.lpspol
-    assert from_file.lcalda == from_data.lcalda
-    assert from_file.kcmpnm == from_data.kcmpnm
-    assert from_file.knetwk == from_data.knetwk
-    assert from_file.mag == from_data.mag
-    assert from_file.imagtyp == from_data.imagtyp
-    assert from_file.imagsrc == from_data.imagsrc
-    assert from_file.data == from_data.data
+    assert from_file.kztime == from_buffer.kztime
+    assert from_file.iztype == from_buffer.iztype
+    assert from_file.kinst == from_buffer.kinst
+    assert from_file.resp0 == from_buffer.resp0
+    assert from_file.resp1 == from_buffer.resp1
+    assert from_file.resp2 == from_buffer.resp2 
+    assert from_file.resp3 == from_buffer.resp3
+    assert from_file.resp4 == from_buffer.resp4
+    assert from_file.resp5 == from_buffer.resp5
+    assert from_file.resp6 == from_buffer.resp6
+    assert from_file.resp7 == from_buffer.resp7
+    assert from_file.resp8 == from_buffer.resp8
+    assert from_file.resp9 == from_buffer.resp9
+    assert from_file.kdatrd == from_buffer.kdatrd
+    assert from_file.kstnm == from_buffer.kstnm
+    assert from_file.cmpaz == from_buffer.cmpaz
+    assert from_file.cmpinc == from_buffer.cmpinc
+    assert from_file.istreg == from_buffer.istreg
+    assert from_file.stla == from_buffer.stla
+    assert from_file.stlo == from_buffer.stlo
+    assert from_file.stel == from_buffer.stel
+    assert from_file.stdp == from_buffer.stdp
+    assert from_file.kevnm == from_buffer.kevnm
+    assert from_file.ievreg == from_buffer.ievreg
+    assert from_file.evla == from_buffer.evla
+    assert from_file.evlo == from_buffer.evlo
+    assert from_file.evel == from_buffer.evel
+    assert from_file.evdp == from_buffer.evdp
+    assert from_file.ievtyp == from_buffer.ievtyp
+    assert from_file.khole == from_buffer.khole
+    assert from_file.dist == from_buffer.dist
+    assert from_file.az == from_buffer.az
+    assert from_file.baz == from_buffer.baz
+    assert from_file.gcarc == from_buffer.gcarc
+    assert from_file.lovrok == from_buffer.lovrok
+    assert from_file.iqual == from_buffer.iqual
+    assert from_file.isynth == from_buffer.isynth
+    assert from_file.user0 == from_buffer.user0
+    assert from_file.user1 == from_buffer.user1
+    assert from_file.user2 == from_buffer.user2
+    assert from_file.user3 == from_buffer.user3
+    assert from_file.user4 == from_buffer.user4
+    assert from_file.user5 == from_buffer.user5
+    assert from_file.user6 == from_buffer.user6
+    assert from_file.user7 == from_buffer.user7
+    assert from_file.user8 == from_buffer.user8
+    assert from_file.user9 == from_buffer.user9
+    assert from_file.kuser0 == from_buffer.kuser0
+    assert from_file.kuser1 == from_buffer.kuser1
+    assert from_file.kuser2 == from_buffer.kuser2
+    assert from_file.nxsize == from_buffer.nxsize
+    assert from_file.xminimum == from_buffer.xminimum
+    assert from_file.xmaximum == from_buffer.xmaximum
+    assert from_file.nysize == from_buffer.nysize
+    assert from_file.yminimum == from_buffer.yminimum
+    assert from_file.ymaximum == from_buffer.ymaximum
+    assert from_file.nvhdr == from_buffer.nvhdr
+    assert from_file.scale == from_buffer.scale
+    assert from_file.norid == from_buffer.norid
+    assert from_file.nevid == from_buffer.nevid
+    assert from_file.nwfid == from_buffer.nwfid
+    assert from_file.iinst == from_buffer.iinst
+    assert from_file.lpspol == from_buffer.lpspol
+    assert from_file.lcalda == from_buffer.lcalda
+    assert from_file.kcmpnm == from_buffer.kcmpnm
+    assert from_file.knetwk == from_buffer.knetwk
+    assert from_file.mag == from_buffer.mag
+    assert from_file.imagtyp == from_buffer.imagtyp
+    assert from_file.imagsrc == from_buffer.imagsrc
+    assert from_file.data == from_buffer.data
+
+
+def test_iris_service():
+    mysac = SacIO.from_iris(
+        net="C1", 
+        sta="VA01", 
+        cha="BHZ", 
+        loc="--", 
+        start="2021-03-22T13:00:00", 
+        duration=1 * 60 * 60, 
+        scale="AUTO", 
+        demean="true", 
+        force_single_result=True)
+    assert mysac.npts == 144001
+    assert len(mysac.data) == 144001
