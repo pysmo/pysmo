@@ -381,7 +381,6 @@ class SacIO():
         base = "https://service.iris.edu/irisws/timeseries/1/query"
         params = urllib.parse.urlencode(kwargs, doseq=False)
         url = f"{base}?{params}"
-        print(url)
         response = requests.get(url)
         zip = zipfile.ZipFile(io.BytesIO(response.content))
         result = {}
