@@ -18,25 +18,38 @@ You can now navigate to the ``pysmo`` directory and explore the files::
 
 .. note:: If you are not a member of the `pysmo group <https://github.com/pysmo>`_ on Github you will have to first fork the pysmo repository (from the GUI on Github).
 
-Pipenv
+Poetry
 ------
-In order to develop pysmo in a consistent and isolated environment we use `pipenv <https://pipenv.readthedocs.io/en/latest/>`_. Pipenv creates a Python virtual environment and manages the Python packages that are installed in that environment. This allows developing and testing while also having the stable version of pysmo installed at the same time. If pipenv isn't already available on your system you can install it with pip::
+In order to develop pysmo in a consistent and isolated environment we use `Poetry <https://python-poetry.org/>`_. Poetry creates a Python virtual environment and manages the Python packages that are installed in that environment. This allows developing and testing while also having the stable version of pysmo installed at the same time. Please see the `Poetry documentation <https://python-poetry.org/docs>`_ for installation and basic usage instructions. Once Poetry is installed its commands can be viewed by running::
 
-   $ pip install pipenv
+  $ poetry --help
 
-Next use pipenv to create a new Python virtual environment and install all packages needed for running and developing pysmo::
+.. caution:: Please note that poetry only creates virtual environments for Python - these are not comparable to a virtual machine and do not offer the same separation!
 
-   $ pipenv install --dev
+.. note:: For convenience we wrap the most used poetry commands in a ``Makefile``.
 
-Once this command has finished (it may take a while to complete), you can spawn a shell that uses this new Python virtual environment by running ``pipenv shell`` or execute commands that run in the environment with ``pipenv run`` For example, to build and install pysmo for development you would run::
+Makefile
+--------
 
-   $ pipenv run python setup.py develop
+Pysmo provides a ``Makefile`` to aid with setting up and using a development environment. To list the available make commands run::
 
-.. caution:: Please note that pipenv only creates a virtual environment for Python - it is not comparable to a virtual machine and does not offer the same separation!
+  $ make help
 
-.. note:: For convenience we put a lot of these commands in a ``Makefile`` for you to use.
+The most commonly used ones will likely be::
 
-At this point you can use the stable version of pysmo in your regular shell, and if you spawn one with ``pipenv shell`` (from within the ``pysmo`` repository you cloned earlier) you are using the development version!
+  $ make install
+
+to create a Python virtual environment for development of pysmo (unless it already exists), then install pysmo and its dependencies, ::
+
+  $ make tests
+
+to run the test scripts from the tests directory, and ::
+
+  $ make shell
+
+which starts a new new shell in the virtual environment. This shell uses the pysmo virtual Python environment instead of the default one. In other words, executing Python will use the development version of pysmo (i.e. the source files in the working directory).
+
+.. note:: Within the virtual environment, any changes made to the the pysmo source files are used without having to re-issue ``make install``.
 
 Git workflows
 -------------
@@ -96,16 +109,12 @@ Unit tests execute a piece of code (a unit) and compare the output of that execu
 
 
 Running the Tests
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 To run all the tests in one go from the root directory of the pysmo repository::
 
-   $ pipenv run py.test -v tests
-
-or::
-
    $ make test
 
-Individual test scripts can also be specified::
+Individual test scripts may also be specified::
 
-   $ pipenv run py.test -v tests/<test_script>.py
+	 $ poetry run py.test -mpl -v tests/<test_script>.py
