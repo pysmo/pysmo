@@ -11,3 +11,8 @@ Documentation
 -------------
 
 The complete pysmo documentation is available at https://pysmo.readthedocs.io/
+
+Contributors
+------------
+
+- Helio Tejedor
