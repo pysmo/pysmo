@@ -18,6 +18,9 @@ endif
 install: check-poetry ## Install this project and its dependencies in a virtual environment.
 	poetry install
 
+update: check-poetry ## Update dependencies to their latest versions.
+	poetry update
+
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
