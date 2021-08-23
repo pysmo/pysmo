@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysmo"
-version = "0.7.7"
+version = "0.8.0"
 description = "Python module to read/write/manipulate SAC (Seismic Analysis Code) files"
 readme = "README.md"
 authors = ["Simon M. Lloyd <simon@slloyd.net>"]
