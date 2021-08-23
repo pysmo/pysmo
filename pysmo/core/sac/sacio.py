@@ -21,6 +21,10 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 
 import struct
 import datetime
+import io
+import requests
+import urllib.parse
+import zipfile
 from contextlib import contextmanager
 from .sacheader import SacHeader, _HEADER_FIELDS
 
@@ -62,6 +66,23 @@ class SacIO():
 
     There are a lot of header fields in a SAC file, which are all called the
     same way when using :class:`SacIO`. They are all listed below.
+
+    Read from IRIS services::
+
+        >>> from pysmo import SacIO
+        >>> my_sac = SacIO.from_iris(
+        >>>             net="C1", 
+        >>>             sta="VA01", 
+        >>>             cha="BHZ", 
+        >>>             loc="--", 
+        >>>             start="2021-03-22T13:00:00", 
+        >>>             duration=1 * 60 * 60, 
+        >>>             scale="AUTO", 
+        >>>             demean="true", 
+        >>>             force_single_result=True)
+        >>> my_sac.npts
+        144001
+
     """
 
     # Descriptors for all header fields
@@ -242,61 +263,78 @@ class SacIO():
         """
 
         with open(filename, 'rb') as file_handle:
+            self.read_buffer(file_handle.read())
 
-            # Guess the file endianness first using the unused12 header field.
-            # It's value should be -12345.0
+    def read_buffer(self, buffer):
+        """
+        Read data and header values from a SAC byte buffer into an
+        existing SacIO instance.
+        """
 
-            # This is where unused12 is located
-            file_handle.seek(276)
+        if len(buffer) < 632:
+            raise EOFError()
 
-            # try reading with little endianness
-            if struct.unpack('<f', (file_handle.read(4)))[-1] == -12345.0:
-                file_byteorder = '<'
-            # otherwise assume big endianness.
-            else:
-                file_byteorder = '>'
+        # Guess the file endianness first using the unused12 header field.
+        # It's value should be -12345.0
 
-            # Loop over all header fields and store them in the SAC object.
-            # Since we are reading them from file instead of manually
-            # setting them we also need to set otherwise protected headers
-            # such as the end time 'e'
-            with self._force_set_header():
-                for header_field in _HEADER_FIELDS:
-                    header_properties = getattr(type(self), header_field)
-                    file_handle.seek(header_properties.start)
-                    content = file_handle.read(header_properties.length)
-                    value = struct.unpack(file_byteorder +
-                                          header_properties.format, content)[0]
-                    if isinstance(value, bytes):
-                        value = value.decode().rstrip()
-                    setattr(self, header_field, value)
+        # This is where unused12 is located
 
-            # Read first data block
-            start1 = 632
-            length = self.npts * 4
-            data_format = file_byteorder + str(self.npts) + 'f'
-            file_handle.seek(start1)
-            data1 = struct.unpack(data_format, file_handle.read(length))
+        # try reading with little endianness
+        if struct.unpack('<f', buffer[276:280])[-1] == -12345.0:
+            file_byteorder = '<'
+        # otherwise assume big endianness.
+        else:
+            file_byteorder = '>'
 
-            # Try reading second data block and combine both blocks
-            # to a list of tuples. If it fails return only the first
-            # data block as a list
-            try:
-                data2 = struct.unpack(data_format, file_handle.read(length))
-                data = []
-                for x1, x2 in zip(data1, data2):
-                    data.append((x1, x2))
-                self._data = data
-            except:
-                self._data = list(data1)
-                if self.depmen is None:
-                    self.depmen = sum(data1)/self.npts
+        # Loop over all header fields and store them in the SAC object.
+        # Since we are reading them from file instead of manually
+        # setting them we also need to set otherwise protected headers
+        # such as the end time 'e'
+        with self._force_set_header():
+            for header_field in _HEADER_FIELDS:
+                header_properties = getattr(type(self), header_field)
+                start = header_properties.start
+                end = start + header_properties.length
+                if end >= len(buffer):
+                    continue
+                content = buffer[start:end]
+                value = struct.unpack(file_byteorder +
+                                      header_properties.format, content)[0]
+                if isinstance(value, bytes):
+                    value = value.decode().rstrip()
+                setattr(self, header_field, value)
 
-            if self.depmin is None:
-                self.depmin = min(data1)
+        # Read first data block
+        start1 = 632
+        length = self.npts * 4
+        end1 = start1+length
+        data_format = file_byteorder + str(self.npts) + 'f'
+        if end1 > len(buffer):
+            raise EOFError()
 
-            if self.depmax is None:
-                self.depmax = max(data1)
+        content = buffer[start1:end1]
+        data1 = struct.unpack(data_format, content)
+
+        # Try reading second data block and combine both blocks
+        # to a list of tuples. If it fails return only the first
+        # data block as a list
+        try:
+            content = buffer[start1+length:end1+length]
+            data2 = struct.unpack(data_format, content)
+            data = []
+            for x1, x2 in zip(data1, data2):
+                data.append((x1, x2))
+            self._data = data
+        except:
+            self._data = list(data1)
+            if self.depmen is None:
+                self.depmen = sum(data1)/self.npts
+
+        if self.depmin is None:
+            self.depmin = min(data1)
+
+        if self.depmax is None:
+            self.depmax = max(data1)
 
     @classmethod
     def from_file(cls, filename):
@@ -306,6 +344,53 @@ class SacIO():
         newinstance = SacIO()
         newinstance.read(filename)
         return newinstance
+
+    @classmethod
+    def from_buffer(cls, buffer):
+        """
+        Create a new SacIO instance from a SAC data buffer.
+        """
+        newinstance = SacIO()
+        newinstance.read_buffer(buffer)
+        return newinstance
+
+    @classmethod
+    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):
+        """
+        Create a list of SacIO instances from a single IRIS
+        request using the output format as "sac.zip".
+
+        :param force_single_result: If true, the function will return
+                                    a single SacIO object or None if
+                                    the requests returns nothing.
+        :type force_single_result: bool
+        """
+        kwargs["net"] = net
+        kwargs["sta"] = sta
+        kwargs["cha"] = cha
+        kwargs["loc"] = loc
+        kwargs["output"] = "sac.zip"
+
+        if type(kwargs["start"]) == datetime.datetime:
+            kwargs["start"] = kwargs["start"].isoformat()
+        
+        end = kwargs.get("end", None)
+        if end is not None and type(end) == datetime.datetime:
+            kwargs["end"] = end.isoformat()
+
+        base = "https://service.iris.edu/irisws/timeseries/1/query"
+        params = urllib.parse.urlencode(kwargs, doseq=False)
+        url = f"{base}?{params}"
+        response = requests.get(url)
+        zip = zipfile.ZipFile(io.BytesIO(response.content))
+        result = {}
+        for name in zip.namelist():
+            buffer = zip.read(name)
+            sac = SacIO.from_buffer(buffer)
+            if force_single_result:
+                return sac
+            result[name] = sac
+        return None if force_single_result else result
 
     def write(self, filename):
         """
