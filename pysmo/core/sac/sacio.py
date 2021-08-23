@@ -71,14 +71,14 @@ class SacIO():
 
         >>> from pysmo import SacIO
         >>> my_sac = SacIO.from_iris(
-        >>>             net="C1", 
-        >>>             sta="VA01", 
-        >>>             cha="BHZ", 
-        >>>             loc="--", 
-        >>>             start="2021-03-22T13:00:00", 
-        >>>             duration=1 * 60 * 60, 
-        >>>             scale="AUTO", 
-        >>>             demean="true", 
+        >>>             net="C1",
+        >>>             sta="VA01",
+        >>>             cha="BHZ",
+        >>>             loc="--",
+        >>>             start="2021-03-22T13:00:00",
+        >>>             duration=1 * 60 * 60,
+        >>>             scale="AUTO",
+        >>>             demean="true",
         >>>             force_single_result=True)
         >>> my_sac.npts
         144001
@@ -275,9 +275,7 @@ class SacIO():
             raise EOFError()
 
         # Guess the file endianness first using the unused12 header field.
-        # It's value should be -12345.0
-
-        # This is where unused12 is located
+        # It is located at position 276 and it's value should be -12345.0.
 
         # try reading with little endianness
         if struct.unpack('<f', buffer[276:280])[-1] == -12345.0:
@@ -355,7 +353,8 @@ class SacIO():
         return newinstance
 
     @classmethod
-    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):
+    def from_iris(cls, net, sta, cha, loc, force_single_result=False,
+                  **kwargs):
         """
         Create a list of SacIO instances from a single IRIS
         request using the output format as "sac.zip".
@@ -373,7 +372,7 @@ class SacIO():
 
         if type(kwargs["start"]) == datetime.datetime:
             kwargs["start"] = kwargs["start"].isoformat()
-        
+
         end = kwargs.get("end", None)
         if end is not None and type(end) == datetime.datetime:
             kwargs["end"] = end.isoformat()
