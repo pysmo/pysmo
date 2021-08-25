@@ -28,7 +28,7 @@ test-figs: check-poetry ## Generate baseline figures for testing. Only run this 
 	poetry run py.test --mpl-generate-path=tests/baseline
 
 tests: check-poetry ## Run tests with pytest.
-	poetry run py.test --cov=pysmo --mpl -v tests
+	poetry run py.test --cov=pysmo --cov-report=xml --mpl -v tests
 
 docs: install check-poetry ## Build html docs.
 	poetry run make -C docs html

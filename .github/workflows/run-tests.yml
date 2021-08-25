@@ -31,5 +31,7 @@ jobs:
           make tests
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.xml
         if: ${{ github.ref == 'refs/heads/github-actions' &&
                 matrix.python-version == 3.9 }}
