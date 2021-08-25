@@ -19,6 +19,9 @@
 Python module for reading/writing SAC files using the :class:`SacIO` class.
 """
 
+__author__ = "Simon Lloyd"
+__copyright__ = "Copyright (c) 2012 Simon Lloyd"
+
 import struct
 import datetime
 import io
@@ -27,10 +30,6 @@ import urllib.parse
 import zipfile
 from contextlib import contextmanager
 from .sacheader import SacHeader, _HEADER_FIELDS
-
-__copyright__ = """
-Copyright (c) 2012 Simon Lloyd
-"""
 
 
 class SacIO():
@@ -64,9 +63,6 @@ class SacIO():
         >>> my_sac.delta
         0.05
 
-    There are a lot of header fields in a SAC file, which are all called the
-    same way when using :class:`SacIO`. They are all listed below.
-
     Read from IRIS services::
 
         >>> from pysmo import SacIO
@@ -83,6 +79,8 @@ class SacIO():
         >>> my_sac.npts
         144001
 
+    There are a lot of header fields in a SAC file, which are all called the
+    same way when using :class:`SacIO`. They are all listed below.
     """
 
     # Descriptors for all header fields
@@ -315,7 +313,9 @@ class SacIO():
 
         # Try reading second data block and combine both blocks
         # to a list of tuples. If it fails return only the first
-        # data block as a list
+        # data block as a list.
+        # NOTE: I've never encountered such a file in
+        # the wild, and this is somewhat untested...
         try:
             content = buffer[start1+length:end1+length]
             data2 = struct.unpack(data_format, content)
@@ -323,7 +323,7 @@ class SacIO():
             for x1, x2 in zip(data1, data2):
                 data.append((x1, x2))
             self._data = data
-        except:
+        except:  # noqa: E722
             self._data = list(data1)
             if self.depmen is None:
                 self.depmen = sum(data1)/self.npts

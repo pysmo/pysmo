@@ -12,3 +12,4 @@ result_images/
 .python-version
 .vscode
 .coverage
+coverage.xml

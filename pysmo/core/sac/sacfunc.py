@@ -19,9 +19,8 @@
 Useful functions to use with SacIO objects.
 """
 
-__copyright__ = """
-Copyright (c) 2012 Simon Lloyd
-"""
+__author__ = "Simon Lloyd"
+__copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 
 def sac2xy(name, retarray=False):
