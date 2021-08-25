@@ -6,6 +6,9 @@ It's core components are an interface to the commonly used
 functions that work with this interface, and some additional useful tools.
 """
 
+
+# Extend search path across multiple psymo packages (aimbat etc.)
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
-from . import core
-from .core import *
+
+# Import everything from core
+from .core import *  # noqa: F401, F403
