@@ -6,5 +6,5 @@ It's core components are an interface to the commonly used
 functions that work with this interface, and some additional useful tools.
 """
 
-from . import sac
-from .sac import *
+# Import everything from the sac directory
+from .sac import *  # noqa: F401, F403

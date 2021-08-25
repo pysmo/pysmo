@@ -292,15 +292,15 @@ def test_file_and_buffer(tmpdir):
     assert from_file.o == from_buffer.o
     assert from_file.a == from_buffer.a
     assert from_file.t0 == from_buffer.t0
-    assert from_file.t1 == from_buffer.t1 
-    assert from_file.t2 == from_buffer.t2 
-    assert from_file.t3 == from_buffer.t3 
-    assert from_file.t4 == from_buffer.t4 
-    assert from_file.t5 == from_buffer.t5 
-    assert from_file.t6 == from_buffer.t6 
-    assert from_file.t7 == from_buffer.t7 
-    assert from_file.t8 == from_buffer.t8 
-    assert from_file.t9 == from_buffer.t9 
+    assert from_file.t1 == from_buffer.t1
+    assert from_file.t2 == from_buffer.t2
+    assert from_file.t3 == from_buffer.t3
+    assert from_file.t4 == from_buffer.t4
+    assert from_file.t5 == from_buffer.t5
+    assert from_file.t6 == from_buffer.t6
+    assert from_file.t7 == from_buffer.t7
+    assert from_file.t8 == from_buffer.t8
+    assert from_file.t9 == from_buffer.t9
     assert from_file.f == from_buffer.f
     # kzdate is a derived header
     assert from_file.kzdate == from_buffer.kzdate
@@ -310,7 +310,7 @@ def test_file_and_buffer(tmpdir):
     assert from_file.kinst == from_buffer.kinst
     assert from_file.resp0 == from_buffer.resp0
     assert from_file.resp1 == from_buffer.resp1
-    assert from_file.resp2 == from_buffer.resp2 
+    assert from_file.resp2 == from_buffer.resp2
     assert from_file.resp3 == from_buffer.resp3
     assert from_file.resp4 == from_buffer.resp4
     assert from_file.resp5 == from_buffer.resp5
@@ -379,14 +379,14 @@ def test_file_and_buffer(tmpdir):
 
 def test_iris_service():
     mysac = SacIO.from_iris(
-        net="C1", 
-        sta="VA01", 
-        cha="BHZ", 
-        loc="--", 
-        start="2021-03-22T13:00:00", 
-        duration=1 * 60 * 60, 
-        scale="AUTO", 
-        demean="true", 
+        net="C1",
+        sta="VA01",
+        cha="BHZ",
+        loc="--",
+        start="2021-03-22T13:00:00",
+        duration=1 * 60 * 60,
+        scale="AUTO",
+        demean="true",
         force_single_result=True)
     assert mysac.npts == 144001
     assert len(mysac.data) == 144001

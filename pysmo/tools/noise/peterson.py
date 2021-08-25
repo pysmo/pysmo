@@ -18,9 +18,8 @@
 """
 """
 
-__copyright__ = """
-Copyright (c) 2013 Simon Lloyd
-"""
+__copyright__ = "Copyright (c) 2012 Simon Lloyd"
+
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -43,15 +42,18 @@ NHNM = dict(dB=np.array([-91.5, -97.4, -110.5, -120.0, -98.0,
                         6.30, 7.90, 15.40, 20.00, 354.80,
                         10**4, 10**5]))
 
+
 def _genNoise(delta, npts, NM, velocity):
     """
     Helper function for calculating random noise from noise model NM.
     """
     delta = float(delta)
-    Fnyq = 0.5/delta 
-    f = interp1d(NM['T'], NM['dB'], kind='linear', bounds_error=False, fill_value=-200)
-    NPTS = int(2**np.ceil(np.ceil(np.log2(npts)+1))) # make it longer than necessary so we can cut out middle bit
-    freqs = np.linspace(1./NPTS/delta,Fnyq,NPTS-1)
+    Fnyq = 0.5/delta
+    f = interp1d(NM['T'], NM['dB'], kind='linear', bounds_error=False,
+                 fill_value=-200)
+    # make it longer than necessary so we can cut out middle bit
+    NPTS = int(2**np.ceil(np.ceil(np.log2(npts)+1)))
+    freqs = np.linspace(1./NPTS/delta, Fnyq, NPTS-1)
     Pxx = f(1/freqs)
     spectrum = np.zeros(NPTS)
     spectrum[1:NPTS] = np.sqrt(10**(Pxx/10) * NPTS / delta * 2)
@@ -72,6 +74,7 @@ def _genNoise(delta, npts, NM, velocity):
     acceleration = acceleration[start:end]
     acceleration = acceleration - np.mean(acceleration)
     return acceleration
+
 
 def genNoiseNLNM(delta, npts, velocity=False):
     """
@@ -94,6 +97,7 @@ def genNoiseNLNM(delta, npts, velocity=False):
         >>> low_noise = noise.genNoiseNLNM(delta, npts)
     """
     return _genNoise(delta, npts, NLNM, velocity)
+
 
 def genNoiseNHNM(delta, npts, velocity=False):
     """

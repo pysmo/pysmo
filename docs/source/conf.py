@@ -14,25 +14,24 @@
 #
 import os
 import sys
+import pkg_resources
 from importlib import reload
 sys.path.insert(0, os.path.abspath('../..'))
 
 
 # -- Project information -----------------------------------------------------
 
-import pkg_resources
-pkg_resources = reload(pkg_resources)   # This seems to be required to pick up the path defined above...
+# This seems to be required to pick up the path defined above...
+pkg_resources = reload(pkg_resources)
 
 project = u'Pysmo'
-copyright = u'2019, Pysmo Project'
+copyright = u'2012, Pysmo Project'
 author = u'Pysmo Project'
 
 # The full version, including alpha/beta/rc tags
-#release = u''
 release = pkg_resources.get_distribution('pysmo').version
 
 # The short X.Y version
-#version = u''
 version = '.'.join(release.split('.')[:2])
 
 # -- General configuration ---------------------------------------------------
@@ -86,7 +85,6 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme

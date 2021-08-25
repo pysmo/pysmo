@@ -2,6 +2,8 @@
 Run tests for all functions defined in pysmo.sac.sacfunc
 """
 
+import matplotlib.pyplot as plt
+from pysmo import SacIO, sacfunc
 import os
 import tempfile
 import shutil
@@ -9,8 +11,6 @@ import pytest
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from pysmo import SacIO, sacfunc
 
 
 @pytest.fixture()
@@ -85,7 +85,7 @@ def test_detrend(sacobj):
     """Detrend SacFile object and verify mean is 0."""
     detrended_data = sacfunc.detrend(sacobj)
     assert np.mean(sacobj.data) != 0
-    assert pytest.approx(np.mean(detrended_data),abs=1e-6) == 0
+    assert pytest.approx(np.mean(detrended_data), abs=1e-6) == 0
 
 
 def test_calcaz(sacobj):
