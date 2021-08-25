@@ -31,5 +31,5 @@ jobs:
           make tests
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
-        if: ${{ github.ref == 'refs/feads/github-actions' &&
+        if: ${{ github.ref == 'refs/heads/github-actions' &&
                 matrix.python-version == 3.9 }}
