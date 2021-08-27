@@ -11,6 +11,36 @@ Pysmo
 
 Python package to read/write/manipulate SAC (Seismic Analysis Code) files.
 
+
+Quickstart
+----------
+To install the stable version of pysmo run the following command in a terminal:
+
+```shell
+$ pip install pysmo
+```
+
+Prerelase versions of pysmo can be installed by running:
+
+```shell
+$ pip install --extra-index-url https://test.pypi.org/simple/ pysmo --pre
+```
+
+Pysmo can then be used in a python script or the python shell directly:
+
+
+```python
+>>> from pysmo import SacIO
+>>> seismogram = SacIO.from_file('file.sac')
+>>> print(seismogram.delta)
+0.02500000037252903
+>>> print(seismogram.data)
+[-2.987490077543953e-08, -2.983458813332618e-08, ...
+>>> help(seismogram)
+Help on SacIO in module pysmo.core.sac.sacio object:
+
+...
+```
 Documentation
 -------------
 
