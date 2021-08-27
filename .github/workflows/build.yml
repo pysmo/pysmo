@@ -6,8 +6,8 @@ on:
       - 'unit tests'
     branches:
       - master
-    conclusion:
-      - 'success'
+    types:
+      - completed
 
 jobs:
   build:
@@ -38,7 +38,8 @@ jobs:
         run: |
           make build
       - name: Upload build artifacts
-        if: ${{ matrix.python-version == 3.9 }}
+        if: ${{ matrix.python-version == 3.9 &&
+                github.event.workflow_run.conclusion == 'success'}}
         uses: actions/upload-artifact@v2
         with:
           name: packages
