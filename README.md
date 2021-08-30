@@ -20,10 +20,16 @@ To install the stable version of pysmo run the following command in a terminal:
 $ pip install pysmo
 ```
 
-Prerelase versions of pysmo can be installed by running:
+Pre-release versions of pysmo can be installed by running:
 
 ```shell
-$ pip install --extra-index-url https://test.pypi.org/simple/ pysmo --pre
+$ pip install pysmo --pre
+```
+
+Finally, to install the current ``master`` branch directly from Github run:
+
+```shell
+$ pip install git+https://github.com/pysmo/pysmo
 ```
 
 Pysmo can then be used in a python script or the python shell directly:
