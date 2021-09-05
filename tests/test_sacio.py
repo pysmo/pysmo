@@ -51,8 +51,7 @@ def tmpfiles(tmpdir):
 def instances(tmpfiles):
     """Copy reference sac file to tmpdir"""
     tmpfile1, tmpfile2, _, _, tmpfile_special_IB = tmpfiles
-    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2),\
-        SacIO.from_file(tmpfile_special_IB)
+    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2), SacIO.from_file(tmpfile_special_IB), SacIO()
 
 
 def test_is_sacio_type(instances):
@@ -68,7 +67,7 @@ def test_read_headers(instances):
     """
     Read all SAC headers from a test file
     """
-    sac, *_, sac_iztype_IS_IB = instances
+    sac, *_, sac_iztype_IS_IB, _ = instances
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
@@ -177,8 +176,8 @@ def test_read_data(instances):
     Test reading data.
     """
     sac, *_ = instances
-    assert sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0,
-                             2378.0, 2358.0, 2398.0, 2331.0]
+    assert sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0,
+                             2407.0, 2378.0, 2358.0, 2398.0, 2331.0]
 
 
 @pytest.mark.depends(on=['test_read_headers'])
@@ -197,7 +196,7 @@ def test_change_headers(instances):
     assert sac2.iftype == iftype_valid
 
     # set iftype to an invalid value
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         sac2.iftype = iftype_invalid
 
     # Try setting a header that should only accept strings to a boolean
@@ -238,12 +237,13 @@ def test_change_data(instances):
 
 @pytest.mark.depends(on=['test_change_headers', 'test_change_data'])
 def test_write_to_file(instances, tmpfiles):
-    sac1, *_ = instances
+    sac1, *_, sac_empty = instances
     _, _, tmpfile3, *_ = tmpfiles
     sac1.write(tmpfile3)
     sac3 = SacIO.from_file(tmpfile3)
     assert sac1.data == sac3.data
     assert sac1.b == sac3.b
+    sac_empty.write(tmpfile3)
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
@@ -258,7 +258,7 @@ def test_pickling(instances, tmpfiles):
     assert sac1.b == sac4.b
 
 
-@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
+@pytest.mark.depends(on=['test_read_headers', 'test_read_data', 'test_change_headers'])
 def test_deepcopy(instances):
     sac1, *_ = instances
     sac5 = copy.deepcopy(sac1)
@@ -268,9 +268,9 @@ def test_deepcopy(instances):
     assert sac1.e != sac5.e
 
 
+@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_file_and_buffer(tmpdir):
-    orgfile_special_IB = os.path.join(os.path.dirname(__file__),
-                                      'testfile_iztype_is_IB.sac')
+    orgfile_special_IB = os.path.join(os.path.dirname(__file__), 'testfile_iztype_is_IB.sac')
     tmpfile5 = os.path.join(tmpdir, 'tmpfile5.sac')
     shutil.copyfile(orgfile_special_IB, tmpfile5)
 
