@@ -56,13 +56,13 @@ header_fields:
     description: Minimum value of dependent variable.
     start: 4
     header_type: f
-    protected: true
+    read_only: true
 
   depmax:
     description: Maximum value of dependent variable.
     start: 8
     header_type: f
-    protected: true
+    read_only: true
 
   scale:
     description: Multiplying scale factor for dependent variable (not currently used)
@@ -85,7 +85,7 @@ header_fields:
     start: 24
     header_type: f
     required: true
-    protected: true
+    read_only: true
 
   o:
     description: Event origin time (seconds relative to reference time.)
@@ -336,7 +336,7 @@ header_fields:
     description: Mean value of dependent variable.
     start: 224
     header_type: f
-    protected: true
+    read_only: true
 
   cmpaz:
     description: Component azimuth (degrees clockwise from north).
@@ -454,7 +454,7 @@ header_fields:
     start: 316
     header_type: n
     required: true
-    protected: true
+    read_only: true
 
   nsnpts:
     description: Internal.
