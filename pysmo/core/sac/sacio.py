@@ -15,9 +15,6 @@
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-"""
-Python module for reading/writing SAC files using the :class:`SacIO` class.
-"""
 
 __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
@@ -28,11 +25,21 @@ import io
 import requests
 import urllib.parse
 import zipfile
-from .sacheader import (SacAlphanumericHeader, SacAuxHeader, SacEnumeratedHeader, SacFloatHeader,
-                        SacIntHeader, SacLogicalHeader, HEADER_FIELDS)
+import warnings
+import numpy as np
+from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
 
-class SacIO:
+class SacMeta(type):
+    """Metaclass that adds the SacHeader descriptors to the class."""
+    def __new__(cls, name, bases, dct):  # type: ignore
+        for header_name in HEADER_FIELDS:
+            header_class = SacHeaderFactory(header_name)
+            dct[header_name] = header_class()
+        return super().__new__(cls, name, bases, dct)
+
+
+class SacIO(metaclass=SacMeta):
     """
     The :class:`SacIO` class reads and writes data and header values to and from a
     SAC file. Instances of :class:`SacIO` provide attributes named identially to
@@ -45,11 +52,11 @@ class SacIO:
 
     Read and print data::
 
-        >>> from pysmo import SacIO
-        >>> my_sac = SacIO.from_file('file.sac')
+        >>> from pysmo import SAC
+        >>> my_sac = SAC.from_file('file.sac')
         >>> data = my_sac.data
         >>> data
-        [-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
+        array([-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
 
     Read the sampling rate::
 
@@ -66,8 +73,8 @@ class SacIO:
 
     Read from IRIS services::
 
-        >>> from pysmo import SacIO
-        >>> my_sac = SacIO.from_iris(
+        >>> from pysmo import SAC
+        >>> my_sac = SAC.from_iris(
         >>>             net="C1",
         >>>             sta="VA01",
         >>>             cha="BHZ",
@@ -80,147 +87,124 @@ class SacIO:
         >>> my_sac.npts
         144001
 
+    For each SAC(file) header field there is a corresponding attribute in this class.
     There are a lot of header fields in a SAC file, which are all called the
-    same way when using :class:`SacIO`. They are all listed below.
+    same way when using :class:`SAC`. They are all listed below.
     """
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialises a SAC object."""
+        # All SAC header fields have a private and a public name. For example the sample rate has a
+        # public name of delta, and a private name of _delta. Here, delta is a descriptor that takes
+        # care of converting from a SAC file to python (formatting, enumerated headers etc), and
+        # _delta is the SAC formatted value stored as a normal attribute. In other words, reading
+        # and writing SAC files uses _delta, whereas accessing the header within Python uses delta.
 
-    # Dynamicall create Descriptors for all header fields
-    for header_name in HEADER_FIELDS.keys():
-        if HEADER_FIELDS[header_name]['header_type'] == 'f':
-            locals()[header_name] = SacFloatHeader()
-        elif HEADER_FIELDS[header_name]['header_type'] == 'n':
-            locals()[header_name] = SacIntHeader()
-        elif HEADER_FIELDS[header_name]['header_type'] == 'i':
-            locals()[header_name] = SacEnumeratedHeader()
-        elif HEADER_FIELDS[header_name]['header_type'] == 'l':
-            locals()[header_name] = SacLogicalHeader()
-        elif HEADER_FIELDS[header_name]['header_type'] == 'k':
-            locals()[header_name] = SacAlphanumericHeader()
-        elif HEADER_FIELDS[header_name]['header_type'] == 'a':
-            locals()[header_name] = SacAuxHeader()
-        else:
-            raise RuntimeError(f"Unable to create header field for {header_name}")
-
-    def __init__(self, **kwargs):
-        """
-        Initialise a SAC object.
-        """
-        # set all header fields to None to populate the private_name with the SAC unknown values:
-        for header_name in HEADER_FIELDS.keys():
+        # The descriptor converts None to the SAC unknown value (e.g. -12345 for int type header fields).
+        # Therefore this loop sets the initial value for all private fields to the SAC unknown value.
+        for header_name in HEADER_FIELDS:
             setattr(self, header_name, None)
 
         # Set some sane defaults
-        self._nvhdr = 6
+        #
+        # self.npts is read only, so we write to the private name self._ntps directly.
         self._npts = 0
+        # Setting self.delta triggers calculation of self.e, but we can't do that without also knowing
+        # the begin time self.b - writing to the private self._delta doesn't try to calculate self.e
         self._delta = 1
-        self._b = 0
-        self.data = []
+        # Now we can write to the public self.b, since self.delta is set above. This triggers calculation of self.e
+        self.b = 0
+        # SAC header version 7 adds a footer after the data block. That is not implemented here.
+        self.nvhdr = 6
+        self.iftype = "time"
+        self.leven = True
+        self.data = np.array([])
 
+        # Set whatever other kwargs were provided at instance creation
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-    def read(self, filename):
-        """
-        Read data and header values from a SAC file into an
-        existing SacIO instance.
-        """
+    def read(self, filename: str) -> None:
+        """Read data and header values from a SAC file into an existing SAC instance."""
 
         with open(filename, 'rb') as file_handle:
             self.read_buffer(file_handle.read())
 
-    def read_buffer(self, buffer):
-        """
-        Read data and header values from a SAC byte buffer into an
-        existing SacIO instance.
-        """
+    def read_buffer(self, buffer: bytes) -> None:
+        """Read data and header values from a SAC byte buffer into an existing SAC instance."""
 
         if len(buffer) < 632:
             raise EOFError()
 
         # Guess the file endianness first using the unused12 header field.
         # It is located at position 276 and it's value should be -12345.0.
-
-        # try reading with little endianness
+        # Try reading with little endianness
         if struct.unpack('<f', buffer[276:280])[-1] == -12345.0:
             file_byteorder = '<'
         # otherwise assume big endianness.
         else:
             file_byteorder = '>'
 
-        # Loop over all header fields and store them in the SAC object.
-        for header_field in HEADER_FIELDS.keys():
-            header_properties = getattr(type(self), header_field)
-            private_name = header_properties.private_name
-            start = header_properties.sac_start_position
-            end = start + header_properties.sac_length
+        # Loop over all header fields and store them in the SAC object under their
+        # respective private names.
+        for header_field in HEADER_FIELDS:
+            header_class = getattr(type(self), header_field)
+            end = header_class.sac_start_position + header_class.sac_length
             if end >= len(buffer):
                 continue
-            content = buffer[start:end]
-            value = struct.unpack(file_byteorder + header_properties.sac_format, content)[0]
+            content = buffer[header_class.sac_start_position:end]
+            value = struct.unpack(file_byteorder + header_class.sac_format, content)[0]
             if isinstance(value, bytes):
                 value = value.decode().rstrip()
-            setattr(self, private_name, value)
+            setattr(self, header_class.private_name, value)
+
+        # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks, which is something
+        # we don't support.
+        if self.iftype.lower() != 'time':
+            raise NotImplementedError(f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported.")
 
         # Read first data block
-        start1 = 632
-        length = self.npts * 4
-        end1 = start1 + length
-        data_format = file_byteorder + str(self.npts) + 'f'
-        if end1 > len(buffer):
+        start = 632
+        length = self.npts * 4  # type: ignore
+        end = start + length
+        data_format = file_byteorder + str(self.npts) + 'f'  # type: ignore
+        if end > len(buffer):
             raise EOFError()
+        content = buffer[start:end]
+        data = struct.unpack(data_format, content)
+        self.data = np.array(data)
 
-        content = buffer[start1:end1]
-        data1 = struct.unpack(data_format, content)
-
-        # Try reading second data block and combine both blocks
-        # to a list of tuples. If it fails return only the first
-        # data block as a list.
-        # NOTE: I've never encountered such a file in
-        # the wild, and this is somewhat untested...
-        try:
-            content = buffer[start1+length:end1+length]
-            data2 = struct.unpack(data_format, content)
-            data = []
-            for x1, x2 in zip(data1, data2):
-                data.append((x1, x2))
-            self._data = data
-        except Exception:
-            self._data = list(data1)
-            if self.depmen is None:
-                self._depmen = sum(data1)/self.npts
-
-        if self.depmin is None:
-            self._depmin = min(data1)
-
-        if self.depmax is None:
-            self._depmax = max(data1)
+        # TODO: implement reading and writing footer with double precision values.
+        # Warn users for now that footer is not read in case of SAC header version 7.
+        if self.nvhdr == 7:
+            warnings.warn(f"SAC header version {self.nvhdr} not implemented. Reverting to version 6")
+            self.nvhdr = 6
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename: str):  # type: ignore
         """
-        Create a new SacIO instance from a SAC file.
+        Creates a new SAC instance from a SAC file.
+
+        :param filename: Name of the file to read.
         """
-        newinstance = SacIO()
+        newinstance = cls()
         newinstance.read(filename)
         return newinstance
 
     @classmethod
-    def from_buffer(cls, buffer):
-        """
-        Create a new SacIO instance from a SAC data buffer.
-        """
-        newinstance = SacIO()
+    def from_buffer(cls, buffer: bytes):  # type: ignore
+        """Create a new SAC instance from a SAC data buffer."""
+        newinstance = cls()
         newinstance.read_buffer(buffer)
         return newinstance
 
     @classmethod
-    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):
+    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):  # type: ignore
         """
-        Create a list of SacIO instances from a single IRIS
+        Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".
 
         :param force_single_result: If true, the function will return
-                                    a single SacIO object or None if
+                                    a single SAC object or None if
                                     the requests returns nothing.
         :type force_single_result: bool
         """
@@ -245,72 +229,65 @@ class SacIO:
         result = {}
         for name in zip.namelist():
             buffer = zip.read(name)
-            sac = SacIO.from_buffer(buffer)
+            sac = cls.from_buffer(buffer)
             if force_single_result:
                 return sac
             result[name] = sac
         return None if force_single_result else result
 
-    def write(self, filename):
+    def write(self, filename: str) -> None:
         """
-        Write data and header values to a SAC file
+        Writes data and header values to a SAC file.
+
+        :param filename: Name of the sacfile to write to.
         """
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
             for header_field in HEADER_FIELDS:
-                header_properties = getattr(type(self), header_field)
-                file_handle.seek(header_properties.sac_start_position)
-                private_value = getattr(self, header_properties.private_name)
+                header_class = getattr(type(self), header_field)
+                file_handle.seek(header_class.sac_start_position)
+                private_value = getattr(self, header_class.private_name)
                 if isinstance(private_value, str):
                     private_value = private_value.encode()
-                private_value = struct.pack(header_properties.sac_format, private_value)
+                private_value = struct.pack(header_class.sac_format, private_value)
                 file_handle.write(private_value)
 
             # write data (if npts > 0)
-            if self.npts > 0:
+            if self.npts > 0:  # type: ignore
                 start1 = 632
                 file_handle.truncate(start1)
                 file_handle.seek(start1)
 
                 data = self._data
 
-                # do we need to write 1 or 2 data sections?
-                if isinstance(data[0], tuple):
-                    data1 = []
-                    data2 = []
-                    for x in data:
-                        data1.append(x[0])
-                        data2.append(x[1])
-                        data1.extend(data2)
-                else:
-                    data1 = data
-                for x in data1:
+                for x in data:
                     file_handle.write(struct.pack('f', x))
 
     @property
-    def data(self):
-        """
-        First data section:
-            - dependent variable
-            - amplitude
-            - real component
-        Second data section (if it exists):
-            - independent variable unevenly spaced
-            - phase
-            - imaginary component
+    def kzdate(self) -> str:
+        """Returns ISO 8601 format of GMT reference date."""
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)  # type: ignore
+        return _kzdate.isoformat()
 
-        If there is only one data section, it is returned as a list of floats.
-        Two data sections result in returning a list of tuples.
-        """
+    @property
+    def kztime(self) -> str:
+        """Returns alphanumeric form of GMT reference time."""
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)  # type: ignore
+        return _kztime.isoformat(timespec='milliseconds')
+
+    @property
+    def data(self) -> np.ndarray:
+        """Returns seismogram data."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: np.ndarray) -> None:
         """
-        Set the data and additionally write it to
-        a SAC file if there is an open filehandle.
-        """
+        Sets the seismogram data. This will also update the end time header
+        value 'e' as well as depmin, depmax, and depmen.
 
+        :param data: numpy array containing seismogram data
+        """
         # Data is stored as _data inside the object
         self._data = data
 
@@ -319,38 +296,15 @@ class SacIO:
 
         # This triggers recalculating end time
         self.b = self.b
-        # Determine if data has one or two data sections
+
         # and calculate trace stats
-        if self.npts > 0:
-            if isinstance(data[0], tuple):
-                self._depmin = min(data)[0]
-                self._depmax = max(data)[0]
-                # TODO: Can we do more here than just set it as undefined?
-                self.depmen = None
-            else:
-                self._depmin = min(data)
-                self._depmax = max(data)
-                self._depmen = sum(data)/self.npts
+        if self.npts > 0:  # type: ignore
+            self._depmin = min(data)
+            self._depmax = max(data)
+            self._depmen = sum(data)/self.npts  # type: ignore
         else:
             # If npts == 0 these attributes make no sense and are therefore reset
-            # to the SAC 'unknown' value by setting the public_name to None
+            # to the SAC 'unknown' value by setting the public_name value to None.
             self.depmin = None
             self.depmax = None
             self.depmen = None
-
-    @property
-    def kzdate(self):
-        """
-        ISO 8601 format of GMT reference date.
-        """
-        _kzdate = datetime.date(self.nzyear, 1, 1) +\
-            datetime.timedelta(self.nzjday)
-        return _kzdate.isoformat()
-
-    @property
-    def kztime(self):
-        """
-        Alphanumeric form of GMT reference time.
-        """
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
-        return _kztime.isoformat(timespec='milliseconds')

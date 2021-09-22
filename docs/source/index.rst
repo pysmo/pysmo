@@ -13,6 +13,7 @@ Welcome to Pysmo's documentation!
 
    intro
    installation
+   fundamentals
    sac
    tools
    contrib
