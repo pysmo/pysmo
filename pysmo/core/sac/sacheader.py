@@ -1,57 +1,35 @@
-###
-# This file is part of pysmo.
+from __future__ import annotations
 
-# psymo is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# psymo is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
-###
+__author__ = "Simon Lloyd"
+__copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
-"""
-Python module for reading/writing SAC files.
-"""
-
-from abc import ABC, abstractproperty
 import os
 import yaml
+from abc import ABC, abstractmethod
 
-__copyright__ = """
-Copyright (c) 2018 Simon Lloyd
-"""
-
+# Read yaml file with dictionaries describing SAC headers
 with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stream:
-    _HEADER_DEFS = yaml.safe_load(stream)
+    _HEADER_DEFS: dict = yaml.safe_load(stream)
 
-HEADER_TYPES = _HEADER_DEFS.pop('header_types')
-HEADER_FIELDS = _HEADER_DEFS.pop('header_fields')
-ENUM_DICT = _HEADER_DEFS.pop('enumerated_header_values')
+# Dictionary of header types (default values etc)
+HEADER_TYPES: dict = _HEADER_DEFS.pop('header_types')
+# Dictionary of header fields (format, type, etc)
+HEADER_FIELDS: dict = _HEADER_DEFS.pop('header_fields')
+# Dictionary of enumerated headers (to convert int to str).
+ENUM_DICT: dict = _HEADER_DEFS.pop('enumerated_header_values')
 
 
 class SacHeader(ABC):
-    """
-    Python descriptor class for SAC file headers. Mainly for use inside the SacIO class.
-    """
-    # create a list of read-only header fields
-    read_only_headers = [header_field for header_field in HEADER_FIELDS.keys() if
-                         HEADER_FIELDS[header_field].get('read_only', False) is True]
+    """Python descriptor (abstract)class for SAC file headers."""
+    # Tuple of read-only header fields
+    read_only_headers = tuple([header_field for header_field in HEADER_FIELDS if
+                               HEADER_FIELDS[header_field].get('read_only', False) is True])
 
-    @property
-    def __doc__(self):
-        return HEADER_FIELDS[self.public_name]['description']
+    def __set_name__(self, owner, name: str) -> None:  # type: ignore
+        self.public_name: str = name
+        self.private_name: str = '_' + name
 
-    def __set_name__(self, owner, name):
-        self.public_name = name
-        self.private_name = '_' + name
-
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj, objtype=None):  # type: ignore
         # instance attribute accessed on class, return self
         if obj is None:
             return self
@@ -59,17 +37,17 @@ class SacHeader(ABC):
         # The private_value content is in the same format as in a SAC file.
         private_value = getattr(obj, self.private_name)
 
-        # Return None for uknown header values
+        # Instead of returning SAC unknown placeholders (e.g. -12345) we return None
         if private_value == HEADER_TYPES[self.header_type]['undefined']:
             return None
 
         # Format value before returning. This will also translate enumerated headers.
         return self.format2public(private_value)
 
-    def __set__(self, obj, public_value):
+    def __set__(self, obj, public_value):  # type: ignore
         # Setting the public value to None updates the private value to be the 'undefined'
         # value for that header field. Since this only really is used during initialisation
-        # of a SacIO instance we don't check for read-only header values.
+        # of a SAC instance we don't check for read-only header values.
         if public_value is None:
             setattr(obj, self.private_name, HEADER_TYPES[self.header_type]['undefined'])
 
@@ -81,42 +59,45 @@ class SacHeader(ABC):
 
             # Set attribute in SAC internal format.
             setattr(obj, self.private_name, self.validate_and_format2private(public_value))
+
+            # Changing b or delta requires recomputing end time e
             if self.public_name in ('b', 'delta'):
                 obj._e = obj.b + (obj.npts - 1) * obj.delta
 
-    @abstractproperty
-    def validate_and_format2private(self, public_value):
+    @abstractmethod
+    def validate_and_format2private(self, public_value):  # type: ignore
+        """First validates a public value, then converts it to the respective private value (i.e. SAC internal)."""
         pass
 
-    @abstractproperty
-    def format2public(self, private_value):
-        pass
-
-    @abstractproperty
-    def header_type(self):
+    @abstractmethod
+    def format2public(self, private_value):  # type: ignore
+        """Format a private value (SAC internal format) to a public value format."""
         pass
 
     @property
-    def sac_start_position(self):
-        """
-        Start position in the binary sac file.
-        """
-        return HEADER_FIELDS[self.public_name]['start']
+    @abstractmethod
+    def header_type(self) -> str:
+        """Returns the SAC header type (k, f, ...)."""
+        pass
+
+    @property
+    def sac_start_position(self) -> int:
+        """Returns the start position in the binary sac file."""
+        return int(HEADER_FIELDS[self.public_name]['start'])
 
     @property
     def sac_length(self) -> int:
-        """
-        Returns length to read from SAC file.
-        """
+        """Returns length to read from SAC file."""
         # Some header fields have their own length that is specified in the dictionary.
         try:
-            return HEADER_FIELDS[self.public_name]['length']
+            return int(HEADER_FIELDS[self.public_name]['length'])
         # If there is none such header field specific format use default one for that type.
         except KeyError:
-            return HEADER_TYPES[self.header_type]['length']
+            return int(HEADER_TYPES[self.header_type]['length'])
 
     @property
-    def sac_format(self):
+    def sac_format(self) -> str:
+        """Returns the SAC format used to write headers to a SAC file."""
         # Some header fields have their own format that is specified in the dictionary.
         try:
             return HEADER_FIELDS[self.public_name]['format']
@@ -126,105 +107,126 @@ class SacHeader(ABC):
 
 
 class SacFloatHeader(SacHeader):
-    """
-    Subclass for Float ('f') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        return HEADER_FIELDS[self.public_name]['description']
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('f')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value: float) -> float:
         return float(public_value)
 
-    def format2public(self, private_value):
+    def format2public(self, private_value: float) -> float:
         return float(private_value)
 
 
 class SacIntHeader(SacHeader):
-    """
-    Subclass for Integer ('n') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        return HEADER_FIELDS[self.public_name]['description']
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('n')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value: int) -> int:
         return int(public_value)
 
-    def format2public(self, private_value):
+    def format2public(self, private_value: int) -> int:
         return int(private_value)
 
 
 class SacEnumeratedHeader(SacHeader):
-    """
-    Subclass for Enumerated ('i') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        doc = HEADER_FIELDS[self.public_name]['description']
+        try:
+            allowed_vals = HEADER_FIELDS[self.public_name]['allowed_vals']
+            doc += f"\n\n {self.public_name} must be one of:\n"
+            for val, desc in allowed_vals.items():
+                doc += f"\n  - {val}:  {desc}"
+        except KeyError:
+            pass
+        return doc
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('i')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value: str) -> int:
         # Convert from string to int
         return ENUM_DICT[public_value]
 
-    def format2public(self, private_value):
+    def format2public(self, private_value: int) -> str:
         # convert from int to string
         int2str_dict = {v: k for k, v in ENUM_DICT.items()}
         return int2str_dict[private_value]
 
 
 class SacLogicalHeader(SacHeader):
-    """
-    Subclass for Logical ('l') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        return HEADER_FIELDS[self.public_name]['description']
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('l')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value: bool) -> bool:
         if isinstance(public_value, bool):
             return public_value
 
-    def format2public(self, private_value):
+    def format2public(self, private_value: bool) -> bool:
         if isinstance(private_value, bool):
             return private_value
 
 
 class SacAlphanumericHeader(SacHeader):
-    """
-    Subclass for Alphanumeric ('k') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        return HEADER_FIELDS[self.public_name]['description']
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('k')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value: str) -> str:
         if isinstance(public_value, bool):
             raise ValueError(f"{self.public_name} may not be of type bool")
         if len(public_value) > self.sac_length:
             raise ValueError(f"{public_value} is too long - maximum length for {self.public_name} is {self.sac_length}")
         return str(public_value)
 
-    def format2public(self, private_value):
+    def format2public(self, private_value: str) -> str:
         return str(private_value).rstrip()
 
 
 class SacAuxHeader(SacHeader):
-    """
-    Subclass for Auxiliary ('a') type SAC headers.
-    """
+    @property
+    def __doc__(self):  # type: ignore
+        return HEADER_FIELDS[self.public_name]['description']
 
     @property
-    def header_type(self):
+    def header_type(self) -> str:
         return('a')
 
-    def validate_and_format2private(self, public_value):
+    def validate_and_format2private(self, public_value):  # type: ignore
         raise RuntimeError(f"I don't know how to format {self.public_name}!")
 
-    def format2public(self, private_value):
+    def format2public(self, private_value):  # type: ignore
         raise RuntimeError(f"I don't know how to format {self.public_name}!")
+
+
+def SacHeaderFactory(header_name: str) -> type[SacHeader]:
+    header_map = {
+        'f': SacFloatHeader,
+        'n': SacIntHeader,
+        'i': SacEnumeratedHeader,
+        'l': SacLogicalHeader,
+        'k': SacAlphanumericHeader,
+        'a': SacAuxHeader
+    }
+    header_type = HEADER_FIELDS[header_name]['header_type']
+    return header_map[header_type]
