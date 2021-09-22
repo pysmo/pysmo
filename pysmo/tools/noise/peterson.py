@@ -22,8 +22,8 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.integrate import cumtrapz
+from scipy.interpolate import interp1d  # type: ignore
+from scipy.integrate import cumtrapz  # type: ignore
 
 NLNM = dict(dB=np.array([-168.0, -166.7, -166.7, -169.2, -163.7,
                          -148.6, -141.1, -141.1, -149.0, -163.8,
@@ -43,7 +43,7 @@ NHNM = dict(dB=np.array([-91.5, -97.4, -110.5, -120.0, -98.0,
                         10**4, 10**5]))
 
 
-def _genNoise(delta, npts, NM, velocity):
+def _genNoise(delta: float, npts: int, NM: dict, velocity: bool) -> np.ndarray:
     """
     Helper function for calculating random noise from noise model NM.
     """
@@ -67,16 +67,16 @@ def _genNoise(delta, npts, NM, velocity):
     start = int((NPTS-npts)/2)
     end = start + npts
     if velocity:
-        velocity = cumtrapz(acceleration, dx=delta)
-        velocity = velocity[start:end]
-        velocity = velocity - np.mean(velocity)
-        return velocity
+        vel = cumtrapz(acceleration, dx=delta)
+        vel = vel[start:end]
+        vel = vel - np.mean(vel)
+        return vel
     acceleration = acceleration[start:end]
     acceleration = acceleration - np.mean(acceleration)
     return acceleration
 
 
-def genNoiseNLNM(delta, npts, velocity=False):
+def genNoiseNLNM(delta: float, npts: int, velocity: bool = False) -> np.ndarray:
     """
     Generate a random signal that matches Peterson's
     new low noise model NLNM.
@@ -99,7 +99,7 @@ def genNoiseNLNM(delta, npts, velocity=False):
     return _genNoise(delta, npts, NLNM, velocity)
 
 
-def genNoiseNHNM(delta, npts, velocity=False):
+def genNoiseNHNM(delta: float, npts: int, velocity: bool = False) -> np.ndarray:
     """
     Generate a random signal that matches Peterson's
     new high noise model NHNM.
