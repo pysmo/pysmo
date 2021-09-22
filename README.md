@@ -36,14 +36,14 @@ Pysmo can then be used in a python script or the python shell directly:
 
 
 ```python
->>> from pysmo import SacIO
->>> seismogram = SacIO.from_file('file.sac')
+>>> from pysmo import SAC
+>>> seismogram = SAC.from_file('file.sac')
 >>> print(seismogram.delta)
 0.02500000037252903
 >>> print(seismogram.data)
 [-2.987490077543953e-08, -2.983458813332618e-08, ...
->>> help(seismogram)
-Help on SacIO in module pysmo.core.sac.sacio object:
+>>> help(SAC)
+Help on class SAC in module pysmo object:
 
 ...
 ```

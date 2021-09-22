@@ -1,4 +1,4 @@
-.PHONY: init install test-figs tests docs build clean shell help
+.PHONY: help check-poetry install update lint test-figs tests docs publish clean shell python
 
 POETRY_VERSION := $(shell command poetry --version 2> /dev/null)
 
@@ -28,7 +28,8 @@ test-figs: check-poetry ## Generate baseline figures for testing. Only run this 
 	poetry run py.test --mpl-generate-path=tests/baseline
 
 tests: check-poetry ## Run tests with pytest.
-	poetry run py.test --cov=pysmo --cov-report=xml --mpl -v tests
+	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl -v tests
+	poetry run py.test --mypy -m mypy -v pysmo
 
 docs: install check-poetry ## Build html docs.
 	poetry run make -C docs html
@@ -44,3 +45,6 @@ clean: ## Remove existing builds.
 
 shell: check-poetry ## Start a shell in the project virtual environment.
 	poetry shell
+
+python: check-poetry ## Start an interactive python shell in the project virtual environment.
+	poetry run python

@@ -2,24 +2,17 @@ Working with SAC files
 ======================
 
 .. automodule:: pysmo.core.sac
-    :members:
-    :undoc-members:
-    :show-inheritance:
+  :members:
+  :undoc-members:
+  :show-inheritance:
 
 
-pysmo.SacIO
+pysmo.SAC
 -----------
 
-.. automodule:: pysmo.core.sac.sacio
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autoclass:: pysmo.SAC
+  :members:
 
-
-pysmo.sacfunc
--------------
-
-.. automodule:: pysmo.core.sac.sacfunc
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autoclass:: pysmo.SacIO
+  :members:
+  :undoc-members:

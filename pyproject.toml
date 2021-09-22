@@ -6,6 +6,10 @@ readme = "README.md"
 authors = ["Simon M. Lloyd <simon@slloyd.net>"]
 license = "GPL-3.0-or-later"
 documentation = "https://pysmo.readthedocs.io"
+exclude = [
+    "tests",
+    "docs",
+]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
@@ -15,25 +19,33 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
-scipy = "^1.5.4"
-numpy = "^1.19.4"
-matplotlib = "^3.3.3"
-pyproj = "^3.0.0"
-PyYAML = "^5.3.1"
-requests = "^2.25.1"
+python = ">=3.8,<3.10"
+scipy = "^1.7.1"
+numpy = "^1.21.2"
+matplotlib = "^3.4.3"
+pyproj = "^3.2.1"
+PyYAML = "^5.4.1"
+requests = "^2.26.0"
 
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.1.2"
-Sphinx = "^3.3.1"
-sphinx-rtd-theme = "^0.5.0"
-pytest-mpl = "^0.12"
-pytest-cov = "^2.10.1"
-pytest-depends = "^1.0.1"
+Sphinx = "^4.2.0"
+sphinx-rtd-theme = "^1.0.0"
 flake8 = "^3.9.2"
+pytest = "^6.2.5"
+pytest-mpl = "^0.13"
+pytest-cov = "^2.12.1"
+pytest-mypy = "^0.8.1"
+pytest-depends = "^1.0.1"
+types-requests = "^2.25.8"
+types-PyYAML = "^5.4.10"
 
+[tool.mypy]
+namespace_packages = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
