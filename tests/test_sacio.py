@@ -8,7 +8,7 @@ import shutil
 import copy
 import pickle
 import pytest
-from pysmo import SacIO
+from pysmo import _SacIO as SacIO
 
 
 @pytest.fixture()

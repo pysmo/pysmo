@@ -9,7 +9,7 @@
 Pysmo
 =====
 
-Python package to read/write/manipulate SAC (Seismic Analysis Code) files.
+The pysmo package provides simple tools for seismologists to solve problems in a pythonic fashion.
 
 
 Quickstart

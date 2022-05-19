@@ -1,36 +1,28 @@
 """
-Protocols
----------
+A core principle of pysmo (or more specifically pysmo functions), is to distinguish between how data are
+stored on disk, and how they are processed. Most computations will only use a small subset of the data
+contained in a file. For example, a function that calculates the distance between two points (e.g. signal
+source and instrument location) only needs the coordinates of these points. Other data that may be stored
+in the file are irrelevant to the computation and can be ignored. It therefore makes sense to break up
+the typically complex data structures used in files to simpler, more meaningful ones that serve as the
+building blocks for pysmo functions. Of course, this needs to happen in a well defined way. In pysmo we
+achieve this using `Python Protocol classes <https://docs.python.org/3/library/typing.html#typing.Protocol>`_.
+These protocols define the types of data that can be used in functions much like built in types such as
+integers or strings. The main considerations, benefits, and implications of this approach are:
 
-A core principle of pysmo (or more specifically pysmo functions), is to be agnostic with regards to
-the types of data files used. In the vast majority of cases, a function processing data stored in a
-file of a certain type will only use a fraction of the data contained in the file itself. This is
-particularly the case when additional metadata is stored alongside e.g. a time series. Therefore,
-instead of defining python classes that essentially turn a file into an equivalent python object
-that consumes all data and logic contained within the file, pysmo uses `Python Protocol classes
-<https://docs.python.org/3/library/typing.html#typing.Protocol>`_ to define what attributes and
-methods classes should contain. These class definitions are are entirely driven by the requirements
-coming from the pysmo functions themselves, rather than what is stored in files of a particular format.
-The protocols thus provide an interface between data and pysmo functions. The main benefits and
-implications of this approach are:
-
+*   The different types of input data that are available to pysmo functions via the protocols are well
+    defined and typically much simpler than the file format used to store the data, making it very
+    straightforward to use, maintain and extend pysmo.
 *   Files of various formats still need to be read into python classes to be used with pysmo,
     but the way they are allowed to be used is determined entirely by the protocols matched
     by these classes. In other words, compatibility of multiple file formats with pysmo functions
     can be guaranteed (so much so that mixing and matching different file formats in the same
     function is seamlessly possible).
-*   The different types of data classes available to pysmo functions via the protocols are well
-    defined and typically much simpler than the file format used to store the data, making it very
-    straightforward to use, maintain and extend pysmo.
 *   No need for a "native" pysmo data class, which would likely require importing (and exporting)
     data from other formats. Instead, existing formats can be extended to become compatible with
-    pysmo protocols. Unlike importing, this means there is no need to consider parts of the
-    existing formats that are not being used by pysmo, or how to convert between different formats.
-*   Since traditional file formats contain a lot of metadata, the corresponding data classes in
-    pysmo will often match multiple protocol types. In cases where functions require
-    Occasionally this means the same arguments
-    need to be passed to functions more than once (e.g. when a function requires one Event type
-    argument and one Station type argument, and both happen to be provided by the same data class).
+    pysmo protocols.
+*   Since traditional file formats contain a lot of (meta)data, the corresponding data classes in
+    pysmo will often match multiple protocol types.
 
 .. note::
     Python does not perform run-time type checking (though there are libraries that can provide this).
