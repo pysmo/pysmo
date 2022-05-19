@@ -111,6 +111,11 @@ html_static_path = ['_static']
 # html_sidebars = {}
 
 
+numfig = True
+
+# Make sure the target is unique
+autosectionlabel_prefix_document = True
+
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.

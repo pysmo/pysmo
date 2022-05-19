@@ -30,7 +30,7 @@ import numpy as np
 from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
 
-class SacMeta(type):
+class _SacMeta(type):
     """Metaclass that adds the SacHeader descriptors to the class."""
     def __new__(cls, name, bases, dct):  # type: ignore
         for header_name in HEADER_FIELDS:
@@ -39,15 +39,15 @@ class SacMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-class SacIO(metaclass=SacMeta):
+class _SacIO(metaclass=_SacMeta):
     """
-    The :class:`SacIO` class reads and writes data and header values to and from a
-    SAC file. Instances of :class:`SacIO` provide attributes named identially to
+    The :class:`_SacIO` class reads and writes data and header values to and from a
+    SAC file. Instances of :class:`_SacIO` provide attributes named identially to
     header names in the SAC file format. Additonal attributes may be set, but are
     not written to a SAC file (because there is no space reserved for them there).
     Class attributes with corresponding header fields in a SAC file (for example the
     begin time `b`) are checked for a valid format before being saved in the
-    :class:`SacIO` instance.
+    :class:`_SacIO` instance.
 
 
     Read and print data::

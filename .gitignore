@@ -13,3 +13,4 @@ result_images/
 .vscode
 .coverage
 coverage.xml
+*.bkp

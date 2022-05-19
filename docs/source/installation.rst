@@ -1,6 +1,5 @@
-=========================
-Installation and Upgrades
-=========================
+Getting Started
+===============
 
 Requirements
 ------------
