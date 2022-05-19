@@ -2,7 +2,7 @@ __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
-from pysmo.core.sac.sacio import SacIO
+from pysmo.core.sac.sacio import _SacIO
 
 
 class _SacStation:
@@ -69,7 +69,7 @@ class _SacEvent:
         pass
 
 
-class SAC(SacIO, _SacStation, _SacEvent):
+class SAC(_SacIO, _SacStation, _SacEvent):
     def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__(*args, **kwargs)
 
