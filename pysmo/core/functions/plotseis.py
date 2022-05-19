@@ -4,7 +4,8 @@ import matplotlib.dates as mdates  # type: ignore
 from pysmo import Seismogram
 
 
-def plotseis(*seismograms: Seismogram, outfile: str = None, showfig: bool = True, title: str = None, **kwargs: dict) -> None:
+def plotseis(*seismograms: Seismogram, outfile: str = None, showfig: bool = True,
+             title: str = None, **kwargs: dict) -> None:
     """
     Plots Seismogram objects.
 
