@@ -14,7 +14,8 @@ Welcome to Pysmo's documentation!
    intro
    installation
    fundamentals
-   sac
+   files
+   functions
    tools
    contrib
    developing
