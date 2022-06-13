@@ -1,5 +1,5 @@
 """
-Pysmo data types serve as input and output in many Pysmo functions. 
+Pysmo data types serve as input and output in many Pysmo functions.
 
 
 A core principle of Pysmo (or more specifically Pysmo functions), is to distinguish between how data are

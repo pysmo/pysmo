@@ -44,7 +44,7 @@ class _SacEvent:
     """Class for SAC event attributes."""
     @property
     def event_latitude(self) -> float:
-        return self.evla
+        return self.evla    # type: ignore
 
     @event_latitude.setter
     def event_latitude(self, value: float) -> None:
@@ -52,7 +52,7 @@ class _SacEvent:
 
     @property
     def event_longitude(self) -> float:
-        return self.evlo
+        return self.evlo    # type: ignore
 
     @event_longitude.setter
     def event_longitude(self, value: float) -> None:
@@ -61,7 +61,7 @@ class _SacEvent:
     @property
     def event_depth(self) -> float:
         """Gets the event depth in meters."""
-        return self.evdp * 1000
+        return self.evdp * 1000  # type: ignore
 
     @event_depth.setter
     def event_depth(self, value: float) -> None:
