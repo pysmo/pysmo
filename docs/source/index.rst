@@ -14,6 +14,7 @@ Welcome to Pysmo's documentation!
    intro
    installation
    fundamentals
+   protocols
    files
    functions
    tools
