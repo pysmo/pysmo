@@ -18,44 +18,44 @@ class Seismogram(Protocol):
         '2005-03-02T07:23:02.160000'
     """
     def __len__(self) -> int:
-        pass
+        ...
 
     @property
     def data(self) -> np.ndarray:
         """Returns the seismogram data as numpy array."""
-        pass
+        ...
 
     @data.setter
     def data(self, value: np.ndarray) -> None:
         """Sets the data."""
-        pass
+        ...
 
     @property
     def begin_time(self) -> datetime.datetime:
         """Returns the begin time"""
-        pass
+        ...
 
     @begin_time.setter
     def begin_time(self, value: datetime.datetime) -> None:
         """Returns the begin time"""
-        pass
+        ...
 
     @property
     def end_time(self) -> datetime.datetime:
         """Returns the end time"""
-        pass
+        ...
 
     @property
     def sampling_rate(self) -> float:
         """Returns sampling rate."""
-        pass
+        ...
 
     @sampling_rate.setter
     def sampling_rate(self, value: float) -> None:
         """Sets the sampling rate."""
-        pass
+        ...
 
     @property
     def id(self) -> str:
         """Returns seismogram id string"""
-        pass
+        ...

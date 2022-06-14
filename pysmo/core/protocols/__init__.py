@@ -1,41 +1,41 @@
 """
-Pysmo data types serve as input and output in many Pysmo functions.
+Seismograms are often distributed as a time series paired with large amounts
+of metadata. Depending on what information is used for further processing,
+metadata may well become more important than the time series itself. Conversely,
+metadata could also be completely irrelevant if only the time series data are used.
+Therefore we consider metadata and time series data to be independent and
+equally important data types in Pysmo. These data types are defined using
+`Python Protocol classes <https://docs.python.org/3/library/typing.html#typing.Protocol>`_,
+and serve as input and output for Pysmo functions. Some things to keep in
+mind are:
 
+*   Pysmo is not built on top of a particular file format or
+    corresponding Python data class to store data in (nor does
+    not provide it's own format). Instead it relies on existing
+    data classes to be either compatible out of the box, or (as
+    is usually the case) extended to become so.
+*   Pysmo protocols only prescribe what information has to be
+    present in a data class, but do not limit what information
+    may be stored in them. As Pysmo protocols are defined quite
+    narrowly and data classes often are often quite broad, a single
+    data class may well be used as different types of input with
+    Pysmo functions.
+*   Python does not perform run-time type checking (though there
+    are libraries that can provide this). There is therefore nothing
+    stopping a user from trying to execute a function with input
+    arguments of the wrong type. We therefore highly recommend
+    adding type hints to code and testing it with *e.g.*
+    `mypy <https://mypy.readthedocs.io/en/stable>`_.
 
-A core principle of Pysmo (or more specifically Pysmo functions), is to distinguish between how data are
-stored on disk, and how they are processed. Most computations will only use a small subset of the data
-contained in a file. For example, a function that calculates the distance between two points (e.g. signal
-source and instrument location) only needs the coordinates of these points. Other data that may be stored
-in the file are irrelevant to the computation and can be ignored. It therefore makes sense to break up
-the typically complex data structures used in files to simpler, more meaningful ones that serve as the
-building blocks for Pysmo functions. Of course, this needs to happen in a well defined way. In Pysmo we
-achieve this using `Python Protocol classes <https://docs.python.org/3/library/typing.html#typing.Protocol>`_.
-These protocols define the types of data that can be used in functions much like built in types such as
-integers or strings. The main considerations, benefits, and implications of this approach are:
-
-*   The different types of input data that are available to Pysmo functions via the protocols are well
-    defined and typically much simpler than the file format used to store the data, making it very
-    straightforward to use, maintain and extend Pysmo.
-*   Files of various formats still need to be read into python classes to be used with Pysmo,
-    but the way they are allowed to be used is determined entirely by the protocols matched
-    by these classes. In other words, compatibility of multiple file formats with Pysmo functions
-    can be guaranteed (so much so that mixing and matching different file formats in the same
-    function is seamlessly possible).
-*   No need for a "native" Pysmo data class, which would likely require importing (and exporting)
-    data from other formats. Instead, existing formats can be extended to become compatible with
-    Pysmo protocols.
-*   Since traditional file formats contain a lot of (meta)data, the corresponding data classes in
-    Pysmo will often match multiple protocol types.
-
-.. note::
-    Python does not perform run-time type checking (though there are libraries that can provide this).
-    There is therefore nothing stopping a user from trying to execute a function with input arguments of
-    the wrong type. We therefore highly recommend adding type hints to code and testing it with
-    *e.g.* `mypy <https://mypy.readthedocs.io/en/stable>`_.
-
-The protocol classes used in pysmo are described below:
+The protocol classes used in Pysmo are described below:
 """
 
 from .seismogram import Seismogram
 from .event import Event
 from .station import Station
+
+__all__ = [
+    'Event',
+    'Seismogram',
+    'Station'
+]
