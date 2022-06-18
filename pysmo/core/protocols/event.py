@@ -1,4 +1,5 @@
 from typing import Protocol
+import datetime
 
 
 class Event(Protocol):
@@ -16,7 +17,7 @@ class Event(Protocol):
 
     @property
     def event_longitude(self) -> float:
-        """Gets the event longitude."""
+        """Returns the event longitude."""
         ...
 
     @event_longitude.setter
@@ -26,10 +27,20 @@ class Event(Protocol):
 
     @property
     def event_depth(self) -> float:
-        """Gets the event depth."""
+        """Returns the event depth."""
         ...
 
     @event_depth.setter
     def event_depth(self, value: float) -> None:
         """Sets the event depth."""
+        ...
+
+    @property
+    def event_time(self) -> datetime.datetime:
+        """Returns the event time"""
+        ...
+
+    @event_time.setter
+    def event_time(self, value: datetime.datetime) -> None:
+        """Sets the event time"""
         ...

@@ -54,8 +54,3 @@ class Seismogram(Protocol):
     def sampling_rate(self, value: float) -> None:
         """Sets the sampling rate."""
         ...
-
-    @property
-    def id(self) -> str:
-        """Returns seismogram id string"""
-        ...

@@ -2,11 +2,11 @@ from typing import Protocol
 
 
 class Station(Protocol):
-    """The :class:`Station` class defines a protocol for seismic stations in pysmo.
+    """The :class:`Station` class defines a protocol for seismic stations in Pysmo.
     """
     @property
     def name(self) -> str:
-        """Gets the station name."""
+        """Retuns the station name."""
         ...
 
     @name.setter
@@ -16,7 +16,7 @@ class Station(Protocol):
 
     @property
     def station_latitude(self) -> float:
-        """Gets the station latitude."""
+        """Retuns the station latitude."""
         ...
 
     @station_latitude.setter
@@ -26,7 +26,7 @@ class Station(Protocol):
 
     @property
     def station_longitude(self) -> float:
-        """Gets the station longitude."""
+        """Retuns the station longitude."""
         ...
 
     @station_longitude.setter
@@ -36,7 +36,7 @@ class Station(Protocol):
 
     @property
     def station_elevation(self) -> float:
-        """Gets the station elevation."""
+        """Retuns the station elevation."""
         ...
 
     @station_elevation.setter

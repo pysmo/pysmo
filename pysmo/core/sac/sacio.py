@@ -32,6 +32,7 @@ from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
 class _SacMeta(type):
     """Metaclass that adds the SacHeader descriptors to the class."""
+
     def __new__(cls, name, bases, dct):  # type: ignore
         for header_name in HEADER_FIELDS:
             header_class = SacHeaderFactory(header_name)
@@ -91,6 +92,7 @@ class _SacIO(metaclass=_SacMeta):
     There are a lot of header fields in a SAC file, which are all called the
     same way when using :class:`SAC`. They are all listed below.
     """
+
     def __init__(self, **kwargs: dict) -> None:
         """Initialises a SAC object."""
         # All SAC header fields have a private and a public name. For example the sample rate has a
