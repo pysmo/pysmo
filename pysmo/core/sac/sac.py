@@ -116,4 +116,4 @@ class SAC(_SacIO, _SacStation, _SacEvent):
     @property
     def id(self) -> str:
         """Returns the seismogram ID"""
-        return f"{self.knetwk}.{self.kstnm}.{self.khole}.{self.kcmpnm}"  # type: ignore
+        return f"{self.knetwk}.{self.kstnm}.{self.khole}.{self.kcmpnm}"
