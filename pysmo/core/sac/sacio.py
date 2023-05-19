@@ -408,7 +408,7 @@ class _SacIO(metaclass=_SacMeta):
     @property
     def kzdate(self) -> str:
         """Returns ISO 8601 format of GMT reference date."""
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
         return _kzdate.isoformat()
 
     @property

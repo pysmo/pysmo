@@ -82,7 +82,7 @@ def test_read_headers(instances: tuple) -> None:
     assert sac.t9 is None
     assert sac.f is None
     # kzdate is a derived header
-    assert sac.kzdate == '2005-03-02'
+    assert sac.kzdate == '2005-03-01'
     # kztime is a derived header
     assert sac.kztime == '07:24:05.500'
     assert sac.iztype == 'o'
