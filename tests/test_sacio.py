@@ -381,4 +381,4 @@ def test_iris_service() -> None:
         scale="AUTO",
         demean="true",
         force_single_result=True)
-    assert mysac.npts == 144001
+    assert mysac.npts == 144001  # type: ignore

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
-
+from __future__ import annotations
 
 __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
@@ -27,7 +27,8 @@ import urllib.parse
 import zipfile
 import warnings
 import numpy as np
-from typing import Union
+from typing import Union, Optional, Any
+from typing_extensions import Self
 from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
 
@@ -322,7 +323,7 @@ class _SacIO(metaclass=_SacMeta):
             self.nvhdr = 6
 
     @classmethod
-    def from_file(cls, filename: str):  # type: ignore
+    def from_file(cls, filename: str) -> Self:
         """
         Creates a new SAC instance from a SAC file.
 
@@ -333,14 +334,15 @@ class _SacIO(metaclass=_SacMeta):
         return newinstance
 
     @classmethod
-    def from_buffer(cls, buffer: bytes):  # type: ignore
+    def from_buffer(cls, buffer: bytes) -> Self:
         """Create a new SAC instance from a SAC data buffer."""
         newinstance = cls()
         newinstance.read_buffer(buffer)
         return newinstance
 
     @classmethod
-    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):  # type: ignore
+    def from_iris(cls, net: str, sta: str, cha: str, loc: str, force_single_result: bool = False,
+                  **kwargs: Any) -> Union[Self, Optional[dict[str, Self]]]:
         """
         Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".

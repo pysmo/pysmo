@@ -3,13 +3,14 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
 from pysmo.core.sac.sacio import _SacIO
+from typing import Any
 
 
-class _SacStation:
+class _SacStation(_SacIO):
     """Class for SAC station attributes."""
     @property
     def name(self) -> str:
-        return self.kstnm  # type: ignore
+        return self.kstnm
 
     @name.setter
     def name(self, value: str) -> None:
@@ -17,7 +18,7 @@ class _SacStation:
 
     @property
     def station_latitude(self) -> float:
-        return self.stla  # type: ignore
+        return self.stla
 
     @station_latitude.setter
     def station_latitude(self, value: float) -> None:
@@ -25,7 +26,7 @@ class _SacStation:
 
     @property
     def station_longitude(self) -> float:
-        return self.stlo  # type: ignore
+        return self.stlo
 
     @station_longitude.setter
     def station_longitude(self, value: float) -> None:
@@ -33,18 +34,18 @@ class _SacStation:
 
     @property
     def station_elevation(self) -> float:
-        return self.stel  # type: ignore
+        return self.stel
 
     @station_elevation.setter
     def station_elevation(self, value: float) -> None:
         setattr(self, 'stel', value)
 
 
-class _SacEvent:
+class _SacEvent(_SacIO):
     """Class for SAC event attributes."""
     @property
     def event_latitude(self) -> float:
-        return self.evla    # type: ignore
+        return self.evla
 
     @event_latitude.setter
     def event_latitude(self, value: float) -> None:
@@ -52,7 +53,7 @@ class _SacEvent:
 
     @property
     def event_longitude(self) -> float:
-        return self.evlo    # type: ignore
+        return self.evlo
 
     @event_longitude.setter
     def event_longitude(self, value: float) -> None:
@@ -61,7 +62,7 @@ class _SacEvent:
     @property
     def event_depth(self) -> float:
         """Gets the event depth in meters."""
-        return self.evdp * 1000  # type: ignore
+        return self.evdp * 1000
 
     @event_depth.setter
     def event_depth(self, value: float) -> None:
@@ -69,10 +70,8 @@ class _SacEvent:
         setattr(self, 'evdp', value/1000)
 
 
-class SAC(_SacIO, _SacStation, _SacEvent):
-    def __init__(self, *args, **kwargs):  # type: ignore
-        super().__init__(*args, **kwargs)
-
+class _SacSeismogram(_SacIO):
+    """Class for SAC seismogram attributes"""
     def __len__(self) -> int:
         return len(self.data)
 
@@ -117,3 +116,8 @@ class SAC(_SacIO, _SacStation, _SacEvent):
     def id(self) -> str:
         """Returns the seismogram ID"""
         return f"{self.knetwk}.{self.kstnm}.{self.khole}.{self.kcmpnm}"
+
+
+class SAC(_SacSeismogram, _SacStation, _SacEvent):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
