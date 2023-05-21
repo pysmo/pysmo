@@ -96,6 +96,7 @@ def test_plot_gauss_env(data_objects: tuple[list[Seismogram], ...]) -> plt.figur
     seismograms, *_ = data_objects
     seis, *_ = seismograms
     seis.data = seis.data - np.mean(seis.data)
+    seis.label = "Unfiltered"  # type: ignore
     gauss_seis = gauss(seis, Tn, alpha)
     gauss_seis.label = "Gaussian filtered"  # type: ignore
     env_seis = envelope(seis, Tn, alpha)

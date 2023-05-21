@@ -84,7 +84,7 @@ to write more complex :ref:`tools:tools`.
 from importlib.metadata import version
 from pysmo.core.sac.sacio import _SacIO  # noqa: F401
 from pysmo.core.sac.sac import SAC  # noqa: F401
-from pysmo.core.protocols import Seismogram, Event, Station  # noqa: F401
+from pysmo.core.protocols import *  # noqa: F401,F403
 from pysmo.core.functions import *  # noqa: F401,F403
 
 __version__ = version('pysmo')
