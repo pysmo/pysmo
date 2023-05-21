@@ -82,7 +82,7 @@ def test_read_headers(instances: tuple) -> None:
     assert sac.t9 is None
     assert sac.f is None
     # kzdate is a derived header
-    assert sac.kzdate == '2005-03-02'
+    assert sac.kzdate == '2005-03-01'
     # kztime is a derived header
     assert sac.kztime == '07:24:05.500'
     assert sac.iztype == 'o'
@@ -187,9 +187,21 @@ def test_change_headers(instances: tuple) -> None:
     with pytest.raises(KeyError):
         sac2.iftype = iftype_invalid
 
-    # Try setting a header that should only accept strings to a boolean
-    with pytest.raises(ValueError):
+    # Try setting a header that should only accept integers with something else
+    with pytest.raises(TypeError):
+        sac2.nzmsec = 3.3
+
+    # ... same for floats
+    with pytest.raises(TypeError):
+        sac2.delta = "3.3"
+
+    # ... same for strings
+    with pytest.raises(TypeError):
         sac2.kuser0 = True
+
+    # ... same for boolean
+    with pytest.raises(TypeError):
+        sac2.leven = "True"
 
     # Try setting a string that is too long
     with pytest.raises(ValueError):
@@ -381,4 +393,4 @@ def test_iris_service() -> None:
         scale="AUTO",
         demean="true",
         force_single_result=True)
-    assert mysac.npts == 144001
+    assert mysac.npts == 144001  # type: ignore

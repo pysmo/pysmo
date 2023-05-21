@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pysmo.  If not, see <http://www.gnu.org/licenses/>.
 ###
-
+from __future__ import annotations
 
 __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
@@ -27,11 +27,14 @@ import urllib.parse
 import zipfile
 import warnings
 import numpy as np
+from typing import Union, Optional, Any
+from typing_extensions import Self
 from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
 
 class _SacMeta(type):
     """Metaclass that adds the SacHeader descriptors to the class."""
+
     def __new__(cls, name, bases, dct):  # type: ignore
         for header_name in HEADER_FIELDS:
             header_class = SacHeaderFactory(header_name)
@@ -91,6 +94,146 @@ class _SacIO(metaclass=_SacMeta):
     There are a lot of header fields in a SAC file, which are all called the
     same way when using :class:`SAC`. They are all listed below.
     """
+    # type annotations:
+    # f -> float
+    delta: float
+    depmin: Union[float, None]
+    depmax: Union[float, None]
+    scale: float
+    odelta: float
+    b: float
+    e: float
+    o: float
+    a: float
+    fmt: float
+    t0: float
+    t1: float
+    t2: float
+    t3: float
+    t4: float
+    t5: float
+    t6: float
+    t7: float
+    t8: float
+    t9: float
+    f: float
+    resp0: float
+    resp1: float
+    resp2: float
+    resp3: float
+    resp4: float
+    resp5: float
+    resp6: float
+    resp7: float
+    resp8: float
+    resp9: float
+    stla: float
+    stlo: float
+    stel: float
+    stdp: float
+    evla: float
+    evlo: float
+    evel: float
+    evdp: float
+    mag: float
+    user0: float
+    user1: float
+    user2: float
+    user3: float
+    user4: float
+    user5: float
+    user6: float
+    user7: float
+    user8: float
+    user9: float
+    dist: float
+    az: float
+    baz: float
+    gcarc: float
+    sb: float
+    sdelta: float
+    depmen: Union[float, None]
+    cmpaz: float
+    cmpinc: float
+    xminimum: float
+    xmaximum: float
+    yminimum: float
+    ymaximum: float
+    unused6: float
+    unused7: float
+    unused8: float
+    unused9: float
+    unused10: float
+    unused11: float
+    unused12: float
+    # n --> int
+    nzyear: int
+    nzjday: int
+    nzhour: int
+    nzmin: int
+    nzsec: int
+    nzmsec: int
+    nvhdr: int
+    norid: int
+    nevid: int
+    npts: int
+    nsnpts: int
+    nwfid: int
+    nxsize: int
+    nysize: int
+    unused15: int
+    # i (enumerated) -> str
+    iftype: str
+    idep: str
+    iztype: str
+    unused16: str
+    iinst: str
+    istreg: str
+    ievreg: str
+    ievtyp: str
+    iqual: str
+    isynth: str
+    imagtyp: str
+    imagsrc: str
+    unused19: str
+    unused20: str
+    unused21: str
+    unused22: str
+    unused23: str
+    unused24: str
+    unused25: str
+    unused26: str
+    # l (logical) -> bool
+    leven: bool
+    lpspol: bool
+    lovrok: bool
+    lcalda: bool
+    unused27: bool
+    # k (alphanumeric) -> str
+    kstnm: str
+    kevnm: str
+    khole: str
+    ko: str
+    ka: str
+    kt0: str
+    kt1: str
+    kt2: str
+    kt3: str
+    kt4: str
+    kt5: str
+    kt6: str
+    kt7: str
+    kt8: str
+    kt9: str
+    kf: str
+    kuser0: str
+    kuser1: str
+    kuser2: str
+    kcmpnm: str
+    knetwk: str
+    kdatrd: str
+    kinst: str
+
     def __init__(self, **kwargs: dict) -> None:
         """Initialises a SAC object."""
         # All SAC header fields have a private and a public name. For example the sample rate has a
@@ -164,9 +307,9 @@ class _SacIO(metaclass=_SacMeta):
 
         # Read first data block
         start = 632
-        length = self.npts * 4  # type: ignore
+        length = self.npts * 4
         end = start + length
-        data_format = file_byteorder + str(self.npts) + 'f'  # type: ignore
+        data_format = file_byteorder + str(self.npts) + 'f'
         if end > len(buffer):
             raise EOFError()
         content = buffer[start:end]
@@ -180,7 +323,7 @@ class _SacIO(metaclass=_SacMeta):
             self.nvhdr = 6
 
     @classmethod
-    def from_file(cls, filename: str):  # type: ignore
+    def from_file(cls, filename: str) -> Self:
         """
         Creates a new SAC instance from a SAC file.
 
@@ -191,14 +334,15 @@ class _SacIO(metaclass=_SacMeta):
         return newinstance
 
     @classmethod
-    def from_buffer(cls, buffer: bytes):  # type: ignore
+    def from_buffer(cls, buffer: bytes) -> Self:
         """Create a new SAC instance from a SAC data buffer."""
         newinstance = cls()
         newinstance.read_buffer(buffer)
         return newinstance
 
     @classmethod
-    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):  # type: ignore
+    def from_iris(cls, net: str, sta: str, cha: str, loc: str, force_single_result: bool = False,
+                  **kwargs: Any) -> Union[Self, Optional[dict[str, Self]]]:
         """
         Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".
@@ -253,7 +397,7 @@ class _SacIO(metaclass=_SacMeta):
                 file_handle.write(private_value)
 
             # write data (if npts > 0)
-            if self.npts > 0:  # type: ignore
+            if self.npts > 0:
                 start1 = 632
                 file_handle.truncate(start1)
                 file_handle.seek(start1)
@@ -266,13 +410,13 @@ class _SacIO(metaclass=_SacMeta):
     @property
     def kzdate(self) -> str:
         """Returns ISO 8601 format of GMT reference date."""
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)  # type: ignore
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
         return _kzdate.isoformat()
 
     @property
     def kztime(self) -> str:
         """Returns alphanumeric form of GMT reference time."""
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)  # type: ignore
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
         return _kztime.isoformat(timespec='milliseconds')
 
     @property
@@ -298,10 +442,10 @@ class _SacIO(metaclass=_SacMeta):
         self.b = self.b
 
         # and calculate trace stats
-        if self.npts > 0:  # type: ignore
+        if self.npts > 0:
             self._depmin = min(data)
             self._depmax = max(data)
-            self._depmen = sum(data)/self.npts  # type: ignore
+            self._depmen = sum(data)/self.npts
         else:
             # If npts == 0 these attributes make no sense and are therefore reset
             # to the SAC 'unknown' value by setting the public_name value to None.
