@@ -2,8 +2,9 @@ __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
-from pysmo.core.sac.sacio import _SacIO
+import warnings
 from typing import Any
+from pysmo.core.sac.sacio import _SacIO
 
 
 class _SacStation(_SacIO):
@@ -104,8 +105,18 @@ class _SacSeismogram(_SacIO):
         self.nzhour = ref_begin_timedate.hour
         self.nzmin = ref_begin_timedate.minute
         self.nzsec = ref_begin_timedate.second
-        # micro -> milliseconds
-        self.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+        # datetime uses microsecond precision, while sac only does milliseconds
+        # We go ahead, but we round the values and raise a warning
+        msec = ref_begin_timedate.microsecond / 1000
+        if msec.is_integer():
+            self.nzmsec = int(msec)
+        else:
+            warnings.warn("SAC file format only has millisecond precision. \
+                          Rounding microseconds to milliseconds.", RuntimeWarning)
+            msec += 0.5
+            if msec >= 1000:
+                self.nzsec = ref_begin_timedate.second + 1
+            self.nzmsec = int(msec % 1000)
 
     @property
     def end_time(self) -> datetime.datetime:
