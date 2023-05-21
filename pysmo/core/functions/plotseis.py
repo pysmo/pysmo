@@ -4,8 +4,8 @@ import matplotlib.dates as mdates  # type: ignore
 from pysmo import Seismogram
 
 
-def plotseis(*seismograms: Seismogram, outfile: str = None, showfig: bool = True,
-             title: str = None, **kwargs: dict) -> None:
+def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
+             title: str = "", **kwargs: dict) -> None:
     """
     Plots Seismogram objects.
 
@@ -27,26 +27,29 @@ def plotseis(*seismograms: Seismogram, outfile: str = None, showfig: bool = True
         >>> seis = SAC.from_file('sacfile.sac')
         >>> plotseis(seis)
     """
+    legend: bool = False
     fig = plt.figure()
     for seis in seismograms:
         start = mdates.date2num(seis.begin_time)
         end = mdates.date2num(seis.end_time)
         time = np.linspace(start, end, len(seis))
         try:
-            label = seis.label  # type: ignore
+            kwargs['label'] = seis.label  # type: ignore
+            legend = True
         except AttributeError:
-            label = seis.id
-        plt.plot(time, seis.data, label=label, **kwargs)
-    plt.legend()
+            pass
+        plt.plot(time, seis.data, **kwargs)
+    if legend:
+        plt.legend()
     plt.xlabel('Time')
     plt.gcf().autofmt_xdate()
     fmt = mdates.DateFormatter('%H:%M:%S')
     plt.gca().xaxis.set_major_formatter(fmt)
-    if title is None:
+    if not title:
         left, _ = plt.xlim()
         title = mdates.num2date(left).strftime('%Y-%m-%d %H:%M:%S')
     plt.title(title)
-    if outfile is not None:
+    if outfile:
         plt.savefig(outfile)
     if showfig:
         plt.show()

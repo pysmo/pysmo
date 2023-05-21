@@ -115,7 +115,10 @@ class SacFloatHeader(SacHeader):
     def header_type(self) -> str:
         return('f')
 
-    def validate_and_format2private(self, public_value: float) -> float:
+    def validate_and_format2private(self, public_value: float | int) -> float:
+        if not isinstance(public_value, float | int):
+            raise TypeError(f"trying to set {self.public_name} to {public_value} failed.\
+                            Expected float, got {type(public_value)}.")
         return float(public_value)
 
     def format2public(self, private_value: float) -> float:
@@ -132,6 +135,9 @@ class SacIntHeader(SacHeader):
         return('n')
 
     def validate_and_format2private(self, public_value: int) -> int:
+        if not isinstance(public_value, int):
+            raise TypeError(f"trying to set {self.public_name} to {public_value} failed.\
+                            Expected int, got {type(public_value)}.")
         return int(public_value)
 
     def format2public(self, private_value: int) -> int:
@@ -175,8 +181,10 @@ class SacLogicalHeader(SacHeader):
         return('l')
 
     def validate_and_format2private(self, public_value: bool) -> bool:
-        if isinstance(public_value, bool):
-            return public_value
+        if not isinstance(public_value, bool):
+            raise TypeError(f"trying to set {self.public_name} to {public_value} failed.\
+                            Expected bool, got {type(public_value)}.")
+        return public_value
 
     def format2public(self, private_value: bool) -> bool:
         if isinstance(private_value, bool):
@@ -194,7 +202,7 @@ class SacAlphanumericHeader(SacHeader):
 
     def validate_and_format2private(self, public_value: str) -> str:
         if isinstance(public_value, bool):
-            raise ValueError(f"{self.public_name} may not be of type bool")
+            raise TypeError(f"{self.public_name} may not be of type bool")
         if len(public_value) > self.sac_length:
             raise ValueError(f"{public_value} is too long - maximum length for {self.public_name} is {self.sac_length}")
         return str(public_value)
