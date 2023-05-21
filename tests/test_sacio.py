@@ -187,9 +187,21 @@ def test_change_headers(instances: tuple) -> None:
     with pytest.raises(KeyError):
         sac2.iftype = iftype_invalid
 
-    # Try setting a header that should only accept strings to a boolean
-    with pytest.raises(ValueError):
+    # Try setting a header that should only accept integers with something else
+    with pytest.raises(TypeError):
+        sac2.nzmsec = 3.3
+
+    # ... same for floats
+    with pytest.raises(TypeError):
+        sac2.delta = "3.3"
+
+    # ... same for strings
+    with pytest.raises(TypeError):
         sac2.kuser0 = True
+
+    # ... same for boolean
+    with pytest.raises(TypeError):
+        sac2.leven = "True"
 
     # Try setting a string that is too long
     with pytest.raises(ValueError):
