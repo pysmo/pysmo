@@ -110,7 +110,7 @@ class _SacSeismogram(_SacIO):
     @property
     def end_time(self) -> datetime.datetime:
         """Returns the end time."""
-        return self.begin_time + datetime.timedelta(seconds=self.delta*len(self))
+        return self.begin_time + datetime.timedelta(seconds=self.delta*(len(self)-1))
 
     @property
     def id(self) -> str:
