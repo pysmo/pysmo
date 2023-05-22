@@ -1,1 +1,3 @@
-Cython
+typing-extensions
+myst-parser
+furo

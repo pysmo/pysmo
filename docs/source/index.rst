@@ -3,17 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Pysmo's documentation!
-=================================
+Welcome to pysmo documentation!
+===============================
+
+.. include:: readme.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
-   :caption: Contents:
+   :caption: Getting Started:
 
    intro
    installation
-   sac
+   fundamentals
+   protocols
+   files
+   functions
    tools
    contrib
    developing

@@ -1,6 +1,6 @@
 
-![Test Status](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml/badge.svg)
-![Build Status](https://github.com/pysmo/pysmo/actions/workflows/build.yml/badge.svg)
+[![Test Status](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml/badge.svg)](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml)
+[![Build Status](https://github.com/pysmo/pysmo/actions/workflows/build.yml/badge.svg)](https://github.com/pysmo/pysmo/actions/workflows/build.yml)
 [![Documentation Status](https://readthedocs.org/projects/pysmo/badge/?version=latest)](https://pysmo.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/pysmo/pysmo/branch/master/graph/badge.svg?token=ZsHTBN4rxF)](https://codecov.io/gh/pysmo/pysmo)
 [![PyPI](https://img.shields.io/pypi/v/pysmo)](https://pypi.org/project/pysmo/)
@@ -9,7 +9,7 @@
 Pysmo
 =====
 
-Python package to read/write/manipulate SAC (Seismic Analysis Code) files.
+The pysmo package provides simple tools for seismologists to solve problems in a pythonic fashion.
 
 
 Quickstart
@@ -36,14 +36,14 @@ Pysmo can then be used in a python script or the python shell directly:
 
 
 ```python
->>> from pysmo import SacIO
->>> seismogram = SacIO.from_file('file.sac')
+>>> from pysmo import SAC
+>>> seismogram = SAC.from_file('file.sac')
 >>> print(seismogram.delta)
 0.02500000037252903
 >>> print(seismogram.data)
 [-2.987490077543953e-08, -2.983458813332618e-08, ...
->>> help(seismogram)
-Help on SacIO in module pysmo.core.sac.sacio object:
+>>> help(SAC)
+Help on class SAC in module pysmo object:
 
 ...
 ```
