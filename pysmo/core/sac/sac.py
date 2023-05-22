@@ -70,6 +70,29 @@ class _SacEvent(_SacIO):
         """Sets the event depth."""
         setattr(self, 'evdp', value/1000)
 
+    @property
+    def event_time(self) -> datetime.datetime:
+        """Returns the event timedate."""
+        time = datetime.time.fromisoformat(self.kztime)
+        date = datetime.date.fromisoformat(self.kzdate)
+        return datetime.datetime.combine(date, time)
+
+    @event_time.setter
+    def event_time(self, event_time: datetime.datetime) -> None:
+        """Sets the event timedate."""
+        # datetime uses microsecond precision, while sac only does milliseconds
+        # We go ahead, but we round the values and raise a warning
+        if not (event_time.microsecond / 1000).is_integer():
+            warnings.warn("SAC file format only has millisecond precision. \
+                          Rounding microseconds to milliseconds.", RuntimeWarning)
+            event_time += datetime.timedelta(microseconds=500)
+        self.nzyear = event_time.year
+        self.nzjday = event_time.timetuple().tm_yday
+        self.nzhour = event_time.hour
+        self.nzmin = event_time.minute
+        self.nzsec = event_time.second
+        self.nzmsec = int(event_time.microsecond / 1000)
+
 
 class _SacSeismogram(_SacIO):
     """Class for SAC seismogram attributes"""
@@ -99,24 +122,21 @@ class _SacSeismogram(_SacIO):
         """Sets the begin timedate."""
         # setting the time should change the reference time, so we first subtract b
         ref_begin_timedate = begin_time - datetime.timedelta(seconds=self.b)
-        # then extract individual time components
+
+        # datetime uses microsecond precision, while sac only does milliseconds
+        # We go ahead, but we round the values and raise a warning
+        if not (ref_begin_timedate.microsecond / 1000).is_integer():
+            warnings.warn("SAC file format only has millisecond precision. \
+                          Rounding microseconds to milliseconds.", RuntimeWarning)
+            ref_begin_timedate += datetime.timedelta(microseconds=500)
+
+        # Now extract individual time components
         self.nzyear = ref_begin_timedate.year
-        self.nzjday = int(ref_begin_timedate.strftime('%j'))
+        self.nzjday = ref_begin_timedate.timetuple().tm_yday
         self.nzhour = ref_begin_timedate.hour
         self.nzmin = ref_begin_timedate.minute
         self.nzsec = ref_begin_timedate.second
-        # datetime uses microsecond precision, while sac only does milliseconds
-        # We go ahead, but we round the values and raise a warning
-        msec = ref_begin_timedate.microsecond / 1000
-        if msec.is_integer():
-            self.nzmsec = int(msec)
-        else:
-            warnings.warn("SAC file format only has millisecond precision. \
-                          Rounding microseconds to milliseconds.", RuntimeWarning)
-            msec += 0.5
-            if msec >= 1000:
-                self.nzsec = ref_begin_timedate.second + 1
-            self.nzmsec = int(msec % 1000)
+        self.nzmsec = int(ref_begin_timedate.microsecond / 1000)
 
     @property
     def end_time(self) -> datetime.datetime:
