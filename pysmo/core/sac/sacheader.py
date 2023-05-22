@@ -113,7 +113,7 @@ class SacFloatHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('f')
+        return ('f')
 
     def validate_and_format2private(self, public_value: float | int) -> float:
         if not isinstance(public_value, float | int):
@@ -132,7 +132,7 @@ class SacIntHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('n')
+        return ('n')
 
     def validate_and_format2private(self, public_value: int) -> int:
         if not isinstance(public_value, int):
@@ -159,7 +159,7 @@ class SacEnumeratedHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('i')
+        return ('i')
 
     def validate_and_format2private(self, public_value: str) -> int:
         # Convert from string to int
@@ -178,7 +178,7 @@ class SacLogicalHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('l')
+        return ('l')
 
     def validate_and_format2private(self, public_value: bool) -> bool:
         if not isinstance(public_value, bool):
@@ -198,7 +198,7 @@ class SacAlphanumericHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('k')
+        return ('k')
 
     def validate_and_format2private(self, public_value: str) -> str:
         if isinstance(public_value, bool):
@@ -218,7 +218,7 @@ class SacAuxHeader(SacHeader):
 
     @property
     def header_type(self) -> str:
-        return('a')
+        return ('a')
 
     def validate_and_format2private(self, public_value):  # type: ignore
         raise RuntimeError(f"I don't know how to format {self.public_name}!")
