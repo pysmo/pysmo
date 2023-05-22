@@ -65,4 +65,4 @@ def __gauss(seis: Seismogram, Tn: float, alpha: float) -> tuple[np.ndarray, np.n
     hn = np.fft.ifft(Hn).real
     qn = np.fft.ifft(Qn).real
     an = np.sqrt(hn**2 + qn**2)  # envelope
-    return(an, hn)
+    return (an, hn)
