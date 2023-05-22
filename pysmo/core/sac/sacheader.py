@@ -117,8 +117,14 @@ class SacFloatHeader(SacHeader):
 
     def validate_and_format2private(self, public_value: float | int) -> float:
         if not isinstance(public_value, float | int):
-            raise TypeError(f"trying to set {self.public_name} to {public_value} failed.\
-                            Expected float, got {type(public_value)}.")
+            raise TypeError(f"Setting {self.public_name} to {public_value} failed. " +
+                            f"Expected float, got {type(public_value)}.")
+        if self.public_name in ("evla", "stla") and not 90 >= public_value >= -90:
+            raise ValueError(f"Setting {self.public_name} to {public_value} failed. " +
+                             "Latitude must be no smaller than -90 and no greater than 90.")
+        elif self.public_name in ("evlo", "stlo") and not 180 >= public_value >= -180:
+            raise ValueError(f"Setting {self.public_name} to {public_value} failed. " +
+                             "Longitude must be no smaller than -180 and no greater than 180.")
         return float(public_value)
 
     def format2public(self, private_value: float) -> float:
