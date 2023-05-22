@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 # This seems to be required to pick up the path defined above...
 pkg_resources = reload(pkg_resources)
 
-project = u'Pysmo'
-copyright = u'2012, Pysmo Project'
+project = u'pysmo'
+copyright = u'2012-2023, Pysmo Project'
 author = u'Pysmo Project'
 
 # The full version, including alpha/beta/rc tags
@@ -50,6 +50,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.autosectionlabel',
+    'myst_parser',
 ]
 
 autodoc_typehints = 'both'
@@ -60,8 +61,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -71,7 +71,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -87,13 +87,29 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'furo'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 # html_theme_options = {}
+
+# Add any paths that contain custom themes here, relative to this directory.
+# html_theme_path = []
+
+# The name for this set of Sphinx documents.  If None, it defaults to
+# "<project> v<release> documentation".
+# html_title = None
+
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+# html_logo = "pysmo.svg"
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large.
+# html_favicon = None
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -119,7 +135,7 @@ autosectionlabel_prefix_document = True
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Pysmodoc'
+htmlhelp_basename = 'pysmodoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------

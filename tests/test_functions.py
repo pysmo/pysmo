@@ -21,16 +21,16 @@ def sacfile() -> str:
 
 
 @pytest.fixture()
-def data_objects(tmpdir_factory: pytest.TempdirFactory, sacfile: str) -> tuple[list[Seismogram], list[Station],
-                                                                               list[Event]]:
+def data_objects(tmp_path_factory: pytest.TempPathFactory, sacfile: str) -> tuple[list[Seismogram], list[Station],
+                                                                                  list[Event]]:
     """Returns instances of test objects to use with functions"""
     seismograms: list = []
     stations: list = []
     events: list = []
     # SAC provides seismogram, station and event
-    test_sacfile = str(tmpdir_factory.mktemp("data").join("testfile.sac"))
+    test_sacfile = tmp_path_factory.mktemp("data") / "testfile.sac"
     shutil.copyfile(sacfile, test_sacfile)
-    sacobj = SAC.from_file(test_sacfile)
+    sacobj = SAC.from_file(str(test_sacfile))
     seismograms.append(sacobj)
     stations.append(sacobj)
     events.append(sacobj)
@@ -43,7 +43,7 @@ def test_resample(data_objects: tuple[list[Seismogram], ...]) -> None:
     for seis in seismograms:
         new_sampling_rate = seis.sampling_rate * 2
         resampled_seis = resample(seis, new_sampling_rate)
-        assert pytest.approx(resampled_seis.sampling_rate == seis.sampling_rate * 2)
+        assert pytest.approx(resampled_seis.sampling_rate) == seis.sampling_rate * 2
         assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
 
 
