@@ -38,7 +38,10 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-python.python",
-				"ms-python.vscode-pylance"
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter",
+				"streetsidesoftware.code-spell-checker",
+				"eamodio.gitlens"
 			]
 		}
 	},
@@ -49,12 +52,17 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "pip3 install --user -r requirements.txt",
 
-	"postCreateCommand": "poetry install",
-	"postAttachCommand": "python -m http.server --directory /workspaces/pysmo/docs/build/html 51234",
+	"postCreateCommand": ["poetry", "install"],
+	"postAttachCommand": "./.devcontainer/postAttachCommand.sh",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode",
 	"features": {
-		"sshd": "latest"
-	}
+		//"ghcr.io/devcontainers/features/sshd:1": {}
+	},
+	"runArgs": [
+  		"--userns=keep-id:uid=1000,gid=1000"
+ 	],
+ 	"containerUser": "vscode",
+ 	"updateRemoteUserUID": false
 }
