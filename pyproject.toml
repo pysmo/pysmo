@@ -40,6 +40,11 @@ furo = "^2023.5.20"
 types-pyyaml = "^6.0.12.9"
 types-requests = "^2.30.0.0"
 myst-parser = "^1.0.0"
+nbsphinx = "^0.9.1"
+pygments = "^2.15.1"
+ipython = "^8.13.2"
+jupyter = "^1.0.0"
+sphinx-autobuild = "^2021.3.14"
 
 [tool.mypy]
 namespace_packages = true
