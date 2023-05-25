@@ -1,7 +1,8 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 import datetime
 
 
+@runtime_checkable
 class Event(Protocol):
     """The :class:`Event` class defines a protocol for seismic events in Pysmo.
     """

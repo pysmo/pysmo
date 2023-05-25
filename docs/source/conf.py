@@ -51,6 +51,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.autosectionlabel',
     'myst_parser',
+    'nbsphinx',
 ]
 
 autodoc_typehints = 'both'

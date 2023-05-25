@@ -425,7 +425,7 @@ class _SacIO(metaclass=_SacMeta):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray) -> None:
+    def data(self, value: np.ndarray) -> None:
         """
         Sets the seismogram data. This will also update the end time header
         value 'e' as well as depmin, depmax, and depmen.
@@ -433,19 +433,19 @@ class _SacIO(metaclass=_SacMeta):
         :param data: numpy array containing seismogram data
         """
         # Data is stored as _data inside the object
-        self._data = data
+        self._data = value
 
         # Calculate number of points from the length of the data vector
-        self._npts = len(data)
+        self._npts = len(value)
 
         # This triggers recalculating end time
         self.b = self.b
 
         # and calculate trace stats
         if self.npts > 0:
-            self._depmin = min(data)
-            self._depmax = max(data)
-            self._depmen = sum(data)/self.npts
+            self._depmin = min(self._data)
+            self._depmax = max(self._data)
+            self._depmen = sum(self._data)/self._npts
         else:
             # If npts == 0 these attributes make no sense and are therefore reset
             # to the SAC 'unknown' value by setting the public_name value to None.

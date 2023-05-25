@@ -1,8 +1,9 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 import numpy as np
 import datetime
 
 
+@runtime_checkable
 class Seismogram(Protocol):
     """The :class:`Seismogram` class defines a protocol for a basic seismogram as used in pysmo.
 
