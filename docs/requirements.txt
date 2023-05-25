@@ -1,3 +1,5 @@
 typing-extensions
 myst-parser
 furo
+nbsphinx
+ipykernel
