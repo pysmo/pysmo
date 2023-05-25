@@ -44,8 +44,8 @@ class _SacStation(_SacIO):
         setattr(self, 'stel', value)
 
 
-class _SacEvent(_SacIO):
-    """Class for SAC event attributes."""
+class _SacEpicenter(_SacIO):
+    """Class for SAC epicenter attributes."""
     @property
     def event_latitude(self) -> float:
         return self.evla
@@ -62,40 +62,18 @@ class _SacEvent(_SacIO):
     def event_longitude(self, value: float) -> None:
         setattr(self, 'evlo', value)
 
+
+class _SacHypocenter(_SacEpicenter, _SacIO):
+    """Class for SAC hypocenter attributes."""
     @property
-    def event_depth(self) -> Optional[float]:
+    def event_depth(self) -> float:
         """Gets the event depth in meters."""
-        if self.evdp:
-            return self.evdp * 1000
-        return None
+        return self.evdp * 1000
 
     @event_depth.setter
     def event_depth(self, value: float) -> None:
         """Sets the event depth."""
         setattr(self, 'evdp', value/1000)
-
-    @property
-    def event_time(self) -> datetime.datetime:
-        """Returns the event timedate."""
-        time = datetime.time.fromisoformat(self.kztime)
-        date = datetime.date.fromisoformat(self.kzdate)
-        return datetime.datetime.combine(date, time)
-
-    @event_time.setter
-    def event_time(self, value: datetime.datetime) -> None:
-        """Sets the event timedate."""
-        # datetime uses microsecond precision, while sac only does milliseconds
-        # We go ahead, but we round the values and raise a warning
-        if not (value.microsecond / 1000).is_integer():
-            warnings.warn("SAC file format only has millisecond precision. \
-                          Rounding microseconds to milliseconds.", RuntimeWarning)
-            value += datetime.timedelta(microseconds=500)
-        self.nzyear = value.year
-        self.nzjday = value.timetuple().tm_yday
-        self.nzhour = value.hour
-        self.nzmin = value.minute
-        self.nzsec = value.second
-        self.nzmsec = int(value.microsecond / 1000)
 
 
 class _SacSeismogram(_SacIO):
@@ -119,19 +97,21 @@ class _SacSeismogram(_SacIO):
         # Begin time is reference time/date + b
         abs_begin_time = datetime.time.fromisoformat(self.kztime)
         begin_date = datetime.date.fromisoformat(self.kzdate)
-        return datetime.datetime.combine(begin_date, abs_begin_time) + datetime.timedelta(seconds=self.b)
+        return datetime.datetime.combine(begin_date, abs_begin_time) + \
+            datetime.timedelta(seconds=self.b)
 
     @begin_time.setter
     def begin_time(self, value: datetime.datetime) -> None:
         """Sets the begin timedate."""
-        # setting the time should change the reference time, so we first subtract b
+        # Setting the time should change the reference time,
+        # so we first subtract b.
         ref_begin_timedate = value - datetime.timedelta(seconds=self.b)
 
         # datetime uses microsecond precision, while sac only does milliseconds
         # We go ahead, but we round the values and raise a warning
         if not (ref_begin_timedate.microsecond / 1000).is_integer():
             warnings.warn("SAC file format only has millisecond precision. \
-                          Rounding microseconds to milliseconds.", RuntimeWarning)
+                            Rounding microseconds to milliseconds.", RuntimeWarning)
             ref_begin_timedate += datetime.timedelta(microseconds=500)
 
         # Now extract individual time components
@@ -153,6 +133,6 @@ class _SacSeismogram(_SacIO):
         return f"{self.knetwk}.{self.kstnm}.{self.khole}.{self.kcmpnm}"
 
 
-class SAC(_SacSeismogram, _SacStation, _SacEvent):
+class SAC(_SacSeismogram, _SacStation, _SacHypocenter):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

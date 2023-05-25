@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 from datetime import datetime, timedelta
 from pysmo import SAC, _SacIO
-from pysmo.core.protocols import Seismogram, Station, Event
+from pysmo.core.protocols import Seismogram, Station, Epicenter, Hypocenter
 
 
 @pytest.fixture()
@@ -86,31 +86,32 @@ def test_sac_as_station(sac: Station, sacio: _SacIO) -> None:
     sac.station_longitude = new_longitude
     sac.station_elevation = new_elevation
     assert sac.name == new_name
-    assert sac.station_latitude == new_latitude == sac.stla     # Cheekily accessing the sac headers directly,
-    assert sac.station_longitude == new_longitude == sac.stlo   # which we of course can do, but it should not
-    assert sac.station_elevation == new_elevation == sac.stel   # be done outside of testing such as here.
+    assert sac.station_latitude == new_latitude == sac.stla   # type: ignore
+    assert sac.station_longitude == new_longitude == sac.stlo   # type: ignore
+    assert sac.station_elevation == new_elevation == sac.stel   # type: ignore
     with pytest.raises(ValueError):
         sac.station_latitude = bad_latitude
     with pytest.raises(ValueError):
         sac.station_longitude = bad_longitude
 
 
-def test_sac_as_event(sac: Event, sacio: _SacIO) -> None:
+def test_sac_as_epicenter(sac: Epicenter, sacio: _SacIO) -> None:
     assert sac.event_latitude == sacio.evla == pytest.approx(-31.465999603271484)
     assert sac.event_longitude == sacio.evlo == pytest.approx(-71.71800231933594)
+    sac.event_latitude, sac.event_longitude = 32, 100
+    assert sac.event_latitude == 32 == sac.evla   # type: ignore
+    assert sac.event_longitude == 100 == sac.evlo  # type: ignore
+    with pytest.raises(ValueError):
+        sac.event_latitude = 100
+    with pytest.raises(ValueError):
+        sac.event_latitude = -100
+    with pytest.raises(ValueError):
+        sac.event_longitude = 500
+    with pytest.raises(ValueError):
+        sac.event_longitude = -500
+
+
+def test_sac_as_hypocenter(sac: Hypocenter, sacio: _SacIO) -> None:
     assert sac.event_depth == sacio.evdp * 1000 == 26000
-    assert sac.event_time == datetime(2005, 3, 1, 7, 24, 5, 500000)
-    new_time1 = datetime.fromisoformat('2011-11-04T00:05:23.123')
-    new_time2 = datetime.fromisoformat('2011-11-04T00:05:23.123155')
-    new_time3 = datetime.fromisoformat('2011-11-04T00:05:23.123855')
-    sac.event_time = new_time1
-    assert sac.event_time == new_time1
-    with pytest.warns(RuntimeWarning):
-        sac.event_time = new_time2
-    assert sac.event_time == new_time1
-    with pytest.warns(RuntimeWarning):
-        sac.event_time = new_time3
-    assert sac.event_time == new_time1 + timedelta(milliseconds=1)
-    with pytest.warns(RuntimeWarning):
-        sac.event_time = datetime.fromisoformat('2011-11-04T00:05:23.999500')
-    assert sac.event_time == datetime.fromisoformat('2011-11-04T00:05:24.000000')
+    sac.event_depth = 5000
+    assert sac.event_depth == 5000 == sac.evdp * 1000  # type: ignore
