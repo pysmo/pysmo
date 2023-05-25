@@ -3,7 +3,7 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
 import warnings
-from typing import Any
+from typing import Any, Optional
 from pysmo.core.sac.sacio import _SacIO
 
 
@@ -34,8 +34,10 @@ class _SacStation(_SacIO):
         setattr(self, 'stlo', value)
 
     @property
-    def station_elevation(self) -> float:
-        return self.stel
+    def station_elevation(self) -> Optional[float]:
+        if self.stel:
+            return self.stel
+        return None
 
     @station_elevation.setter
     def station_elevation(self, value: float) -> None:
@@ -61,9 +63,11 @@ class _SacEvent(_SacIO):
         setattr(self, 'evlo', value)
 
     @property
-    def event_depth(self) -> float:
+    def event_depth(self) -> Optional[float]:
         """Gets the event depth in meters."""
-        return self.evdp * 1000
+        if self.evdp:
+            return self.evdp * 1000
+        return None
 
     @event_depth.setter
     def event_depth(self, value: float) -> None:
@@ -78,20 +82,20 @@ class _SacEvent(_SacIO):
         return datetime.datetime.combine(date, time)
 
     @event_time.setter
-    def event_time(self, event_time: datetime.datetime) -> None:
+    def event_time(self, value: datetime.datetime) -> None:
         """Sets the event timedate."""
         # datetime uses microsecond precision, while sac only does milliseconds
         # We go ahead, but we round the values and raise a warning
-        if not (event_time.microsecond / 1000).is_integer():
+        if not (value.microsecond / 1000).is_integer():
             warnings.warn("SAC file format only has millisecond precision. \
                           Rounding microseconds to milliseconds.", RuntimeWarning)
-            event_time += datetime.timedelta(microseconds=500)
-        self.nzyear = event_time.year
-        self.nzjday = event_time.timetuple().tm_yday
-        self.nzhour = event_time.hour
-        self.nzmin = event_time.minute
-        self.nzsec = event_time.second
-        self.nzmsec = int(event_time.microsecond / 1000)
+            value += datetime.timedelta(microseconds=500)
+        self.nzyear = value.year
+        self.nzjday = value.timetuple().tm_yday
+        self.nzhour = value.hour
+        self.nzmin = value.minute
+        self.nzsec = value.second
+        self.nzmsec = int(value.microsecond / 1000)
 
 
 class _SacSeismogram(_SacIO):
@@ -105,9 +109,9 @@ class _SacSeismogram(_SacIO):
         return self.delta
 
     @sampling_rate.setter
-    def sampling_rate(self, sampling_rate: float) -> None:
+    def sampling_rate(self, value: float) -> None:
         """Sets the sampling rate."""
-        self.delta = sampling_rate
+        self.delta = value
 
     @property
     def begin_time(self) -> datetime.datetime:
@@ -118,10 +122,10 @@ class _SacSeismogram(_SacIO):
         return datetime.datetime.combine(begin_date, abs_begin_time) + datetime.timedelta(seconds=self.b)
 
     @begin_time.setter
-    def begin_time(self, begin_time: datetime.datetime) -> None:
+    def begin_time(self, value: datetime.datetime) -> None:
         """Sets the begin timedate."""
         # setting the time should change the reference time, so we first subtract b
-        ref_begin_timedate = begin_time - datetime.timedelta(seconds=self.b)
+        ref_begin_timedate = value - datetime.timedelta(seconds=self.b)
 
         # datetime uses microsecond precision, while sac only does milliseconds
         # We go ahead, but we round the values and raise a warning

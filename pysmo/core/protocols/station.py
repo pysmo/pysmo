@@ -1,6 +1,7 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
+@runtime_checkable
 class Station(Protocol):
     """The :class:`Station` class defines a protocol for seismic stations in Pysmo.
     """

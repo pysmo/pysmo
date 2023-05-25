@@ -27,16 +27,22 @@ lint: check-poetry ## Lint code with flake8
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
-tests: check-poetry lint mypy## Run tests with pytest.
+tests: check-poetry lint mypy ## Run tests with pytest.
 	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl -v tests
 
 mypy: check-poetry ## Run tests with pytest.
 	poetry run py.test --mypy -m mypy -v pysmo
 
-docs: install check-poetry ## Build html docs.
+docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
 
-build: clean check-poetry ## Build distribution.
+live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
+	poetry run python3 -m sphinx_autobuild docs/source docs/build/html
+
+notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
+	poetry run jupyter-notebook
+
+build: clean check-poetry install ## Build distribution.
 	poetry build
 
 publish: check-poetry build ## Publish package to PyPI (you will be asked for PyPI username and password).
