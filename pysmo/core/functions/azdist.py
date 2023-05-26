@@ -5,10 +5,10 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 
 from pyproj import Geod
-from pysmo.core.protocols import Station, Event
+from pysmo.core.protocols import Station, Epicenter
 
 
-def azimuth(event: Event, station: Station, ellps: str = 'WGS84') -> float:
+def azimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
     """
     Calculate azimuth (in DEG) from an event to a station. The default ellipse used is
     'WGS84', but others may be specified. For more information see:
@@ -34,7 +34,7 @@ def azimuth(event: Event, station: Station, ellps: str = 'WGS84') -> float:
     return __azdist(event, station, ellps)[0]
 
 
-def backazimuth(event: Event, station: Station, ellps: str = 'WGS84') -> float:
+def backazimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
     """
     Calculate backazimuth (in DEG) from a station to an event. The default ellipse used is
     'WGS84', but others may be specified. For more information see:
@@ -60,7 +60,7 @@ def backazimuth(event: Event, station: Station, ellps: str = 'WGS84') -> float:
     return __azdist(event, station, ellps)[1]
 
 
-def distance(event: Event, station: Station, ellps: str = 'WGS84') -> float:
+def distance(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
     """
     Calculate the great circle distance (in metres) between an event and a station. The
     default ellipse used is 'WGS84', but others may be specified. For more information see:
@@ -86,7 +86,7 @@ def distance(event: Event, station: Station, ellps: str = 'WGS84') -> float:
     return __azdist(event, station, ellps)[2]
 
 
-def __azdist(event: Event, station: Station, ellps: str) -> tuple[float, float, float]:
+def __azdist(event: Epicenter, station: Station, ellps: str) -> tuple[float, float, float]:
     """
     Return forward/backazimuth and distance using
     pyproj (proj4 bindings)
