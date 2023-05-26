@@ -86,9 +86,9 @@ def test_sac_as_station(sac: Station, sacio: _SacIO) -> None:
     sac.station_longitude = new_longitude
     sac.station_elevation = new_elevation
     assert sac.name == new_name
-    assert sac.station_latitude == new_latitude == sac.stla   # type: ignore
-    assert sac.station_longitude == new_longitude == sac.stlo   # type: ignore
-    assert sac.station_elevation == new_elevation == sac.stel   # type: ignore
+    assert sac.station_latitude == new_latitude == sac.stla
+    assert sac.station_longitude == new_longitude == sac.stlo
+    assert sac.station_elevation == new_elevation == sac.stel
     with pytest.raises(ValueError):
         sac.station_latitude = bad_latitude
     with pytest.raises(ValueError):
