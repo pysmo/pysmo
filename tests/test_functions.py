@@ -3,7 +3,7 @@ from __future__ import annotations
 Run tests for all functions defined in pysmo.sac.sacfunc
 """
 
-from pysmo import (SAC, Station, Event, Seismogram, resample, detrend, envelope, gauss, plotseis,
+from pysmo import (SAC, Station, Epicenter, Seismogram, resample, detrend, envelope, gauss, plotseis,
                    distance, azimuth, backazimuth)
 import matplotlib.pyplot as plt  # type: ignore
 import os
@@ -22,7 +22,7 @@ def sacfile() -> str:
 
 @pytest.fixture()
 def data_objects(tmp_path_factory: pytest.TempPathFactory, sacfile: str) -> tuple[list[Seismogram], list[Station],
-                                                                                  list[Event]]:
+                                                                                  list[Epicenter]]:
     """Returns instances of test objects to use with functions"""
     seismograms: list = []
     stations: list = []
@@ -105,7 +105,7 @@ def test_plot_gauss_env(data_objects: tuple[list[Seismogram], ...]) -> plt.figur
     return fig
 
 
-def test_azimuth(data_objects: tuple[list[Seismogram], list[Station], list[Event]]) -> None:
+def test_azimuth(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
     """Calculate azimuth from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):
@@ -115,7 +115,7 @@ def test_azimuth(data_objects: tuple[list[Seismogram], list[Station], list[Event
         assert pytest.approx(azimuth_clrk66) == 181.92001941872516
 
 
-def test_backazimuth(data_objects: tuple[list[Seismogram], list[Station], list[Event]]) -> None:
+def test_backazimuth(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
     """Calculate backazimuth from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):
@@ -125,7 +125,7 @@ def test_backazimuth(data_objects: tuple[list[Seismogram], list[Station], list[E
         assert pytest.approx(backazimuth_clrk66) == 2.467847115319614
 
 
-def test_distance(data_objects: tuple[list[Seismogram], list[Station], list[Event]]) -> None:
+def test_distance(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
     """Calculate distance from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):
