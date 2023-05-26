@@ -20,8 +20,12 @@ can be easily installed using the ``pip`` module::
 
   $ python3 -m pip install pysmo
 
-If desired, the latest development version of Pysmo can be installed *instead* of the
-stable release::
+Pre-release versions of pysmo can be installed with the `--pre` flag::
+
+  $ python3 -m pip install pysmo --pre
+
+Finally, the latest development version of Pysmo can be installed directly from Github by
+running::
 
    $ python -m pip install git+https://github.com/pysmo/pysmo
 
