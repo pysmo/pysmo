@@ -55,7 +55,6 @@ extensions = [
     # 'sphinx.ext.autosectionlabel',
     'sphinx_copybutton',
     'sphinx.ext.intersphinx',
-    'sphinxcontrib.mermaid',
     'sphinx_tippy',
     'nbsphinx',
 ]
