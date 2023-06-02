@@ -1,5 +1,9 @@
-typing-extensions
-myst-parser
 furo
+myst-parser
+sphinx-design
+sphinx-copybutton
+sphinx-tippy
+sphinx-autodoc2
 nbsphinx
 ipykernel
+typing-extensions
