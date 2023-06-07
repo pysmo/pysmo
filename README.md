@@ -24,7 +24,6 @@ Pysmo itself is designed to be modular and easy to expand without interfering
 with the existing code base, making it straightforward to incorporate user
 contributions.
 
-Contributors
-------------
+## Contributors
 
 - Helio Tejedor

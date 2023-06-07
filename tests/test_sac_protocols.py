@@ -6,8 +6,8 @@ import os
 import pytest
 import numpy as np
 from datetime import datetime, timedelta
-from pysmo import SAC, _SacIO
-from pysmo.core.protocols import Seismogram, Station, Epicenter, Hypocenter
+from pysmo.core.sac import SAC, _SacIO
+from pysmo.core.types import Seismogram, Station, Epicenter, Hypocenter
 
 
 @pytest.fixture()

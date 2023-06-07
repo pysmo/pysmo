@@ -3,8 +3,9 @@ from __future__ import annotations
 Run tests for all functions defined in pysmo.sac.sacfunc
 """
 
-from pysmo import (SAC, Station, Epicenter, Seismogram, resample, detrend, envelope, gauss, plotseis,
-                   distance, azimuth, backazimuth)
+from pysmo import Station, Epicenter, Seismogram
+from pysmo.core.sac import SAC
+from pysmo.functions import resample, detrend, gauss, plotseis, distance, azimuth, backazimuth, envelope
 import matplotlib.pyplot as plt  # type: ignore
 import os
 import shutil
