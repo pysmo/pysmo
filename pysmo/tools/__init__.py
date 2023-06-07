@@ -1,5 +1,4 @@
 """
-The psymo.tools package provides some extra tools that do
-not involve usage of SAC files.
+The `psymo.tools`{l=python} package provides some extra tools that ...
 """
 name = 'tools'

@@ -44,25 +44,61 @@ version = '.'.join(release.split('.')[:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.githubpages',
-    'sphinx.ext.autosectionlabel',
     'myst_parser',
+    'sphinx_design',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    # 'sphinx.ext.doctest',
+    # 'sphinx.ext.coverage',
+    # 'sphinx.ext.mathjax',
+    # 'sphinx.ext.githubpages',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_copybutton',
+    'sphinx.ext.intersphinx',
+    'sphinx_tippy',
     'nbsphinx',
+    'autodoc2',
 ]
 
-autodoc_typehints = 'both'
+autodoc2_packages = [
+    {
+        "path": "../../pysmo",
+        "module": "psymo",
+    },
+    {
+        "path": "../../pysmo/core/functions",
+        "module": "psymo.functions",
+    },
+]
 
+autodoc2_render_plugin = "myst"
+
+myst_enable_extensions = [
+    "colon_fence",
+    "attrs_inline",
+    "attrs_block",
+    "fieldlist",
+]
+
+myst_heading_anchors = 3
+
+intersphinx_mapping = {
+    "mypy": ("https://mypy.readthedocs.io/en/stable/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pip": ("https://pip.pypa.io/en/stable/", None),
+}
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = ['.rst', '.md']
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -126,7 +162,6 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-
 
 numfig = True
 
