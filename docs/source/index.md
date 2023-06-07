@@ -18,13 +18,13 @@ tutorial.ipynb
 :caption: pysmo Reference
 :maxdepth: 2
 
-problem-statement
+rationale
 in-the-box
 types
+classes
 functions
 tools
-examples
-apidocs/index
+gallery
 ```
 
 ```{toctree}
@@ -36,10 +36,3 @@ rules-of-the-land
 developing
 contributing
 ```
-
-
-<!-- ## Indices and tables -->
-<!---->
-<!-- * :ref:`genindex` -->
-<!-- * :ref:`modindex` -->
-<!-- * :ref:`search` -->

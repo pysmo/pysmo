@@ -1,4 +1,4 @@
-# Examples
+# Gallery
 
 ## Realistic noise
 

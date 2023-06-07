@@ -173,8 +173,20 @@ $ python -m mypy mycode.py
 ## Available Types
 
 TODO:
-
 - list available types and link to them.
+
+```{eval-rst}
+.. autosummary::
+
+   pysmo.Seismogram
+   pysmo.Station
+```
+
+```{eval-rst}
+.. autoclass:: pysmo.Seismogram
+    :members:
+    :undoc-members:
+```
 
 ## Compatible Classes
 

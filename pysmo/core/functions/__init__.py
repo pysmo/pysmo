@@ -1,7 +1,3 @@
-"""
-asdf
-"""
-
 from .detrend import detrend  # noqa: F401
 from .resample import resample  # noqa: F401
 from .filter_gauss import envelope, gauss  # noqa: F401

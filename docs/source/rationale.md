@@ -1,4 +1,4 @@
-# Problem Statement
+# Rationale
 
 Anyone who has taken a course on programming (in any language) will most likely first
 have been taught about the different data types available. These typically consist of

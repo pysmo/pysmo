@@ -46,21 +46,29 @@ version = '.'.join(release.split('.')[:2])
 extensions = [
     'myst_parser',
     'sphinx_design',
-    'autodoc2',
-    # 'sphinx.ext.autodoc',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     # 'sphinx.ext.doctest',
     # 'sphinx.ext.coverage',
     # 'sphinx.ext.mathjax',
     # 'sphinx.ext.githubpages',
-    # 'sphinx.ext.autosectionlabel',
+    'sphinx.ext.autosectionlabel',
     'sphinx_copybutton',
     'sphinx.ext.intersphinx',
     'sphinx_tippy',
     'nbsphinx',
+    'autodoc2',
 ]
 
 autodoc2_packages = [
-    '../../pysmo',
+    {
+        "path": "../../pysmo",
+        "module": "psymo",
+    },
+    {
+        "path": "../../pysmo/core/functions",
+        "module": "psymo.functions",
+    },
 ]
 
 autodoc2_render_plugin = "myst"
