@@ -3,6 +3,7 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
 import warnings
+import numpy as np
 from typing import Any, Optional
 from pysmo.core.sac.sacio import _SacIO
 
@@ -78,8 +79,10 @@ class _SacHypocenter(_SacEpicenter, _SacIO):
 
 class _SacSeismogram(_SacIO):
     """Class for SAC seismogram attributes"""
+
     def __len__(self) -> int:
-        return len(self.data)
+        """Returns the length (number of points) of a seismogram."""
+        return np.size(self.data)
 
     @property
     def sampling_rate(self) -> float:
