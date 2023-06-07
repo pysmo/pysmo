@@ -28,6 +28,17 @@ In order to develop pysmo in a consistent and isolated environment we use `Poetr
 
 .. note:: For convenience we wrap the most used poetry commands in a ``Makefile``.
 
+Setting up dependencies on Windows
+----------------------------------
+To set up the development environment correctly on Windows OS, a few additional steps are required. 
+To download the additional dependencies we will use Chocolatey - a package manager for Windows. Please check out the Chocolatey installation instructions `here <https://chocolatey.org/install#individual>`_. 
+
+Once Chocolatey is correctly installed, run the following commands to install the additional dependencies. ::
+
+   $ choco install make
+   $ choco install awk
+   $ choco install pandoc
+
 Makefile
 --------
 
@@ -75,7 +86,7 @@ The final step is to upload your changes to Github, where a pull request can be 
 
    $ git push --set-upstream origin
 
-If you now longer need the working branch you can switch back to master and delete the working branch::
+If you no longer need the working branch you can switch back to master and delete the working branch::
 
    $ git checkout master
    $ git branch -d <newbranch>
@@ -113,7 +124,7 @@ Running the Tests
 
 To run all the tests in one go from the root directory of the pysmo repository::
 
-   $ make test
+   $ make tests
 
 Individual test scripts may also be specified::
 

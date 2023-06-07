@@ -1,6 +1,12 @@
 .PHONY: help check-poetry install update lint test-figs tests docs publish clean shell python
 
-POETRY_VERSION := $(shell command poetry --version 2> /dev/null)
+ifeq ($(OS),Windows_NT)
+    POETRY_VERSION := $(shell poetry --version 2> NUL)
+	PYTHON_VERSION := python
+else
+    POETRY_VERSION := $(shell command poetry --version 2> /dev/null)
+	PYTHON_VERSION := python3 
+endif
 
 help: ## List all commands.
 	@echo -e "\nThis makefile executes mostly poetry commands. To view all poetry commands availabile run 'poetry help'."
@@ -37,7 +43,7 @@ docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
-	poetry run python3 -m sphinx_autobuild docs/source docs/build/html
+	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html
 
 notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
 	poetry run jupyter-notebook
