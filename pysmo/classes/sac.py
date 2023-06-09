@@ -5,7 +5,7 @@ import datetime
 import warnings
 import numpy as np
 from typing import Any, Optional
-from pysmo.core.sac.sacio import _SacIO
+from pysmo.io import _SacIO
 
 
 class _SacStation(_SacIO):

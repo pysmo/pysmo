@@ -25,15 +25,13 @@ pysmo package consists of:
 """
 
 from importlib.metadata import version
-from pysmo.core.types import (
+from pysmo.types import (
     Epicenter,
     Hypocenter,
     Seismogram,
     Station,
 )
-# from pysmo.core.sac.sacio import _SacIO  # noqa: F401
-# from pysmo.core.sac.sac import SAC  # noqa: F401
-# from pysmo.core.functions import *  # noqa: F401,F403
+from pysmo.classes.sac import SAC
 
 __version__ = version('pysmo')
 
@@ -42,4 +40,5 @@ __all__ = [
     'Hypocenter',
     'Seismogram',
     'Station',
+    'SAC',
 ]

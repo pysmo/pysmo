@@ -5,7 +5,7 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 
 from pyproj import Geod
-from pysmo.core.types import Station, Epicenter
+from pysmo import Station, Epicenter
 
 
 def azimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:

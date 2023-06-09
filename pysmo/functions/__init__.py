@@ -1,5 +1,16 @@
-from ..core.functions.detrend import detrend  # noqa: F401
-from ..core.functions.resample import resample  # noqa: F401
-from ..core.functions.filter_gauss import envelope, gauss  # noqa: F401
-from ..core.functions.plotseis import plotseis  # noqa: F401
-from ..core.functions.azdist import azimuth, backazimuth, distance  # noqa: F401
+from .detrend import detrend
+from .resample import resample
+from .filter_gauss import envelope, gauss
+from .plotseis import plotseis
+from .azdist import azimuth, backazimuth, distance
+
+__all__ = [
+    'detrend',
+    'resample',
+    'envelope',
+    'gauss',
+    'plotseis',
+    'azimuth',
+    'backazimuth',
+    'distance',
+]
