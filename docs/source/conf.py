@@ -57,7 +57,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx_tippy',
     'nbsphinx',
-    'autodoc2',
+    # 'autodoc2',
 ]
 
 autodoc2_packages = [
@@ -65,13 +65,13 @@ autodoc2_packages = [
         "path": "../../pysmo",
         "module": "psymo",
     },
-    {
-        "path": "../../pysmo/core/functions",
-        "module": "psymo.functions",
-    },
+    # {
+    #     "path": "../../pysmo/functions",
+    #     "module": "psymo.functions",
+    # },
 ]
 
-autodoc2_render_plugin = "myst"
+# autodoc2_render_plugin = "myst"
 
 myst_enable_extensions = [
     "colon_fence",
@@ -163,6 +163,9 @@ html_static_path = ['_static']
 #
 # html_sidebars = {}
 
+# html_css_files = [
+#     'tippy.css',
+# ]
 numfig = True
 
 # Make sure the target is unique
