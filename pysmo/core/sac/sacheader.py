@@ -257,7 +257,7 @@ class SacHeader():
             if isinstance(value, bool):
                 raise ValueError('Value for %s may not be a bool.' % self.name)
             try:
-                value = str(value)
+                value = str(value).rstrip()
             except ValueError:
                 raise ValueError('Unable to set %s to %s - must be of type\
                                  str.' % (self.name, value))
