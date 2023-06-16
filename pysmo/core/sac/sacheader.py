@@ -256,6 +256,10 @@ class SacHeader():
         elif self.header_type == 'k':
             if isinstance(value, bool):
                 raise ValueError('Value for %s may not be a bool.' % self.name)
+            # fix for aimbat returning bytes instead of strings. Should really be
+            # fixed there, but I don't know what is causing it...
+            if isinstance(value, bytes):
+                value = value.decode()
             try:
                 value = str(value).rstrip()
             except ValueError:
