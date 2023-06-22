@@ -26,7 +26,7 @@ pysmo package consists of:
 
 from importlib.metadata import version
 from pysmo.types import (
-    Epicenter,
+    Location,
     Hypocenter,
     Seismogram,
     Station,
@@ -36,7 +36,7 @@ from pysmo.classes.sac import SAC
 __version__ = version('pysmo')
 
 __all__ = [
-    'Epicenter',
+    'Location',
     'Hypocenter',
     'Seismogram',
     'Station',
