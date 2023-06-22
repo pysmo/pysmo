@@ -101,7 +101,7 @@ def test_plot_gauss_env(data_objects: tuple[list[Seismogram], ...]) -> plt.figur
     gauss_seis.label = "Gaussian filtered"  # type: ignore
     env_seis = envelope(seis, Tn, alpha)
     env_seis.label = "Envelope"  # type: ignore
-    fig = plotseis(seis, gauss_seis, env_seis, showfig=False)  # type: ignore
+    fig = plotseis(seis, gauss_seis, env_seis, showfig=False)
     return fig
 
 
