@@ -15,7 +15,7 @@ def normalize(seismogram: Seismogram) -> Seismogram:
     Example usage::
         >>> import numpy as np
         >>> from pysmo import SAC, detrend
-        >>> original_seis = SAC.from_file('sacfile.sac')
+        >>> original_seis = SAC.from_file('sacfile.sac').Seismogram
         >>> normalized_seis = normalize(original_seis)
         >>> assert np.max(normalized_seis.data) <= 1
         True
