@@ -1,62 +1,28 @@
-from __future__ import annotations
+# from __future__ import annotations
 """
 Run tests for the SacIO class
 """
 
-import os
-import shutil
 import copy
 import pickle
 import pytest
 from pysmo.io import _SacIO as SacIO
 
 
-@pytest.fixture()
-def tmpfiles(tmpdir_factory) -> tuple[str, ...]:  # type: ignore
-    """
-    Define temporary files for testing.
-    - tmpfile1: copy of reference file, which is not modified during test
-    - tmpfile2: copy of reference file, which is modified during test
-    - tmpfile3: used to write a new sac file
-    - tmpfile4: used to test pickling
-    - tmpfile_special_IB: copy of sacfile with IZTYPE=IB
-    """
-    orgfile = os.path.join(os.path.dirname(__file__), 'testfile.sac')
-    tmpdir = tmpdir_factory.mktemp("data")
-    tmpfile1 = os.path.join(tmpdir, 'tmpfile1.sac')
-    tmpfile2 = os.path.join(tmpdir, 'tmpfile2.sac')
-    tmpfile3 = os.path.join(tmpdir, 'tmpfile2.sac')
-    tmpfile4 = os.path.join(tmpdir, 'tmpfile4.pickle')
-    shutil.copyfile(orgfile, tmpfile1)
-    shutil.copyfile(orgfile, tmpfile2)
-    orgfile_special_IB = os.path.join(os.path.dirname(__file__),
-                                      'testfile_iztype_is_IB.sac')
-    tmpfile_special_IB = os.path.join(tmpdir, 'tmpfile4.pickle')
-    shutil.copyfile(orgfile_special_IB, tmpfile_special_IB)
-    return tmpfile1, tmpfile2, tmpfile3, tmpfile4, tmpfile_special_IB
-
-
-@pytest.fixture()
-def instances(tmpfiles: tuple[str, ...]) -> tuple[SacIO, ...]:
-    """Copy reference sac file to tmpdir"""
-    tmpfile1, tmpfile2, _, _, tmpfile_special_IB = tmpfiles
-    return SacIO.from_file(tmpfile1), SacIO.from_file(tmpfile2), SacIO.from_file(tmpfile_special_IB), SacIO()
-
-
-def test_is_sac_type(instances: tuple[SacIO, ...]) -> None:
+def test_is_sac_type(sacio_instances: tuple[SacIO, ...]) -> None:
     """
     Test if a SacIO instance is created.
     """
-    for sac_instance in instances:
-        assert isinstance(sac_instance, SacIO)
+    for sacio_instance in sacio_instances:
+        assert isinstance(sacio_instance, SacIO)
 
 
 @pytest.mark.depends(on=['test_is_sac_type', 'test_read_data'])
-def test_read_headers(instances: tuple) -> None:
+def test_read_headers(sacio_instances: tuple) -> None:
     """
     Read all SacIO headers from a test file
     """
-    sac, *_, sac_iztype_IS_IB, _ = instances
+    sac, *_, sac_iztype_IS_IB = sacio_instances
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
@@ -160,21 +126,21 @@ def test_read_headers(instances: tuple) -> None:
 
 
 @pytest.mark.depends(on=['test_is_sac_type'])
-def test_read_data(instances: tuple[SacIO, ...]) -> None:
+def test_read_data(sacio_instances: tuple[SacIO, ...]) -> None:
     """
     Test reading data.
     """
-    sac, *_ = instances
+    sac, *_ = sacio_instances
     assert all(sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0, 2378.0, 2358.0, 2398.0, 2331.0])
 
 
 @pytest.mark.depends(on=['test_read_headers'])
-def test_change_headers(instances: tuple) -> None:
+def test_change_headers(sacio_instances: tuple) -> None:
     """
     Test changing header values
     """
 
-    sac1, sac2, *_ = instances
+    sac1, sac2, *_ = sacio_instances
 
     iftype_valid = 'time'
     iftype_invalid = 'asdfasdf'
@@ -226,11 +192,11 @@ def test_change_headers(instances: tuple) -> None:
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_change_data(instances: tuple) -> None:
+def test_change_data(sacio_instances: tuple) -> None:
     """
     Test changing data
     """
-    _, sac2, *_ = instances
+    _, sac2, *_ = sacio_instances
     newdata = [132, 232, 3465, 111]
     sac2.data = newdata
     assert sac2.data == newdata
@@ -240,9 +206,9 @@ def test_change_data(instances: tuple) -> None:
 
 
 @pytest.mark.depends(on=['test_change_headers', 'test_change_data'])
-def test_write_to_file(instances: tuple[SacIO, ...], tmpfiles: tuple[str, ...]) -> None:
-    sac1, *_, sac_empty = instances
-    _, _, tmpfile3, *_ = tmpfiles
+def test_write_to_file(sacio_instances: tuple[SacIO, ...], sacfiles: tuple[str, ...]) -> None:
+    sac1, _, sac_empty, *_ = sacio_instances
+    _, _, tmpfile3, *_ = sacfiles
     sac1.write(tmpfile3)
     sac3 = SacIO.from_file(tmpfile3)
     assert all(sac1.data == sac3.data)
@@ -251,20 +217,20 @@ def test_write_to_file(instances: tuple[SacIO, ...], tmpfiles: tuple[str, ...]) 
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_pickling(instances: tuple[SacIO, ...], tmpfiles: tuple[str, ...]) -> None:
-    sac1, *_ = instances
-    _, _, _, tmpfile4, *_ = tmpfiles
-    with open(tmpfile4, "wb") as output_file:
+def test_pickling(sacio_instances: tuple[SacIO, ...], picklefiles: tuple[str, ...]) -> None:
+    sac1, *_ = sacio_instances
+    picklefile, *_ = picklefiles
+    with open(picklefile, "wb") as output_file:
         pickle.dump(sac1, output_file)
-    with open(tmpfile4, "rb") as input_file:
+    with open(picklefile, "rb") as input_file:
         sac4 = pickle.load(input_file)
     assert all(sac1.data == sac4.data)
     assert sac1.b == sac4.b
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data', 'test_change_headers'])
-def test_deepcopy(instances: tuple) -> None:
-    sac1, *_ = instances
+def test_deepcopy(sacio_instances: tuple) -> None:
+    sac1, *_ = sacio_instances
     sac5 = copy.deepcopy(sac1)
     assert all(sac1.data == sac5.data)
     assert sac1.e == sac5.e
@@ -273,13 +239,10 @@ def test_deepcopy(instances: tuple) -> None:
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_file_and_buffer(tmpdir_factory):  # type: ignore
-    orgfile_special_IB = os.path.join(os.path.dirname(__file__), 'testfile_iztype_is_IB.sac')
-    tmpfile5 = tmpdir_factory.mktemp("data").join("tmpfile5.sac")
-    shutil.copyfile(orgfile_special_IB, tmpfile5)
-
-    from_file = SacIO.from_file(tmpfile5)
-    with open(tmpfile5, "rb") as f:
+def test_file_and_buffer(sacfiles: tuple[str, ...]) -> None:
+    orgfile_special_IB = sacfiles[3]
+    from_file = SacIO.from_file(orgfile_special_IB)
+    with open(orgfile_special_IB, "rb") as f:
         from_buffer = SacIO.from_buffer(f.read())
 
     assert from_file.npts == from_buffer.npts

@@ -16,7 +16,7 @@ def detrend(seismogram: Seismogram) -> Seismogram:
 
         >>> import numpy as np
         >>> from pysmo import SAC, detrend
-        >>> original_seis = SAC.from_file('sacfile.sac')
+        >>> original_seis = SAC.from_file('sacfile.sac').Seismogram
         >>> detrended_seis = detrend(original_seis)
         >>> assert np.mean(detrended_seis.data) == 0
         True

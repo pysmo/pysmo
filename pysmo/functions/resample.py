@@ -17,7 +17,7 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> Seismogram:
     Example usage::
 
         >>> from pysmo import SAC, resample
-        >>> original_seis = SAC.from_file('sacfile.sac')
+        >>> original_seis = SAC.from_file('sacfile.sac').Seismogram
         >>> len(original_seis)
         20000
         >>> original_sampling_rate = original_seis.sampling_rate
