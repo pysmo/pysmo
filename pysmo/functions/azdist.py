@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
