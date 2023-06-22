@@ -1,4 +1,3 @@
-from __future__ import annotations
 import numpy as np
 import copy
 from pysmo import Seismogram
@@ -19,7 +18,7 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
     Example::
 
         >>> from pysmo import SAC, envelope
-        >>> seis = SAC.from_file('sacfile.sac')
+        >>> seis = SAC.from_file('sacfile.sac').Seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
@@ -44,7 +43,7 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
     Example usage::
 
         >>> from pysmo import SAC, gauss
-        >>> seis = SAC.from_file('sacfile.sac')
+        >>> seis = SAC.from_file('sacfile.sac').Seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)
