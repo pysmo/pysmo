@@ -1,10 +1,10 @@
-from __future__ import annotations
 """
 Run tests for all functions defined in pysmo.sac.sacfunc
 """
 
-from pysmo import Station, Epicenter, Seismogram, SAC
+from pysmo import Station, Location, Seismogram, SAC
 from pysmo.functions import resample, detrend, gauss, plotseis, distance, azimuth, backazimuth, envelope
+from typing import Any
 import matplotlib.pyplot as plt  # type: ignore
 import os
 import shutil
@@ -17,12 +17,12 @@ matplotlib.use('Agg')
 @pytest.fixture()
 def sacfile() -> str:
     """Determine absolute path of the test SAC file."""
-    return os.path.join(os.path.dirname(__file__), 'testfile.sac')
+    return os.path.join(os.path.dirname(__file__), 'assets/testfile.sac')
 
 
 @pytest.fixture()
-def data_objects(tmp_path_factory: pytest.TempPathFactory, sacfile: str) -> tuple[list[Seismogram], list[Station],
-                                                                                  list[Epicenter]]:
+def data_objects(tmp_path_factory: pytest.TempPathFactory, sacfile: str) -> tuple[list[Seismogram],
+                                                                                  list[Station], list[Any]]:
     """Returns instances of test objects to use with functions"""
     seismograms: list = []
     stations: list = []
@@ -31,9 +31,9 @@ def data_objects(tmp_path_factory: pytest.TempPathFactory, sacfile: str) -> tupl
     test_sacfile = tmp_path_factory.mktemp("data") / "testfile.sac"
     shutil.copyfile(sacfile, test_sacfile)
     sacobj = SAC.from_file(str(test_sacfile))
-    seismograms.append(sacobj)
-    stations.append(sacobj)
-    events.append(sacobj)
+    seismograms.append(sacobj.Seismogram)
+    stations.append(sacobj.Station)
+    events.append(sacobj.Event)
     return seismograms, stations, events
 
 
@@ -105,7 +105,7 @@ def test_plot_gauss_env(data_objects: tuple[list[Seismogram], ...]) -> plt.figur
     return fig
 
 
-def test_azimuth(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
+def test_azimuth(data_objects: tuple[list[Seismogram], list[Location], list[Location]]) -> None:
     """Calculate azimuth from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):
@@ -115,7 +115,7 @@ def test_azimuth(data_objects: tuple[list[Seismogram], list[Station], list[Epice
         assert pytest.approx(azimuth_clrk66) == 181.92001941872516
 
 
-def test_backazimuth(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
+def test_backazimuth(data_objects: tuple[list[Seismogram], list[Location], list[Location]]) -> None:
     """Calculate backazimuth from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):
@@ -125,7 +125,7 @@ def test_backazimuth(data_objects: tuple[list[Seismogram], list[Station], list[E
         assert pytest.approx(backazimuth_clrk66) == 2.467847115319614
 
 
-def test_distance(data_objects: tuple[list[Seismogram], list[Station], list[Epicenter]]) -> None:
+def test_distance(data_objects: tuple[list[Seismogram], list[Location], list[Location]]) -> None:
     """Calculate distance from Event and Station objects"""
     _, stations, events = data_objects
     for event, station in zip(events, stations):

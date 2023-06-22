@@ -5,20 +5,20 @@ __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 
 from pyproj import Geod
-from pysmo import Station, Epicenter
+from pysmo import Location
 
 
-def azimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
+def azimuth(point1: Location, point2: Location, ellps: str = 'WGS84') -> float:
     """
-    Calculate azimuth (in DEG) from an event to a station. The default ellipse used is
+    Calculate azimuth (in DEG) between two points. The default ellipse used is
     'WGS84', but others may be specified. For more information see:
 
     https://pyproj4.github.io/pyproj/stable
 
-    :param event: Name of the event object providing coordinates of the origin point.
-    :type event: Event
-    :param station: Name of the station object providing coordinates of the target point.
-    :type station: Station
+    :param point1: Name of the event object providing coordinates of the origin point.
+    :type point1: Location
+    :param point2: Name of the station object providing coordinates of the target point.
+    :type point2: Location
     :param ellps: Ellipsoid to use for azimuth calculation
     :type ellps: string
     :returns: Azimuth
@@ -28,23 +28,23 @@ def azimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
 
         >>> from pysmo import SAC, azimuth
         >>> sacobj = SAC.from_file('sacfile.sac')
-        >>> azimuth = azimuth(sacobj, sacobj)  # the SAC class provides both event and station
-        >>> azimuth = azimuth(sacobj, sacobj, ellps='clrk66') # Use Clarke 1966 instead of default
+        >>> azimuth = azimuth(sacobj.Event, sacobj.Station)  # the SAC class provides both event and station
+        >>> azimuth = azimuth(sacobj.Event, sacobj.Station, ellps='clrk66') # Use Clarke 1966 instead of default
     """
-    return __azdist(event, station, ellps)[0]
+    return __azdist(point1, point2, ellps)[0]
 
 
-def backazimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
+def backazimuth(point1: Location, point2: Location, ellps: str = 'WGS84') -> float:
     """
-    Calculate backazimuth (in DEG) from a station to an event. The default ellipse used is
+    Calculate backazimuth (in DEG) between two points. The default ellipse used is
     'WGS84', but others may be specified. For more information see:
 
     https://pyproj4.github.io/pyproj/stable
 
-    :param event: Name of the event object providing coordinates of the origin point.
-    :type event: Event
-    :param station: Name of the station object providing coordinates of the target point.
-    :type station: Station
+    :param point1: Name of the event object providing coordinates of the origin point.
+    :type point1: Location
+    :param point2: Name of the station object providing coordinates of the target point.
+    :type point2: Location
     :param ellps: Ellipsoid to use for azimuth calculation
     :type ellps: string
     :returns: Azimuth
@@ -54,23 +54,23 @@ def backazimuth(event: Epicenter, station: Station, ellps: str = 'WGS84') -> flo
 
         >>> from pysmo import SAC, backazimuth
         >>> sacobj = SAC.from_file('sacfile.sac')
-        >>> azimuth = backazimuth(sacobj, sacobj)  # the SAC class provides both event and station
-        >>> azimuth = backazimuth(sacobj, sacobj, ellps='clrk66') # Use Clarke 1966 instead of default
+        >>> azimuth = backazimuth(sacobj.Event, sacobj.Station)  # the SAC class provides both event and station
+        >>> azimuth = backazimuth(sacobj.Event, sacobj.Station, ellps='clrk66') # Use Clarke 1966 instead of default
     """
-    return __azdist(event, station, ellps)[1]
+    return __azdist(point1, point2, ellps)[1]
 
 
-def distance(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
+def distance(point1: Location, point2: Location, ellps: str = 'WGS84') -> float:
     """
-    Calculate the great circle distance (in metres) between an event and a station. The
+    Calculate the great circle distance (in metres) between two points. The
     default ellipse used is 'WGS84', but others may be specified. For more information see:
 
     https://pyproj4.github.io/pyproj/stable
 
-    :param event: Name of the event object providing coordinates of the origin point.
-    :type event: Event
-    :param station: Name of the station object providing coordinates of the target point.
-    :type station: Station
+    :param point1: Name of the event object providing coordinates of the origin point.
+    :type point1: Location
+    :param point2: Name of the station object providing coordinates of the target point.
+    :type point2: Location
     :param ellps: Ellipsoid to use for distance calculation
     :type ellps: string
     :returns: Great Circle Distance in metres.
@@ -80,20 +80,20 @@ def distance(event: Epicenter, station: Station, ellps: str = 'WGS84') -> float:
 
         >>> from pysmo import SAC, distance
         >>> sacobj = SAC.from_file('sacfile.sac')
-        >>> azimuth = distance(sacobj, sacobj)  # the SAC class provides both event and station
-        >>> azimuth = distance(sacobj, sacobj, ellps='clrk66') # Use Clarke 1966 instead of default
+        >>> azimuth = distance(sacobj.Event, sacobj.Station)  # the SAC class provides both event and station
+        >>> azimuth = distance(sacobj.Event, sacobj.Station, ellps='clrk66') # Use Clarke 1966 instead of default
     """
-    return __azdist(event, station, ellps)[2]
+    return __azdist(point1, point2, ellps)[2]
 
 
-def __azdist(event: Epicenter, station: Station, ellps: str) -> tuple[float, float, float]:
+def __azdist(point1: Location, point2: Location, ellps: str) -> tuple[float, float, float]:
     """
     Return forward/backazimuth and distance using
     pyproj (proj4 bindings)
     """
     g = Geod(ellps=ellps)
-    az, baz, dist = g.inv(event.event_longitude, event.event_latitude,
-                          station.station_longitude, station.station_latitude)
+    az, baz, dist = g.inv(point1.longitude, point1.latitude,
+                          point2.longitude, point2.latitude)
     # Prefer positive bearings
     if az < 0:
         az += 360

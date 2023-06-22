@@ -60,7 +60,31 @@ class Seismogram(Protocol):
 
 
 @runtime_checkable
-class Station(Protocol):
+class Location(Protocol):
+    """The :class:`Location` defines surface coordinates in pysmo."""
+    @property
+    def latitude(self) -> float:
+        """Returns the latitude."""
+        ...
+
+    @latitude.setter
+    def latitude(self, value: float) -> None:
+        """Sets the latitude."""
+        ...
+
+    @property
+    def longitude(self) -> float:
+        """Returns the longitude."""
+        ...
+
+    @longitude.setter
+    def longitude(self, value: float) -> None:
+        """Sets the longitude."""
+        ...
+
+
+@runtime_checkable
+class Station(Location, Protocol):
     """The :class:`Station` class defines a protocol for seismic stations in Pysmo.
     """
     @property
@@ -74,71 +98,56 @@ class Station(Protocol):
         ...
 
     @property
-    def station_latitude(self) -> float:
-        """Retuns the station latitude."""
+    def network(self) -> str:
+        """Retuns the station network."""
         ...
 
-    @station_latitude.setter
-    def station_latitude(self, value: float) -> None:
-        """Sets the station latitude."""
+    @network.setter
+    def network(self, value: str) -> None:
+        """Sets the station network."""
         ...
+    #
+    # @property
+    # def latitude(self) -> float:
+    #     """Retuns the station latitude."""
+    #     ...
+    #
+    # @latitude.setter
+    # def latitude(self, value: float) -> None:
+    #     """Sets the station latitude."""
+    #     ...
+    #
+    # @property
+    # def longitude(self) -> float:
+    #     """Retuns the station longitude."""
+    #     ...
+    #
+    # @longitude.setter
+    # def longitude(self, value: float) -> None:
+    #     """Sets the station longitude."""
+    #     ...
 
     @property
-    def station_longitude(self) -> float:
-        """Retuns the station longitude."""
-        ...
-
-    @station_longitude.setter
-    def station_longitude(self, value: float) -> None:
-        """Sets the station longitude."""
-        ...
-
-    @property
-    def station_elevation(self) -> float:
+    def elevation(self) -> float:
         """Retuns the station elevation."""
         ...
 
-    @station_elevation.setter
-    def station_elevation(self, value: float) -> None:
+    @elevation.setter
+    def elevation(self, value: float) -> None:
         """Sets the station elevation."""
         ...
 
 
 @runtime_checkable
-class Epicenter(Protocol):
-    """The :class:`Epicenter` defines an epicenter in pysmo.
-    """
-    @property
-    def event_latitude(self) -> float:
-        """Returns the event latitude."""
-        ...
-
-    @event_latitude.setter
-    def event_latitude(self, value: float) -> None:
-        """Sets the event latitude."""
-        ...
-
-    @property
-    def event_longitude(self) -> float:
-        """Returns the event longitude."""
-        ...
-
-    @event_longitude.setter
-    def event_longitude(self, value: float) -> None:
-        """Sets the event longitude."""
-        ...
-
-
-@runtime_checkable
-class Hypocenter(Epicenter, Protocol):
+class Hypocenter(Location, Protocol):
     """The :class:`Hypocenter` class defines a protocol for hypocenters in pysmo.
     """
     @property
-    def event_depth(self) -> float:
+    def depth(self) -> float:
         """Returns the event depth."""
         ...
 
-    @event_depth.setter
-    def event_depth(self, value: float) -> None:
+    @depth.setter
+    def depth(self, value: float) -> None:
         """Sets the event depth."""
         ...
