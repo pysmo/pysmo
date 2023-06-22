@@ -5,7 +5,7 @@ from pysmo import Seismogram
 
 
 def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
-             title: str = "", **kwargs: dict) -> None:
+             title: str = "", **kwargs: dict) -> plt.FigureBase:
     """
     Plots Seismogram objects.
 
@@ -24,7 +24,7 @@ def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
     Example usage::
 
         >>> from pysmo import SAC, plotseis
-        >>> seis = SAC.from_file('sacfile.sac')
+        >>> seis = SAC.from_file('sacfile.sac').Seismogram
         >>> plotseis(seis)
     """
     legend: bool = False

@@ -8,107 +8,50 @@ from typing import Any, Optional
 from pysmo.io import _SacIO
 
 
-class _SacStation(_SacIO):
-    """Class for SAC station attributes."""
-    @property
-    def name(self) -> str:
-        return self.kstnm
-
-    @name.setter
-    def name(self, value: str) -> None:
-        setattr(self, 'kstnm', value)
-
-    @property
-    def station_latitude(self) -> float:
-        return self.stla
-
-    @station_latitude.setter
-    def station_latitude(self, value: float) -> None:
-        setattr(self, 'stla', value)
-
-    @property
-    def station_longitude(self) -> float:
-        return self.stlo
-
-    @station_longitude.setter
-    def station_longitude(self, value: float) -> None:
-        setattr(self, 'stlo', value)
-
-    @property
-    def station_elevation(self) -> Optional[float]:
-        if self.stel:
-            return self.stel
-        return None
-
-    @station_elevation.setter
-    def station_elevation(self, value: float) -> None:
-        setattr(self, 'stel', value)
-
-
-class _SacEpicenter(_SacIO):
-    """Class for SAC epicenter attributes."""
-    @property
-    def event_latitude(self) -> float:
-        return self.evla
-
-    @event_latitude.setter
-    def event_latitude(self, value: float) -> None:
-        setattr(self, 'evla', value)
-
-    @property
-    def event_longitude(self) -> float:
-        return self.evlo
-
-    @event_longitude.setter
-    def event_longitude(self, value: float) -> None:
-        setattr(self, 'evlo', value)
-
-
-class _SacHypocenter(_SacEpicenter, _SacIO):
-    """Class for SAC hypocenter attributes."""
-    @property
-    def event_depth(self) -> float:
-        """Gets the event depth in meters."""
-        return self.evdp * 1000
-
-    @event_depth.setter
-    def event_depth(self, value: float) -> None:
-        """Sets the event depth."""
-        setattr(self, 'evdp', value/1000)
-
-
-class _SacSeismogram(_SacIO):
+class _SacSeismogram:
     """Class for SAC seismogram attributes"""
+
+    def __init__(self, parent: _SacIO):
+        self.parent = parent
 
     def __len__(self) -> int:
         """Returns the length (number of points) of a seismogram."""
         return np.size(self.data)
 
     @property
+    def data(self) -> np.ndarray:
+        """Returns seismogram data"""
+        return self.parent.data
+
+    @data.setter
+    def data(self, value: np.ndarray) -> None:
+        self.parent.data = value
+
+    @property
     def sampling_rate(self) -> float:
         """Returns the sampling rate."""
-        return self.delta
+        return self.parent.delta
 
     @sampling_rate.setter
     def sampling_rate(self, value: float) -> None:
         """Sets the sampling rate."""
-        self.delta = value
+        self.parent.delta = value
 
     @property
     def begin_time(self) -> datetime.datetime:
         """Returns the begin timedate."""
         # Begin time is reference time/date + b
-        abs_begin_time = datetime.time.fromisoformat(self.kztime)
-        begin_date = datetime.date.fromisoformat(self.kzdate)
+        abs_begin_time = datetime.time.fromisoformat(self.parent.kztime)
+        begin_date = datetime.date.fromisoformat(self.parent.kzdate)
         return datetime.datetime.combine(begin_date, abs_begin_time) + \
-            datetime.timedelta(seconds=self.b)
+            datetime.timedelta(seconds=self.parent.b)
 
     @begin_time.setter
     def begin_time(self, value: datetime.datetime) -> None:
         """Sets the begin timedate."""
         # Setting the time should change the reference time,
         # so we first subtract b.
-        ref_begin_timedate = value - datetime.timedelta(seconds=self.b)
+        ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.b)
 
         # datetime uses microsecond precision, while sac only does milliseconds
         # We go ahead, but we round the values and raise a warning
@@ -118,24 +61,107 @@ class _SacSeismogram(_SacIO):
             ref_begin_timedate += datetime.timedelta(microseconds=500)
 
         # Now extract individual time components
-        self.nzyear = ref_begin_timedate.year
-        self.nzjday = ref_begin_timedate.timetuple().tm_yday
-        self.nzhour = ref_begin_timedate.hour
-        self.nzmin = ref_begin_timedate.minute
-        self.nzsec = ref_begin_timedate.second
-        self.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+        self.parent.nzyear = ref_begin_timedate.year
+        self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
+        self.parent.nzhour = ref_begin_timedate.hour
+        self.parent.nzmin = ref_begin_timedate.minute
+        self.parent.nzsec = ref_begin_timedate.second
+        self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
 
     @property
     def end_time(self) -> datetime.datetime:
         """Returns the end time."""
-        return self.begin_time + datetime.timedelta(seconds=self.delta*(len(self)-1))
+        return self.begin_time + datetime.timedelta(seconds=self.sampling_rate*(len(self)-1))
 
     @property
     def id(self) -> str:
         """Returns the seismogram ID"""
-        return f"{self.knetwk}.{self.kstnm}.{self.khole}.{self.kcmpnm}"
+        return f"{self.parent.knetwk}.{self.parent.kstnm}.{self.parent.khole}.{self.parent.kcmpnm}"
 
 
-class SAC(_SacSeismogram, _SacStation, _SacHypocenter):
+class _SacStation:
+    """Class for SAC station attributes."""
+    def __init__(self, parent: _SacIO):
+        self.parent = parent
+
+    @property
+    def name(self) -> str:
+        return self.parent.kstnm
+
+    @name.setter
+    def name(self, value: str) -> None:
+        setattr(self.parent, 'kstnm', value)
+
+    @property
+    def network(self) -> str:
+        return self.parent.knetwk
+
+    @network.setter
+    def network(self, value: str) -> None:
+        setattr(self.parent, 'knetwk', value)
+
+    @property
+    def latitude(self) -> float:
+        return self.parent.stla
+
+    @latitude.setter
+    def latitude(self, value: float) -> None:
+        setattr(self.parent, 'stla', value)
+
+    @property
+    def longitude(self) -> float:
+        return self.parent.stlo
+
+    @longitude.setter
+    def longitude(self, value: float) -> None:
+        setattr(self.parent, 'stlo', value)
+
+    @property
+    def elevation(self) -> Optional[float]:
+        if self.parent.stel:
+            return self.parent.stel
+        return None
+
+    @elevation.setter
+    def elevation(self, value: float) -> None:
+        setattr(self.parent, 'stel', value)
+
+
+class _SacEvent:
+    """Class for SAC Event attributes."""
+    def __init__(self, parent: _SacIO):
+        self.parent = parent
+
+    @property
+    def latitude(self) -> float:
+        return self.parent.evla
+
+    @latitude.setter
+    def latitude(self, value: float) -> None:
+        setattr(self.parent, 'evla', value)
+
+    @property
+    def longitude(self) -> float:
+        return self.parent.evlo
+
+    @longitude.setter
+    def longitude(self, value: float) -> None:
+        setattr(self.parent, 'evlo', value)
+
+    @property
+    def depth(self) -> float:
+        """Gets the event depth in meters."""
+        return self.parent.evdp * 1000
+
+    @depth.setter
+    def depth(self, value: float) -> None:
+        """Sets the event depth."""
+        setattr(self.parent, 'evdp', value/1000)
+
+
+class SAC(_SacIO):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.Seismogram = _SacSeismogram(self)
+        self.Station = _SacStation(self)
+        self.Event = _SacEvent(self)
