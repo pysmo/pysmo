@@ -1,8 +1,3 @@
-# from __future__ import annotations
-"""
-Run tests for the SacIO class
-"""
-
 import copy
 import pickle
 import pytest
@@ -10,18 +5,14 @@ from pysmo.io import _SacIO as SacIO
 
 
 def test_is_sac_type(sacio_instances: tuple[SacIO, ...]) -> None:
-    """
-    Test if a SacIO instance is created.
-    """
+    """Test if a SacIO instance is created."""
     for sacio_instance in sacio_instances:
         assert isinstance(sacio_instance, SacIO)
 
 
 @pytest.mark.depends(on=['test_is_sac_type', 'test_read_data'])
 def test_read_headers(sacio_instances: tuple) -> None:
-    """
-    Read all SacIO headers from a test file
-    """
+    """Read all SacIO headers from a test file."""
     sac, *_, sac_iztype_IS_IB = sacio_instances
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
@@ -127,18 +118,14 @@ def test_read_headers(sacio_instances: tuple) -> None:
 
 @pytest.mark.depends(on=['test_is_sac_type'])
 def test_read_data(sacio_instances: tuple[SacIO, ...]) -> None:
-    """
-    Test reading data.
-    """
+    """Test reading data."""
     sac, *_ = sacio_instances
     assert all(sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0, 2378.0, 2358.0, 2398.0, 2331.0])
 
 
 @pytest.mark.depends(on=['test_read_headers'])
 def test_change_headers(sacio_instances: tuple) -> None:
-    """
-    Test changing header values
-    """
+    """Test changing header values."""
 
     sac1, sac2, *_ = sacio_instances
 
@@ -193,9 +180,7 @@ def test_change_headers(sacio_instances: tuple) -> None:
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
 def test_change_data(sacio_instances: tuple) -> None:
-    """
-    Test changing data
-    """
+    """Test changing data."""
     _, sac2, *_ = sacio_instances
     newdata = [132, 232, 3465, 111]
     sac2.data = newdata

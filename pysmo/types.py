@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
 import numpy as np
 import datetime
 
@@ -102,7 +102,7 @@ class Station(Location, Protocol):
         ...
 
     @property
-    def elevation(self) -> float:
+    def elevation(self) -> Optional[float]:
         """Station elevation in metres."""
         ...
 
