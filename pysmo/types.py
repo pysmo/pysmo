@@ -15,7 +15,8 @@ class Seismogram(Protocol):
         ...     return seis_in.begin_time.isoformat()
         ...
         >>> my_sac = SAC.from_file('testfile.sac')
-        >>> example_function(my_sac)
+        >>> my_seismogram = my_sac.Seismogram
+        >>> example_function(my_seismogram)
         '2005-03-02T07:23:02.160000'
     """
 
@@ -25,37 +26,34 @@ class Seismogram(Protocol):
 
     @property
     def data(self) -> np.ndarray:
-        """Returns the seismogram data as numpy array."""
+        """Seismogram data stored as numpy array."""
         ...
 
     @data.setter
     def data(self, value: np.ndarray) -> None:
-        """Sets the data."""
         ...
 
     @property
     def begin_time(self) -> datetime.datetime:
-        """Returns the begin time"""
+        """Seismogram begin time."""
         ...
 
     @begin_time.setter
     def begin_time(self, value: datetime.datetime) -> None:
-        """Returns the begin time"""
         ...
 
     @property
     def end_time(self) -> datetime.datetime:
-        """Returns the end time"""
+        """Seismogram end time"""
         ...
 
     @property
     def sampling_rate(self) -> float:
-        """Returns sampling rate."""
+        """Seismogram sampling rate."""
         ...
 
     @sampling_rate.setter
     def sampling_rate(self, value: float) -> None:
-        """Sets the sampling rate."""
         ...
 
 
@@ -64,22 +62,20 @@ class Location(Protocol):
     """The :class:`Location` defines surface coordinates in pysmo."""
     @property
     def latitude(self) -> float:
-        """Returns the latitude."""
+        """Latitude in degrees."""
         ...
 
     @latitude.setter
     def latitude(self, value: float) -> None:
-        """Sets the latitude."""
         ...
 
     @property
     def longitude(self) -> float:
-        """Returns the longitude."""
+        """Longitude in degrees."""
         ...
 
     @longitude.setter
     def longitude(self, value: float) -> None:
-        """Sets the longitude."""
         ...
 
 
@@ -89,52 +85,29 @@ class Station(Location, Protocol):
     """
     @property
     def name(self) -> str:
-        """Retuns the station name."""
+        """Station name."""
         ...
 
     @name.setter
     def name(self, value: str) -> None:
-        """Sets the station name."""
         ...
 
     @property
     def network(self) -> str:
-        """Retuns the station network."""
+        """Station network name."""
         ...
 
     @network.setter
     def network(self, value: str) -> None:
-        """Sets the station network."""
         ...
-    #
-    # @property
-    # def latitude(self) -> float:
-    #     """Retuns the station latitude."""
-    #     ...
-    #
-    # @latitude.setter
-    # def latitude(self, value: float) -> None:
-    #     """Sets the station latitude."""
-    #     ...
-    #
-    # @property
-    # def longitude(self) -> float:
-    #     """Retuns the station longitude."""
-    #     ...
-    #
-    # @longitude.setter
-    # def longitude(self, value: float) -> None:
-    #     """Sets the station longitude."""
-    #     ...
 
     @property
     def elevation(self) -> float:
-        """Retuns the station elevation."""
+        """Station elevation in metres."""
         ...
 
     @elevation.setter
     def elevation(self, value: float) -> None:
-        """Sets the station elevation."""
         ...
 
 
@@ -144,10 +117,9 @@ class Hypocenter(Location, Protocol):
     """
     @property
     def depth(self) -> float:
-        """Returns the event depth."""
+        """Event depth in metres."""
         ...
 
     @depth.setter
     def depth(self, value: float) -> None:
-        """Sets the event depth."""
         ...

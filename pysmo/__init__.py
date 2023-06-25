@@ -31,6 +31,12 @@ from pysmo.types import (
     Seismogram,
     Station,
 )
+from pysmo.classes.mini import (
+    MiniSeismogram,
+    MiniLocation,
+    MiniStation,
+    MiniHypocenter,
+)
 from pysmo.classes.sac import SAC
 
 __version__ = version('pysmo')
@@ -41,4 +47,8 @@ __all__ = [
     'Seismogram',
     'Station',
     'SAC',
+    'MiniSeismogram',
+    'MiniLocation',
+    'MiniStation',
+    'MiniHypocenter',
 ]

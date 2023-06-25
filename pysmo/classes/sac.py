@@ -1,22 +1,22 @@
 __author__ = "Simon Lloyd"
-__copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
 import datetime
 import warnings
 import numpy as np
 from typing import Any, Optional
+from .mini import MiniHypocenter, MiniSeismogram, MiniStation
 from pysmo.io import _SacIO
 
 
-class _SacSeismogram:
-    """Class for SAC seismogram attributes"""
+class _SacNested:
+    """Base class for nested SAC classes"""
 
-    def __init__(self, parent: _SacIO):
+    def __init__(self, parent: _SacIO) -> None:
         self.parent = parent
 
-    def __len__(self) -> int:
-        """Returns the length (number of points) of a seismogram."""
-        return np.size(self.data)
+
+class _SacSeismogram(_SacNested, MiniSeismogram):
+    """Class for SAC seismogram attributes"""
 
     @property
     def data(self) -> np.ndarray:
@@ -68,21 +68,9 @@ class _SacSeismogram:
         self.parent.nzsec = ref_begin_timedate.second
         self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
 
-    @property
-    def end_time(self) -> datetime.datetime:
-        """Returns the end time."""
-        return self.begin_time + datetime.timedelta(seconds=self.sampling_rate*(len(self)-1))
 
-    @property
-    def id(self) -> str:
-        """Returns the seismogram ID"""
-        return f"{self.parent.knetwk}.{self.parent.kstnm}.{self.parent.khole}.{self.parent.kcmpnm}"
-
-
-class _SacStation:
+class _SacStation(_SacNested, MiniStation):
     """Class for SAC station attributes."""
-    def __init__(self, parent: _SacIO):
-        self.parent = parent
 
     @property
     def name(self) -> str:
@@ -127,10 +115,8 @@ class _SacStation:
         setattr(self.parent, 'stel', value)
 
 
-class _SacEvent:
+class _SacEvent(_SacNested, MiniHypocenter):
     """Class for SAC Event attributes."""
-    def __init__(self, parent: _SacIO):
-        self.parent = parent
 
     @property
     def latitude(self) -> float:
