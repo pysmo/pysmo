@@ -33,7 +33,7 @@ Pysmo attempts to mitigate these kinds of problems by adding a layer that sits b
 the *generic classes* (i.e. a class one normally encounters in Python) and the functions
 that use the data contained in these classes. This additional layer consists of a number
 of *protocol classes* which define types that are more meaningful in a seismological
-context. This way, something like an epicentre may be it's own type as opposed to just
+context. This way, something like a hypocentre may be it's own type as opposed to just
 being metadata in a larger object. Instead of writing a function that takes an all
 encompassing object as argument, a pysmo user can instead write a function that takes
 well defined types as arguments, all while still using those large all encompassing

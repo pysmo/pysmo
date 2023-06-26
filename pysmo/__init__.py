@@ -26,8 +26,8 @@ pysmo package consists of:
 
 from importlib.metadata import version
 from pysmo.types import (
-    Location,
     Hypocenter,
+    Location,
     Seismogram,
     Station,
 )
