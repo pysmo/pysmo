@@ -67,6 +67,16 @@ The psymo repository also contains files to create a
 tasks (all the steps below) for you automatically.
 :::
 
+## Setting up the development environment on Windows
+To set up the development environment correctly on Windows, we need a few additional steps. 
+* Install [Chocolatey](https://chocolatey.org/install#individual), a package manager for Windows which we will be using to set up the additional dependencies correctly. 
+* Once Chocolatey is installed, run the following commands to install the dependencies: 
+```
+choco install make
+choco install awk
+choco install pandoc
+```
+
 ## Requirements
 
 ### Python
