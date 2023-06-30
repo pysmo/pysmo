@@ -41,7 +41,7 @@ class MiniSeismogram:
     data: np.ndarray = field(default_factory=lambda: np.array([]))
     """Seismogram data.
 
-    The :py:attr:`MiniSeismogram.data` attribute is a numpy array containing seismogram
+    The :py:attr:`data` attribute is a numpy array containing seismogram
     data. If a new instance is created without specifiying the data an empty array is
     used.
     """
@@ -49,7 +49,7 @@ class MiniSeismogram:
     id: Optional[str] = None
     """Seismogram ID.
 
-    The :py:attr:`MiniSeismogram.id` is an optional attribute to store an identifier in.
+    :py:attr:`id` is an optional attribute to store an identifier in.
     """
 
     def __len__(self) -> int:
@@ -61,7 +61,7 @@ class MiniSeismogram:
     def end_time(self) -> datetime:
         """Seismogram end time.
 
-        The :py:attr:`MiniSeismogram.end_time` attribute is a read only attribute that
+        The :py:attr:`end_time` attribute is a read only attribute that
         returns the seismogram end time.
         """
         return self.begin_time + timedelta(seconds=self.sampling_rate*(len(self)-1))
