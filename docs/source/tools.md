@@ -1,9 +1,8 @@
 # Tools
 
-TODO: add text to __init__.py
+## Noise
 
-## Subpackages
-
-TODO: list tools
-
-
+```{eval-rst}
+.. automodule:: pysmo.tools.noise
+    :members:
+```
