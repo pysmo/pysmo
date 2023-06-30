@@ -28,12 +28,12 @@ Finally, the latest development version of pysmo can be installed directly from
 $ python -m pip install git+https://github.com/pysmo/pysmo
 ```
 
-:::{note}
+```{note}
 It is possible to install the stable release alongside the development
 version. Please read the pysmo
 [development documentation](<project:developing.md#development-environment>) for
 instructions.
-:::
+```
 
 ## Upgrading
 
