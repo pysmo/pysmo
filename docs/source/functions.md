@@ -1,7 +1,11 @@
 # Functions
 
-TODO: Explain functions
+Pysmo provides functions that perform common operations on the types of data that match
+pysmo's types.
 
 ## Available Functions
 
-TODO: List functions with links
+```{eval-rst}
+.. automodule:: pysmo.functions
+    :members:
+```

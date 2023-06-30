@@ -18,7 +18,7 @@ def azimuth(point1: Location, point2: Location, ellps: str = 'WGS84') -> float:
     :param point2: Name of the station object providing coordinates of the target point.
     :type point2: Location
     :param ellps: Ellipsoid to use for azimuth calculation
-    :type ellps: string
+    :type ellps: str
     :returns: Azimuth
     :rtype: float
 
@@ -44,7 +44,7 @@ def backazimuth(point1: Location, point2: Location, ellps: str = 'WGS84') -> flo
     :param point2: Name of the station object providing coordinates of the target point.
     :type point2: Location
     :param ellps: Ellipsoid to use for azimuth calculation
-    :type ellps: string
+    :type ellps: str
     :returns: Azimuth
     :rtype: float
 
@@ -70,7 +70,7 @@ def distance(point1: Location, point2: Location, ellps: str = 'WGS84') -> float:
     :param point2: Name of the station object providing coordinates of the target point.
     :type point2: Location
     :param ellps: Ellipsoid to use for distance calculation
-    :type ellps: string
+    :type ellps: str
     :returns: Great Circle Distance in metres.
     :rtype: float
 
