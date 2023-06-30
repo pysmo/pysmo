@@ -1,3 +1,8 @@
+"""
+Pysmo provides functions that perform common operations on the types of data that match
+pysmo's types.
+"""
+
 from .detrend import detrend
 from .resample import resample
 from .filter_gauss import envelope, gauss
