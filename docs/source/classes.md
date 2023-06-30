@@ -92,10 +92,13 @@ to access SAC files.
 
 .. autoclass:: pysmo.classes.sac._SacEvent
     :members:
+    :inherited-members:
 
 .. autoclass:: pysmo.classes.sac._SacSeismogram
     :members:
+    :inherited-members:
 
 .. autoclass:: pysmo.classes.sac._SacStation
     :members:
+    :inherited-members:
 ```
