@@ -5,6 +5,7 @@ from .plotseis import plotseis
 from .azdist import azimuth, backazimuth, distance
 from .normalize import normalize
 from .xcorr import xcorr
+from .filter_butter import filter_butter
 
 __all__ = [
     'detrend',
@@ -16,5 +17,6 @@ __all__ = [
     'backazimuth',
     'distance',
     'normalize',
-    'xcorr'
+    'xcorr',
+    'filter_butter'
 ]
