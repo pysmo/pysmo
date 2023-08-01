@@ -358,11 +358,11 @@ class _SacIO(metaclass=_SacMeta):
         kwargs["loc"] = loc
         kwargs["output"] = "sac.zip"
 
-        if type(kwargs["start"]) == datetime.datetime:
+        if isinstance(kwargs["start"], datetime.datetime):
             kwargs["start"] = kwargs["start"].isoformat()
 
         end = kwargs.get("end", None)
-        if end is not None and type(end) == datetime.datetime:
+        if end is not None and isinstance(end, datetime.datetime):
             kwargs["end"] = end.isoformat()
 
         base = "https://service.iris.edu/irisws/timeseries/1/query"
