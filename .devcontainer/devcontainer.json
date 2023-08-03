@@ -45,7 +45,7 @@
     }
   },
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
+  "forwardPorts": [8000, 8888],
   "portsAttributes": {
     "8000": {"label": "Live-Docs"},
     "8888": {"label": "Notebook"}
