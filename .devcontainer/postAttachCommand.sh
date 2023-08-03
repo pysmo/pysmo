@@ -1,2 +1,2 @@
 nohup make live-docs &
-make notebook
+nohub make notebook &
