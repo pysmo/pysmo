@@ -1,7 +1,8 @@
 import numpy as np
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from typing import Optional
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
 
 @dataclass
@@ -22,7 +23,7 @@ class MiniSeismogram:
         True
     """
 
-    begin_time: datetime = datetime.fromtimestamp(0, tz=timezone.utc)
+    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time
     """Seismogram begin time.
 
     The :py:attr:`MiniSeismogram.begin_time` attribute is the (absolute) time of the
@@ -30,7 +31,7 @@ class MiniSeismogram:
     If a new instance is created without specifiying the begin time, Unix time 0 is used.
     """
 
-    sampling_rate: float = 1
+    sampling_rate: float = SEISMOGRAM_DEFAULTS.sampling_rate
     """Seismogram sampling rate.
 
     The :py:attr:`MiniSeismogram.sampling_rate` attribute is the sampling rate of the
