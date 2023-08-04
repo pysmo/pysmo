@@ -35,7 +35,7 @@ test-figs: check-poetry ## Generate baseline figures for testing. Only run this 
 	poetry run py.test --mpl-generate-path=tests/baseline
 
 tests: check-poetry lint mypy ## Run tests with pytest.
-	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl -v tests
+	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl tests
 
 mypy: check-poetry ## Run tests with pytest.
 	poetry run py.test --mypy -m mypy -v pysmo
