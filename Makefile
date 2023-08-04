@@ -29,13 +29,13 @@ update: check-poetry ## Update dependencies to their latest versions.
 	poetry update
 
 lint: check-poetry ## Lint code with flake8
-	poetry run flake8 --statistics --max-line-length=120
+	poetry run flake8 --statistics
 
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
 tests: check-poetry lint mypy ## Run tests with pytest.
-	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl -v tests
+	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl tests
 
 mypy: check-poetry ## Run tests with pytest.
 	poetry run py.test --mypy -m mypy -v pysmo

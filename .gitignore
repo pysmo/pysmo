@@ -18,3 +18,4 @@ coverage.xml
 nohup.out
 .nfs*
 docs/source/apidocs/
+.tox
