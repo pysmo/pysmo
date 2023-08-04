@@ -8,6 +8,7 @@ from pysmo import (
     MiniStation,
     MiniHypocenter
 )
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
 
 def test_MiniSeismogram() -> None:
@@ -18,15 +19,15 @@ def test_MiniSeismogram() -> None:
     assert isinstance(my_seismogram, Seismogram)
 
     # Check defaults
-    assert my_seismogram.begin_time.year == 1970
-    assert my_seismogram.begin_time.month == 1
-    assert my_seismogram.begin_time.day == 1
-    assert my_seismogram.begin_time.hour == 0
-    assert my_seismogram.begin_time.minute == 0
-    assert my_seismogram.begin_time.second == 0
-    assert my_seismogram.begin_time.microsecond == 0
+    assert my_seismogram.begin_time.year == SEISMOGRAM_DEFAULTS.begin_time.year == 1970
+    assert my_seismogram.begin_time.month == SEISMOGRAM_DEFAULTS.begin_time.month == 1
+    assert my_seismogram.begin_time.day == SEISMOGRAM_DEFAULTS.begin_time.day == 1
+    assert my_seismogram.begin_time.hour == SEISMOGRAM_DEFAULTS.begin_time.hour == 0
+    assert my_seismogram.begin_time.minute == SEISMOGRAM_DEFAULTS.begin_time.minute == 0
+    assert my_seismogram.begin_time.second == SEISMOGRAM_DEFAULTS.begin_time.second == 0
+    assert my_seismogram.begin_time.microsecond == SEISMOGRAM_DEFAULTS.begin_time.microsecond == 0
+    assert my_seismogram.sampling_rate == SEISMOGRAM_DEFAULTS.sampling_rate == 1
     assert my_seismogram.data.size == 0
-    assert my_seismogram.sampling_rate == 1
     assert len(my_seismogram) == 0
     assert my_seismogram.id is None
 
