@@ -11,7 +11,7 @@ result_images/
 *.swp
 .python-version
 .vscode
-.coverage
+.coverage*
 coverage.xml
 *.bkp
 .ipynb_checkpoints
