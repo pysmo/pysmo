@@ -44,7 +44,7 @@ docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
-	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html
+	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html --watch pysmo
 
 notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
 	poetry run jupyter-notebook
