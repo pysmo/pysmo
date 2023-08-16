@@ -22,7 +22,7 @@ Cloning into 'pysmo'...
 $ cd pysmo
 ```
 
-That's it! Now skip ahead to <project:#project-layout>.
+That's it! Now skip ahead to <project:developing.md#project-layout>.
 
 ### Create your own fork
 
