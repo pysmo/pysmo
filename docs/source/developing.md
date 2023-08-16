@@ -67,7 +67,21 @@ The psymo repository also contains files to create a
 tasks (all the steps below) for you automatically.
 :::
 
+
+
 ## Requirements
+
+### Setting up Windows
+
+To set up the development environment on Windows a few additional steps may be needed:
+* Install [Chocolatey](https://chocolatey.org/install#individual), a package manager for
+  Windows which greatly simplifies installing additional dependencies correctly.
+* Once Chocolatey is installed, run the following commands (run as administrator) using
+  either PowerShell or the Command Prompt to install the dependencies:
+```powershell
+choco install make
+choco install awk
+```
 
 ### Python
 
@@ -77,6 +91,10 @@ A safe bet is a recent version of the
 or your system already has a recent version of Python installed, that is likely fine too
 (we'll just assume you know what you are doing).
 
+:::{tip}
+If you are running Windows and have Chocolatey installed, you can use the `choco` command
+to install and update Python.
+:::
 
 ### Poetry
 
@@ -84,13 +102,20 @@ In order to develop pysmo in a consistent and isolated environment we use
 [Poetry](https://python-poetry.org). Poetry creates a Python virtual environment and
 manages the Python packages that are installed in that environment. This allows
 developing and testing while also having the stable version of pysmo installed at the
-same time. Please consult the `Poetry documentation <https://python-poetry.org/docs>`_
-for installation and basic usage instructions.
+same time. Please consult the [Poetry documentation](https://python-poetry.org/docs) for
+installation and basic usage instructions.
 
-:::{tip}
-For convenience we wrap the most used poetry commands in a `Makefile`.
+:::{note}
+For convenience we wrap the most used poetry commands in a `Makefile`, so interaction
+with Poetry is rarely required.
 :::
 
+### Pandoc
+
+In order to build the documentation in the development environment,
+[Pandoc](https://pandoc.org/index.html) is required. Pandoc can be installed by following
+the [installation instructions](https://pandoc.org/installing.html) on the official
+website. 
 
 ## Makefile
 
@@ -100,7 +125,8 @@ without arguments (or with `help`) will list available commands:
 ```bash
 $ make help
 
-This makefile executes mostly poetry commands. To view all poetry commands availabile run 'poetry help'.
+This makefile executes mostly poetry commands. To view all poetry commands availabile run
+'poetry help'.
 
 AVAILABLE COMMANDS
   build                Build distribution.
@@ -109,14 +135,14 @@ AVAILABLE COMMANDS
 ...
 ```
 
-To get you started issue
+To get you started run
 
 ```bash
 $ make install
 ```
 
-to create a Python virtual environment for development of pysmo (unless it already
-exists), then install pysmo and its dependencies.
+in a shell. This will first create a Python virtual environment for development of pysmo
+(unless the environment already already exists), then install pysmo and its dependencies.
 
 To activate this virtual environment run
 

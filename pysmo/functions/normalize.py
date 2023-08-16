@@ -21,7 +21,7 @@ def normalize(seismogram: Seismogram) -> Seismogram:
         True
     """
     seis = copy.deepcopy(seismogram)
-    norm = np.max(seis.data)
-    seis.data /= np.abs(norm)
+    norm = np.max(np.abs(seis.data))
+    seis.data /= norm
 
     return seis

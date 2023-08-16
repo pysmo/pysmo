@@ -29,7 +29,7 @@ update: check-poetry ## Update dependencies to their latest versions.
 	poetry update
 
 lint: check-poetry ## Lint code with flake8
-	poetry run flake8 --statistics --max-line-length=120
+	poetry run flake8 --statistics
 
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
@@ -44,7 +44,7 @@ docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
-	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html
+	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html --watch pysmo
 
 notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
 	poetry run jupyter-notebook
