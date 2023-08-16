@@ -88,6 +88,7 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "pip": ("https://pip.pypa.io/en/stable/", None),
+    "pytest": ("https://docs.pytest.org/en/stable/", None),
 }
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

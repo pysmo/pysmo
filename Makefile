@@ -34,11 +34,11 @@ lint: check-poetry ## Lint code with flake8
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
-tests: check-poetry lint mypy ## Run tests with pytest.
-	poetry run py.test --mypy --cov=pysmo --cov-report=xml --mpl -v tests
+tests: check-poetry lint mypy ## Run all tests with pytest.
+	poetry run pytest --mypy --cov=pysmo --cov-report=xml --mpl -v tests
 
-mypy: check-poetry ## Run tests with pytest.
-	poetry run py.test --mypy -m mypy -v pysmo
+mypy: check-poetry ## Run typing tests with pytest.
+	poetry run pytest --mypy -m mypy -v pysmo
 
 docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
