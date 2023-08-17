@@ -1,5 +1,5 @@
-.PHONY: help check-poetry install update lint test-figs tests mypy docs live-docs \
-	notebook build publish clean shell python
+.PHONY: help check-poetry install update lint test-figs tests mypy docs docs-export \
+	live-docs notebook build publish clean shell python
 
 ifeq ($(OS),Windows_NT)
   POETRY_VERSION := $(shell poetry --version 2> NUL)
@@ -42,6 +42,9 @@ mypy: check-poetry ## Run typing tests with pytest.
 
 docs: check-poetry install ## Build html docs.
 	poetry run make -C docs html
+
+docs-export: check-poetry install ## Export installed package information to docs/requirements.txt.
+	poetry export --only=docs -o docs/requirements.txt
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
 	poetry run $(PYTHON_VERSION) -m sphinx_autobuild docs/source docs/build/html --watch pysmo

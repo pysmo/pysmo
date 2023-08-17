@@ -1,4 +1,8 @@
 """
+#####
+Noise
+#####
+
 This module provides support for calculating random synthetic noise that matches the
 naturally observed amplitude spectrum.
 
