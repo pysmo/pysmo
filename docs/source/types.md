@@ -71,11 +71,12 @@ coordinates are stored inside the class. We can then calculate the gcd by passin
 instance of this class to the *f{sub}`traditional`* function.
 
 Using pysmo, we write the gcd function to work with two sets of coordinates instead.
-Specifically, two objects that match the `Location` type of pysmo serve as input for
-*f{sub}`pysmo`*. Any class that has the attributes `latitude` and `longitude` matches the
-`Location` type, which we assume are present in the *Station* and *Event* components of
-the example data class. A graphical representation of the two approaches is shown in
-({numref}`fig_hypothetical_file`).
+Specifically, two objects that match the [`Location`](project:types.md#pysmo.Location)
+type of pysmo serve as input for *f{sub}`pysmo`*. Any class that has attributes named
+`latitude` and `longitude` (and they are both of type [`float`](inv:python#float))
+matches the [`Location`](project:types.md#pysmo.Location) type, which we assume are
+present in the *Station* and *Event* components of the example data class. A graphical
+representation of the two approaches is shown in ({numref}`fig_hypothetical_file`).
 
 
 ```{figure} images/hypothetical_file.png
