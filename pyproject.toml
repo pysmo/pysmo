@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysmo"
-version = "1.0.0-dev0"
+version = "1.0.0-dev1"
 description = "Python module for seismologists."
 readme = "README.md"
 authors = ["Simon M. Lloyd <simon@slloyd.net>"]
