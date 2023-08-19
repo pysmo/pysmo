@@ -347,7 +347,7 @@ def test_iris_service() -> None:
 @pytest.mark.depends(on=['test_file_and_buffer'])
 def test_iris_service_params_error() -> None:
     try:
-        mysac = SacIO.from_iris(
+        SacIO.from_iris(
             net="XX",
             sta="XXXX",
             cha="XXX",
