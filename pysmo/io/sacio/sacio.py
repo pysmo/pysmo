@@ -27,7 +27,7 @@ import urllib.parse
 import zipfile
 import warnings
 import numpy as np
-from typing import Union, Optional, Any
+from typing import Union, Any
 from typing_extensions import Self
 from .sacheader import HEADER_FIELDS, SacHeaderFactory
 
@@ -342,7 +342,7 @@ class _SacIO(metaclass=_SacMeta):
 
     @classmethod
     def from_iris(cls, net: str, sta: str, cha: str, loc: str, force_single_result: bool = False,
-                  **kwargs: Any) -> Union[Self, Optional[dict[str, Self]]]:
+                  **kwargs: Any) -> Union[Self, dict[str, Self], None]:
         """
         Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".
@@ -369,6 +369,8 @@ class _SacIO(metaclass=_SacMeta):
         params = urllib.parse.urlencode(kwargs, doseq=False)
         url = f"{base}?{params}"
         response = requests.get(url)
+        if not response:
+            raise ValueError(response.content.decode("utf-8"))
         zip = zipfile.ZipFile(io.BytesIO(response.content))
         result = {}
         for name in zip.namelist():
