@@ -374,6 +374,7 @@ def test_iris_service_multi_result() -> None:
         scale="AUTO",
         demean="true",
         force_single_result=False)
+    assert isinstance(mysacs, dict)
     assert len(mysacs) == 4
     data = [
         ("IU.MAKZ.00.HHZ.D.2015.252.150941.SAC", 36790),
@@ -383,6 +384,7 @@ def test_iris_service_multi_result() -> None:
     ]
 
     for name, npts in data:
+        assert isinstance(mysacs[name], SacIO)
         assert mysacs[name].npts == npts
 
 
@@ -398,4 +400,5 @@ def test_iris_service_multi_result_forced() -> None:
         scale="AUTO",
         demean="true",
         force_single_result=True)
+    assert isinstance(mysacs, SacIO)
     assert mysacs.npts == 36790
