@@ -369,6 +369,8 @@ class _SacIO(metaclass=_SacMeta):
         params = urllib.parse.urlencode(kwargs, doseq=False)
         url = f"{base}?{params}"
         response = requests.get(url)
+        if not response:
+            raise ValueError(response.content.decode("utf-8"))
         zip = zipfile.ZipFile(io.BytesIO(response.content))
         result = {}
         for name in zip.namelist():

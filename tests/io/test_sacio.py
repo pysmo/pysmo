@@ -342,3 +342,60 @@ def test_iris_service() -> None:
         demean="true",
         force_single_result=True)
     assert mysac.npts == 144001  # type: ignore
+
+
+@pytest.mark.depends(on=['test_file_and_buffer'])
+def test_iris_service_params_error() -> None:
+    try:
+        mysac = SacIO.from_iris(
+            net="XX",
+            sta="XXXX",
+            cha="XXX",
+            loc="XX",
+            start="2012-01-11T11:11:11",
+            duration=1 * 60 * 60,
+            scale="AUTO",
+            demean="true",
+            force_single_result=True)
+        assert False
+    except ValueError as error:
+        assert str(error).startswith("Error 404: Not Found")
+
+
+@pytest.mark.depends(on=['test_file_and_buffer'])
+def test_iris_service_multi_result() -> None:
+    mysacs = SacIO.from_iris(
+        net="IU",
+        sta="MAKZ",
+        cha="HHZ",
+        loc="00",
+        start="2015-09-09T15:00:00",
+        duration=1 * 60 * 60,
+        scale="AUTO",
+        demean="true",
+        force_single_result=False)
+    assert len(mysacs) == 4
+    data = [
+        ("IU.MAKZ.00.HHZ.D.2015.252.150941.SAC", 36790),
+        ("IU.MAKZ.00.HHZ.D.2015.252.152559.SAC", 39196),
+        ("IU.MAKZ.00.HHZ.D.2015.252.154438.SAC", 40349),
+        ("IU.MAKZ.00.HHZ.D.2015.252.155301.SAC", 37711)
+    ]
+
+    for name, npts in data:
+        assert mysacs[name].npts == npts
+
+
+@pytest.mark.depends(on=['test_file_and_buffer'])
+def test_iris_service_multi_result_forced() -> None:
+    mysacs = SacIO.from_iris(
+        net="IU",
+        sta="MAKZ",
+        cha="HHZ",
+        loc="00",
+        start="2015-09-09T15:00:00",
+        duration=1 * 60 * 60,
+        scale="AUTO",
+        demean="true",
+        force_single_result=True)
+    assert mysacs.npts == 36790
