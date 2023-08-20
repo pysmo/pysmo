@@ -62,22 +62,26 @@ def test_sac_as_station(sac_instance: SAC, sacio_instance: _SacIO) -> None:
     sacstation = sac_instance.Station
     sacio = sacio_instance
     assert sacstation.name == sacio.kstnm
+    assert sacstation.network == sacio.knetwk
     assert sacstation.latitude == sacio.stla == pytest.approx(-48.46787643432617)
     assert sacstation.longitude == sacio.stlo == pytest.approx(-72.56145477294922)
     assert sacstation.elevation == sacio.stel is None  # testfile happens to not have this set...
 
     # try changing values
     new_name = "new_name"
+    new_network = "network"
     new_latitude = 23.3
     bad_latitude = 9199
     new_longitude = -123
     bad_longitude = 500
     new_elevation = 123
     sacstation.name = new_name
+    sacstation.network = new_network
     sacstation.latitude = new_latitude
     sacstation.longitude = new_longitude
     sacstation.elevation = new_elevation
-    assert sacstation.name == new_name
+    assert sacstation.name == new_name == sac_instance.kstnm
+    assert sacstation.network == new_network == sac_instance.knetwk
     assert sacstation.latitude == new_latitude == sac_instance.stla
     assert sacstation.longitude == new_longitude == sac_instance.stlo
     assert sacstation.elevation == new_elevation == sac_instance.stel
