@@ -242,13 +242,19 @@ class _SacIO(metaclass=_SacMeta):
         # _delta is the SAC formatted value stored as a normal attribute. In other words, reading
         # and writing SAC files uses _delta, whereas accessing the header within Python uses delta.
 
+        # Set defaults first
+        self._set_defaults()
+
+        # Set whatever other kwargs were provided at instance creation
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+    def _set_defaults(self) -> None:
         # The descriptor converts None to the SAC unknown value (e.g. -12345 for int type header fields).
         # Therefore this loop sets the initial value for all private fields to the SAC unknown value.
         for header_name in HEADER_FIELDS:
             setattr(self, header_name, None)
-
-        # Set some sane defaults
-        #
+        # Set some sane defaults:
         # self.npts is read only, so we write to the private name self._ntps directly.
         self._npts = 0
         # Setting self.delta triggers calculation of self.e, but we can't do that without also knowing
@@ -261,10 +267,6 @@ class _SacIO(metaclass=_SacMeta):
         self.iftype = "time"
         self.leven = True
         self.data = np.array([])
-
-        # Set whatever other kwargs were provided at instance creation
-        for name, value in kwargs.items():
-            setattr(self, name, value)
 
     def read(self, filename: str) -> None:
         """Read data and header values from a SAC file into an existing SAC instance."""
