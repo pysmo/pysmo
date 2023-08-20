@@ -221,6 +221,7 @@ class SAC(_SacIO):
     """Event is an instance of the :py:class:`_SacEvent` helper class."""
 
     def __post_init__(self) -> None:
+        super()._set_defaults()
         self.Seismogram = _SacSeismogram(self)
         self.Station = _SacStation(self)
         self.Event = _SacEvent(self)
