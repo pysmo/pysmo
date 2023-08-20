@@ -1,10 +1,10 @@
 from dataclasses import FrozenInstanceError
 from scipy import signal  # type: ignore
-import numpy as np
-import pytest
-import pysmo.tools.noise as noise
 import matplotlib.pyplot as plt  # type: ignore
+import pytest
+import numpy as np
 import matplotlib
+import pysmo.tools.noise as noise
 matplotlib.use('Agg')
 
 
@@ -32,8 +32,7 @@ def test_NoiseModel() -> None:
 
 
 @pytest.mark.depends(on=['test_NoiseModel'])
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/',
-                               savefig_kwargs={'dpi': 300}, tolerance=10)
+@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/')
 def test_peterson():  # type: ignore
     nlnm = noise.peterson(0)
     nhnm = noise.peterson(1)
@@ -50,13 +49,12 @@ def test_peterson():  # type: ignore
     ax.plot(nlnm.T, nlnm.psd)
     ax.plot(nhnm.T, nhnm.psd)
     ax.plot(nm_03.T, nm_03.psd)
-    plt.gca().set_xscale("log")
+    ax.set_xscale("log")
     return fig
 
 
 @pytest.mark.depends(on=['test_NoiseModel'])
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/',
-                               savefig_kwargs={'dpi': 300}, tolerance=10)
+@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/')
 def test_generate_noise():  # type: ignore
     npts = 10000
     nperseg = npts/4
@@ -82,9 +80,9 @@ def test_generate_noise():  # type: ignore
     ax1 = fig.add_subplot(2, 1, 1)
     ax1.plot(1/freqs_acc, 10*np.log10(power_acc))
     ax1.plot(nhnm.T, nhnm.psd, 'k')
-    plt.gca().set_xscale("log")
+    ax1.set_xscale("log")
     ax2 = fig.add_subplot(2, 1, 2)
     ax2.plot(1/freqs_vel, 10*np.log10(power_vel))
     ax2.plot(nhnm_velo.T, nhnm_velo.psd, 'k')
-    plt.gca().set_xscale("log")
+    ax2.set_xscale("log")
     return fig
