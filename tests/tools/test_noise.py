@@ -35,6 +35,8 @@ def test_peterson():  # type: ignore
     nlnm = noise.peterson(0)
     nhnm = noise.peterson(1)
     nm_03 = noise.peterson(0.3)
+    with pytest.raises(ValueError):
+        noise.peterson(1.34)
     assert nlnm == noise.NLNM
     assert nhnm == noise.NHNM
     assert all(nm_03.T == np.array([0.10, 0.17, 0.22, 0.32, 0.40, 0.80, 1.24, 2.40, 3.80,
