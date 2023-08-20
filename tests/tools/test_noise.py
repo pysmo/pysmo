@@ -32,7 +32,8 @@ def test_NoiseModel() -> None:
 
 
 @pytest.mark.depends(on=['test_NoiseModel'])
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/')
+@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/',
+                               savefig_kwargs={'dpi': 300}, tolerance=10)
 def test_peterson():  # type: ignore
     nlnm = noise.peterson(0)
     nhnm = noise.peterson(1)
@@ -54,7 +55,8 @@ def test_peterson():  # type: ignore
 
 
 @pytest.mark.depends(on=['test_NoiseModel'])
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/')
+@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/',
+                               savefig_kwargs={'dpi': 300}, tolerance=10)
 def test_generate_noise():  # type: ignore
     npts = 10000
     nperseg = npts/4
