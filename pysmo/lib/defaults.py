@@ -5,6 +5,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 
+# Default model for distance and azimuth calculations
+DEFAULT_ELLPS = 'WGS84'
+
+
+# Seismogram defaults
 @dataclass(frozen=True)
 class _SEISMOGRAM_DEFAULTS:
     begin_time: datetime = datetime.fromtimestamp(0, tz=timezone.utc)

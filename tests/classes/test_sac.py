@@ -6,10 +6,10 @@ import pytest
 import numpy as np
 from datetime import datetime, timedelta
 from pysmo import Seismogram, SAC
-from pysmo.io import _SacIO
+from pysmo.lib.io import SacIO
 
 
-def test_sac_seismogram(sac_instance: SAC, sacio_instance: _SacIO) -> None:
+def test_sac_seismogram(sac_instance: SAC, sacio_instance: SacIO) -> None:
     sacseis = sac_instance.Seismogram
     sacio = sacio_instance
     assert isinstance(sacseis, Seismogram)
@@ -58,7 +58,7 @@ def test_sac_seismogram(sac_instance: SAC, sacio_instance: _SacIO) -> None:
         assert sacseis.begin_time.microsecond == 0
 
 
-def test_sac_as_station(sac_instance: SAC, sacio_instance: _SacIO) -> None:
+def test_sac_as_station(sac_instance: SAC, sacio_instance: SacIO) -> None:
     sacstation = sac_instance.Station
     sacio = sacio_instance
     assert sacstation.name == sacio.kstnm
@@ -91,7 +91,7 @@ def test_sac_as_station(sac_instance: SAC, sacio_instance: _SacIO) -> None:
         sacstation.longitude = bad_longitude
 
 
-def test_sac_as_event(sac_instance: SAC, sacio_instance: _SacIO) -> None:
+def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
     sacevent = sac_instance.Event
     sacio = sacio_instance
     assert sacevent.latitude == sacio.evla == pytest.approx(-31.465999603271484)
