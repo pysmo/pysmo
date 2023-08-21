@@ -1,18 +1,16 @@
-__author__ = "Simon Lloyd"
-
 import datetime
 import warnings
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
 from .mini import MiniHypocenter, MiniSeismogram, MiniStation
-from pysmo.io import _SacIO
+from pysmo.lib.io import SacIO
 
 
 class _SacNested:
     """Base class for nested SAC classes"""
 
-    def __init__(self, parent: _SacIO) -> None:
+    def __init__(self, parent: SacIO) -> None:
         self.parent = parent
 
 
@@ -166,7 +164,7 @@ class _SacEvent(_SacNested, MiniHypocenter):
 
 
 @dataclass
-class SAC(_SacIO):
+class SAC(SacIO):
     """Class for SAC files.
 
     The :py:class:`SAC` provides a data structure that mirrors header fields and data as

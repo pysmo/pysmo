@@ -1,7 +1,7 @@
 import copy
 import pickle
 import pytest
-from pysmo.io import _SacIO as SacIO
+from pysmo.lib.io import SacIO as SacIO
 
 
 def test_is_sac_type(sacio_instances: tuple[SacIO, ...]) -> None:
