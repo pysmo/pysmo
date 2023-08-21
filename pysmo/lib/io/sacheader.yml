@@ -2,7 +2,7 @@
 header_types:
   f:
     definition: floating
-    undefined: -12345.0
+    undefined: -12345
     description: Single Precision.
     length: 4
     format: f
@@ -18,10 +18,7 @@ header_types:
     definition: enumerated
     undefined: -12345
     description: >
-      Name begins with an "I". Has a limited set of integer
-      values. Each value is given a specific name. Each value
-      represents a specific condition. Subroutines use
-      the equivalent alphanumeric name.
+      Name begins with an "I". Has a limited set of integer values. Each value is given a specific name. Each value represents a specific condition. Subroutines use the equivalent alphanumeric name.
     length: 4
     format: i
 
@@ -44,7 +41,6 @@ header_types:
     undefined: ''
     description: Not really in the header. Derived from other header fields.
 
-
 header_fields:
   delta:
     description: Increment between evenly spaced samples (nominal value).
@@ -65,7 +61,7 @@ header_fields:
     read_only: true
 
   scale:
-    description: Multiplying scale factor for dependent variable (not currently used)
+    description: Multiplying scale factor for dependent variable (not currently used).
     start: 12
     header_type: f
 
@@ -88,17 +84,17 @@ header_fields:
     read_only: true
 
   o:
-    description: Event origin time (seconds relative to reference time.)
+    description: Event origin time (seconds relative to reference time).
     start: 28
     header_type: f
 
   a:
-    description: First arrival time (seconds relative to reference time.)
+    description: First arrival time (seconds relative to reference time).
     start: 32
     header_type: f
 
   fmt:
-    description: Internal
+    description: Internal.
     start: 36
     header_type: f
 
@@ -153,62 +149,62 @@ header_fields:
     header_type: f
 
   f:
-    description: Fini or end of event time (seconds relative to reference time.)
+    description: Fini or end of event time (seconds relative to reference time).
     start: 80
     header_type: f
 
   resp0:
-    description: Instrument response parameter 0 (not currently used)
+    description: Instrument response parameter 0 (not currently used).
     start: 84
     header_type: f
 
   resp1:
-    description: Instrument response parameter 1 (not currently used)
+    description: Instrument response parameter 1 (not currently used).
     start: 88
     header_type: f
 
   resp2:
-    description: Instrument response parameter 2 (not currently used)
+    description: Instrument response parameter 2 (not currently used).
     start: 92
     header_type: f
 
   resp3:
-    description: Instrument response parameter 3 (not currently used)
+    description: Instrument response parameter 3 (not currently used).
     start: 96
     header_type: f
 
   resp4:
-    description: Instrument response parameter 4 (not currently used)
+    description: Instrument response parameter 4 (not currently used).
     start: 100
     header_type: f
 
   resp5:
-    description: Instrument response parameter 5 (not currently used)
+    description: Instrument response parameter 5 (not currently used).
     start: 104
     header_type: f
 
   resp6:
-    description: Instrument response parameter 6 (not currently used)
+    description: Instrument response parameter 6 (not currently used).
     start: 108
     header_type: f
 
   resp7:
-    description: Instrument response parameter 7 (not currently used)
+    description: Instrument response parameter 7 (not currently used).
     start: 112
     header_type: f
 
   resp8:
-    description: Instrument response parameter 8 (not currently used)
+    description: Instrument response parameter 8 (not currently used).
     start: 116
     header_type: f
 
   resp9:
-    description: Instrument response parameter 9 (not currently used)
+    description: Instrument response parameter 9 (not currently used).
     start: 120
     header_type: f
 
   stla:
-    description: Station latitude (degrees, north positive)
+    description: Station latitude (degrees, north positive).
     start: 124
     header_type: f
 
@@ -218,12 +214,12 @@ header_fields:
     header_type: f
 
   stel:
-    description: Station elevation above sea level (meters). (not currently used)
+    description: Station elevation above sea level (meters).
     start: 132
     header_type: f
 
   stdp:
-    description: Station depth below surface (meters). (not currently used)
+    description: Station depth below surface (meters).
     start: 136
     header_type: f
 
@@ -238,12 +234,12 @@ header_fields:
     header_type: f
 
   evel:
-    description: Event elevation (meters). [not currently used]
+    description: Event elevation (meters).
     start: 148
     header_type: f
 
   evdp:
-    description: Event depth below surface (kilometers -- previously meters)
+    description: Event depth below surface (kilometers -- previously meters).
     start: 152
     header_type: f
 
@@ -253,52 +249,52 @@ header_fields:
     header_type: f
 
   user0:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 160
     header_type: f
 
   user1:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 164
     header_type: f
 
   user2:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 168
     header_type: f
 
   user3:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 172
     header_type: f
 
   user4:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 176
     header_type: f
 
   user5:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 180
     header_type: f
 
   user6:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 184
     header_type: f
 
   user7:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 188
     header_type: f
 
   user8:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 192
     header_type: f
 
   user9:
-    description: User defined variable storage area
+    description: User defined variable storage area.
     start: 196
     header_type: f
 
@@ -349,22 +345,22 @@ header_fields:
     header_type: f
 
   xminimum:
-    description: Minimum value of X (Spectral files only)
+    description: Minimum value of X (Spectral files only).
     start: 236
     header_type: f
 
   xmaximum:
-    description: Maximum value of X (Spectral files only)
+    description: Maximum value of X (Spectral files only).
     start: 240
     header_type: f
 
   yminimum:
-    description: Minimum value of Y (Spectral files only)
+    description: Minimum value of Y (Spectral files only).
     start: 244
     header_type: f
 
   ymaximum:
-    description: Maximum value of Y (Spectral files only)
+    description: Maximum value of Y (Spectral files only).
     start: 248
     header_type: f
 
@@ -440,17 +436,17 @@ header_fields:
     required: true
 
   norid:
-    description: Origin ID (CSS 3.0)
+    description: Origin ID (CSS 3.0).
     start: 308
     header_type: n
 
   nevid:
-    description: Event ID (CSS 3.0)
+    description: Event ID (CSS 3.0).
     start: 312
     header_type: n
 
   npts:
-    description: Number of points per data component
+    description: Number of points per data component.
     start: 316
     header_type: n
     required: true
@@ -462,17 +458,17 @@ header_fields:
     header_type: n
 
   nwfid:
-    description: Waveform ID (CSS 3.0)
+    description: Waveform ID (CSS 3.0).
     start: 324
     header_type: n
 
   nxsize:
-    description: Spectral Length (Spectral files only)
+    description: Spectral Length (Spectral files only).
     start: 328
     header_type: n
 
   nysize:
-    description: Spectral Length (Spectral files only)
+    description: Spectral Length (Spectral files only).
     start: 332
     header_type: n
 
@@ -482,193 +478,192 @@ header_fields:
     header_type: n
 
   iftype:
-    description: Type of file
+    description: Type of file.
     start: 340
     header_type: i
     required: true
     allowed_vals:
-      time: Time series file
-      rlim: Spectral file---real and imaginary
-      amph: Spectral file---amplitude and phase
-      xy: General x versus y data
+      time: Time series file.
+      rlim: Spectral file---real and imaginary.
+      amph: Spectral file---amplitude and phase.
+      xy: General x versus y data.
       ## xyz does not have a matching numerical ID!!!!
       #xyz: General XYZ (3-D) file
 
   idep:
-    description: Type of dependent variable
+    description: Type of dependent variable.
     start: 344
     header_type: i
     allowed_vals:
-      unkn: Unknown
-      disp: Displacement in nm
-      vel: Velocity in nm/sec
-      volts: Velocity in volts
-      acc: Acceleration in nm/sec/sec
+      unkn: Unknown.
+      disp: Displacement in nm.
+      vel: Velocity in nm/sec.
+      volts: Velocity in volts.
+      acc: Acceleration in nm/sec/sec.
 
   iztype:
-    description: Reference time equivalence
+    description: Reference time equivalence.
     start: 348
     header_type: i
     allowed_vals:
-      unkn: Unknown
-      b: Begin time
-      day: Midnight of refernece GMT day
-      o: Event origin time
-      a: First arrival time
-      t0: User defined time pick 0
-      t1: User defined time pick 1
-      t2: User defined time pick 2
-      t3: User defined time pick 3
-      t4: User defined time pick 4
-      t5: User defined time pick 5
-      t6: User defined time pick 6
-      t7: User defined time pick 7
-      t8: User defined time pick 8
-      t9: User defined time pick 9
+      unkn: Unknown.
+      b: Begin time.
+      day: Midnight of refernece GMT day.
+      o: Event origin time.
+      a: First arrival time.
+      t0: User defined time pick 0.
+      t1: User defined time pick 1.
+      t2: User defined time pick 2.
+      t3: User defined time pick 3.
+      t4: User defined time pick 4.
+      t5: User defined time pick 5.
+      t6: User defined time pick 6.
+      t7: User defined time pick 7.
+      t8: User defined time pick 8.
+      t9: User defined time pick 9.
 
   unused16:
     description: Unused.
     start: 352
     header_type: i
 
-
   iinst:
-    description: Type of recording instrument. [not currently used]
+    description: Type of recording instrument.
     start: 356
     header_type: i
 
   istreg:
-    description: Station geographic region. [not currently used]
+    description: Station geographic region.
     start: 360
     header_type: i
 
   ievreg:
-    description: Event geographic region. [not currently used]
+    description: Event geographic region.
     start: 364
     header_type: i
 
   ievtyp:
-    description: Type of event
+    description: Type of event.
     start: 368
     header_type: i
     allowed_vals:
-      unkn: Unknown
-      nucl: Nuclear event
-      pren: Nuclear pre-shot event
-      postn: Nuclear post-shot event
-      quake: Earthquake
-      preq: Foreshock
-      postq: Aftershock
-      chem: Chemical explosion
-      qb: Quarry or mine blast confirmed by quarry
-      qb1: Quarry/mine blast with designed shot info-ripple fired
-      qb2: Quarry/mine blast with observed shot info-ripple fired
-      qbx: Quarry or mine blast - single shot
-      qmt: 'Quarry/mining-induced events: tremors and rockbursts'
-      eq: Earthquake
-      eq1: Earthquakes in a swarm or aftershock sequence
-      eq2: Felt earthquake
-      me: Marine explosion
-      ex: Other explosion
-      nu: Nuclear explosion
-      nc: Nuclear cavity collapse
-      o: Other source of known origin
-      l: Local event of unknown origin
-      r: Regional event of unknown origin
-      t: Teleseismic event of unknown origin
-      u: Undetermined or conflicting information
-      other: Other
+      unkn: Unknown.
+      nucl: Nuclear event.
+      pren: Nuclear pre-shot event.
+      postn: Nuclear post-shot event.
+      quake: Earthquake.
+      preq: Foreshock.
+      postq: Aftershock.
+      chem: Chemical explosion.
+      qb: Quarry or mine blast confirmed by quarry.
+      qb1: Quarry/mine blast with designed shot info-ripple fired.
+      qb2: Quarry/mine blast with observed shot info-ripple fired.
+      qbx: Quarry or mine blast - single shot.
+      qmt: 'Quarry/mining-induced events: tremors and rockbursts.'
+      eq: Earthquake.
+      eq1: Earthquakes in a swarm or aftershock sequence.
+      eq2: Felt earthquake.
+      me: Marine explosion.
+      ex: Other explosion.
+      nu: Nuclear explosion.
+      nc: Nuclear cavity collapse.
+      o: Other source of known origin.
+      l: Local event of unknown origin.
+      r: Regional event of unknown origin.
+      t: Teleseismic event of unknown origin.
+      u: Undetermined or conflicting information.
+      other: Other.
 
   iqual:
-    description: Quality of data [not currently used]
+    description: Quality of data.
     start: 372
     header_type: i
     allowed_vals:
-      good: Good data
-      glch: Glitches
-      drop: Dropouts
-      lowsn: Low signal to noise ratio
-      other: Other
+      good: Good data.
+      glch: Glitches.
+      drop: Dropouts.
+      lowsn: Low signal to noise ratio.
+      other: Other.
 
   isynth:
-    description: Synthetic data flag [not currently used]
+    description: Synthetic data flag.
     start: 376
     header_type: i
     allowed_vals:
-      rldta: Real data
+      rldta: Real data.
 
   imagtyp:
-    description: Magnitude type
+    description: Magnitude type.
     start: 380
     header_type: i
     allowed_vals:
-      mb: Bodywave Magnitude
-      ms: Surfacewave Magnitude
-      ml: Local Magnitude
-      mw: Moment Magnitude
-      md: Duration Magnitude
-      mx: User Defined Magnitude
+      mb: Bodywave Magnitude.
+      ms: Surfacewave Magnitude.
+      ml: Local Magnitude.
+      mw: Moment Magnitude.
+      md: Duration Magnitude.
+      mx: User Defined Magnitude.
 
   imagsrc:
-    description: Source of magnitude information
+    description: Source of magnitude information.
     start: 384
     header_type: i
     allowed_vals:
-      neic: National Earthquake Information Center
-      pde: Preliminary Determination of Epicenter
-      isc: Internation Seismological Centre
-      reb: Reviewed Event Bulletin
-      usgs: US Geological Survey
-      brk: UC Berkeley
-      caltech: California Institute of Technology
-      llnl: Lawrence Livermore National Laboratory
-      evloc: Event Location (computer program)
-      jsop: Joint Seismic Observation Program
-      user: The individual using SAC2000
-      unknown: unknown
+      neic: National Earthquake Information Center.
+      pde: Preliminary Determination of Epicenter.
+      isc: Internation Seismological Centre.
+      reb: Reviewed Event Bulletin.
+      usgs: US Geological Survey.
+      brk: UC Berkeley.
+      caltech: California Institute of Technology.
+      llnl: Lawrence Livermore National Laboratory.
+      evloc: Event Location (computer program).
+      jsop: Joint Seismic Observation Program.
+      user: The individual using SAC2000.
+      unknown: unknown.
 
   unused19:
-    description: Unused
+    description: Unused.
     start: 388
     header_type: i
 
   unused20:
-    description: Unused
+    description: Unused.
     start: 392
     header_type: i
 
   unused21:
-    description: Unused
+    description: Unused.
     start: 396
     header_type: i
 
   unused22:
-    description: Unused
+    description: Unused.
     start: 400
     header_type: i
 
   unused23:
-    description: Unused
+    description: Unused.
     start: 404
     header_type: i
 
   unused24:
-    description: Unused
+    description: Unused.
     start: 408
     header_type: i
 
   unused25:
-    description: Unused
+    description: Unused.
     start: 412
     header_type: i
 
   unused26:
-    description: Unused
+    description: Unused.
     start: 416
     header_type: i
 
   leven:
-    description: TRUE if data is evenly spaced
+    description: TRUE if data is evenly spaced.
     start: 420
     header_type: l
     required: true
@@ -689,7 +684,7 @@ header_fields:
     header_type: l
 
   unused27:
-    description: Unused
+    description: Unused.
     start: 436
     header_type: l
 
