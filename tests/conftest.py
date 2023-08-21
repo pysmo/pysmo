@@ -3,7 +3,7 @@ import os
 import shutil
 from pysmo import SAC, Seismogram, Station, MiniSeismogram, MiniStation
 from pysmo.classes.mini import MiniHypocenter
-from pysmo.io import _SacIO
+from pysmo.lib.io import SacIO
 from pysmo.types import Hypocenter
 
 
@@ -46,16 +46,16 @@ def picklefiles(tmpdir_factory: pytest.TempdirFactory) -> tuple[str, ...]:
 
 
 @pytest.fixture()
-def sacio_instances(sacfiles: tuple[str, ...]) -> tuple[_SacIO, ...]:
+def sacio_instances(sacfiles: tuple[str, ...]) -> tuple[SacIO, ...]:
     """Create _SacIO instances"""
-    sacio1 = _SacIO.from_file(sacfiles[0])
-    sacio2 = _SacIO.from_file(sacfiles[1])
-    sacio3 = _SacIO.from_file(sacfiles[3])
+    sacio1 = SacIO.from_file(sacfiles[0])
+    sacio2 = SacIO.from_file(sacfiles[1])
+    sacio3 = SacIO.from_file(sacfiles[3])
     return sacio1, sacio2, sacio3
 
 
 @pytest.fixture()
-def sacio_instance(sacio_instances: tuple[_SacIO, ...]) -> _SacIO:
+def sacio_instance(sacio_instances: tuple[SacIO, ...]) -> SacIO:
     """Return single _SacIO instance"""
     return sacio_instances[0]
 
