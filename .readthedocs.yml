@@ -23,7 +23,6 @@ sphinx:
 formats:
   - pdf
   - epub
-  - htmlzip
 
 # Optionally declare the Python requirements required to build your docs
 python:
