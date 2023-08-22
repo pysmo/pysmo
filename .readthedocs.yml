@@ -12,7 +12,7 @@ build:
   apt_packages:
     - python3-poetry
   jobs:
-    post_checkout:
+    pre_install:
       - poetry export --only=docs -o docs-requirements.txt
 
 # Build documentation in the docs/ directory with Sphinx
