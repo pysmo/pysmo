@@ -6,6 +6,9 @@ readme = "README.md"
 authors = ["Simon M. Lloyd <simon@slloyd.net>"]
 license = "GPL-3.0-or-later"
 documentation = "https://pysmo.readthedocs.io"
+packages = [
+   {include = "pysmo"},
+]
 exclude = [
     "tests",
     "docs",
