@@ -13,9 +13,7 @@ two.
 
 ![peterson](../examples/tools/noise/peterson.png)
 
-:::{dropdown} {octicon}`code;1em;sd-text-info` View Source Code
-:animate: fade-in-slide-down
-```{literalinclude} ../examples/tools/noise/peterson.py
-:language: python
-```
-:::
+??? quote "View Source Code" 
+    ```python title="peterson.py"
+    --8<-- "docs/examples/tools/noise/peterson.py"
+    ```

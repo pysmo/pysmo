@@ -1,0 +1,3 @@
+# Functions
+
+::: pysmo.functions

@@ -22,7 +22,7 @@ Cloning into 'pysmo'...
 $ cd pysmo
 ```
 
-That's it! Now skip ahead to <project:developing.md#project-layout>.
+That's it! Now skip ahead to [project layout](#project-layout).
 
 ### Create your own fork
 
@@ -37,11 +37,12 @@ Cloning into 'pysmo'...
 $ cd pysmo
 ```
 
-```{note}
-We used [ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) to
-clone the repository this time round. With an _ssh-agent_ running, this will save you
-from having to constantly enter your credentials when pushing changes back to GitHub.
-```
+!!! note
+    We used
+    [ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) to
+    clone the repository this time round. With an _ssh-agent_ running, this will save
+    you from having to constantly enter your credentials when pushing changes back to
+    GitHub.
 
 In order to pull in changes in the upstream pysmo repository, we suggest adding it as
 an additional remote:
@@ -55,18 +56,16 @@ $ git remote add upstream https://github.com/pysmo/pysmo.git
 Inside the pysmo folder you will find a relatively simple layout. The four most important
 items are:
 
-1. `pysmo`{l=bash}: this directory is for the pysmo source code. There are `README.md`
+1. `pysmo`: this directory is for the pysmo source code. There are `README.md`
   files in all relevant sub-directories here to help you find your way around.
-2. `docs`{l=bash}: anything to do with documentation happens here.
-3. `tests`{l=bash}: we use this directory to hold unit tests.
-4. `Makefile`{l=bash}: Most things can be managed with this makefile.
+2. `docs`: anything to do with documentation happens here.
+3. `tests`: we use this directory to hold unit tests.
+4. `Makefile`: Most things can be managed with this makefile.
 
-:::{tip}
-The psymo repository also contains files to create a
-[development container](https://containers.dev/), which performs the necessary setup
-tasks (all the steps below) for you automatically.
-:::
-
+!!! tip
+    The psymo repository also contains files to create a
+    [development container](https://containers.dev/), which performs the necessary
+    setup tasks (all the steps below) for you automatically.
 
 
 ## Requirements
@@ -74,14 +73,15 @@ tasks (all the steps below) for you automatically.
 ### Setting up Windows
 
 To set up the development environment on Windows a few additional steps may be needed:
+
 * Install [Chocolatey](https://chocolatey.org/install#individual), a package manager for
   Windows which greatly simplifies installing additional dependencies correctly.
 * Once Chocolatey is installed, run the following commands (run as administrator) using
   either PowerShell or the Command Prompt to install the dependencies:
-```powershell
-choco install make
-choco install awk
-```
+  ```powershell
+  PS > choco install make
+  PS > choco install awk
+  ```
 
 ### Python
 
@@ -91,10 +91,9 @@ A safe bet is a recent version of the
 or your system already has a recent version of Python installed, that is likely fine too
 (we'll just assume you know what you are doing).
 
-:::{tip}
-If you are running Windows and have Chocolatey installed, you can use the `choco` command
-to install and update Python.
-:::
+!!! tip
+    If you are running Windows and have Chocolatey installed, you can use the
+    `choco` command to install and update Python.
 
 ### Poetry
 
@@ -105,17 +104,10 @@ developing and testing while also having the stable version of pysmo installed a
 same time. Please consult the [Poetry documentation](https://python-poetry.org/docs) for
 installation and basic usage instructions.
 
-:::{note}
-For convenience we wrap the most used poetry commands in a `Makefile`, so interaction
-with Poetry is rarely required.
-:::
+!!! note
+    For convenience we wrap the most used poetry commands in a `Makefile`, so
+    interaction with Poetry is rarely required.
 
-### Pandoc
-
-In order to build the documentation in the development environment,
-[Pandoc](https://pandoc.org/index.html) is required. Pandoc can be installed by following
-the [installation instructions](https://pandoc.org/installing.html) on the official
-website. 
 
 ## Makefile
 
