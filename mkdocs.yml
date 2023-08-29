@@ -1,0 +1,129 @@
+site_name: pysmo
+copyright: Copyright &copy; 2012 - 2023 Simon Lloyd
+
+# Repository
+repo_name: pysmo/pysmo
+repo_url: https://github.com/pysmo/pysmo
+
+# Configuration
+theme:
+  name: material
+  features:
+    # - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tooltips
+    - content.tabs.link
+    - navigation.footer
+    - navigation.indexes
+    # - navigation.sections
+    # - navigation.tabs
+    - navigation.top
+  palette:
+    # # Palette toggle for automatic mode
+    # - media: "(prefers-color-scheme)"
+    #   toggle:
+    #     icon: material/brightness-auto
+    #     name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+        # name: Switch to system preference
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji ""
+      emoji_generator: !!python/name:materialx.emoji.to_svg ""
+  # - markdown_include.include:
+  #     base_path: docs
+  # - termynal:
+  #     prompt_literal_start:
+  #       - "$"
+  #       - ">"
+  #       - ">>>"
+
+plugins:
+  - search
+  - autorefs
+  - mkdocs-jupyter
+  # - termynal
+  # - gen-files:
+  # scripts:
+  # - docs/gen_ref_pages.py
+  # - literate-nav:
+  # nav_file: SUMMARY.md
+  # - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://mypy.readthedocs.io/en/stable/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
+            - https://docs.scipy.org/doc/scipy/objects.inv
+            - https://pip.pypa.io/en/stable/objects.inv
+            - https://docs.pytest.org/en/stable/objects.inv
+            - https://pytest-mpl.readthedocs.io/en/latest/objects.inv
+            - https://matplotlib.org/stable/objects.inv
+            - https://flake8.pycqa.org/en/latest/objects.inv
+            - https://www.mkdocs.org/objects.inv
+
+nav:
+  - Home:
+      - pysmo: index.md
+  - First Steps:
+      - first-steps/index.md
+      - first-steps/installation.md
+      - first-steps/tutorial.ipynb
+  - User Guide:
+      - user-guide/rationale.md
+      - user-guide/in-the-box.md
+      - Types:
+          - user-guide/types/index.md
+          - user-guide/types/Seismogram.md
+          - user-guide/types/Location.md
+          - user-guide/types/Station.md
+          - user-guide/types/Hypocenter.md
+      - Classes:
+          - user-guide/classes/index.md
+          - user-guide/classes/minimal.md
+          - user-guide/classes/sac.md
+      - Functions:
+          - user-guide/functions/index.md
+      - Tools:
+          - user-guide/tools/index.md
+          - user-guide/tools/noise.md
+  - Gallery:
+      - gallery/index.md
+  - Developing Pysmo:
+      - developing/index.md
+      - developing/types-more.md
+      - developing/developing.md
+      - developing/contributing.md
+  - Contributors: contributors.md
+  - Changelog: changelog.md
