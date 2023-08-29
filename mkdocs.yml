@@ -125,3 +125,5 @@ nav:
       - developing/types-more.md
       - developing/developing.md
       - developing/contributing.md
+  - Contributors: contributors.md
+  - Changelog: changelog.md
