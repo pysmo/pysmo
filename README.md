@@ -1,3 +1,4 @@
+# pysmo
 
 [![Test Status](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml/badge.svg)](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml)
 [![Build Status](https://github.com/pysmo/pysmo/actions/workflows/build.yml/badge.svg)](https://github.com/pysmo/pysmo/actions/workflows/build.yml)

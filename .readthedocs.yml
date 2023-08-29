@@ -15,16 +15,9 @@ build:
     pre_install:
       - /home/docs/.local/bin/poetry export --only=docs -o docs-requirements.txt
 
-# Build documentation in the docs/ directory with Sphinx
-sphinx:
-  configuration: docs/source/conf.py
+mkdocs:
+  configuration: mkdocs.yml
 
-# Optionally build your docs in additional formats such as PDF
-formats:
-  - pdf
-  - epub
-
-# Optionally declare the Python requirements required to build your docs
 python:
   install:
     - requirements: docs-requirements.txt
