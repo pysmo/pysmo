@@ -8,11 +8,11 @@ the project organisation, conventions, and tools used.
 ## What goes where
 
 For the most part, the same components presented to a pysmo user
-([Types](project:types.md), [Classes](project:classes.md),
-[Functions](project:functions.md), [Tools](project:tools.md)) are also how the code
-itself is organised. It should be fairly easy to determine where a new piece of code
-should go. However, there are some rules that need to be kept in mind in order to ensure
-code added to pysmo behaves as expected.
+([Types](../user-guide/types/index.md), [Classes](../user-guide/classes/index.md),
+[Functions](../user-guide/functions/index.md), [Tools](../user-guide/tools/index.md))
+are also how the code itself is organised. It should be fairly easy to determine where a
+new piece of code should go. However, there are some rules that need to be kept in mind
+in order to ensure code added to pysmo behaves as expected.
 
 ### Types
 
@@ -22,18 +22,16 @@ paramount. This stability is achieved by keeping the type definitions simple, an
 close as possible to whatever they represent in the physical world. Other rules to follow
 are:
 
-- Types should be top level importable (i.e. `from pysmo import <type>`{l=python}). Any
-  new type should therefore be added to the
-[`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py) file.
-- They should be fully documented inside the docstrings of the `.py` files and added to
-  the
-  [`docs/source/types.md`](https://github.com/pysmo/pysmo/blob/master/docs/source/types.md)
-  file so that they are included into this documentation.
+- Types should be top level importable (i.e. `from pysmo import <type>`). Any new type
+  should therefore be added to the
+  [`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py)
+  file.
+- They should be fully documented inside the docstrings of the `.py` files.
 - Every type should have a corresponding minimal generic class (see more below).
 - If a new type were to contain all attributes of an existing type, that existing type
   should be reused. For example:
 
-  ```python
+  ```python title="type_A_B.py"
   class A(Protocol):
     """Pysmo type A, which has properties prop1 and prop2."""
     @property
@@ -57,7 +55,7 @@ The generic classes serve as containers for data, which are used via the pysmo t
 When writing a new class (or modifying an existing one to become compatible with
 pysmo), it is important to remember that the pysmo types are protocol classes, and as
 such only check for type compatibility. It is therefore up to the programmer to ensure
-they behave as expected (which can be verified using the unit tests provided by pysmo).
+they behave as expected (which is verified using the unit tests provided by pysmo).
 The classes are similarly essential to pysmo as the types, and similar rules apply:
 
 - Classes should also be top level importable
@@ -65,16 +63,15 @@ The classes are similarly essential to pysmo as the types, and similar rules app
   to the
   [`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py)
   file.
-- They classes should be added to
-  [`docs/source/classes.md`](https://github.com/pysmo/pysmo/blob/master/docs/source/classes.md)
-  for the documentation to include the docstrings.
+- A markdown file needs to be added to [docs/user-guide/classes](https://github.com/pysmo/pysmo/tree/master/docs/user-guide/classes)
+  for the documentation to include the docstrings of the class.
 - For each type there is a corresponding minimal class (e.g.
-  [`MiniSeismogram`](project:classes.md#pysmo.MiniSeismogram) for the
-  [`Seismogram`](project:classes.md#pysmo.Seismogram) type). They serve as default class
-  for functions that output data. These minimal classes are also where methods are
-  defined. As the methods only make use of attributes defined by pysmo types, using the
-  mini classes as base class for other classes (compatible with pysmo types) means they
-  also possess these methods without having to write a custom implementation (see for
+  [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] for the
+  [`Seismogram`][pysmo.types.Seismogram]). They serve as default class for functions that
+  output data. These minimal classes are also where methods are defined. As the methods
+  only make use of attributes defined by pysmo types, using the mini classes as base
+  class for other classes (compatible with pysmo types) means they also possess these
+  methods without having to write a custom implementation (see for
   example [here](https://github.com/pysmo/pysmo/blob/master/pysmo/classes/sac.py)).
 
 
@@ -101,9 +98,9 @@ processing). It also may serve as a place for "anything else".
 - Each tool should be it's own module, that can be imported as `pysmo.tools.<toolname>`.
   Therefore, tools that exist in a single file don't need a `__init__.py` file, and ones
   that exist in their own directory need an `__init__.py` file in that directory.
-- Each tool's documentation should also be entirely within the module, and is included to
-  the pysmo documentation with an `automodule` entry in
-  [`docs/source/tools.md`](https://github.com/pysmo/pysmo/blob/master/docs/source/tools.md).
+- Each tool's documentation should also be entirely within the module as docstrings.
+- A markdown file needs to be added to
+  [docs/user-guide/tools](https://github.com/pysmo/pysmo/tree/master/docs/user-guide/tools).
 
 
 ## Testing
@@ -113,10 +110,9 @@ are calculated from the code that is being tested itself. While this does help a
 future code changes from breaking things, there is no way to know if the initial code is
 actually correct (e.g. free from logical errors). Ideally, test data should therefore be
 calculated using external tools. Where this is not possible, we suggest writing tests
-that involve creating figures (with [matplotlib](inv:matplotlib#index)) that can be
-manually inspected to see if the output makes sense. These figures then become the
-reference data that future test runs can use via the [pytest-mpl](inv:pytest-mpl#index)
-extension automatically.
+that involve creating figures (with [matplotlib][]) that can be manually inspected to see
+if the output makes sense. These figures then become the reference data that future test
+runs can use via the [pytest-mpl][] extension automatically.
 
 
 ## Formatting and Style
@@ -129,9 +125,7 @@ easily readable code. Aside from using those kinds of tools, we highly encourage
 [self-documenting code](https://en.wikipedia.org/wiki/Self-documenting_code). For
 example, instead of writing code to calculate velocity like this:
 
-```python
-# Documented code
-
+```python title="documented-code.py"
 # Calculate the velocity v
 def v(d: float, t: float) -> float:
   """Calculates the velocity from distance and time."""
@@ -143,9 +137,7 @@ def v(d: float, t: float) -> float:
 Use of more meaningful variable (and function) names results in code that is easier to
 read and less error prone (e.g. due to ambiguous variable names causing confusion):
 
-```python
-# Self-documenting code
-
+```python title="self-documenting-code.py"
 def velocity(distance: float, time: float) -> float:
   """Calculates the velocity from distance and time."""
   return distance / time
@@ -153,9 +145,11 @@ def velocity(distance: float, time: float) -> float:
 
 ### Documentation
 
-This documentation is built using [sphinx](https://www.sphinx-doc.org) together with the
-[myst](inv:myst#index) extension. Thus the main documentation source files are written in
-[Markdown](https://en.wikipedia.org/wiki/Markdown), while the docstrings in the python
-files are in [reStructuredText](https://en.wikipedia.org/wiki/ReStructuredText) format.
-Both languages are well documented and easy to use. For consistency, we avoid lines
-spanning more than 90 characters and make sure none end with unnecessary whitespaces.
+This documentation is built using [mkdocs](https://www.mkdocs.org/) using the
+[material](https://squidfunk.github.io/mkdocs-material/) theme. Thus the main
+documentation source files are written in
+[Markdown](https://en.wikipedia.org/wiki/Markdown). The docstrings in the `.py` files are
+included via the [mkdocstrings](https://mkdocstrings.github.io) plugin. Please write the
+docstrings using the
+[google](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
+style.
