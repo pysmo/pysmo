@@ -7,17 +7,15 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> Seismogram:
     """
     Resamples Seismogram object data using Fourier method.
 
-    :param seismogram: Seismogram object.
-    :type seismogram: pysmo.Seismogram
-    :param sampling_rate: New sampling rate.
-    :type sampling_rate: float
-    :returns: Detrended seismogram.
-    :rtype: pysmo.Seismogram
+    Parameters:
+        seismogram: Seismogram object.
+        sampling_rate: New sampling rate.
 
-    Example usage::
+    Returns: Detrended seismogram.
 
+    Examples:
         >>> from pysmo import SAC, resample
-        >>> original_seis = SAC.from_file('sacfile.sac').Seismogram
+        >>> original_seis = SAC.from_file('sacfile.sac').seismogram
         >>> len(original_seis)
         20000
         >>> original_sampling_rate = original_seis.sampling_rate

@@ -4,28 +4,28 @@ from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
 def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
-    """Calculate azimuth (in DEG) between two points.
+    """Calculate azimuth between two points.
 
-    For more information see: https://pyproj4.github.io/pyproj/stable
+    info:
+        For more information see: https://pyproj4.github.io/pyproj/stable
 
-    :param point1: Name of the event object providing coordinates of the origin point.
-    :type point1: Location
-    :param point2: Name of the station object providing coordinates of the target point.
-    :type point2: Location
-    :param ellps: Ellipsoid to use for azimuth calculation
-    :type ellps: str
-    :returns: Azimuth
-    :rtype: float
+    Parameters:
+        point1: Name of the event object providing coordinates of the origin point.
+        point2: Name of the station object providing coordinates of the target point.
+        ellps: Ellipsoid to use for azimuth calculation
 
-    Example usage::
+    Returns:
+        Azimuth in degrees from point 1 to point 2.
 
+    Examples:
         >>> from pysmo import SAC
         >>> from pysmo.functions import azimuth
         >>> sacobj = SAC.from_file('sacfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = azimuth(sacobj.Event, sacobj.Station)
+        >>> azimuth = azimuth(sacobj.event, sacobj.station)
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = azimuth(sacobj.Event, sacobj.Station, ellps='clrk66')
+        >>> azimuth = azimuth(sacobj.event, sacobj.station, ellps='clrk66')
+
     """
     return __azdist(point1, point2, ellps)[0]
 
@@ -33,26 +33,25 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
 def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
     """Calculate backazimuth (in DEG) between two points.
 
-    For more information see: https://pyproj4.github.io/pyproj/stable
+    info:
+        For more information see: https://pyproj4.github.io/pyproj/stable
 
-    :param point1: Name of the event object providing coordinates of the origin point.
-    :type point1: Location
-    :param point2: Name of the station object providing coordinates of the target point.
-    :type point2: Location
-    :param ellps: Ellipsoid to use for azimuth calculation
-    :type ellps: str
-    :returns: Azimuth
-    :rtype: float
+    Parameters:
+        point1: Name of the event object providing coordinates of the origin point.
+        point2: Name of the station object providing coordinates of the target point.
+        ellps: Ellipsoid to use for azimuth calculation
 
-    Example usage::
+    Returns:
+        Backzimuth in degrees from point 2 to point 1
 
+    Examples:
         >>> from pysmo import SAC
         >>> from pysmo.functions import backazimuth
         >>> sacobj = SAC.from_file('sacfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = backazimuth(sacobj.Event, sacobj.Station)
+        >>> azimuth = backazimuth(sacobj.event, sacobj.station)
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = backazimuth(sacobj.Event, sacobj.Station, ellps='clrk66')
+        >>> azimuth = backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
     """
     return __azdist(point1, point2, ellps)[1]
 
@@ -60,26 +59,25 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
 def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
     """Calculate the great circle distance (in metres) between two points.
 
-    For more information see: https://pyproj4.github.io/pyproj/stable
+    info:
+        For more information see: https://pyproj4.github.io/pyproj/stable
 
-    :param point1: Name of the event object providing coordinates of the origin point.
-    :type point1: Location
-    :param point2: Name of the station object providing coordinates of the target point.
-    :type point2: Location
-    :param ellps: Ellipsoid to use for distance calculation
-    :type ellps: str
-    :returns: Great Circle Distance in metres.
-    :rtype: float
+    Parameters:
+        point1: Name of the event object providing coordinates of the origin point.
+        point2: Name of the station object providing coordinates of the target point.
+        ellps: Ellipsoid to use for distance calculation
 
-    Example usage::
+    Returns:
+        Great Circle Distance in metres.
 
+    Examples:
         >>> from pysmo import SAC
         >>> from pysmo.functions import distance
         >>> sacobj = SAC.from_file('sacfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = distance(sacobj.Event, sacobj.Station)
+        >>> azimuth = distance(sacobj.event, sacobj.station)
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = distance(sacobj.Event, sacobj.Station, ellps='clrk66')
+        >>> azimuth = distance(sacobj.event, sacobj.station, ellps='clrk66')
     """
     return __azdist(point1, point2, ellps)[2]
 

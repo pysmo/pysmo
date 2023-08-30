@@ -4,13 +4,20 @@
 is a commonly used program that uses it's own file format. Pysmo provides a Python class
 to access SAC files.
 
-::: pysmo.classes.sac.SAC
+::: pysmo.classes.sac
     options:
-      inherited_members: true
-      members: Event, Station, Seismogram
+      show_root_toc_entry: false
+      allow_inspection: true
+      members:
+        - SAC
+        - _SacSeismogram
+        - _SacStation
+        - _SacEvent
 
-::: pysmo.classes.sac._SacEvent
 
-::: pysmo.classes.sac._SacSeismogram
-
-::: pysmo.classes.sac._SacStation
+::: pysmo.lib.io.sacio
+    options:
+      heading_level: 2
+      show_root_toc_entry: false
+      members:
+        - SacIO

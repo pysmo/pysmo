@@ -112,7 +112,7 @@ there with the following content:
 
 !!! note
     Notice that the code is making use of [type hinting](../first-steps/index.md) and
-    [pysmo types](../user-guide/types/index.md) covered in previous sections.
+    [pysmo types](../user-guide/types.md) covered in previous sections.
 
 To ensure that this newly created function can be imported correctly, we add add
 it to the `__init__.py` file in the `pysmo/functions` folder. This is what the

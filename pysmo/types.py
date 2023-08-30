@@ -5,10 +5,18 @@ import datetime
 
 @runtime_checkable
 class Seismogram(Protocol):
-    """The :class:`Seismogram` class defines a protocol for a basic seismogram as used in pysmo.
+    """The `Seismogram` class defines a type for a basic seismogram as used in pysmo.
 
-    Example usage for a function that takes a Seismogram compatible class instance as argument
-    and returns the begin time in isoformat::
+    Attributes:
+        __len__: The length of the Seismogram.
+        data: Seismogram data.
+        sampling_rate: The sampling rate [s].
+        begin_time: Seismogram begin time.
+        end_time: Seismogram end time (read only).
+
+    Examples:
+        Usage for a function that takes a Seismogram compatible class instance as argument
+        and returns the begin time in isoformat:
 
         >>> from pysmo import SAC, Seismogram  # SAC is a class that "speaks" Seismogram
         >>> def begin_time_in_isoformat(seis_in: Seismogram) -> str:
@@ -21,12 +29,10 @@ class Seismogram(Protocol):
     """
 
     def __len__(self) -> int:
-        """Returns the length (number of points) of a Seismogram."""
         ...
 
     @property
     def data(self) -> np.ndarray:
-        """Seismogram data stored as numpy array."""
         ...
 
     @data.setter
@@ -35,7 +41,6 @@ class Seismogram(Protocol):
 
     @property
     def begin_time(self) -> datetime.datetime:
-        """Seismogram begin time."""
         ...
 
     @begin_time.setter
@@ -44,12 +49,10 @@ class Seismogram(Protocol):
 
     @property
     def end_time(self) -> datetime.datetime:
-        """Seismogram end time"""
         ...
 
     @property
     def sampling_rate(self) -> float:
-        """Seismogram sampling rate."""
         ...
 
     @sampling_rate.setter
@@ -59,10 +62,14 @@ class Seismogram(Protocol):
 
 @runtime_checkable
 class Location(Protocol):
-    """The :class:`Location` defines surface coordinates in pysmo."""
+    """The `Location` defines surface coordinates in pysmo.
+
+    Attributes:
+        latitude: Latitude in degrees.
+        longitude: Longitude in degrees.
+    """
     @property
     def latitude(self) -> float:
-        """Latitude in degrees."""
         ...
 
     @latitude.setter
@@ -71,7 +78,6 @@ class Location(Protocol):
 
     @property
     def longitude(self) -> float:
-        """Longitude in degrees."""
         ...
 
     @longitude.setter
@@ -81,11 +87,17 @@ class Location(Protocol):
 
 @runtime_checkable
 class Station(Location, Protocol):
-    """The :class:`Station` class defines a protocol for seismic stations in Pysmo.
+    """The `Station` class defines a protocol for seismic stations in Pysmo.
+
+    Attributes:
+        name: Station name.
+        network: Network name.
+        latitude (float): Latitude in degrees.
+        longitude (float): Longitude in degrees.
+        elevation: Elevation in metres.
     """
     @property
     def name(self) -> str:
-        """Station name."""
         ...
 
     @name.setter
@@ -94,7 +106,6 @@ class Station(Location, Protocol):
 
     @property
     def network(self) -> str:
-        """Station network name."""
         ...
 
     @network.setter
@@ -103,7 +114,6 @@ class Station(Location, Protocol):
 
     @property
     def elevation(self) -> Optional[float]:
-        """Station elevation in metres."""
         ...
 
     @elevation.setter
@@ -113,11 +123,15 @@ class Station(Location, Protocol):
 
 @runtime_checkable
 class Hypocenter(Location, Protocol):
-    """The :class:`Hypocenter` class defines a protocol for hypocenters in pysmo.
+    """The `Hypocenter` class defines a protocol for hypocenters in pysmo.
+
+    Attributes:
+        depth: Event depth in metres.
+        latitude (float): Latitude in degrees.
+        longitude (float): Longitude in degrees.
     """
     @property
     def depth(self) -> float:
-        """Event depth in metres."""
         ...
 
     @depth.setter

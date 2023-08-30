@@ -7,18 +7,17 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
-    :param name: Name of the seismogram object passed to this function.
-    :type seismogram: pysmo.Seismogram
-    :param Tn: Center period of Gaussian filter [in seconds]
-    :type Tn: float
-    :param alpha: Set alpha (which determines filterwidth)
-    :type alpha: float
-    :returns: seismogram containing the envelope
+    Parameters:
+        seismogram: Name of the seismogram object passed to this function.
+        Tn: Center period of Gaussian filter [in seconds]
+        alpha: Set alpha (which determines filterwidth)
 
-    Example::
+    Returns:
+        Seismogram containing the envelope
 
+    Examples:
         >>> from pysmo import SAC, envelope
-        >>> seis = SAC.from_file('sacfile.sac').Seismogram
+        >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
@@ -32,18 +31,17 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
     """
     Returns a gaussian filtered seismogram.
 
-    :param name: Name of the SAC object passed to this function.
-    :type name: SAC
-    :param Tn: Center period of Gaussian filter [in seconds]
-    :type Tn: float
-    :param alpha: Set alpha (which determines filterwidth)
-    :type alpha: float
-    :returns: gaussian filtered seismogram.
+    Parameters:
+        seismogram: Name of the SAC object passed to this function.
+        Tn: Center period of Gaussian filter [in seconds]
+        alpha: Set alpha (which determines filterwidth)
 
-    Example usage::
+    Returns:
+        Gaussian filtered seismogram.
 
+    Examples:
         >>> from pysmo import SAC, gauss
-        >>> seis = SAC.from_file('sacfile.sac').Seismogram
+        >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)

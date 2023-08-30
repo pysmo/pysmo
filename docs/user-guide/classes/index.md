@@ -1,6 +1,6 @@
 # Classes
 
-The types discussed in the [previous chapter](../types/index.md) are only useful in
+The types discussed in the [previous chapter](../types.md) are only useful in
 conjunction with compatible classes. A class is is compatible with a particular type if
 all attributes and methods present in the type (defined by the respective protocol class)
 are also present in the class itself. For example, a `City` class may look something

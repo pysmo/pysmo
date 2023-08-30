@@ -9,22 +9,17 @@ def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
     """
     Plots Seismogram objects.
 
-    :param seismograms: One or more seismogram objects. If a 'label' attribute is found
-                        it will be used to label the trace in the plot.
-    :type seismograms: pysmo.Seismogram
-    :param outfile: Optionally save figure to this filename.
-    :type outfile: str
-    :param showfig: Display figure.
-    :type showfig: bool
-    :param title: Optionally set figure title.
-    :type title: str
-    :param kwargs: Optionally add kwargs to pass to the plot command
-    :type kwargs: dict
+    Parameters:
+        seismograms: One or more seismogram objects. If a 'label' attribute is found
+                     it will be used to label the trace in the plot.
+        outfile: Optionally save figure to this filename.
+        showfig: Display figure.
+        title: Optionally set figure title.
+        kwargs: Optionally add kwargs to pass to the plot command
 
-    Example usage::
-
+    Examples:
         >>> from pysmo import SAC, plotseis
-        >>> seis = SAC.from_file('sacfile.sac').Seismogram
+        >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> plotseis(seis)
     """
     legend: bool = False
