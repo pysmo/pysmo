@@ -7,7 +7,7 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
     """Calculate azimuth between two points.
 
     info:
-        For more information see: https://pyproj4.github.io/pyproj/stable
+        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         point1: Name of the event object providing coordinates of the origin point.
@@ -34,7 +34,7 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
     """Calculate backazimuth (in DEG) between two points.
 
     info:
-        For more information see: https://pyproj4.github.io/pyproj/stable
+        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         point1: Name of the event object providing coordinates of the origin point.
@@ -60,7 +60,7 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
     """Calculate the great circle distance (in metres) between two points.
 
     info:
-        For more information see: https://pyproj4.github.io/pyproj/stable
+        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         point1: Name of the event object providing coordinates of the origin point.
