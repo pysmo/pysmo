@@ -8,8 +8,8 @@ the project organisation, conventions, and tools used.
 ## What goes where
 
 For the most part, the same components presented to a pysmo user
-([Types](../user-guide/types/index.md), [Classes](../user-guide/classes/index.md),
-[Functions](../user-guide/functions/index.md), [Tools](../user-guide/tools/index.md))
+([Types](../user-guide/types.md), [Classes](../user-guide/classes/index.md),
+[Functions](../user-guide/functions.md), [Tools](../user-guide/tools/index.md))
 are also how the code itself is organised. It should be fairly easy to determine where a
 new piece of code should go. However, there are some rules that need to be kept in mind
 in order to ensure code added to pysmo behaves as expected.

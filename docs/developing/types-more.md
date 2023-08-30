@@ -109,7 +109,7 @@ classes is a lot of work, and it does not make much sense to create yet another 
 pysmo.
 
 In order to make use of these existing classes, we must ensure compatibility with the
-[pysmo types](../user-guide/types/index.md). While some types may work out of the box
+[pysmo types](../user-guide/types.md). While some types may work out of the box
 with an existing class, it is usually necessary to modify the class to work with pysmo
 types. Crucially, this requires only a fraction of work compared to writing a data class
 from scratch.

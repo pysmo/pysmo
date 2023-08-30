@@ -51,6 +51,8 @@ markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
+  - toc:
+      permalink: "#"
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.snippets
@@ -81,6 +83,8 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          options:
+            docstring_style: google
           import:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
@@ -92,6 +96,7 @@ plugins:
             - https://matplotlib.org/stable/objects.inv
             - https://flake8.pycqa.org/en/latest/objects.inv
             - https://www.mkdocs.org/objects.inv
+            - https://pyproj4.github.io/pyproj/stable/objects.inv
 
 nav:
   - Home:
@@ -103,18 +108,12 @@ nav:
   - User Guide:
       - user-guide/rationale.md
       - user-guide/in-the-box.md
-      - Types:
-          - user-guide/types/index.md
-          - user-guide/types/Seismogram.md
-          - user-guide/types/Location.md
-          - user-guide/types/Station.md
-          - user-guide/types/Hypocenter.md
+      - user-guide/types.md
       - Classes:
           - user-guide/classes/index.md
           - user-guide/classes/minimal.md
           - user-guide/classes/sac.md
-      - Functions:
-          - user-guide/functions/index.md
+      - Functions: user-guide/functions.md
       - Tools:
           - user-guide/tools/index.md
           - user-guide/tools/noise.md
@@ -125,5 +124,5 @@ nav:
       - developing/types-more.md
       - developing/developing.md
       - developing/contributing.md
-  - Contributors: contributors.md
-  - Changelog: changelog.md
+  - contributors.md
+  - changelog.md
