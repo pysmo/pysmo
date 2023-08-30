@@ -7,168 +7,6 @@ from .mini import MiniHypocenter, MiniSeismogram, MiniStation
 from pysmo.lib.io import SacIO
 
 
-class _SacNested:
-    """Base class for nested SAC classes"""
-
-    def __init__(self, parent: SacIO) -> None:
-        self.parent = parent
-
-
-class _SacSeismogram(_SacNested, MiniSeismogram):
-    """Helper class for SAC seismogram attributes.
-
-    The `_SacSeismogram` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each new
-    (parent) SAC instance to enable pysmo types compatibility.
-
-    Attributes:
-        data: Seismogram data.
-        sampling_rate: Seismogram sampling rate.
-        begin_time: Seismogram begin timedate.
-    """
-
-    @property
-    def data(self) -> np.ndarray:
-        return self.parent.data
-
-    @data.setter
-    def data(self, value: np.ndarray) -> None:
-        self.parent.data = value
-
-    @property
-    def sampling_rate(self) -> float:
-        return self.parent.delta
-
-    @sampling_rate.setter
-    def sampling_rate(self, value: float) -> None:
-        self.parent.delta = value
-
-    @property
-    def begin_time(self) -> datetime.datetime:
-        # Begin time is reference time/date + b
-        abs_begin_time = datetime.time.fromisoformat(self.parent.kztime)
-        begin_date = datetime.date.fromisoformat(self.parent.kzdate)
-        return datetime.datetime.combine(begin_date, abs_begin_time) + \
-            datetime.timedelta(seconds=self.parent.b)
-
-    @begin_time.setter
-    def begin_time(self, value: datetime.datetime) -> None:
-        # Setting the time should change the reference time,
-        # so we first subtract b.
-        ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.b)
-
-        # datetime uses microsecond precision, while sac only does milliseconds
-        # We go ahead, but we round the values and raise a warning
-        if not (ref_begin_timedate.microsecond / 1000).is_integer():
-            warnings.warn("SAC file format only has millisecond precision. \
-                            Rounding microseconds to milliseconds.", RuntimeWarning)
-            ref_begin_timedate += datetime.timedelta(microseconds=500)
-
-        # Now extract individual time components
-        self.parent.nzyear = ref_begin_timedate.year
-        self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
-        self.parent.nzhour = ref_begin_timedate.hour
-        self.parent.nzmin = ref_begin_timedate.minute
-        self.parent.nzsec = ref_begin_timedate.second
-        self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
-
-
-class _SacStation(_SacNested, MiniStation):
-    """Helper class for SAC event attributes.
-
-    The `_SacStation` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each
-    new (parent) SAC instance to enable pysmo types compatibility.
-
-    Attributes:
-        name: Station name or code.
-        network: Network name or code.
-        latitude: Station latitude.
-        longitude: Station longitude.
-        elevation: Station elevation in meters.
-    """
-
-    @property
-    def name(self) -> str:
-        return self.parent.kstnm
-
-    @name.setter
-    def name(self, value: str) -> None:
-        setattr(self.parent, 'kstnm', value)
-
-    @property
-    def network(self) -> str:
-        return self.parent.knetwk
-
-    @network.setter
-    def network(self, value: str) -> None:
-        setattr(self.parent, 'knetwk', value)
-
-    @property
-    def latitude(self) -> float:
-        return self.parent.stla
-
-    @latitude.setter
-    def latitude(self, value: float) -> None:
-        setattr(self.parent, 'stla', value)
-
-    @property
-    def longitude(self) -> float:
-        return self.parent.stlo
-
-    @longitude.setter
-    def longitude(self, value: float) -> None:
-        setattr(self.parent, 'stlo', value)
-
-    @property
-    def elevation(self) -> Optional[float]:
-        if self.parent.stel:
-            return self.parent.stel
-        return None
-
-    @elevation.setter
-    def elevation(self, value: float) -> None:
-        setattr(self.parent, 'stel', value)
-
-
-class _SacEvent(_SacNested, MiniHypocenter):
-    """Helper class for SAC event attributes.
-
-    The `_SacEvent` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each
-    new (parent) SAC instance to enable pysmo types compatibility.
-
-    Attributes:
-        latitude: Event Latitude.
-        longitude: Event Longitude.
-        depth: Event depth in meters.
-    """
-
-    @property
-    def latitude(self) -> float:
-        return self.parent.evla
-
-    @latitude.setter
-    def latitude(self, value: float) -> None:
-        setattr(self.parent, 'evla', value)
-
-    @property
-    def longitude(self) -> float:
-        return self.parent.evlo
-
-    @longitude.setter
-    def longitude(self, value: float) -> None:
-        setattr(self.parent, 'evlo', value)
-
-    @property
-    def depth(self) -> float:
-        return self.parent.evdp * 1000
-
-    @depth.setter
-    def depth(self, value: float) -> None:
-        setattr(self.parent, 'evdp', value/1000)
-
-
 @dataclass
 class SAC(SacIO):
     """Class for SAC files.
@@ -206,7 +44,7 @@ class SAC(SacIO):
         True
 
         Note that `my_sac.seismogram` is an instance of the
-        [`_SacSeismogram`][pysmo.classes.sac._SacSeismogram] helper class. It is
+        [`SacSeismogram`][pysmo.classes.sac.SAC.SacSeismogram] helper class. It is
         created when a new `SAC` instance is instantiated. For convenience we can
         access it via a new variable:
 
@@ -223,17 +61,184 @@ class SAC(SacIO):
         [SacIO][pysmo.lib.io.sacio.SacIO] class.
 
     Attributes:
-        Seismogram: Seismogram is an instance of the `_SacSeismogram` helper class.
-        Station: Station is an instance of the `_SacStation` helper class.
-        Event: Event is an instance of the `_SacEvent` helper class.
+        seismogram: Maps pysmo compatible attributes to the internal SAC attributes.
+        station: Maps pysmo compatible attributes to the internal SAC attributes.
+        event: Maps pysmo compatible attributes to the internal SAC attributes.
     """
 
-    seismogram: _SacSeismogram = field(init=False)
-    station: _SacStation = field(init=False)
-    event: _SacEvent = field(init=False)
+    class _SacNested:
+        """Base class for nested SAC classes"""
+
+        def __init__(self, parent: SacIO) -> None:
+            self.parent = parent
+
+    class SacEvent(_SacNested, MiniHypocenter):
+        """Helper class for event attributes.
+
+        The `SacEvent` class is used to map SAC attributes in a way that
+        matches pysmo types. An instance of this class is created for each
+        new (parent) [SAC][pysmo.classes.sac.SAC] instance to enable pysmo
+        types compatibility.
+
+        Attributes:
+            latitude: Event Latitude.
+            longitude: Event Longitude.
+            depth: Event depth in meters.
+        """
+
+        @property
+        def latitude(self) -> float:
+            return self.parent.evla
+
+        @latitude.setter
+        def latitude(self, value: float) -> None:
+            setattr(self.parent, 'evla', value)
+
+        @property
+        def longitude(self) -> float:
+            return self.parent.evlo
+
+        @longitude.setter
+        def longitude(self, value: float) -> None:
+            setattr(self.parent, 'evlo', value)
+
+        @property
+        def depth(self) -> float:
+            return self.parent.evdp * 1000
+
+        @depth.setter
+        def depth(self, value: float) -> None:
+            setattr(self.parent, 'evdp', value/1000)
+
+    class SacSeismogram(_SacNested, MiniSeismogram):
+        """Helper class for seismogram attributes.
+
+        The `SacSeismogram` class is used to map SAC attributes in a way that
+        matches pysmo types. An instance of this class is created for each new
+        (parent) [SAC][pysmo.classes.sac.SAC]instance to enable pysmo types
+        compatibility.
+
+        note:
+            Because this class inherits from
+            [MiniSeismogram][pysmo.classes.mini.MiniSeismogram], not all
+            attributes need to be redifined here (e.g. the read-only
+            `end_time`).
+
+        Attributes:
+            data: Seismogram data.
+            sampling_rate: Seismogram sampling rate.
+            begin_time: Seismogram begin timedate.
+        """
+
+        @property
+        def data(self) -> np.ndarray:
+            return self.parent.data
+
+        @data.setter
+        def data(self, value: np.ndarray) -> None:
+            self.parent.data = value
+
+        @property
+        def sampling_rate(self) -> float:
+            return self.parent.delta
+
+        @sampling_rate.setter
+        def sampling_rate(self, value: float) -> None:
+            self.parent.delta = value
+
+        @property
+        def begin_time(self) -> datetime.datetime:
+            # Begin time is reference time/date + b
+            abs_begin_time = datetime.time.fromisoformat(self.parent.kztime)
+            begin_date = datetime.date.fromisoformat(self.parent.kzdate)
+            return datetime.datetime.combine(begin_date, abs_begin_time) + \
+                datetime.timedelta(seconds=self.parent.b)
+
+        @begin_time.setter
+        def begin_time(self, value: datetime.datetime) -> None:
+            # Setting the time should change the reference time,
+            # so we first subtract b.
+            ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.b)
+
+            # datetime uses microsecond precision, while sac only does milliseconds
+            # We go ahead, but we round the values and raise a warning
+            if not (ref_begin_timedate.microsecond / 1000).is_integer():
+                warnings.warn("SAC file format only has millisecond precision. \
+                               Rounding microseconds to milliseconds.", RuntimeWarning)
+                ref_begin_timedate += datetime.timedelta(microseconds=500)
+
+            # Now extract individual time components
+            self.parent.nzyear = ref_begin_timedate.year
+            self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
+            self.parent.nzhour = ref_begin_timedate.hour
+            self.parent.nzmin = ref_begin_timedate.minute
+            self.parent.nzsec = ref_begin_timedate.second
+            self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+
+    class SacStation(_SacNested, MiniStation):
+        """Helper class for SAC event attributes.
+
+        The `SacStation` class is used to map SAC attributes in a way that
+        matches pysmo types. An instance of this class is created for each
+        new (parent) [SAC][pysmo.classes.sac.SAC]instance to enable pysmo
+        types compatibility.
+
+        Attributes:
+            name: Station name or code.
+            network: Network name or code.
+            latitude: Station latitude.
+            longitude: Station longitude.
+            elevation: Station elevation in meters.
+        """
+
+        @property
+        def name(self) -> str:
+            return self.parent.kstnm
+
+        @name.setter
+        def name(self, value: str) -> None:
+            setattr(self.parent, 'kstnm', value)
+
+        @property
+        def network(self) -> str:
+            return self.parent.knetwk
+
+        @network.setter
+        def network(self, value: str) -> None:
+            setattr(self.parent, 'knetwk', value)
+
+        @property
+        def latitude(self) -> float:
+            return self.parent.stla
+
+        @latitude.setter
+        def latitude(self, value: float) -> None:
+            setattr(self.parent, 'stla', value)
+
+        @property
+        def longitude(self) -> float:
+            return self.parent.stlo
+
+        @longitude.setter
+        def longitude(self, value: float) -> None:
+            setattr(self.parent, 'stlo', value)
+
+        @property
+        def elevation(self) -> Optional[float]:
+            if self.parent.stel:
+                return self.parent.stel
+            return None
+
+        @elevation.setter
+        def elevation(self, value: float) -> None:
+            setattr(self.parent, 'stel', value)
+
+    seismogram: SacSeismogram = field(init=False)
+    station: SacStation = field(init=False)
+    event: SacEvent = field(init=False)
 
     def __post_init__(self) -> None:
         super()._set_defaults()
-        self.seismogram = _SacSeismogram(self)
-        self.station = _SacStation(self)
-        self.event = _SacEvent(self)
+        self.seismogram = self.SacSeismogram(self)
+        self.station = self.SacStation(self)
+        self.event = self.SacEvent(self)
