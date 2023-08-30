@@ -7,16 +7,16 @@ def detrend(seismogram: Seismogram) -> Seismogram:
     """
     Remove linear and/or constant trends from SAC object data.
 
-    :param seismogram: Seismogram object.
-    :type seismogram: pysmo.Seismogram
-    :returns: Detrended seismogram.
-    :rtype: pysmo.Seismogram
+    Parameters:
+        seismogram: Seismogram object.
 
-    Example usage::
+    Returns:
+        Detrended seismogram.
 
+    Examples:
         >>> import numpy as np
         >>> from pysmo import SAC, detrend
-        >>> original_seis = SAC.from_file('sacfile.sac').Seismogram
+        >>> original_seis = SAC.from_file('sacfile.sac').seismogram
         >>> detrended_seis = detrend(original_seis)
         >>> assert np.mean(detrended_seis.data) == 0
         True

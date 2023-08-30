@@ -47,7 +47,7 @@ def picklefiles(tmpdir_factory: pytest.TempdirFactory) -> tuple[str, ...]:
 
 @pytest.fixture()
 def sacio_instances(sacfiles: tuple[str, ...]) -> tuple[SacIO, ...]:
-    """Create _SacIO instances"""
+    """Create SacIO instances"""
     sacio1 = SacIO.from_file(sacfiles[0])
     sacio2 = SacIO.from_file(sacfiles[1])
     sacio3 = SacIO.from_file(sacfiles[3])
@@ -56,7 +56,7 @@ def sacio_instances(sacfiles: tuple[str, ...]) -> tuple[SacIO, ...]:
 
 @pytest.fixture()
 def sacio_instance(sacio_instances: tuple[SacIO, ...]) -> SacIO:
-    """Return single _SacIO instance"""
+    """Return single SacIO instance"""
     return sacio_instances[0]
 
 
@@ -68,7 +68,7 @@ def sac_instance(sacfiles: tuple[str, ...]) -> SAC:
 
 @pytest.fixture()
 def sac_seismogram(sac_instance: SAC) -> Seismogram:
-    return sac_instance.Seismogram
+    return sac_instance.seismogram
 
 
 @pytest.fixture()
@@ -84,7 +84,7 @@ def seismograms(sac_seismogram: Seismogram, mini_seismogram: Seismogram) -> tupl
 
 @pytest.fixture()
 def sac_station(sac_instance: SAC) -> Station:
-    return sac_instance.Station
+    return sac_instance.station
 
 
 @pytest.fixture()
@@ -100,7 +100,7 @@ def stations(sac_station: Station, mini_station: Station) -> tuple[Station, ...]
 
 @pytest.fixture()
 def sac_event(sac_instance: SAC):  # type: ignore
-    return sac_instance.Event
+    return sac_instance.event
 
 
 @pytest.fixture()

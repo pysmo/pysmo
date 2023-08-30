@@ -10,7 +10,7 @@ import zipfile
 import warnings
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Union, Any, Sized
+from typing import Any, Sized
 from typing_extensions import Self
 
 
@@ -88,23 +88,42 @@ class SacHeader(ABC):
 
     @abstractmethod
     def format2public(self, private_value: float | int | str) -> float | int | str | bool:
-        """Format a private value (SAC internal format) to a public value format."""
+        """Format a private value (SAC internal format) to a public value format.
+
+        Method takes care of converting between things like enumerated headers
+        and SAC internal 'unknown' values (i.e. -12345 becomes None).
+
+        Parameters:
+            private_value: SAC header in the file format.
+
+        Returns:
+            SAC header formatted for use in Python.
+        """
         pass
 
     @property
     @abstractmethod
     def header_type(self) -> str:
-        """Returns the SAC header type (k, f, ...)."""
+        """
+        Returns:
+            The SAC header type (k, f, ...).
+        """
         pass
 
     @property
     def sac_start_position(self) -> int:
-        """Returns the start position in the binary sac file."""
+        """
+        Returns:
+            The start position in the binary sac file.
+        """
         return int(_HEADER_FIELDS[self.public_name]['start'])
 
     @property
     def sac_length(self) -> int:
-        """Returns length to read from SAC file."""
+        """
+        Returns:
+            Length to read from SAC file.
+        """
         # Some header fields have their own length that is specified in the dictionary.
         try:
             return int(_HEADER_FIELDS[self.public_name]['length'])
@@ -114,7 +133,10 @@ class SacHeader(ABC):
 
     @property
     def sac_format(self) -> str:
-        """Returns the SAC format used to write headers to a SAC file."""
+        """
+        Returns:
+            The SAC format used to write headers to a SAC file.
+        """
         # Some header fields have their own format that is specified in the dictionary.
         try:
             return _HEADER_FIELDS[self.public_name]['format']
@@ -256,40 +278,45 @@ class _SacMeta(type):
 
 class SacIO(metaclass=_SacMeta):
     """
-    The :class:`_SacIO` class reads and writes data and header values to and from a
-    SAC file. Instances of :class:`_SacIO` provide attributes named identially to
+    The `SacIO` class reads and writes data and header values to and from a
+    SAC file. Instances of `SacIO` provide attributes named identially to
     header names in the SAC file format. Additonal attributes may be set, but are
     not written to a SAC file (because there is no space reserved for them there).
     Class attributes with corresponding header fields in a SAC file (for example the
     begin time `b`) are checked for a valid format before being saved in the
-    :class:`_SacIO` instance.
+    `SacIO` instance.
 
+    Warning:
+        This class should typically never be used directly. Instead please
+        use the [SAC][pysmo.classes.sac.SAC] class, which inherits all
+        attributes and methods from here.
 
-    Read and print data::
+    Examples:
+        Create a new instance from a file and print seismogram data:
 
-        >>> from pysmo import SAC
-        >>> my_sac = SAC.from_file('file.sac')
+        >>> from pysmo.lib.io import SacIO
+        >>> my_sac = SacIO.from_file('file.sac')
         >>> data = my_sac.data
         >>> data
         array([-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
 
-    Read the sampling rate::
+        Read the sampling rate:
 
         >>> delta = my_sac.delta
         >>> delta
         0.019999999552965164
 
-    Change the sampling rate::
+        Change the sampling rate:
 
         >>> newdelta = 0.05
         >>> my_sac.delta = newdelta
         >>> my_sac.delta
         0.05
 
-    Read from IRIS services::
+        Create a new instance from IRIS services:
 
-        >>> from pysmo import SAC
-        >>> my_sac = SAC.from_iris(
+        >>> from pysmo.lib.io import SacIO
+        >>> my_sac = SacIO.from_iris(
         >>>             net="C1",
         >>>             sta="VA01",
         >>>             cha="BHZ",
@@ -304,13 +331,149 @@ class SacIO(metaclass=_SacMeta):
 
     For each SAC(file) header field there is a corresponding attribute in this class.
     There are a lot of header fields in a SAC file, which are all called the
-    same way when using :class:`SAC`. They are all listed below.
+    same way when using `SAC`.
+
+    Attributes:
+        delta: Increment between evenly spaced samples (nominal value).
+        depmin: Minimum value of dependent variable.
+        depmax: Maximum value of dependent variable.
+        scale: Multiplying scale factor for dependent variable (not currently used).
+        odelta: Observed increment if different from nominal value.
+        b: Beginning value of the independent variable.
+        e: Ending value of the independent variable.
+        o: Event origin time (seconds relative to reference time).
+        a: First arrival time (seconds relative to reference time).
+        fmt: Internal.
+        t0: User defined time pick or marker 0 (seconds relative to reference time).
+        t1: User defined time pick or marker 1 (seconds relative to reference time).
+        t2: User defined time pick or marker 2 (seconds relative to reference time).
+        t3: User defined time pick or marker 3 (seconds relative to reference time).
+        t4: User defined time pick or marker 4 (seconds relative to reference time).
+        t5: User defined time pick or marker 5 (seconds relative to reference time).
+        t6: User defined time pick or marker 6 (seconds relative to reference time).
+        t7: User defined time pick or marker 7 (seconds relative to reference time).
+        t8: User defined time pick or marker 8 (seconds relative to reference time).
+        t9: User defined time pick or marker 9 (seconds relative to reference time).
+        f: Fini or end of event time (seconds relative to reference time).
+        resp0: Instrument response parameter 0 (not currently used).
+        resp1: Instrument response parameter 1 (not currently used).
+        resp2: Instrument response parameter 2 (not currently used).
+        resp3: Instrument response parameter 3 (not currently used).
+        resp4: Instrument response parameter 4 (not currently used).
+        resp5: Instrument response parameter 5 (not currently used).
+        resp6: Instrument response parameter 6 (not currently used).
+        resp7: Instrument response parameter 7 (not currently used).
+        resp8: Instrument response parameter 8 (not currently used).
+        resp9: Instrument response parameter 9 (not currently used).
+        stla: Station latitude (degrees, north positive).
+        stlo: Station longitude (degrees, east positive).
+        stel: Station elevation above sea level (meters).
+        stdp: Station depth below surface (meters).
+        evla: Event latitude (degrees, north positive).
+        evlo: Event longitude (degrees, east positive).
+        evel: Event elevation (meters).
+        evdp: Event depth below surface (kilometers -- previously meters).
+        mag: Event magnitude.
+        user0: User defined variable storage area.
+        user1: User defined variable storage area.
+        user2: User defined variable storage area.
+        user3: User defined variable storage area.
+        user4: User defined variable storage area.
+        user5: User defined variable storage area.
+        user6: User defined variable storage area.
+        user7: User defined variable storage area.
+        user8: User defined variable storage area.
+        user9: User defined variable storage area.
+        dist: Station to event distance (km).
+        az: Event to station azimuth (degrees).
+        baz: Station to event azimuth (degrees).
+        gcarc: Station to event great circle arc length (degrees).
+        sb: Internal.
+        sdelta: Internal.
+        depmen: Mean value of dependent variable.
+        cmpaz: Component azimuth (degrees clockwise from north).
+        cmpinc: Component incident angle (degrees from vertical).
+        xminimum: Minimum value of X (Spectral files only).
+        xmaximum: Maximum value of X (Spectral files only).
+        yminimum: Minimum value of Y (Spectral files only).
+        ymaximum: Maximum value of Y (Spectral files only).
+        unused6: Unused.
+        unused7: Unused.
+        unused8: Unused.
+        unused9: Unused.
+        unused10: Unused.
+        unused11: Unused.
+        unused12: Unused.
+        nzyear: GMT year corresponding to reference (zero) time in file.
+        nzjday: GMT julian day.
+        nzhour: GMT hour.
+        nzmin: GMT minute.
+        nzsec: GMT second.
+        nzmsec: GMT millisecond.
+        nvhdr: Header version number.
+        norid: Origin ID (CSS 3.0).
+        nevid: Event ID (CSS 3.0).
+        npts: Number of points per data component.
+        nsnpts: Internal.
+        nwfid: Waveform ID (CSS 3.0).
+        nxsize: Spectral Length (Spectral files only).
+        nysize: Spectral Length (Spectral files only).
+        unused15: Unused.
+        iftype: Type of file.
+        idep: Type of dependent variable.
+        iztype: Reference time equivalence.
+        unused16: Unused.
+        iinst: Type of recording instrument.
+        istreg: Station geographic region.
+        ievreg: Event geographic region.
+        ievtyp: Type of event.
+        iqual: Quality of data.
+        isynth: Synthetic data flag.
+        imagtyp: Magnitude type.
+        imagsrc: Source of magnitude information.
+        unused19: Unused.
+        unused20: Unused.
+        unused21: Unused.
+        unused22: Unused.
+        unused23: Unused.
+        unused24: Unused.
+        unused25: Unused.
+        unused26: Unused.
+        leven: TRUE if data is evenly spaced.
+        lpspol: TRUE if station components have a positive polarity (left-hand rule).
+        lovrok: TRUE if it is okay to overwrite this file on disk.
+        lcalda: TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and event coordinates.
+        unused27: Unused.
+        kstnm: Station name.
+        kevnm: Event name.
+        khole: Nuclear: hole identifier; Other: location identifier.
+        ko: Event origin time identification.
+        ka: First arrival time identification.
+        kt0: User defined time pick identification.
+        kt1: User defined time pick identification.
+        kt2: User defined time pick identification.
+        kt3: User defined time pick identification.
+        kt4: User defined time pick identification.
+        kt5: User defined time pick identification.
+        kt6: User defined time pick identification.
+        kt7: User defined time pick identification.
+        kt8: User defined time pick identification.
+        kt9: User defined time pick identification.
+        kf: Fini identification.
+        kuser0: User defined variable storage area.
+        kuser1: User defined variable storage area.
+        kuser2: User defined variable storage area.
+        kcmpnm: Channel name. SEED volumes use three character names, and the third is the component/orientation.
+                For horizontals, the current trend is to use 1 and 2 instead of N and E.
+        knetwk: Name of seismic network.
+        kdatrd: Date data was read onto computer.
+        kinst: Generic name of recording instrument.
     """
     # type annotations:
     # f -> float
     delta: float
-    depmin: Union[float, None]
-    depmax: Union[float, None]
+    depmin: float | None
+    depmax: float | None
     scale: float
     odelta: float
     b: float
@@ -364,7 +527,7 @@ class SacIO(metaclass=_SacMeta):
     gcarc: float
     sb: float
     sdelta: float
-    depmen: Union[float, None]
+    depmen: float | None
     cmpaz: float
     cmpinc: float
     xminimum: float
@@ -447,7 +610,6 @@ class SacIO(metaclass=_SacMeta):
     kinst: str
 
     def __init__(self, **kwargs: dict) -> None:
-        """Initialises a SAC object."""
         # All SAC header fields have a private and a public name. For example the sample rate has a
         # public name of delta, and a private name of _delta. Here, delta is a descriptor that takes
         # care of converting from a SAC file to python (formatting, enumerated headers etc), and
@@ -481,13 +643,21 @@ class SacIO(metaclass=_SacMeta):
         self.data = np.array([])
 
     def read(self, filename: str) -> None:
-        """Read data and header values from a SAC file into an existing SAC instance."""
+        """Read data and header values from a SAC file into an existing SAC instance.
+
+        Parameters:
+            filename: Name of the sac file to read.
+        """
 
         with open(filename, 'rb') as file_handle:
             self.read_buffer(file_handle.read())
 
     def read_buffer(self, buffer: bytes) -> None:
-        """Read data and header values from a SAC byte buffer into an existing SAC instance."""
+        """Read data and header values from a SAC byte buffer into an existing SAC instance.
+
+        Parameters:
+            buffer: Buffer containing SAC file content.
+        """
 
         if len(buffer) < 632:
             raise EOFError()
@@ -538,10 +708,13 @@ class SacIO(metaclass=_SacMeta):
 
     @classmethod
     def from_file(cls, filename: str) -> Self:
-        """
-        Creates a new SAC instance from a SAC file.
+        """Create a new SAC instance from a SAC file.
 
-        :param filename: Name of the file to read.
+        Parameters:
+            filename: Name of the SAC file to read.
+
+        Returns:
+            A new SacIO instance.
         """
         newinstance = cls()
         newinstance.read(filename)
@@ -549,22 +722,30 @@ class SacIO(metaclass=_SacMeta):
 
     @classmethod
     def from_buffer(cls, buffer: bytes) -> Self:
-        """Create a new SAC instance from a SAC data buffer."""
+        """Create a new SAC instance from a SAC data buffer.
+
+        Parameters:
+            buffer: Buffer containing SAC file content.
+
+        Returns:
+            A new SacIO instance.
+        """
         newinstance = cls()
         newinstance.read_buffer(buffer)
         return newinstance
 
     @classmethod
     def from_iris(cls, net: str, sta: str, cha: str, loc: str, force_single_result: bool = False,
-                  **kwargs: Any) -> Union[Self, dict[str, Self], None]:
-        """
-        Create a list of SAC instances from a single IRIS
+                  **kwargs: Any) -> Self | dict[str, Self] | None:
+        """Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".
 
-        :param force_single_result: If true, the function will return
-                                    a single SAC object or None if
-                                    the requests returns nothing.
-        :type force_single_result: bool
+        Parameters:
+            force_single_result: If true, the function will return a single SAC
+                                 object or None if the requests returns nothing.
+
+        Returns:
+            A new SacIO instance.
         """
         kwargs["net"] = net
         kwargs["sta"] = sta
@@ -596,10 +777,10 @@ class SacIO(metaclass=_SacMeta):
         return None if force_single_result else result
 
     def write(self, filename: str) -> None:
-        """
-        Writes data and header values to a SAC file.
+        """Writes data and header values to a SAC file.
 
-        :param filename: Name of the sacfile to write to.
+        Parameters:
+            filename: Name of the sacfile to write to.
         """
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
@@ -625,28 +806,36 @@ class SacIO(metaclass=_SacMeta):
 
     @property
     def kzdate(self) -> str:
-        """Returns ISO 8601 format of GMT reference date."""
+        """
+        Returns:
+            ISO 8601 format of GMT reference date.
+        """
         _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
         return _kzdate.isoformat()
 
     @property
     def kztime(self) -> str:
-        """Returns alphanumeric form of GMT reference time."""
+        """
+        Returns:
+            Alphanumeric form of GMT reference time.
+        """
         _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
         return _kztime.isoformat(timespec='milliseconds')
 
     @property
     def data(self) -> np.ndarray:
-        """Returns seismogram data."""
+        """
+        Returns:
+            Seismogram data."""
         return self._data
 
     @data.setter
     def data(self, value: np.ndarray) -> None:
-        """
-        Sets the seismogram data. This will also update the end time header
+        """Sets the seismogram data. This will also update the end time header
         value 'e' as well as depmin, depmax, and depmen.
 
-        :param data: numpy array containing seismogram data
+        Parameters:
+            data: numpy array containing seismogram data
         """
         # Data is stored as _data inside the object
         self._data = value
