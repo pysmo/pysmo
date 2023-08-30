@@ -10,7 +10,7 @@ from pysmo.lib.io import SacIO
 
 
 def test_sac_seismogram(sac_instance: SAC, sacio_instance: SacIO) -> None:
-    sacseis = sac_instance.Seismogram
+    sacseis = sac_instance.seismogram
     sacio = sacio_instance
     assert isinstance(sacseis, Seismogram)
     assert isinstance(sacseis.data, np.ndarray)
@@ -59,7 +59,7 @@ def test_sac_seismogram(sac_instance: SAC, sacio_instance: SacIO) -> None:
 
 
 def test_sac_as_station(sac_instance: SAC, sacio_instance: SacIO) -> None:
-    sacstation = sac_instance.Station
+    sacstation = sac_instance.station
     sacio = sacio_instance
     assert sacstation.name == sacio.kstnm
     assert sacstation.network == sacio.knetwk
@@ -92,7 +92,7 @@ def test_sac_as_station(sac_instance: SAC, sacio_instance: SacIO) -> None:
 
 
 def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
-    sacevent = sac_instance.Event
+    sacevent = sac_instance.event
     sacio = sacio_instance
     assert sacevent.latitude == sacio.evla == pytest.approx(-31.465999603271484)
     assert sacevent.longitude == sacio.evlo == pytest.approx(-71.71800231933594)

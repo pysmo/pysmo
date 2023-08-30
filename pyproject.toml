@@ -12,6 +12,8 @@ packages = [
 exclude = [
     "tests",
     "docs",
+    "utils",
+    "site",
 ]
 classifiers = [
     "Intended Audience :: Science/Research",

@@ -81,7 +81,7 @@ and `longitude` (and they are both of type [`float`][float]) matches the
 *Event* components of the example data class.
 
 <figure markdown>
-  ![hypothetical_file](../../images/hypothetical_file.png){ loading=lazy }
+  ![hypothetical_file](../images/hypothetical_file.png){ loading=lazy }
   <figcaption>
     A hypothetical generic class (shown in light green) contains within it station data
     (light purple), event data (light yellow), and a seismogram (light red). Instead of
@@ -106,7 +106,7 @@ provided the new `Station` and `Event` formats still match the
 *f<sub>pysmo</sub>*.
 
 <figure markdown>
-  ![hypothetical_file2](../../images/hypothetical_file2.png){ loading=lazy }
+  ![hypothetical_file2](../images/hypothetical_file2.png){ loading=lazy }
   <figcaption>
     Because a different format is being used (represented by dark colours instead of
     light), the function f<sub>traditional</sub> no longer is able to perform the
@@ -117,7 +117,7 @@ provided the new `Station` and `Event` formats still match the
 
 To be fair, this apparent advantage of the pysmo function over the traditional one does
 not come for free, as the underlying generic classes need to be compatible with the
-protocol classes (see [here](../../developing/types-more.md#more-on-types)). Fortunately,
+protocol classes (see [here](../developing/types-more.md#more-on-types)). Fortunately,
 if there is indeed a need to expand a class to make it compatible with the pysmo types,
 the effort to do so is fairly minimal (especially compared to writing or maintaining an
 entire class). The task of ensuring compatibility with pysmo may be done by the class
@@ -135,7 +135,7 @@ Besides minimising potential compatibility problems, working with pysmo types al
 up interesting ways of working with seismological data. We illustrate some below:
 
 <figure markdown>
-  ![pysmo_benefits](../../images/pysmo_benefits.png){ loading=lazy }
+  ![pysmo_benefits](../images/pysmo_benefits.png){ loading=lazy }
   <figcaption>
     Examples of how pysmo functions can be used in novel ways: (a) If a function needs
     data that is not present in a file format, the file can be used in combination with
@@ -149,7 +149,7 @@ up interesting ways of working with seismological data. We illustrate some below
 
 ### Using pysmo types
 
-Once [installed](../../first-steps/installation.md), the pysmo types can be imported and
+Once [installed](../first-steps/installation.md), the pysmo types can be imported and
 used just like any class. For example:
 
 ```python
@@ -194,7 +194,7 @@ type hinting together with a good code editor or mypy.
     ```
 
 
-## Compatible Classes
+### Compatible Classes
 
 Using pysmo types requires compatible classes that hold the actual data. In order to be
 compatible with a particular type, a class needs to have all the attributes and methods
@@ -202,5 +202,18 @@ compatible with a particular type, a class needs to have all the attributes and 
 also possess additional attributes and methods that are not in the protocol classes, or
 may even be compatible with multiple types.
 
-The classes shipped with pysmo are described in the [Classes](../classes/index.md)
+The classes shipped with pysmo are described in the [Classes](classes/index.md)
 chapter.
+
+
+## All pysmo types
+
+::: pysmo.types
+    options:
+      heading_level: 3
+      show_root_heading: false
+      show_root_toc_entry: false
+      inherited_members: true
+      docstring_section_style: table
+      allow_inspection: true
+      with_preloaded_modules: true

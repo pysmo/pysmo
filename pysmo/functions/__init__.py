@@ -3,12 +3,12 @@ Pysmo provides functions that perform common operations on the types of data tha
 pysmo's types.
 """
 
-from .detrend import detrend
 from .resample import resample
 from .filter_gauss import envelope, gauss
 from .plotseis import plotseis
 from .azdist import azimuth, backazimuth, distance
 from .normalize import normalize
+from .detrend import detrend
 
 __all__ = [
     'detrend',

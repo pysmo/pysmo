@@ -17,14 +17,18 @@ class _SacNested:
 class _SacSeismogram(_SacNested, MiniSeismogram):
     """Helper class for SAC seismogram attributes.
 
-    The :py:class:`_SacSeismogram` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each new (parent) SAC
-    instance to enable pysmo types compatibility.
+    The `_SacSeismogram` class is used to map SAC attributes in a way that
+    matches pysmo types. An instance of this class is created for each new
+    (parent) SAC instance to enable pysmo types compatibility.
+
+    Attributes:
+        data: Seismogram data.
+        sampling_rate: Seismogram sampling rate.
+        begin_time: Seismogram begin timedate.
     """
 
     @property
     def data(self) -> np.ndarray:
-        """The seismogram data."""
         return self.parent.data
 
     @data.setter
@@ -33,7 +37,6 @@ class _SacSeismogram(_SacNested, MiniSeismogram):
 
     @property
     def sampling_rate(self) -> float:
-        """Seismogram sampling rate."""
         return self.parent.delta
 
     @sampling_rate.setter
@@ -42,7 +45,6 @@ class _SacSeismogram(_SacNested, MiniSeismogram):
 
     @property
     def begin_time(self) -> datetime.datetime:
-        """Seismogram begin timedate."""
         # Begin time is reference time/date + b
         abs_begin_time = datetime.time.fromisoformat(self.parent.kztime)
         begin_date = datetime.date.fromisoformat(self.parent.kzdate)
@@ -74,14 +76,20 @@ class _SacSeismogram(_SacNested, MiniSeismogram):
 class _SacStation(_SacNested, MiniStation):
     """Helper class for SAC event attributes.
 
-    The :py:class:`_SacStation` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each new (parent) SAC
-    instance to enable pysmo types compatibility.
+    The `_SacStation` class is used to map SAC attributes in a way that
+    matches pysmo types. An instance of this class is created for each
+    new (parent) SAC instance to enable pysmo types compatibility.
+
+    Attributes:
+        name: Station name or code.
+        network: Network name or code.
+        latitude: Station latitude.
+        longitude: Station longitude.
+        elevation: Station elevation in meters.
     """
 
     @property
     def name(self) -> str:
-        """Station name or code."""
         return self.parent.kstnm
 
     @name.setter
@@ -90,7 +98,6 @@ class _SacStation(_SacNested, MiniStation):
 
     @property
     def network(self) -> str:
-        """Network name or code."""
         return self.parent.knetwk
 
     @network.setter
@@ -99,7 +106,6 @@ class _SacStation(_SacNested, MiniStation):
 
     @property
     def latitude(self) -> float:
-        """Station latitude."""
         return self.parent.stla
 
     @latitude.setter
@@ -108,7 +114,6 @@ class _SacStation(_SacNested, MiniStation):
 
     @property
     def longitude(self) -> float:
-        """Station longitude."""
         return self.parent.stlo
 
     @longitude.setter
@@ -117,7 +122,6 @@ class _SacStation(_SacNested, MiniStation):
 
     @property
     def elevation(self) -> Optional[float]:
-        """Station elevation in meters."""
         if self.parent.stel:
             return self.parent.stel
         return None
@@ -130,14 +134,18 @@ class _SacStation(_SacNested, MiniStation):
 class _SacEvent(_SacNested, MiniHypocenter):
     """Helper class for SAC event attributes.
 
-    The :py:class:`_SacEvent` class is used to map SAC attributes in a way that
-    matches pysmo types. An instance of this class is created for each new (parent) SAC
-    instance to enable pysmo types compatibility.
+    The `_SacEvent` class is used to map SAC attributes in a way that
+    matches pysmo types. An instance of this class is created for each
+    new (parent) SAC instance to enable pysmo types compatibility.
+
+    Attributes:
+        latitude: Event Latitude.
+        longitude: Event Longitude.
+        depth: Event depth in meters.
     """
 
     @property
     def latitude(self) -> float:
-        """Event Latitude."""
         return self.parent.evla
 
     @latitude.setter
@@ -146,7 +154,6 @@ class _SacEvent(_SacNested, MiniHypocenter):
 
     @property
     def longitude(self) -> float:
-        """Event Longitude."""
         return self.parent.evlo
 
     @longitude.setter
@@ -155,7 +162,6 @@ class _SacEvent(_SacNested, MiniHypocenter):
 
     @property
     def depth(self) -> float:
-        """Event depth in meters."""
         return self.parent.evdp * 1000
 
     @depth.setter
@@ -167,9 +173,11 @@ class _SacEvent(_SacNested, MiniHypocenter):
 class SAC(SacIO):
     """Class for SAC files.
 
-    The :py:class:`SAC` provides a data structure that mirrors header fields and data as
-    presented by the sac fileformat. SAC instances are typically created by reading sac
-    file. Data and header fields can be accessed as attributes:
+    Examples:
+        The `SAC` class provides a data structure that mirrors header fields and
+        data as presented by the sac fileformat. SAC instances are typically
+        created by reading sac file. Data and header fields can be accessed as
+        attributes:
 
         >>> from pysmo import SAC
         >>> my_sac = SAC.from_file('my_file.sac')
@@ -180,12 +188,12 @@ class SAC(SacIO):
         >>> my_sac.evla = 23.14
         >>> ...
 
-    Presenting the data in this way is *not* compatible with pysmo types. For example,
-    event coordinates are stored in the :py:attr:`evla` and :py:attr:`evlo` attributes,
-    which do not match the pysmo :py:class:`Location` type. In order to map these
-    incompatible attributes to ones that can be used with pysmo types, we use helper
-    classes as a way to access the attributes under different names that *are*
-    compatible with pysmo types:
+        Presenting the data in this way is *not* compatible with pysmo types.
+        For example, event coordinates are stored in the `evla` and `evlo`
+        attributes, which do not match the pysmo [`Location`][pysmo.types.Location]
+        type. In order to map these incompatible attributes to ones that can be
+        used with pysmo types, we use helper classes as a way to access the attributes
+        under different names that *are* compatible with pysmo types:
 
         >>> # Import the Seismogram type to check if the nested class is compatible.
         >>> from pysmo import Seismogram
@@ -193,33 +201,39 @@ class SAC(SacIO):
         >>> # First verify that a SAC instance is not a pysmo Seismogram:
         >>> isinstance(my_sac, Seismogram)
         False
-        >>> # The my_sac.Seismogram object is, however:
-        >>> isinstance(my_sac.Seismogram, Seismogram)
+        >>> # The my_sac.seismogram object is, however:
+        >>> isinstance(my_sac.seismogram, Seismogram)
         True
 
-    Note that :py:class:`my_sac.Seismogram` is an instance of the
-    :py:class:`_SacSeismogram` helper class. It is created when a new :py:class:`SAC`
-    instance is instantiated. For convenience we can access it via a new variable:
+        Note that `my_sac.seismogram` is an instance of the
+        [`_SacSeismogram`][pysmo.classes.sac._SacSeismogram] helper class. It is
+        created when a new `SAC` instance is instantiated. For convenience we can
+        access it via a new variable:
 
-        >>> my_seismogram = my_sac.Seismogram
+        >>> my_seismogram = my_sac.seismogram
         >>> isinstance(my_seismogram, Seismogram)
         True
         >>> # Verify the helper object is indeed just providing access to the same thing
         >>> # under a different name:
         >>> my_sac.delta is my_seismogram.sampling_rate
         True
+
+    Tip:
+        This class inherits the numerous attributes and methods from the
+        [SacIO][pysmo.lib.io.sacio.SacIO] class.
+
+    Attributes:
+        Seismogram: Seismogram is an instance of the `_SacSeismogram` helper class.
+        Station: Station is an instance of the `_SacStation` helper class.
+        Event: Event is an instance of the `_SacEvent` helper class.
     """
-    Seismogram: _SacSeismogram = field(init=False)
-    """Seismogram is an instance of the :py:class:`_SacSeismogram` helper class."""
 
-    Station: _SacStation = field(init=False)
-    """Station is an instance of the :py:class:`_SacStation` helper class."""
-
-    Event: _SacEvent = field(init=False)
-    """Event is an instance of the :py:class:`_SacEvent` helper class."""
+    seismogram: _SacSeismogram = field(init=False)
+    station: _SacStation = field(init=False)
+    event: _SacEvent = field(init=False)
 
     def __post_init__(self) -> None:
         super()._set_defaults()
-        self.Seismogram = _SacSeismogram(self)
-        self.Station = _SacStation(self)
-        self.Event = _SacEvent(self)
+        self.seismogram = _SacSeismogram(self)
+        self.station = _SacStation(self)
+        self.event = _SacEvent(self)
