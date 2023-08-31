@@ -1,9 +1,8 @@
-"""
-Run tests for all functions defined in pysmo.sac.sacfunc
-"""
+"""Run tests for all functions defined in pysmo.tools.noise"""
 
 from pysmo import Seismogram
-from pysmo.functions import gauss, plotseis, envelope
+from pysmo.functions import plotseis
+from pysmo.tools.signal import gauss, envelope
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
 import numpy as np
