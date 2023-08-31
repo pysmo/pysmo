@@ -59,7 +59,7 @@ they behave as expected (which is verified using the unit tests provided by pysm
 The classes are similarly essential to pysmo as the types, and similar rules apply:
 
 - Classes should also be top level importable
-  (i.e. `from pysmo import <class>`{l=python}). Any new class should therefore be added
+  (i.e. `from pysmo import <class>`). Any new class should therefore be added
   to the
   [`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py)
   file.
@@ -83,11 +83,13 @@ but if you do write a function that *doesn't* use pysmo types, it is worth askin
 yourself if perhaps it is worth defining a new type. Again there are rules for how
 functions are imported:
 
-- Functions are imported via `pysmo.functions`{l=python}, so they need to be added to the
-  [`pysmo/functions/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/functions/__init__.py)
+- Pysmo functions, like types and classes are imported at the base level.
+  (i.e. `from pysmo import <function>`). Any new function should therefore be added
+  to the
+  [`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py)
   file.
 - Unlike types and classes, no additional edits to the documentation source files are
-  necessary for the docstrings to be included in pysmo's documentation.
+  not necessary for the docstrings to be included in pysmo's documentation.
 
 
 ### Tools

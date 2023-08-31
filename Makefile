@@ -47,7 +47,7 @@ docs-export: check-poetry install ## Export installed package information to doc
 	poetry export --only=docs -o docs/requirements.txt
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
-	poetry run mkdocs serve -w README.md -w pysmo
+	poetry run mkdocs serve -w README.md -w pysmo -w changelog.md -w contributors.md
 
 notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
 	poetry run jupyter-notebook
