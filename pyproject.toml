@@ -35,6 +35,7 @@ requests = "^2.31.0"
 [tool.poetry.group.dev.dependencies]
 types-pyyaml = "^6.0.12.11"
 types-requests = "^2.31.0.2"
+pytest-cases = "^3.6.14"
 
 [tool.poetry.group.test.dependencies]
 flake8 = "^6.1.0"

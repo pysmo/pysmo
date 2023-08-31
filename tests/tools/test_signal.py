@@ -1,7 +1,6 @@
 """Run tests for all functions defined in pysmo.tools.noise"""
 
-from pysmo import Seismogram
-from pysmo.functions import plotseis
+from pysmo import Seismogram, plotseis
 from pysmo.tools.signal import gauss, envelope
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
