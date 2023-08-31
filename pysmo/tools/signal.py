@@ -16,7 +16,8 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         Seismogram containing the envelope
 
     Examples:
-        >>> from pysmo import SAC, envelope
+        >>> from pysmo import SAC
+        >>> from pysmo.tools.signal import envelope
         >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
@@ -40,7 +41,8 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         Gaussian filtered seismogram.
 
     Examples:
-        >>> from pysmo import SAC, gauss
+        >>> from pysmo import SAC
+        >>> from pysmo.tools.signal import gauss
         >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50

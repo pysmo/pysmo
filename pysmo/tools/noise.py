@@ -12,7 +12,15 @@ Classes:
 Functions:
     peterson: Generate a noise model using Peterson's models as base.
     generate_noise: Generate noise from a noise model.
+
+Examples:
+    >>> from pysmo.tools.noise import generate_noise, peterson
+    >>> NLNM = peterson(noise_level=0)
+    >>> sampling_rate = 0.05
+    >>> npts = 5000
+    >>> low_noise_seismogram = generate_noise(NLMN, npts, sampling_rate)
 """
+
 import numpy as np
 from datetime import datetime
 from dataclasses import dataclass, field
@@ -103,13 +111,6 @@ def generate_noise(model: NoiseModel, npts: int,
 
     Returns:
         Seismogram with random seismic noise as data.
-
-    Examples:
-        >>> from pysmo.tools.noise import generate_noise, peterson
-        >>> NLNM = peterson(noise_level=0)
-        >>> sampling_rate = 0.05
-        >>> npts = 5000
-        >>> low_noise_seismogram = generate_noise(NLMN, npts, sampling_rate)
     """
     # Sampling frequency
     Fs = 1 / sampling_rate

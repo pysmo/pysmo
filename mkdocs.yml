@@ -116,6 +116,7 @@ nav:
       - Functions: user-guide/functions.md
       - Tools:
           - user-guide/tools/index.md
+          - user-guide/tools/signal.md
           - user-guide/tools/noise.md
   - Gallery:
       - gallery/index.md
