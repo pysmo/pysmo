@@ -295,7 +295,7 @@ class SacIO(metaclass=_SacMeta):
         Create a new instance from a file and print seismogram data:
 
         >>> from pysmo.lib.io import SacIO
-        >>> my_sac = SacIO.from_file('file.sac')
+        >>> my_sac = SacIO.from_file('testfile.sac')
         >>> data = my_sac.data
         >>> data
         array([-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...

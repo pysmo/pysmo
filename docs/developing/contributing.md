@@ -137,17 +137,17 @@ We also need to create an associated test file to ensure that the function retur
 correct output. In most instances, it actually makes sense to write the test case first
 ([test-driven development](https://en.wikipedia.org/wiki/Test-driven_development)).
 
-The tests in pysmo are in the `tests` folder, where we keep the structure similar to
-the pysmo source in the `pysmo` folder. 
+The tests in pysmo are in the `tests` folder, where we keep the structure identical to
+the pysmo source in the `pysmo` folder. Hence we add the following content to the
+`tests/test_functions.py` file:
 
-Hence we add the file `tests/functions/test_normalize.py` with the following content:
-
-```python title="tests/functions/test_seismogram.py"
---8<-- "tests/functions/test_seismogram.py"
+```python title="tests/test_functions.py" linenums="27" hl_lines="3-8"
+--8<-- "docs/snippets/test_functions.py:27:34"
 ```
 
 !!! important
-    The filename may not be arbitrary here: it must begin with `test`!
+    The filename may not be arbitrary here: if you create a
+    new file, its name must begin with `test`!
 
 Pysmo tests are written for, and executed with [pytest][]. Test data such as the
 `seismograms` used in our example above are defined in the file `tests/conftest.py`.
@@ -157,10 +157,10 @@ These fixtures provide a consistent (disposable) context to run tests with. Runn
 $ make tests
 ```
 
-will run all tests in the `tests` folder. A single test may be executed by running
+will run all tests in the `tests` folder. A single test file may be executed by running
 
 ```bash
-$ poetry run pytest tests/functions/test_normalize.py
+$ poetry run pytest tests/test_functions.py
 ```
 
 
