@@ -1,5 +1,4 @@
-from pysmo import Location
-from pysmo.functions import distance, azimuth, backazimuth
+from pysmo import Location, distance, azimuth, backazimuth
 import pytest
 
 

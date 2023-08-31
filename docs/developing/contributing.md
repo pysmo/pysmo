@@ -103,23 +103,31 @@ the new branch in a single step:
 $ git checkout -b func-normalize
 ```
 
-Pysmo functions belong in the `pysmo/functions` folder, so we create the `normalize.py`
-there with the following content:
+Pysmo functions belong in the `pysmo/functions.py` file, so we add the following
+(highlighted) content:
 
-```python title="pysmo/functions/normalize.py"
---8<-- "pysmo/functions/normalize.py"
+```python title="pysmo/functions.py" linenums="48" hl_lines="5-25"
+--8<-- "docs/snippets/functions.py:48:78"
 ```
 
 !!! note
     Notice that the code is making use of [type hinting](../first-steps/index.md) and
     [pysmo types](../user-guide/types.md) covered in previous sections.
+    The docstring is formatted according to the
+    [google style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
 
-To ensure that this newly created function can be imported correctly, we add add
-it to the `__init__.py` file in the `pysmo/functions` folder. This is what the
-`__init__.py` file looks like after adding the normalize function to it:
+To ensure that this newly created function can be imported correctly, it must be
+added to the pysmo `__init__.py` file in two places. First, it needs to be imported
+from the `.py` file itself:
 
-```python title="pysmo/functions/__init__.py"
---8<-- "pysmo/functions/__init__.py"
+```python title="pysmo/__init__.py" linenums="45" hl_lines="3"
+--8<-- "docs/snippets/sample_init.py:45:55"
+```
+
+Then it must be added to the `__all__` list:
+
+```python title="pysmo/__init__.py" linenums="58" hl_lines="11"
+--8<-- "docs/snippets/sample_init.py:58:70"
 ```
 
 
@@ -129,12 +137,13 @@ We also need to create an associated test file to ensure that the function retur
 correct output. In most instances, it actually makes sense to write the test case first
 ([test-driven development](https://en.wikipedia.org/wiki/Test-driven_development)).
 
-The tests in pysmo are in the `tests` folder, where we keep the structure identical to
-the pysmo source in the `pysmo` folder. Hence we add the file
-`tests/functions/test_normalize.py` with the following content:
+The tests in pysmo are in the `tests` folder, where we keep the structure similar to
+the pysmo source in the `pysmo` folder. 
 
-```python title="tests/functions/test_normalize.py"
---8<-- "tests/functions/test_normalize.py"
+Hence we add the file `tests/functions/test_normalize.py` with the following content:
+
+```python title="tests/functions/test_seismogram.py"
+--8<-- "tests/functions/test_seismogram.py"
 ```
 
 !!! important
