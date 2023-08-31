@@ -6,25 +6,22 @@ from pysmo.classes.mini import MiniHypocenter
 from pysmo.lib.io import SacIO
 from pysmo.types import Hypocenter
 
-
-@pytest.fixture()
-def orgfiles() -> tuple[str, ...]:
-    """Returns full path of test sac files"""
-    orgfile = os.path.join(os.path.dirname(__file__), 'assets/testfile.sac')
-    orgfile_special_IB = os.path.join(os.path.dirname(__file__), 'assets/testfile_iztype_is_IB.sac')
-    return orgfile, orgfile_special_IB
+TESTDATA = dict(
+    orgfile=os.path.join(os.path.dirname(__file__), 'assets/testfile.sac'),
+    orgfile_special_IB=os.path.join(os.path.dirname(__file__), 'assets/testfile_iztype_is_IB.sac')
+)
 
 
 @pytest.fixture()
-def sacfiles(tmpdir_factory: pytest.TempdirFactory, orgfiles: tuple[str, ...]) -> tuple[str, ...]:
-    """
-    Define temporary files for testing.
+def sacfiles(tmpdir_factory: pytest.TempdirFactory) -> tuple[str, ...]:
+    """Define temporary files for testing.
+
     - sacfile1: copy of reference file, which is not modified during test
     - sacfile2: copy of reference file, which is modified during test
     - sacfile3: used to write a new sac file
     - sacfile_special_IB: copy of sacfile with IZTYPE=IB
     """
-    orgfile, orgfile_special_IB = orgfiles
+    orgfile, orgfile_special_IB = TESTDATA['orgfile'], TESTDATA['orgfile_special_IB']
     tmpdir = tmpdir_factory.mktemp('sacfiles')
     sacfile1 = os.path.join(tmpdir, 'tmpfile1.sac')
     sacfile2 = os.path.join(tmpdir, 'tmpfile2.sac')
@@ -78,8 +75,8 @@ def mini_seismogram(sac_seismogram: Seismogram) -> Seismogram:
 
 
 @pytest.fixture()
-def seismograms(sac_seismogram: Seismogram, mini_seismogram: Seismogram) -> tuple[Seismogram, ...]:
-    return sac_seismogram, mini_seismogram
+def seismograms(sac_seismogram: Seismogram, mini_seismogram: Seismogram) -> list[Seismogram]:
+    return [sac_seismogram, mini_seismogram]
 
 
 @pytest.fixture()
