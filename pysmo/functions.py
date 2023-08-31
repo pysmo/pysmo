@@ -83,10 +83,13 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
 
     Examples:
         >>> import numpy as np
+        >>> import pytest
         >>> from pysmo import SAC, detrend
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
+        >>> assert 0 == pytest.approx(np.mean(original_seis.data), abs=1e-11)
+        False
         >>> detrended_seis = detrend(original_seis)
-        >>> assert np.mean(detrended_seis.data) == 0
+        >>> assert 0 == pytest.approx(np.mean(detrended_seis.data), abs=1e-11)
         True
     """
     clone = clone_to_miniseismogram(seismogram, skip_data=True)
@@ -108,12 +111,12 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         >>> from pysmo import SAC, resample
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
         >>> len(original_seis)
-        20000
+        180000
         >>> original_sampling_rate = original_seis.sampling_rate
         >>> new_sampling_rate = original_sampling_rate * 2
         >>> resampled_seis = resample(original_seis, new_sampling_rate)
         >>> len(resampled_seis)
-        10000
+        90000
     """
     len_in = len(seismogram)
     sampling_rate_in = seismogram.sampling_rate
@@ -186,12 +189,13 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
 
     Examples:
         >>> from pysmo import SAC, azimuth
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = azimuth(sacobj.event, sacobj.station)
+        >>> azimuth(sacobj.event, sacobj.station)
+        181.9199258637492
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = azimuth(sacobj.event, sacobj.station, ellps='clrk66')
-
+        >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        181.92001941872516
     """
     return azdist(lat1=point1.latitude, lon1=point1.longitude,
                   lat2=point2.latitude, lon2=point2.longitude,
@@ -214,11 +218,13 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
 
     Examples:
         >>> from pysmo import SAC, backazimuth
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = backazimuth(sacobj.event, sacobj.station)
+        >>> backazimuth(sacobj.event, sacobj.station)
+        2.4677533885335947
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        2.467847115319614
     """
     return azdist(lat1=point1.latitude, lon1=point1.longitude,
                   lat2=point2.latitude, lon2=point2.longitude,
@@ -241,11 +247,13 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
 
     Examples:
         >>> from pysmo import SAC, distance
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = distance(sacobj.event, sacobj.station)
+        >>> distance(sacobj.event, sacobj.station)
+        1889154.9940066522
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = distance(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
+        1889121.778136402
     """
     return azdist(lat1=point1.latitude, lon1=point1.longitude,
                   lat2=point2.latitude, lon2=point2.longitude,

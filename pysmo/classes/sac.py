@@ -18,7 +18,7 @@ class SAC(SacIO):
         attributes:
 
         >>> from pysmo import SAC
-        >>> my_sac = SAC.from_file('my_file.sac')
+        >>> my_sac = SAC.from_file('testfile.sac')
         >>> print(my_sac.delta)
         0.019999999552965164
         >>> print(my_sac.data)

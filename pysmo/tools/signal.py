@@ -1,9 +1,8 @@
 import numpy as np
-import copy
-from pysmo import Seismogram
+from pysmo import Seismogram, MiniSeismogram, clone_to_miniseismogram
 
 
-def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
+def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
@@ -23,9 +22,9 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
     """
-    seis = copy.deepcopy(seismogram)
-    seis.data = __gauss(seis, Tn, alpha)[0]
-    return seis
+    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone.data = __gauss(seismogram, Tn, alpha)[0]
+    return clone
 
 
 def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
@@ -48,9 +47,9 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)
     """
-    seis = copy.deepcopy(seismogram)
-    seis.data = __gauss(seis, Tn, alpha)[1]
-    return seis
+    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone.data = __gauss(seismogram, Tn, alpha)[1]
+    return clone
 
 
 def __gauss(seis: Seismogram, Tn: float, alpha: float) -> tuple[np.ndarray, np.ndarray]:
