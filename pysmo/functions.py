@@ -4,11 +4,15 @@ match pysmo's types.
 
 import matplotlib.pyplot as plt  # type: ignore
 import matplotlib.dates as mdates  # type: ignore
-import scipy.signal  # type: ignore
 import numpy as np
 import copy
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import azdist
+from pysmo.lib.functions import (
+    _azdist,
+    _detrend,
+    _normalize,
+    _resample
+)
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
@@ -50,13 +54,30 @@ def clone_to_miniseismogram(seismogram: Seismogram,
 
 
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
-    """Normalize the seismogram with its absolute max value
+    """Normalize a seismogram with its absolute max value
 
     Parameters:
         seismogram: Seismogram object.
 
     Returns:
         Normalized seismogram.
+
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class (and classes that inherit from it). Thus, if
+        you intend normalizing seismogram data **in-place**,
+        instead of writing:
+
+        ```python
+        my_seis.data = normalize(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.normalize()
+        ```
 
     Examples:
         >>> import numpy as np
@@ -67,19 +88,35 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    norm = np.max(np.abs(seismogram.data))
-    clone.data = seismogram.data / norm
+    clone.data = _normalize(seismogram)
     return clone
 
 
 def detrend(seismogram: Seismogram) -> MiniSeismogram:
-    """Remove linear and/or constant trends from SAC object data.
+    """Remove linear and/or constant trends from a seismogram.
 
     Parameters:
         seismogram: Seismogram object.
 
     Returns:
         Detrended seismogram.
+
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class (and classes that inherit from it). Thus, if
+        you intend detrending seismogram data **in-place**,
+        instead of writing:
+
+        ```python
+        my_seis.data = detrend(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.detrend()
+        ```
 
     Examples:
         >>> import numpy as np
@@ -93,7 +130,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    clone.data = scipy.signal.detrend(seismogram.data)
+    clone.data = _detrend(seismogram)
     return clone
 
 
@@ -105,7 +142,24 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         sampling_rate: New sampling rate.
 
     Returns:
-        Detrended seismogram.
+        Resampled seismogram.
+
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class (and classes that inherit from it). Thus, if
+        you intend resample seismogram data **in-place**,
+        instead of writing:
+
+        ```python
+        my_seis.data = resample(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.resample()
+        ```
 
     Examples:
         >>> from pysmo import SAC, resample
@@ -118,11 +172,8 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         >>> len(resampled_seis)
         90000
     """
-    len_in = len(seismogram)
-    sampling_rate_in = seismogram.sampling_rate
-    len_out = int(len_in * sampling_rate_in / sampling_rate)
     clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    clone.data = scipy.signal.resample(seismogram.data, len_out)
+    clone.data = _resample(seismogram, sampling_rate)
     clone.sampling_rate = sampling_rate
     return clone
 
@@ -197,9 +248,9 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
         >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
         181.92001941872516
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[0]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[0]
 
 
 def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -226,9 +277,9 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[1]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[1]
 
 
 def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -255,6 +306,6 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
         >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
         1889121.778136402
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[2]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[2]
