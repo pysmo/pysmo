@@ -8,7 +8,7 @@ import scipy.signal  # type: ignore
 import numpy as np
 import copy
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import azdist
+from pysmo.lib.functions import _azdist
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
@@ -193,9 +193,9 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
         >>> azimuth = azimuth(sacobj.event, sacobj.station, ellps='clrk66')
 
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[0]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[0]
 
 
 def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -220,9 +220,9 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
         >>> # Use Clarke 1966 instead of default
         >>> azimuth = backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[1]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[1]
 
 
 def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -247,6 +247,6 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
         >>> # Use Clarke 1966 instead of default
         >>> azimuth = distance(sacobj.event, sacobj.station, ellps='clrk66')
     """
-    return azdist(lat1=point1.latitude, lon1=point1.longitude,
-                  lat2=point2.latitude, lon2=point2.longitude,
-                  ellps=ellps)[2]
+    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
+                   lat2=point2.latitude, lon2=point2.longitude,
+                   ellps=ellps)[2]
