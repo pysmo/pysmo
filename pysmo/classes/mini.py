@@ -10,6 +10,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.functions import (
+    _normalize,
+    _detrend,
+    _resample
+)
 
 
 @dataclass
@@ -47,6 +52,52 @@ class MiniSeismogram:
     @property
     def end_time(self) -> datetime:
         return self.begin_time + timedelta(seconds=self.sampling_rate*(len(self)-1))
+
+    def normalize(self) -> None:
+        """Normalize the seismogram data with its absolute max value.
+
+        Examples:
+            >>> import numpy as np
+            >>> from pysmo import MiniSeismogram
+            >>> my_seis = MiniSeismogram(data=np.array([5, 3, 7]))
+            >>> my_seis.normalize()
+            >>> my_seis.data
+            array([0.71428571, 0.42857143, 1.        ])
+        """
+        self.data = _normalize(self)
+
+    def detrend(self) -> None:
+        """Remove linear and/or constant trends from a seismogram.
+
+        Examples:
+            >>> import numpy as np
+            >>> import pytest
+            >>> from pysmo import MiniSeismogram
+            >>> my_seis = MiniSeismogram(data=np.array([5, 3, 7]))
+            >>> my_seis.detrend()
+            >>> np.mean(my_seis.data)
+            >>> assert 0 == pytest.approx(np.mean(my_seis.data))
+            True
+        """
+        self.data = _detrend(self)
+
+    def resample(self, sampling_rate: float) -> None:
+        """Resample Seismogram object data using the Fourier method.
+
+        Parameters:
+            sampling_rate: New sampling rate.
+
+        Examples:
+            >>> from pysmo import MiniSeismogram
+            >>> my_seis = MiniSeismogram(data=np.random.rand(10000))
+            >>> len(my_seis)
+            10000
+            >>> new_sampling_rate = my_seis.sampling_rate * 2
+            >>> my_seis.resample(new_sampling_rate)
+            >>> len(my_seis)
+            5000
+        """
+        self.data, self.sampling_rate = _resample(self, sampling_rate), sampling_rate
 
 
 @dataclass
