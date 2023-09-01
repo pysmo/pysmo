@@ -68,7 +68,7 @@ def sac_seismogram(sac_instance: SAC) -> Seismogram:
     return sac_instance.seismogram
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def mini_seismogram(sac_seismogram: Seismogram) -> Seismogram:
     return MiniSeismogram(begin_time=sac_seismogram.begin_time, sampling_rate=sac_seismogram.sampling_rate,
                           data=sac_seismogram.data)

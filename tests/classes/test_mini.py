@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from datetime import datetime, timedelta
 from pysmo import (
     Seismogram,
@@ -48,6 +49,25 @@ def test_MiniSeismogram() -> None:
         seconds=my_seismogram.sampling_rate * (len(my_seismogram)-1))
     my_seismogram.id = 'test'
     assert my_seismogram.id == 'test'
+
+
+class TestMiniSeismogramMethods:
+
+    def test_normalize(self, mini_seismogram: MiniSeismogram) -> None:
+        mini_seismogram.normalize()
+        assert np.max(mini_seismogram.data) <= 1
+
+    def test_detrend(self, mini_seismogram: MiniSeismogram) -> None:
+        mini_seismogram.detrend()
+        assert 0 == pytest.approx(np.mean(mini_seismogram.data), abs=1e-11)
+
+    def test_resample(self, mini_seismogram: MiniSeismogram) -> None:
+        old_sampling_rate = mini_seismogram.sampling_rate
+        old_len = len(mini_seismogram)
+        new_sampling_rate = old_sampling_rate * 2
+        mini_seismogram.resample(new_sampling_rate)
+        assert len(mini_seismogram) * 2 == old_len
+        assert mini_seismogram.sampling_rate == new_sampling_rate
 
 
 def test_MiniStation() -> None:
