@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
-from .mini import MiniHypocenter, MiniSeismogram, MiniStation
+from .mini import MiniEvent, MiniSeismogram, MiniStation
 from pysmo.lib.io import SacIO
 
 
@@ -72,7 +72,7 @@ class SAC(SacIO):
         def __init__(self, parent: SacIO) -> None:
             self.parent = parent
 
-    class SacEvent(_SacNested, MiniHypocenter):
+    class SacEvent(_SacNested, MiniEvent):
         """Helper class for event attributes.
 
         The `SacEvent` class is used to map SAC attributes in a way that
@@ -121,8 +121,8 @@ class SAC(SacIO):
         note:
             Because this class inherits from
             [MiniSeismogram][pysmo.classes.mini.MiniSeismogram], not all
-            attributes need to be redifined here (e.g. the read-only
-            `end_time`).
+            attributes and methods need to be redifined here (e.g. the
+            read-only `end_time`).
 
         Attributes:
             data: Seismogram data.
@@ -200,7 +200,7 @@ class SAC(SacIO):
             setattr(self.parent, 'kstnm', value)
 
         @property
-        def network(self) -> str:
+        def network(self) -> Optional[str]:
             return self.parent.knetwk
 
         @network.setter
