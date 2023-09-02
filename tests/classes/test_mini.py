@@ -1,13 +1,15 @@
 import numpy as np
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pysmo import (
     Seismogram,
     Station,
     Hypocenter,
+    Event,
     MiniSeismogram,
     MiniStation,
-    MiniHypocenter
+    MiniHypocenter,
+    MiniEvent
 )
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
@@ -116,3 +118,27 @@ def test_MiniHypocenter() -> None:
     assert my_hypcenter.latitude == new_latitude
     my_hypcenter.longitude = new_longitude
     assert my_hypcenter.longitude == new_longitude
+
+
+def test_MiniEvent() -> None:
+
+    latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
+    new_latitude, new_longitude, new_depth, new_time = -21.1, -22.2, 500.2, time + timedelta(minutes=3)
+
+    my_event = MiniEvent(latitude=latitude, longitude=longitude, depth=depth, time=time)
+
+    assert isinstance(my_event, Event)
+
+    assert my_event.depth == depth
+    assert my_event.latitude == latitude
+    assert my_event.longitude == longitude
+    assert my_event.time == time
+
+    my_event.depth = new_depth
+    assert my_event.depth == new_depth
+    my_event.latitude = new_latitude
+    assert my_event.latitude == new_latitude
+    my_event.longitude = new_longitude
+    assert my_event.longitude == new_longitude
+    my_event.time = new_time
+    assert my_event.time == new_time

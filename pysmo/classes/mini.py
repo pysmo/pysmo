@@ -22,7 +22,7 @@ class MiniSeismogram:
     """Minimal class for seismogram data.
 
     The `MiniSeismogram` class provides a minimal implementation of class that
-    is compatible with the `Seismogram` type.
+    is compatible with the [`Seismogram`][pysmo.types.Seismogram] type.
 
     Attributes:
         begin_time: Seismogram begin time.
@@ -33,9 +33,10 @@ class MiniSeismogram:
 
     Examples:
         >>> from pysmo import MiniSeismogram, Seismogram
-        >>> from datetime import datetime
+        >>> from datetime import datetime, timezone
         >>> import numpy as np
-        >>> my_seismogram = MiniSeismogram(begin_time=datetime.now(),sampling_rate=0.1,
+        >>> now = datetime.now(timezone.utc)
+        >>> my_seismogram = MiniSeismogram(begin_time=now, sampling_rate=0.1,
                                            data=np.random.rand(100), id='myseis')
         >>> isinstance(my_seismogram, Seismogram)
         True
@@ -147,7 +148,7 @@ class MiniStation(MiniLocation):
         True
     """
     name: str
-    network: str
+    network: Optional[str] = None
     elevation: Optional[float] = None
 
 
@@ -156,13 +157,14 @@ class MiniHypocenter(MiniLocation):
     """Minimal class for hypocententers.
 
     The `MiniHypocenter` class provides a minimal implementation of class that
-    is compatible with the `Hypocenter` type. The class is a subclass of
-    `MiniLocation`, and therefore also matches the `Location` type.
+    is compatible with the [`Hypocenter`][pysmo.types.Hypocenter] type. The
+    class is a subclass of [`MiniLocation`][pysmo.classes.mini.MiniLocation],
+    and therefore also matches the [`Location`][pysmo.types.Location] type.
 
     Attributes:
         depth: Hypocenter depth.
-        longitude (float): Station longitude.
-        latitude (float): Station latitude.
+        longitude (float): Event longitude.
+        latitude (float): Event latitude.
 
     Examples:
         >>> from pysmo import MiniHypocenter, Hypocenter, Location
@@ -172,5 +174,36 @@ class MiniHypocenter(MiniLocation):
         >>> isinstance(my_hypo, Location)
         True
     """
-
     depth: float
+
+
+@dataclass(kw_only=True)
+class MiniEvent(MiniHypocenter):
+    """Minimal class for events.
+
+    The `MiniEvent` class provides a minimal implementation of class that is
+    compatible with the [`Event`][pysmo.types.Event] type. The class is a
+    subclass of [`MiniHypocenter`][pysmo.classes.mini.MiniHypocenter], and
+    therefore also matches the [`Location`][pysmo.types.Location] and
+    [`Hypocenter`][pysmo.types.Hypocenter] types.
+
+    Attributes:
+        depth: Hypocenter depth.
+        longitude (float): Event longitude.
+        latitude (float): Event latitude.
+        time: Event origin time.
+
+    Examples:
+        >>> from pysmo import MiniEvent, Event, Hypocenter, Location
+        >>> from datetime import datetime, timezone
+        >>> now = datetime.now(timezone.utc)
+        >>> my_event = MiniEvent(latitude=-24.68, longitude=-26.73,
+                                 depth=15234.0, time=now)
+        >>> isinstance(my_event, Event)
+        True
+        >>> isinstance(my_event, Hypocenter)
+        True
+        >>> isinstance(my_event, Location)
+        True
+    """
+    time: datetime
