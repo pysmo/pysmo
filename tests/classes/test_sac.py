@@ -97,10 +97,15 @@ def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
     assert sacevent.latitude == sacio.evla == pytest.approx(-31.465999603271484)
     assert sacevent.longitude == sacio.evlo == pytest.approx(-71.71800231933594)
     assert sacevent.depth == sacio.evdp * 1000 == 26000
+    assert sacevent.time == sac_instance.seismogram.begin_time + \
+        timedelta(seconds=sac_instance.o - sac_instance.b)
     sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
+    newtime = sacevent.time + timedelta(seconds=30)
+    sacevent.time = newtime
     assert sacevent.latitude == 32 == sac_instance.evla
     assert sacevent.longitude == 100 == sac_instance.evlo
     assert sacevent.depth == 5000 == sac_instance.evdp * 1000
+    assert sacevent.time == newtime
     with pytest.raises(ValueError):
         sacevent.latitude = 100
     with pytest.raises(ValueError):
@@ -109,3 +114,5 @@ def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
         sacevent.longitude = 500
     with pytest.raises(ValueError):
         sacevent.longitude = -500
+    with pytest.warns(RuntimeWarning):
+        sacevent.time += timedelta(microseconds=10)

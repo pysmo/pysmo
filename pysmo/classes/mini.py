@@ -1,9 +1,23 @@
 """
-Pysmo includes minimal implementations of a class for each type. They are all named
-using the pattern `Mini<Type>`, thus the [`Seismogram`][pysmo.types.Seismogram] type has
-a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class. The *Mini*
-classes may be used directly to store and process data, or serve as base classes when
+Pysmo includes minimal implementations of a class for each type. They serve as
+reference classes to be used with the corresponding types, and where applicable,
+are used as output objects in functions.
+
+The classes are all named using the pattern `Mini<Type>`. Thus the
+[`Seismogram`][pysmo.types.Seismogram] type has a corresponding
+[`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class. The *Mini* classes
+may be used directly to store and process data, or serve as base classes when
 creating new or modifying existing classes.
+
+warning: Important
+    Using mini classes as base doesn't magically make other classes compatible
+    with pysmo types! Remember that type checking merely checks for correct
+    type structure, not for functionality. It is therefore important that the
+    *attributes* are correctly mapped to the corresponding attributes in
+    whatever class it is you are trying to make compatible.
+
+    The *methods* inherrited from the mini classes work out of the box,
+    however.
 """
 import numpy as np
 from dataclasses import dataclass, field
@@ -188,7 +202,7 @@ class MiniEvent(MiniHypocenter):
     [`Hypocenter`][pysmo.types.Hypocenter] types.
 
     Attributes:
-        depth: Hypocenter depth.
+        depth (float): Hypocenter depth.
         longitude (float): Event longitude.
         latitude (float): Event latitude.
         time: Event origin time.
