@@ -110,6 +110,35 @@ class SAC(SacIO):
         def depth(self, value: float) -> None:
             setattr(self.parent, 'evdp', value/1000)
 
+        @property
+        def time(self) -> datetime.datetime:
+            # Begin time is reference time/date + "o" sac header
+            ref_time = datetime.time.fromisoformat(self.parent.kztime)
+            ref_date = datetime.date.fromisoformat(self.parent.kzdate)
+            return datetime.datetime.combine(ref_date, ref_time) + \
+                datetime.timedelta(seconds=self.parent.o)
+
+        @time.setter
+        def time(self, value: datetime.datetime) -> None:
+            # Setting the time should change the reference time,
+            # so we first subtract o.
+            ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.o)
+
+            # datetime uses microsecond precision, while sac only does milliseconds
+            # We go ahead, but we round the values and raise a warning
+            if not (ref_begin_timedate.microsecond / 1000).is_integer():
+                warnings.warn("SAC file format only has millisecond precision. \
+                               Rounding microseconds to milliseconds.", RuntimeWarning)
+                ref_begin_timedate += datetime.timedelta(microseconds=500)
+
+            # Now extract individual time components
+            self.parent.nzyear = ref_begin_timedate.year
+            self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
+            self.parent.nzhour = ref_begin_timedate.hour
+            self.parent.nzmin = ref_begin_timedate.minute
+            self.parent.nzsec = ref_begin_timedate.second
+            self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+
     class SacSeismogram(_SacNested, MiniSeismogram):
         """Helper class for seismogram attributes.
 
@@ -148,10 +177,10 @@ class SAC(SacIO):
 
         @property
         def begin_time(self) -> datetime.datetime:
-            # Begin time is reference time/date + b
-            abs_begin_time = datetime.time.fromisoformat(self.parent.kztime)
-            begin_date = datetime.date.fromisoformat(self.parent.kzdate)
-            return datetime.datetime.combine(begin_date, abs_begin_time) + \
+            # Begin time is reference time/date + "b" sac header
+            ref_time = datetime.time.fromisoformat(self.parent.kztime)
+            ref_date = datetime.date.fromisoformat(self.parent.kzdate)
+            return datetime.datetime.combine(ref_date, ref_time) + \
                 datetime.timedelta(seconds=self.parent.b)
 
         @begin_time.setter
