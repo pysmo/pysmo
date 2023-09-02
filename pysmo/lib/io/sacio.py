@@ -681,7 +681,8 @@ class SacIO(metaclass=_SacMeta):
             content = buffer[header_class.sac_start_position:end]
             value = struct.unpack(file_byteorder + header_class.sac_format, content)[0]
             if isinstance(value, bytes):
-                value = value.decode().rstrip()
+                # strip spaces and "\x00" chars
+                value = value.decode().rstrip(" \x00")
             setattr(self, header_class.private_name, value)
 
         # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks, which is something
