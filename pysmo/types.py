@@ -90,11 +90,11 @@ class Station(Location, Protocol):
     """The `Station` class defines a protocol for seismic stations in Pysmo.
 
     Attributes:
-        name: Station name.
-        network: Network name.
-        latitude (float): Latitude in degrees.
-        longitude (float): Longitude in degrees.
-        elevation: Elevation in metres.
+        name: Station name or identifier.
+        network: Network nam or identifiere.
+        latitude (float): Station latitude in degrees.
+        longitude (float): Station longitude in degrees.
+        elevation: Station elevation in metres.
     """
     @property
     def name(self) -> str:
@@ -105,7 +105,7 @@ class Station(Location, Protocol):
         ...
 
     @property
-    def network(self) -> str:
+    def network(self) -> Optional[str]:
         ...
 
     @network.setter
@@ -136,4 +136,23 @@ class Hypocenter(Location, Protocol):
 
     @depth.setter
     def depth(self, value: float) -> None:
+        ...
+
+
+@runtime_checkable
+class Event(Hypocenter, Protocol):
+    """The `Event` class defines a protocol for events in pysmo.
+
+    Attributes:
+        depth (float): Event depth in metres.
+        latitude (float): Latitude in degrees.
+        longitude (float): Longitude in degrees.
+        time: Event origin time.
+    """
+    @property
+    def time(self) -> datetime.datetime:
+        ...
+
+    @time.setter
+    def time(self, value: datetime.datetime) -> None:
         ...

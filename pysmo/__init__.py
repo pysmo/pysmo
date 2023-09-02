@@ -30,14 +30,16 @@ from pysmo.types import (
     Hypocenter,
     Location,
     Seismogram,
-    Station
+    Station,
+    Event
 )
 
 from pysmo.classes.mini import (
     MiniSeismogram,
     MiniLocation,
     MiniStation,
-    MiniHypocenter
+    MiniHypocenter,
+    MiniEvent
 )
 
 from pysmo.classes.sac import SAC
@@ -60,11 +62,13 @@ __all__ = [
     'Hypocenter',
     'Seismogram',
     'Station',
+    'Event',
     'SAC',
     'MiniSeismogram',
     'MiniLocation',
     'MiniStation',
     'MiniHypocenter',
+    'MiniEvent',
     'normalize',
     'detrend',
     'resample',
