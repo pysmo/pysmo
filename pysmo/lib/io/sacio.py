@@ -1,4 +1,16 @@
 from __future__ import annotations
+from pysmo.lib.functions import _azdist
+from pydantic.dataclasses import dataclass
+from pydantic import (
+    FieldValidationInfo,
+    ValidationError,
+    field_validator,
+    Field,
+    ConfigDict,
+    computed_field
+)
+from typing import Any, Optional
+from typing_extensions import Self
 import struct
 import datetime
 import io
@@ -9,9 +21,6 @@ import urllib.parse
 import zipfile
 import warnings
 import numpy as np
-from abc import ABC, abstractmethod
-from typing import Any, Sized
-from typing_extensions import Self
 
 
 # Read yaml file with dictionaries describing SAC headers
@@ -19,264 +28,19 @@ with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stre
     _HEADER_DEFS: dict = yaml.safe_load(stream)
 
 # Dictionary of header types (default values etc)
-_HEADER_TYPES: dict = _HEADER_DEFS.pop('header_types')
+HEADER_TYPES: dict = _HEADER_DEFS.pop('header_types')
 # Dictionary of header fields (format, type, etc)
-_HEADER_FIELDS: dict = _HEADER_DEFS.pop('header_fields')
+HEADER_FIELDS: dict = _HEADER_DEFS.pop('header_fields')
 # Dictionary of enumerated headers (to convert int to str).
-_ENUM_DICT: dict = _HEADER_DEFS.pop('enumerated_header_values')
+ENUM_DICT: dict = _HEADER_DEFS.pop('enumerated_header_values')
 
 
-class SacHeader(ABC):
-    """Python descriptor (abstract)class for SAC file headers."""
-
-    def __set_name__(self, owner: SacIO, name: str) -> None:
-        self.public_name: str = name
-        self.private_name: str = '_' + name
-        # Set docstring while we are here too.
-        try:
-            self.__doc__: str = _HEADER_FIELDS[name]['description']
-            try:
-                allowed_vals = _HEADER_FIELDS[name]['allowed_vals']
-                self.__doc__ += f" ``{name}`` must be one of:\n"
-                for val, desc in allowed_vals.items():
-                    self.__doc__ += f"\n- {val}:  {desc}"
-            except KeyError:
-                pass
-        except Exception:
-            pass
-
-    def __get__(self, obj: SacIO | None, objtype: _SacMeta | None = None) -> Self | float | int | str | bool | None:
-        # instance attribute accessed on class, return self
-        if obj is None:
-            return self
-
-        # The private_value content is in the same format as in a SAC file.
-        private_value = getattr(obj, self.private_name)
-
-        # Instead of returning SAC unknown placeholders (e.g. -12345) return
-        # the more pythonic 'None'.
-        if private_value == self.private_undefined:
-            return None
-
-        # Format value before returning. This will also translate enumerated headers.
-        return self.format2public(private_value)
-
-    def __set__(self, obj: SacIO, public_value: float | int | str | bool | None) -> None:
-        # Setting the public value to None updates the private value to be the 'undefined'
-        # value for that header field. Since this only really is used during initialisation
-        # of a SAC instance we don't check for read-only header values.
-        if public_value is None:
-            setattr(obj, self.private_name, self.private_undefined)
-
-        # Format to SAC format and save to private_name
-        else:
-            # Some headers are calculated from data/other headers, and should not be set.
-            if self.public_read_only:
-                raise RuntimeError(f"{self.public_name} is a read-only header field.")
-
-            # Set attribute in SAC internal format.
-            setattr(obj, self.private_name, self.validate_and_format2private(public_value))
-
-            # Changing b or delta requires recomputing end time e
-            if self.public_name in ('b', 'delta'):
-                obj._e = obj.b + (obj.npts - 1) * obj.delta  # type: ignore
-
-    @abstractmethod
-    def validate_and_format2private(self, public_value: float | int | str | bool) -> float | int | str:
-        """First validates a public value, then converts it to the respective private value (i.e. SAC internal)."""
-        pass
-
-    @abstractmethod
-    def format2public(self, private_value: float | int | str) -> float | int | str | bool:
-        """Format a private value (SAC internal format) to a public value format.
-
-        Method takes care of converting between things like enumerated headers
-        and SAC internal 'unknown' values (i.e. -12345 becomes None).
-
-        Parameters:
-            private_value: SAC header in the file format.
-
-        Returns:
-            SAC header formatted for use in Python.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def header_type(self) -> str:
-        """
-        Returns:
-            The SAC header type (k, f, ...).
-        """
-        pass
-
-    @property
-    def sac_start_position(self) -> int:
-        """
-        Returns:
-            The start position in the binary sac file.
-        """
-        return int(_HEADER_FIELDS[self.public_name]['start'])
-
-    @property
-    def sac_length(self) -> int:
-        """
-        Returns:
-            Length to read from SAC file.
-        """
-        # Some header fields have their own length that is specified in the dictionary.
-        try:
-            return int(_HEADER_FIELDS[self.public_name]['length'])
-        # If there is no such header field specific format use default one for that type.
-        except KeyError:
-            return int(_HEADER_TYPES[self.header_type]['length'])
-
-    @property
-    def sac_format(self) -> str:
-        """
-        Returns:
-            The SAC format used to write headers to a SAC file.
-        """
-        # Some header fields have their own format that is specified in the dictionary.
-        try:
-            return _HEADER_FIELDS[self.public_name]['format']
-        # If there is no such header field specific format use default one for that type.
-        except KeyError:
-            return _HEADER_TYPES[self.header_type]['format']
-
-    @property
-    def public_read_only(self) -> bool:
-        return _HEADER_FIELDS[self.public_name].get('read_only', False)
-
-    @property
-    def private_undefined(self) -> float | int | str | bool:
-        return _HEADER_TYPES[self.header_type].get('undefined')
-
-
-class SacFloatHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('f')
-
-    def validate_and_format2private(self, public_value: float | int | str | bool) -> float:
-        if not isinstance(public_value, float | int):
-            raise TypeError(f"Setting {self.public_name} to {public_value} failed. " +
-                            f"Expected float, got {type(public_value)}.")
-        if self.public_name in ("evla", "stla") and not 90 >= public_value >= -90:
-            raise ValueError(f"Setting {self.public_name} to {public_value} failed. " +
-                             "Latitude must be no smaller than -90 and no greater than 90.")
-        elif self.public_name in ("evlo", "stlo") and not 180 >= public_value > -180:
-            raise ValueError(f"Setting {self.public_name} to {public_value} failed. " +
-                             "Longitude must be greater than -180 and no greater than 180.")
-        return float(public_value)
-
-    def format2public(self, private_value: float | int | str) -> float:
-        return float(private_value)
-
-
-class SacIntHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('n')
-
-    def validate_and_format2private(self, public_value: float | int | str | bool) -> int:
-        if not isinstance(public_value, int):
-            raise TypeError(f"trying to set {self.public_name} to {public_value} failed. " +
-                            f"Expected int, got {type(public_value)}.")
-        return int(public_value)
-
-    def format2public(self, private_value: float | int | str) -> int:
-        return int(private_value)
-
-
-class SacEnumeratedHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('i')
-
-    def validate_and_format2private(self, public_value: float | int | str | bool) -> int:
-        # Convert from string to int
-        return _ENUM_DICT[public_value]
-
-    def format2public(self, private_value: float | int | str) -> str:
-        # convert from int to string
-        int2str_dict = {v: k for k, v in _ENUM_DICT.items()}
-        return int2str_dict[private_value]
-
-
-class SacLogicalHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('l')
-
-    def validate_and_format2private(self, public_value: float | int | str | bool) -> bool:
-        if not isinstance(public_value, bool):
-            raise TypeError(f"trying to set {self.public_name} to {public_value} failed. " +
-                            f"Expected bool, got {type(public_value)}.")
-        return public_value
-
-    def format2public(self, private_value: float | int | str) -> bool:
-        return bool(private_value)
-
-
-class SacAlphanumericHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('k')
-
-    def validate_and_format2private(self, public_value: Sized | float | int | str | bool) -> str:
-        if isinstance(public_value, bool):
-            raise TypeError(f"{self.public_name} may not be of type bool")
-        if len(str(public_value)) > self.sac_length:
-            raise ValueError(f"{public_value} is too long - maximum length for {self.public_name} is {self.sac_length}")
-        return str(public_value)
-
-    def format2public(self, private_value: float | int | str) -> str:
-        return str(private_value).rstrip()
-
-
-class SacAuxHeader(SacHeader):
-
-    @property
-    def header_type(self) -> str:
-        return ('a')
-
-    def validate_and_format2private(self, public_value: Any) -> Any:
-        raise RuntimeError(f"I don't know how to format {self.public_name}!")
-
-    def format2public(self, private_value: Any) -> Any:
-        raise RuntimeError(f"I don't know how to format {self.public_name}!")
-
-
-def SacHeaderFactory(header_name: str) -> type[SacHeader]:
-    header_map = {
-        'f': SacFloatHeader,
-        'n': SacIntHeader,
-        'i': SacEnumeratedHeader,
-        'l': SacLogicalHeader,
-        'k': SacAlphanumericHeader,
-        'a': SacAuxHeader
-    }
-    header_type = _HEADER_FIELDS[header_name]['header_type']
-    return header_map[header_type]
-
-
-class _SacMeta(type):
-    """Metaclass that adds the SacHeader descriptors to the class."""
-
-    def __new__(cls, name, bases, dct):  # type: ignore
-        for header_name in _HEADER_FIELDS:
-            header_class = SacHeaderFactory(header_name)
-            dct[header_name] = header_class()
-        return super().__new__(cls, name, bases, dct)
-
-
-class SacIO(metaclass=_SacMeta):
+@dataclass(config=ConfigDict(
+    arbitrary_types_allowed=True,  # needed for numpy.ndarray
+    validate_assignment=True,      # check at runtime
+    # extra='allow'                  # allow extra attributes
+    ))
+class SacIO:
     """
     The `SacIO` class reads and writes data and header values to and from a
     SAC file. Instances of `SacIO` provide attributes named identially to
@@ -469,178 +233,246 @@ class SacIO(metaclass=_SacMeta):
         kdatrd: Date data was read onto computer.
         kinst: Generic name of recording instrument.
     """
-    # type annotations:
-    # f -> float
-    delta: float
-    depmin: float | None
-    depmax: float | None
-    scale: float
-    odelta: float
-    b: float
-    e: float
-    o: float
-    a: float
-    fmt: float
-    t0: float
-    t1: float
-    t2: float
-    t3: float
-    t4: float
-    t5: float
-    t6: float
-    t7: float
-    t8: float
-    t9: float
-    f: float
-    resp0: float
-    resp1: float
-    resp2: float
-    resp3: float
-    resp4: float
-    resp5: float
-    resp6: float
-    resp7: float
-    resp8: float
-    resp9: float
-    stla: float
-    stlo: float
-    stel: float
-    stdp: float
-    evla: float
-    evlo: float
-    evel: float
-    evdp: float
-    mag: float
-    user0: float
-    user1: float
-    user2: float
-    user3: float
-    user4: float
-    user5: float
-    user6: float
-    user7: float
-    user8: float
-    user9: float
-    dist: float
-    az: float
-    baz: float
-    gcarc: float
-    sb: float
-    sdelta: float
-    depmen: float | None
-    cmpaz: float
-    cmpinc: float
-    xminimum: float
-    xmaximum: float
-    yminimum: float
-    ymaximum: float
-    unused6: float
-    unused7: float
-    unused8: float
-    unused9: float
-    unused10: float
-    unused11: float
-    unused12: float
-    # n --> int
-    nzyear: int
-    nzjday: int
-    nzhour: int
-    nzmin: int
-    nzsec: int
-    nzmsec: int
-    nvhdr: int
-    norid: int
-    nevid: int
-    npts: int
-    nsnpts: int
-    nwfid: int
-    nxsize: int
-    nysize: int
-    unused15: int
-    # i (enumerated) -> str
-    iftype: str
-    idep: str
-    iztype: str
-    unused16: str
-    iinst: str
-    istreg: str
-    ievreg: str
-    ievtyp: str
-    iqual: str
-    isynth: str
-    imagtyp: str
-    imagsrc: str
-    unused19: str
-    unused20: str
-    unused21: str
-    unused22: str
-    unused23: str
-    unused24: str
-    unused25: str
-    unused26: str
-    # l (logical) -> bool
-    leven: bool
-    lpspol: bool
-    lovrok: bool
-    lcalda: bool
-    unused27: bool
-    # k (alphanumeric) -> str
-    kstnm: str
-    kevnm: str
-    khole: str
-    ko: str
-    ka: str
-    kt0: str
-    kt1: str
-    kt2: str
-    kt3: str
-    kt4: str
-    kt5: str
-    kt6: str
-    kt7: str
-    kt8: str
-    kt9: str
-    kf: str
-    kuser0: str
-    kuser1: str
-    kuser2: str
-    kcmpnm: str
-    knetwk: str
-    kdatrd: str
-    kinst: str
 
-    def __init__(self, **kwargs: dict) -> None:
-        # All SAC header fields have a private and a public name. For example the sample rate has a
-        # public name of delta, and a private name of _delta. Here, delta is a descriptor that takes
-        # care of converting from a SAC file to python (formatting, enumerated headers etc), and
-        # _delta is the SAC formatted value stored as a normal attribute. In other words, reading
-        # and writing SAC files uses _delta, whereas accessing the header within Python uses delta.
+    b: float = 0
+    delta: float = 1
+    odelta: Optional[float] = None
+    scale: Optional[float] = None
+    o: Optional[float] = None
+    a: Optional[float] = None
+    fmt: Optional[float] = None
+    t0: Optional[float] = None
+    t1: Optional[float] = None
+    t2: Optional[float] = None
+    t3: Optional[float] = None
+    t4: Optional[float] = None
+    t5: Optional[float] = None
+    t6: Optional[float] = None
+    t7: Optional[float] = None
+    t8: Optional[float] = None
+    t9: Optional[float] = None
+    f: Optional[float] = None
+    resp0: Optional[float] = None
+    resp1: Optional[float] = None
+    resp2: Optional[float] = None
+    resp3: Optional[float] = None
+    resp4: Optional[float] = None
+    resp5: Optional[float] = None
+    resp6: Optional[float] = None
+    resp7: Optional[float] = None
+    resp8: Optional[float] = None
+    resp9: Optional[float] = None
+    stla: Optional[float] = Field(default=None, ge=-90, le=90)
+    stlo: Optional[float] = Field(default=None, gt=-180, le=180)
+    stel: Optional[float] = None
+    stdp: Optional[float] = None
+    evla: Optional[float] = Field(default=None, ge=-90, le=90)
+    evlo: Optional[float] = Field(default=None, gt=-180, le=180)
+    evel: Optional[float] = None
+    evdp: Optional[float] = None
+    mag: Optional[float] = None
+    user0: Optional[float] = None
+    user1: Optional[float] = None
+    user2: Optional[float] = None
+    user3: Optional[float] = None
+    user4: Optional[float] = None
+    user5: Optional[float] = None
+    user6: Optional[float] = None
+    user7: Optional[float] = None
+    user8: Optional[float] = None
+    user9: Optional[float] = None
+    sb: Optional[float] = None
+    sdelta: Optional[float] = None
+    cmpaz: Optional[float] = None
+    cmpinc: Optional[float] = None
+    unused6: Optional[float] = None
+    unused7: Optional[float] = None
+    unused8: Optional[float] = None
+    unused9: Optional[float] = None
+    unused10: Optional[float] = None
+    unused11: Optional[float] = None
+    unused12: Optional[float] = None
+    nzyear: Optional[int] = None
+    nzjday: Optional[int] = None
+    nzhour: Optional[int] = None
+    nzmin: Optional[int] = None
+    nzsec: Optional[int] = None
+    nzmsec: Optional[int] = None
+    nvhdr: int = 6
+    norid: Optional[int] = None
+    nevid: Optional[int] = None
+    nsnpts: Optional[int] = None
+    nwfid: Optional[int] = None
+    unused15: Optional[int] = None
+    iftype: str = "time"
+    idep: str = "unkn"
+    iztype: str = "unkn"
+    unused16: Optional[str] = None
+    iinst: Optional[str] = None
+    istreg: Optional[str] = None
+    ievreg: Optional[str] = None
+    ievtyp: str = "unkn"
+    iqual: Optional[str] = None
+    isynth: Optional[str] = None
+    imagtyp: Optional[str] = None
+    imagsrc: Optional[str] = None
+    unused19: Optional[str] = None
+    unused20: Optional[str] = None
+    unused21: Optional[str] = None
+    unused22: Optional[str] = None
+    unused23: Optional[str] = None
+    unused24: Optional[str] = None
+    unused25: Optional[str] = None
+    unused26: Optional[str] = None
+    # TODO: Unevenly spaced data
+    leven: bool = True
+    lpspol: Optional[bool] = None
+    lovrok: Optional[bool] = None
+    unused27: Optional[bool] = None
+    kstnm: Optional[str] = Field(default=None, max_length=8)
+    kevnm: Optional[str] = Field(default=None, max_length=16)
+    khole: Optional[str] = Field(default=None, max_length=8)
+    ko: Optional[str] = Field(default=None, max_length=8)
+    ka: Optional[str] = Field(default=None, max_length=8)
+    kt0: Optional[str] = Field(default=None, max_length=8)
+    kt1: Optional[str] = Field(default=None, max_length=8)
+    kt2: Optional[str] = Field(default=None, max_length=8)
+    kt3: Optional[str] = Field(default=None, max_length=8)
+    kt4: Optional[str] = Field(default=None, max_length=8)
+    kt5: Optional[str] = Field(default=None, max_length=8)
+    kt6: Optional[str] = Field(default=None, max_length=8)
+    kt7: Optional[str] = Field(default=None, max_length=8)
+    kt8: Optional[str] = Field(default=None, max_length=8)
+    kt9: Optional[str] = Field(default=None, max_length=8)
+    kf: Optional[str] = Field(default=None, max_length=8)
+    kuser0: Optional[str] = Field(default=None, max_length=8)
+    kuser1: Optional[str] = Field(default=None, max_length=8)
+    kuser2: Optional[str] = Field(default=None, max_length=8)
+    kcmpnm: Optional[str] = Field(default=None, max_length=8)
+    knetwk: Optional[str] = Field(default=None, max_length=8)
+    kdatrd: Optional[str] = Field(default=None, max_length=8)
+    kinst: Optional[str] = Field(default=None, max_length=8)
+    data: np.ndarray = Field(default_factory=lambda: np.array([]))
+    x: np.ndarray = Field(default_factory=lambda: np.array([]))
+    y: np.ndarray = Field(default_factory=lambda: np.array([]))
 
-        # Set defaults first
-        self._set_defaults()
+    @computed_field  # type: ignore[misc]
+    @property
+    def depmin(self) -> Optional[float]:
+        if self.npts == 0:
+            return None
+        return np.min(self.data)
 
-        # Set whatever other kwargs were provided at instance creation
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+    @computed_field  # type: ignore[misc]
+    @property
+    def depmax(self) -> Optional[float]:
+        if self.npts == 0:
+            return None
+        return np.max(self.data)
 
-    def _set_defaults(self) -> None:
-        # The descriptor converts None to the SAC unknown value (e.g. -12345 for int type header fields).
-        # Therefore this loop sets the initial value for all private fields to the SAC unknown value.
-        for header_name in _HEADER_FIELDS:
-            setattr(self, header_name, None)
-        # Set some sane defaults:
-        # self.npts is read only, so we write to the private name self._ntps directly.
-        self._npts = 0
-        # Setting self.delta triggers calculation of self.e, but we can't do that without also knowing
-        # the begin time self.b - writing to the private self._delta doesn't try to calculate self.e
-        self._delta = 1
-        # Now we can write to the public self.b, since self.delta is set above. This triggers calculation of self.e
-        self.b = 0
-        # SAC header version 7 adds a footer after the data block. That is not implemented here.
-        self.nvhdr = 6
-        self.iftype = "time"
-        self.leven = True
-        self.data = np.array([])
+    @computed_field  # type: ignore[misc]
+    @property
+    def depmen(self) -> Optional[float]:
+        if self.npts == 0:
+            return None
+        return np.mean(self.data)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def e(self) -> float:
+        return self.b + (self.npts - 1) * self.delta
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def dist(self) -> float:
+        if self.stla and self.stlo and self.evla and self.evlo:
+            return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[2] / 1000
+        raise ValueError("Unable to calculate dist: not all coordinates available.")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def az(self) -> float:
+        if self.stla and self.stlo and self.evla and self.evlo:
+            return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[0]
+        raise ValueError("Unable to calculate az: not all coordinates available.")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def baz(self) -> float:
+        if self.stla and self.stlo and self.evla and self.evlo:
+            return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[1]
+        raise ValueError("Unable to calculate baz: not all coordinates available.")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def gcarc(self) -> float:
+        if self.stla and self.stlo and self.evla and self.evlo:
+            lat1, lon1 = np.deg2rad(self.stla), np.deg2rad(self.stlo)
+            lat2, lon2 = np.deg2rad(self.evla), np.deg2rad(self.evlo)
+            return np.rad2deg(np.arccos(np.sin(lat1) * np.sin(lat2) + np.cos(lat1)
+                              * np.cos(lat2) * np.cos(np.abs(lon1 - lon2))))
+        raise ValueError("Unable to calculate gcarc: not all coordinates available.")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def xminimum(self) -> Optional[float]:
+        if self.nxsize == 0 or not self.nxsize:
+            return None
+        return float(np.min(self.x))
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def xmaximum(self) -> Optional[float]:
+        if self.nxsize == 0 or not self.nxsize:
+            return None
+        return np.max(self.x)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def yminimum(self) -> Optional[float]:
+        if self.nysize == 0 or not self.nysize:
+            return None
+        return np.min(self.y)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def ymaximum(self) -> Optional[float]:
+        if self.nysize == 0 or not self.nysize:
+            return None
+        return np.max(self.y)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def npts(self) -> int:
+        return np.size(self.data)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def nxsize(self) -> Optional[int]:
+        if np.size(self.x) == 0:
+            return None
+        return np.size(self.x)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def nysize(self) -> Optional[int]:
+        if np.size(self.y) == 0:
+            return None
+        return np.size(self.y)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def lcalda(self) -> bool:
+        # all distances and bearings are always calculated...
+        return True
+
+    @field_validator("iftype", "idep", "iztype", "ievtype", "iqual", "isynth", "imagtyp", "imagsrc")
+    @classmethod
+    def validate_enumerated_header(cls, value: str, info: FieldValidationInfo) -> str:
+        if value and value not in HEADER_FIELDS[info.field_name]["allowed_vals"].keys():
+            raise ValueError(f"Invalid {value=} for {info.field_name}. Must be one of " +
+                             f"{list(HEADER_FIELDS[info.field_name]['allowed_vals'].keys())}.")
+        return value
 
     def read(self, filename: str) -> None:
         """Read data and header values from a SAC file into an existing SAC instance.
@@ -671,19 +503,47 @@ class SacIO(metaclass=_SacMeta):
         else:
             file_byteorder = '>'
 
+        # Reverse ENUM_DICT so that we can look up the string from the int
+        enum_dict_reversed = {v: k for k, v in ENUM_DICT.items()}
+
         # Loop over all header fields and store them in the SAC object under their
         # respective private names.
-        for header_field in _HEADER_FIELDS:
-            header_class = getattr(type(self), header_field)
-            end = header_class.sac_start_position + header_class.sac_length
+        npts = 0
+        for header, header_dict in HEADER_FIELDS.items():
+            header_type = header_dict["header_type"]
+            header_start = header_dict["start"]
+            header_length = header_dict.get("length", HEADER_TYPES[header_type]["length"])
+            header_format = header_dict.get("format", HEADER_TYPES[header_type]["format"])
+            header_undefined = HEADER_TYPES[header_type]["undefined"]
+            end = header_start + header_length
             if end >= len(buffer):
                 continue
-            content = buffer[header_class.sac_start_position:end]
-            value = struct.unpack(file_byteorder + header_class.sac_format, content)[0]
+            content = buffer[header_start:end]
+            value = struct.unpack(file_byteorder + header_format, content)[0]
             if isinstance(value, bytes):
                 # strip spaces and "\x00" chars
                 value = value.decode().rstrip(" \x00")
-            setattr(self, header_class.private_name, value)
+
+            # npts is read only property in this class, but is needed for reading data
+            if header == "npts":
+                npts = int(value)
+
+            # skip if undefined (value == -12345...)
+            if value == header_undefined:
+                continue
+
+            # convert enumerated header to string and format others
+            if header_type == "i":
+                value = enum_dict_reversed[value]
+
+            # SAC file has headers fields which are read only attributes in this
+            # class. We skip them with this try/except.
+            # TODO: This is a bit crude, should maybe be a bit more specific.
+            try:
+                setattr(self, header, value)
+            except ValidationError as e:
+                if "Object has no attribute" in str(e):
+                    pass
 
         # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks, which is something
         # we don't support.
@@ -692,9 +552,9 @@ class SacIO(metaclass=_SacMeta):
 
         # Read first data block
         start = 632
-        length = self.npts * 4
+        length = npts * 4
         end = start + length
-        data_format = file_byteorder + str(self.npts) + 'f'
+        data_format = file_byteorder + str(npts) + 'f'
         if end > len(buffer):
             raise EOFError()
         content = buffer[start:end]
@@ -785,14 +645,28 @@ class SacIO(metaclass=_SacMeta):
         """
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
-            for header_field in _HEADER_FIELDS:
-                header_class = getattr(type(self), header_field)
-                file_handle.seek(header_class.sac_start_position)
-                private_value = getattr(self, header_class.private_name)
-                if isinstance(private_value, str):
-                    private_value = private_value.encode()
-                private_value = struct.pack(header_class.sac_format, private_value)
-                file_handle.write(private_value)
+            for header, header_dict in HEADER_FIELDS.items():
+                header_type = header_dict["header_type"]
+                header_format = header_dict.get("format", HEADER_TYPES[header_type]["format"])
+                header_undefined = HEADER_TYPES[header_type]["undefined"]
+
+                value = getattr(self, header)
+
+                # convert enumerated header to integer if it is not None
+                if header_type == "i" and value:
+                    value = ENUM_DICT[value]
+
+                # set None to -12345
+                if not value:
+                    value = header_undefined
+
+                # Encode strings to bytes
+                if isinstance(value, str):
+                    value = value.encode()
+
+                # write to file
+                file_handle.seek(header_dict.get('start'))
+                file_handle.write(struct.pack(header_format, value))
 
             # write data (if npts > 0)
             if self.npts > 0:
@@ -800,9 +674,7 @@ class SacIO(metaclass=_SacMeta):
                 file_handle.truncate(start1)
                 file_handle.seek(start1)
 
-                data = self._data
-
-                for x in data:
+                for x in self.data:
                     file_handle.write(struct.pack('f', x))
 
     @property
@@ -811,7 +683,7 @@ class SacIO(metaclass=_SacMeta):
         Returns:
             ISO 8601 format of GMT reference date.
         """
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)  # type: ignore
         return _kzdate.isoformat()
 
     @property
@@ -820,41 +692,5 @@ class SacIO(metaclass=_SacMeta):
         Returns:
             Alphanumeric form of GMT reference time.
         """
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)  # type: ignore
         return _kztime.isoformat(timespec='milliseconds')
-
-    @property
-    def data(self) -> np.ndarray:
-        """
-        Returns:
-            Seismogram data."""
-        return self._data
-
-    @data.setter
-    def data(self, value: np.ndarray) -> None:
-        """Sets the seismogram data. This will also update the end time header
-        value 'e' as well as depmin, depmax, and depmen.
-
-        Parameters:
-            data: numpy array containing seismogram data
-        """
-        # Data is stored as _data inside the object
-        self._data = value
-
-        # Calculate number of points from the length of the data vector
-        self._npts = len(value)
-
-        # This triggers recalculating end time
-        self.b = self.b
-
-        # and calculate trace stats
-        if self.npts > 0:
-            self._depmin = min(self._data)
-            self._depmax = max(self._data)
-            self._depmen = sum(self._data)/self._npts
-        else:
-            # If npts == 0 these attributes make no sense and are therefore reset
-            # to the SAC 'unknown' value by setting the public_name value to None.
-            self.depmin = None
-            self.depmax = None
-            self.depmen = None

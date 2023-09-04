@@ -1,10 +1,10 @@
 import datetime
-import warnings
 import numpy as np
-from dataclasses import dataclass, field
 from typing import Optional
 from .mini import MiniEvent, MiniSeismogram, MiniStation
 from pysmo.lib.io import SacIO
+from pydantic.dataclasses import dataclass
+from pydantic import Field
 
 
 @dataclass
@@ -72,72 +72,15 @@ class SAC(SacIO):
         def __init__(self, parent: SacIO) -> None:
             self.parent = parent
 
-    class SacEvent(_SacNested, MiniEvent):
-        """Helper class for event attributes.
-
-        The `SacEvent` class is used to map SAC attributes in a way that
-        matches pysmo types. An instance of this class is created for each
-        new (parent) [SAC][pysmo.classes.sac.SAC] instance to enable pysmo
-        types compatibility.
-
-        Attributes:
-            latitude: Event Latitude.
-            longitude: Event Longitude.
-            depth: Event depth in meters.
-        """
-
         @property
-        def latitude(self) -> float:
-            return self.parent.evla
-
-        @latitude.setter
-        def latitude(self, value: float) -> None:
-            setattr(self.parent, 'evla', value)
-
-        @property
-        def longitude(self) -> float:
-            return self.parent.evlo
-
-        @longitude.setter
-        def longitude(self, value: float) -> None:
-            setattr(self.parent, 'evlo', value)
-
-        @property
-        def depth(self) -> float:
-            return self.parent.evdp * 1000
-
-        @depth.setter
-        def depth(self, value: float) -> None:
-            setattr(self.parent, 'evdp', value/1000)
-
-        @property
-        def time(self) -> datetime.datetime:
-            # Begin time is reference time/date + "o" sac header
+        def _ref_datetime(self) -> datetime.datetime:
+            """
+            Returns:
+                Reference time date in a SAC file.
+            """
             ref_time = datetime.time.fromisoformat(self.parent.kztime)
             ref_date = datetime.date.fromisoformat(self.parent.kzdate)
-            return datetime.datetime.combine(ref_date, ref_time) + \
-                datetime.timedelta(seconds=self.parent.o)
-
-        @time.setter
-        def time(self, value: datetime.datetime) -> None:
-            # Setting the time should change the reference time,
-            # so we first subtract o.
-            ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.o)
-
-            # datetime uses microsecond precision, while sac only does milliseconds
-            # We go ahead, but we round the values and raise a warning
-            if not (ref_begin_timedate.microsecond / 1000).is_integer():
-                warnings.warn("SAC file format only has millisecond precision. \
-                               Rounding microseconds to milliseconds.", RuntimeWarning)
-                ref_begin_timedate += datetime.timedelta(microseconds=500)
-
-            # Now extract individual time components
-            self.parent.nzyear = ref_begin_timedate.year
-            self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
-            self.parent.nzhour = ref_begin_timedate.hour
-            self.parent.nzmin = ref_begin_timedate.minute
-            self.parent.nzsec = ref_begin_timedate.second
-            self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+            return datetime.datetime.combine(ref_date, ref_time)
 
     class SacSeismogram(_SacNested, MiniSeismogram):
         """Helper class for seismogram attributes.
@@ -178,31 +121,78 @@ class SAC(SacIO):
         @property
         def begin_time(self) -> datetime.datetime:
             # Begin time is reference time/date + "b" sac header
-            ref_time = datetime.time.fromisoformat(self.parent.kztime)
-            ref_date = datetime.date.fromisoformat(self.parent.kzdate)
-            return datetime.datetime.combine(ref_date, ref_time) + \
-                datetime.timedelta(seconds=self.parent.b)
+            return self._ref_datetime + datetime.timedelta(seconds=self.parent.b)
 
         @begin_time.setter
         def begin_time(self, value: datetime.datetime) -> None:
-            # Setting the time should change the reference time,
-            # so we first subtract b.
-            ref_begin_timedate = value - datetime.timedelta(seconds=self.parent.b)
+            # Since other sac headers depend on the reference time (e.g . "o"),
+            # we don't touch the sac reference time. Instead set the "b"
+            # header, which is the difference between event time and
+            # reference time in seconds.
+            self.parent.b = (value - self._ref_datetime).total_seconds()
 
-            # datetime uses microsecond precision, while sac only does milliseconds
-            # We go ahead, but we round the values and raise a warning
-            if not (ref_begin_timedate.microsecond / 1000).is_integer():
-                warnings.warn("SAC file format only has millisecond precision. \
-                               Rounding microseconds to milliseconds.", RuntimeWarning)
-                ref_begin_timedate += datetime.timedelta(microseconds=500)
+    class SacEvent(_SacNested, MiniEvent):
+        """Helper class for event attributes.
 
-            # Now extract individual time components
-            self.parent.nzyear = ref_begin_timedate.year
-            self.parent.nzjday = ref_begin_timedate.timetuple().tm_yday
-            self.parent.nzhour = ref_begin_timedate.hour
-            self.parent.nzmin = ref_begin_timedate.minute
-            self.parent.nzsec = ref_begin_timedate.second
-            self.parent.nzmsec = int(ref_begin_timedate.microsecond / 1000)
+        The `SacEvent` class is used to map SAC attributes in a way that
+        matches pysmo types. An instance of this class is created for each
+        new (parent) [SAC][pysmo.classes.sac.SAC] instance to enable pysmo
+        types compatibility.
+
+        Attributes:
+            latitude: Event Latitude.
+            longitude: Event Longitude.
+            depth: Event depth in meters.
+        """
+
+        @property
+        def latitude(self) -> float:
+            # TODO: better error message
+            if self.parent.evla is None:
+                raise ValueError("Value for event latitude is None.")
+            return self.parent.evla
+
+        @latitude.setter
+        def latitude(self, value: float) -> None:
+            setattr(self.parent, 'evla', value)
+
+        @property
+        def longitude(self) -> float:
+            # TODO: better error message
+            if self.parent.evlo is None:
+                raise ValueError("Value for event longitude is None.")
+            return self.parent.evlo
+
+        @longitude.setter
+        def longitude(self, value: float) -> None:
+            setattr(self.parent, 'evlo', value)
+
+        @property
+        def depth(self) -> float:
+            # TODO: better error message
+            if self.parent.evdp is None:
+                raise ValueError("Value for event depth is None.")
+            return self.parent.evdp * 1000
+
+        @depth.setter
+        def depth(self, value: float) -> None:
+            setattr(self.parent, 'evdp', value/1000)
+
+        @property
+        def time(self) -> datetime.datetime:
+            # Event origin time is reference datetime + "o" sac header
+            if self.parent.o is None:
+                raise ValueError(f"Value for SAC header 'o' is {self.parent.o}. " +
+                                 "Unable to set new event origin time.")
+            return self._ref_datetime + datetime.timedelta(seconds=self.parent.o)
+
+        @time.setter
+        def time(self, value: datetime.datetime) -> None:
+            # Since other sac headers depend on the reference time (e.g . "b"),
+            # we don't touch the sac reference time. Instead set the "o"
+            # header, which is the difference between event time and
+            # reference time in seconds.
+            self.parent.o = (value - self._ref_datetime).total_seconds()
 
     class SacStation(_SacNested, MiniStation):
         """Helper class for SAC event attributes.
@@ -222,6 +212,9 @@ class SAC(SacIO):
 
         @property
         def name(self) -> str:
+            if self.parent.kstnm is None:
+                raise ValueError("Value for SAC header 'kstnm' is undefined." +
+                                 "Unable to get station name.")
             return self.parent.kstnm
 
         @name.setter
@@ -238,6 +231,9 @@ class SAC(SacIO):
 
         @property
         def latitude(self) -> float:
+            if self.parent.stla is None:
+                raise ValueError("Value for SAC header 'stla' is undefined." +
+                                 "Unable to get station latitude.")
             return self.parent.stla
 
         @latitude.setter
@@ -246,6 +242,9 @@ class SAC(SacIO):
 
         @property
         def longitude(self) -> float:
+            if self.parent.stlo is None:
+                raise ValueError("Value for SAC header 'stlo' is undefined." +
+                                 "Unable to get station longitude.")
             return self.parent.stlo
 
         @longitude.setter
@@ -254,20 +253,17 @@ class SAC(SacIO):
 
         @property
         def elevation(self) -> Optional[float]:
-            if self.parent.stel:
-                return self.parent.stel
-            return None
+            return self.parent.stel
 
         @elevation.setter
         def elevation(self, value: float) -> None:
             setattr(self.parent, 'stel', value)
 
-    seismogram: SacSeismogram = field(init=False)
-    station: SacStation = field(init=False)
-    event: SacEvent = field(init=False)
+    seismogram: SacSeismogram = Field(default=None)
+    station: SacStation = Field(default=None)
+    event: SacEvent = Field(default=None)
 
     def __post_init__(self) -> None:
-        super()._set_defaults()
-        self.seismogram = self.SacSeismogram(self)
-        self.station = self.SacStation(self)
-        self.event = self.SacEvent(self)
+        self.seismogram = self.SacSeismogram(parent=self)
+        self.station = self.SacStation(parent=self)
+        self.event = self.SacEvent(parent=self)
