@@ -1,10 +1,11 @@
+# from dataclasses import InitVar
 import datetime
 import numpy as np
 from typing import Optional
 from .mini import MiniEvent, MiniSeismogram, MiniStation
 from pysmo.lib.io import SacIO
 from pydantic.dataclasses import dataclass
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 
 @dataclass
@@ -66,11 +67,11 @@ class SAC(SacIO):
         event: Maps pysmo compatible attributes to the internal SAC attributes.
     """
 
+    @dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
     class _SacNested:
         """Base class for nested SAC classes"""
 
-        def __init__(self, parent: SacIO) -> None:
-            self.parent = parent
+        parent: SacIO = Field()
 
         @property
         def _ref_datetime(self) -> datetime.datetime:

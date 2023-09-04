@@ -19,19 +19,20 @@ warning: Important
     The *methods* inherrited from the mini classes work out of the box,
     however.
 """
-import numpy as np
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Optional
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import (
     _normalize,
     _detrend,
     _resample
 )
+from typing import Optional
+from datetime import datetime, timedelta
+from pydantic.dataclasses import dataclass
+from pydantic import ConfigDict, Field
+import numpy as np
 
 
-@dataclass
+@dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
 class MiniSeismogram:
     """Minimal class for seismogram data.
 
@@ -56,9 +57,9 @@ class MiniSeismogram:
         True
     """
 
-    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time
-    sampling_rate: float = SEISMOGRAM_DEFAULTS.sampling_rate
-    data: np.ndarray = field(default_factory=lambda: np.array([]))
+    begin_time: datetime = Field(default=SEISMOGRAM_DEFAULTS.begin_time)
+    sampling_rate: float = Field(default=SEISMOGRAM_DEFAULTS.sampling_rate)
+    data: np.ndarray = Field(default_factory=lambda: np.array([]))
     id: Optional[str] = None
 
     def __len__(self) -> int:
@@ -115,7 +116,7 @@ class MiniSeismogram:
         self.data, self.sampling_rate = _resample(self, sampling_rate), sampling_rate
 
 
-@dataclass
+@dataclass(kw_only=True)
 class MiniLocation:
     """Minimal class for geographical locations.
 
@@ -132,9 +133,8 @@ class MiniLocation:
         >>> isinstance(my_location, Location)
         True
     """
-
-    latitude: float
-    longitude: float
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(gt=-180, le=180)
 
 
 @dataclass(kw_only=True)

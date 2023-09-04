@@ -38,7 +38,6 @@ ENUM_DICT: dict = _HEADER_DEFS.pop('enumerated_header_values')
 @dataclass(config=ConfigDict(
     arbitrary_types_allowed=True,  # needed for numpy.ndarray
     validate_assignment=True,      # check at runtime
-    # extra='allow'                  # allow extra attributes
     ))
 class SacIO:
     """
