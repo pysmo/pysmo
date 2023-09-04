@@ -19,19 +19,20 @@ def test_sac_seismogram(sac_instance: SAC, sacio_instance: SacIO) -> None:
     assert sacseis.sampling_rate == sacio.delta == pytest.approx(0.02, 0.001)
     assert sacseis.begin_time == datetime(2005, 3, 1, 7, 23, 2, 160000)
     assert sacseis.begin_time.year == sacio.nzyear
-    assert sacseis.begin_time.timetuple().tm_yday == sacio.nzjday + int(sacio.b / 3600)
-    assert sacseis.begin_time.minute == (sacio.nzmin + int(sacio.b / 60)) % 60
-    assert sacseis.begin_time.second == (sacio.nzsec + int(sacio.b)) % 60
-    assert sacseis.begin_time.microsecond == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
+    if sacio.nzjday:
+        assert sacseis.begin_time.timetuple().tm_yday == sacio.nzjday + int(sacio.b / 3600)
+    if sacio.nzmin:
+        assert sacseis.begin_time.minute == (sacio.nzmin + int(sacio.b / 60)) % 60
+    if sacio.nzsec:
+        assert sacseis.begin_time.second == (sacio.nzsec + int(sacio.b)) % 60
+    if sacio.nzmsec:
+        assert sacseis.begin_time.microsecond == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
     assert sacseis.end_time == datetime(2005, 3, 1, 8, 23, 2, 139920)
     assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacio.delta * (sacio.npts - 1))
 
     # Change some values
     random_data = np.random.randn(100)
     new_time1 = datetime.fromisoformat('2011-11-04T00:05:23.123')
-    new_time2 = datetime.fromisoformat('2011-11-04T00:05:23.123155')
-    new_time3 = datetime.fromisoformat('2011-11-04T00:05:23.123855')
-    new_time4 = datetime.fromisoformat('2011-11-04T00:05:23.999500')
     sacseis.data = random_data
     # changing data should also change end time
     assert sacseis.data.all() == random_data.all()
@@ -45,17 +46,6 @@ def test_sac_seismogram(sac_instance: SAC, sacio_instance: SacIO) -> None:
     sacseis.begin_time = new_time1
     assert sacseis.begin_time == new_time1
     assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacseis.sampling_rate * (len(sacseis.data)-1))
-    with pytest.warns(RuntimeWarning):
-        # rounding down
-        sacseis.begin_time = new_time2
-        assert sacseis.begin_time.microsecond == round(new_time2.microsecond, -3)
-        # rounding up
-        sacseis.begin_time = new_time3
-        assert sacseis.begin_time.microsecond == round(new_time3.microsecond, -3)
-        # rounding up when within 500 microseconds of the next second
-        sacseis.begin_time = new_time4
-        assert sacseis.begin_time.second == new_time4.second + 1
-        assert sacseis.begin_time.microsecond == 0
 
 
 def test_sac_as_station(sac_instance: SAC, sacio_instance: SacIO) -> None:
@@ -90,22 +80,38 @@ def test_sac_as_station(sac_instance: SAC, sacio_instance: SacIO) -> None:
     with pytest.raises(ValueError):
         sacstation.longitude = bad_longitude
 
+    # errors when information is missing.
+    sac_instance.kstnm = None
+    with pytest.raises(ValueError):
+        sacstation.name
+    sac_instance.stla = None
+    with pytest.raises(ValueError):
+        sacstation.latitude
+    sac_instance.stlo = None
+    with pytest.raises(ValueError):
+        sacstation.longitude
+
 
 def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
     sacevent = sac_instance.event
     sacio = sacio_instance
     assert sacevent.latitude == sacio.evla == pytest.approx(-31.465999603271484)
     assert sacevent.longitude == sacio.evlo == pytest.approx(-71.71800231933594)
-    assert sacevent.depth == sacio.evdp * 1000 == 26000
-    assert sacevent.time == sac_instance.seismogram.begin_time + \
-        timedelta(seconds=sac_instance.o - sac_instance.b)
-    sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
+    if sacio.evdp:
+        assert sacevent.depth == sacio.evdp * 1000 == 26000
+    if sac_instance.o:
+        assert sacevent.time == sac_instance.seismogram.begin_time + \
+            timedelta(seconds=sac_instance.o - sac_instance.b)
     newtime = sacevent.time + timedelta(seconds=30)
+    old_o = sac_instance.o
     sacevent.time = newtime
+    assert sacevent.time == newtime
+    assert sac_instance.o == 30 + old_o  # type: ignore
+    sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
     assert sacevent.latitude == 32 == sac_instance.evla
     assert sacevent.longitude == 100 == sac_instance.evlo
-    assert sacevent.depth == 5000 == sac_instance.evdp * 1000
-    assert sacevent.time == newtime
+    if sac_instance.evdp:
+        assert sacevent.depth == 5000 == sac_instance.evdp * 1000
     with pytest.raises(ValueError):
         sacevent.latitude = 100
     with pytest.raises(ValueError):
@@ -114,5 +120,15 @@ def test_sac_as_event(sac_instance: SAC, sacio_instance: SacIO) -> None:
         sacevent.longitude = 500
     with pytest.raises(ValueError):
         sacevent.longitude = -500
-    with pytest.warns(RuntimeWarning):
-        sacevent.time += timedelta(microseconds=10)
+    sac_instance.o = None
+    with pytest.raises(ValueError):
+        sacevent.time
+    sac_instance.evla = None
+    with pytest.raises(ValueError):
+        sacevent.latitude
+    sac_instance.evlo = None
+    with pytest.raises(ValueError):
+        sacevent.longitude
+    sac_instance.evdp = None
+    with pytest.raises(ValueError):
+        sacevent.depth
