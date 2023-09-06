@@ -1,0 +1,51 @@
+from datetime import datetime, timedelta, timezone
+import pytest
+from pydantic import ValidationError
+from pysmo import Event, MiniEvent
+
+
+class TestMiniEvent:
+
+    def test_create_instance(self) -> None:
+        """Test creating an instance."""
+
+        with pytest.raises(ValidationError):
+            minievent = MiniEvent()  # type: ignore
+        latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
+        minievent = MiniEvent(latitude=latitude, longitude=longitude,
+                              depth=depth, time=time)
+        assert isinstance(minievent, MiniEvent)
+        assert isinstance(minievent, Event)
+
+    @pytest.mark.depends(name='test_create_instance')
+    def test_change_attributes(self) -> None:
+
+        latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
+        new_latitude, new_longitude, new_depth, new_time = -21.1, -22.2, 500.2, time + timedelta(minutes=3)
+
+        minievent = MiniEvent(latitude=latitude, longitude=longitude, depth=depth, time=time)
+
+        assert isinstance(minievent, Event)
+
+        assert minievent.depth == depth
+        assert minievent.latitude == latitude
+        assert minievent.longitude == longitude
+        assert minievent.time == time
+
+        minievent.depth = new_depth
+        assert minievent.depth == new_depth
+        minievent.latitude = new_latitude
+        assert minievent.latitude == new_latitude
+        minievent.longitude = new_longitude
+        assert minievent.longitude == new_longitude
+        minievent.time = new_time
+        assert minievent.time == new_time
+
+        with pytest.raises(ValidationError):
+            minievent.latitude = -100
+        with pytest.raises(ValidationError):
+            minievent.latitude = 100
+        with pytest.raises(ValidationError):
+            minievent.longitude = -180
+        with pytest.raises(ValidationError):
+            minievent.latitude = 181
