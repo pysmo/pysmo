@@ -45,7 +45,6 @@ from pysmo.classes.mini import (
 from pysmo.classes.sac import SAC
 
 from pysmo.functions import (
-    clone_to_miniseismogram,
     normalize,
     detrend,
     resample,
@@ -76,5 +75,4 @@ __all__ = [
     'azimuth',
     'backazimuth',
     'distance',
-    'clone_to_miniseismogram'
 ]

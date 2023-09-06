@@ -32,18 +32,6 @@ class TestSeismogramFunctions:
         normalized_seis = normalize(seismogram)
         assert np.max(normalized_seis.data) <= 1
 
-    def test_clone_to_miniseismogram(self, seismogram: Seismogram) -> None:
-        """Test for cloning to MiniSeismogram object."""
-        from pysmo import clone_to_miniseismogram
-        cloned = clone_to_miniseismogram(seismogram, skip_data=True)
-        assert list(cloned.data) == []
-        cloned = clone_to_miniseismogram(seismogram)
-        assert all(cloned.data == seismogram.data)
-        assert cloned.data is not seismogram.data
-        assert cloned.begin_time == seismogram.begin_time
-        assert cloned.begin_time is not seismogram.begin_time
-        assert cloned.sampling_rate == seismogram.sampling_rate
-
     def test_detrend(self, seismogram: Seismogram) -> None:
         """Detrend Seismogram object and verify mean is 0."""
         from pysmo import detrend
