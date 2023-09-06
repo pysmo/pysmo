@@ -9,6 +9,19 @@ from datetime import datetime, timezone
 DEFAULT_ELLPS = 'WGS84'
 
 
+# SacIO defaults
+@dataclass(frozen=True)
+class _SACIO_DEFAULTS:
+    b: float = 0
+    delta: float = 1
+    nvhdr: int = 6
+    iftype: str = "time"
+    idep: str = "unkn"
+    iztype: str = "unkn"
+    ievtyp: str = "unkn"
+    leven: bool = True
+
+
 # Seismogram defaults
 @dataclass(frozen=True)
 class _SEISMOGRAM_DEFAULTS:
@@ -16,4 +29,5 @@ class _SEISMOGRAM_DEFAULTS:
     sampling_rate: float = 1
 
 
+SACIO_DEFAULTS = _SACIO_DEFAULTS()
 SEISMOGRAM_DEFAULTS = _SEISMOGRAM_DEFAULTS()

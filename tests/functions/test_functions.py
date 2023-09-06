@@ -3,7 +3,6 @@ import pytest
 import pytest_cases
 import numpy as np
 import matplotlib  # type: ignore
-
 from tests.conftest import TESTDATA
 
 matplotlib.use('Agg')
@@ -14,7 +13,7 @@ MINISEIS = MiniSeismogram(begin_time=SACSEIS.begin_time,
                           sampling_rate=SACSEIS.sampling_rate, data=SACSEIS.data)
 
 
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='./baseline/')
+@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir='../baseline/')
 def test_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
     from pysmo import plotseis
     fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
