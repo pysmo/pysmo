@@ -70,9 +70,7 @@ The classes are similarly essential to pysmo as the types, and similar rules app
   [`Seismogram`][pysmo.types.Seismogram]). They serve as default class for functions that
   output data. These minimal classes are also where methods are defined. As the methods
   only make use of attributes defined by pysmo types, using the mini classes as base
-  class for other classes (compatible with pysmo types) means they also possess these
-  methods without having to write a custom implementation (see for
-  example [here](https://github.com/pysmo/pysmo/blob/master/pysmo/classes/sac.py)).
+  class for other classes (compatible with pysmo types) is a potential option.
 
 
 ### Functions

@@ -1,4 +1,4 @@
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 import numpy as np
 import datetime
 
@@ -23,7 +23,7 @@ class Seismogram(Protocol):
         ...     return seis_in.begin_time.isoformat()
         ...
         >>> my_sac = SAC.from_file('testfile.sac')
-        >>> my_seismogram = my_sac.Seismogram
+        >>> my_seismogram = my_sac.seismogram
         >>> example_function(my_seismogram)
         '2005-03-02T07:23:02.160000'
     """
@@ -105,7 +105,7 @@ class Station(Location, Protocol):
         ...
 
     @property
-    def network(self) -> Optional[str]:
+    def network(self) -> str | None:
         ...
 
     @network.setter
@@ -113,7 +113,7 @@ class Station(Location, Protocol):
         ...
 
     @property
-    def elevation(self) -> Optional[float]:
+    def elevation(self) -> float | None:
         ...
 
     @elevation.setter

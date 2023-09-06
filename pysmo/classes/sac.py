@@ -1,11 +1,10 @@
-# from dataclasses import InitVar
-import datetime
-import numpy as np
-from typing import Optional
-from .mini import MiniEvent, MiniSeismogram, MiniStation
 from pysmo.lib.io import SacIO
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.exceptions import SacHeaderUndefined
 from pydantic.dataclasses import dataclass
 from pydantic import Field, ConfigDict
+import datetime
+import numpy as np
 
 
 @dataclass
@@ -67,11 +66,11 @@ class SAC(SacIO):
         event: Maps pysmo compatible attributes to the internal SAC attributes.
     """
 
-    @dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
+    @dataclass
     class _SacNested:
         """Base class for nested SAC classes"""
 
-        parent: SacIO = Field()
+        parent: SacIO
 
         @property
         def _ref_datetime(self) -> datetime.datetime:
@@ -79,11 +78,19 @@ class SAC(SacIO):
             Returns:
                 Reference time date in a SAC file.
             """
+            # The SAC header variable "b" is set to a default value, so
+            # it should never b "None" in a SacIO object. We use that
+            # to define the reference time in case it is missing in
+            # the parent SacIO object.
+            # TODO: maybe it needs setting in the SacIO object too?
+            if self.parent.kztime is None or self.parent.kzdate is None:
+                return SEISMOGRAM_DEFAULTS.begin_time - datetime.timedelta(seconds=self.parent.b)
             ref_time = datetime.time.fromisoformat(self.parent.kztime)
             ref_date = datetime.date.fromisoformat(self.parent.kzdate)
             return datetime.datetime.combine(ref_date, ref_time)
 
-    class SacSeismogram(_SacNested, MiniSeismogram):
+    @dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
+    class SacSeismogram(_SacNested):
         """Helper class for seismogram attributes.
 
         The `SacSeismogram` class is used to map SAC attributes in a way that
@@ -91,17 +98,15 @@ class SAC(SacIO):
         (parent) [SAC][pysmo.classes.sac.SAC]instance to enable pysmo types
         compatibility.
 
-        note:
-            Because this class inherits from
-            [MiniSeismogram][pysmo.classes.mini.MiniSeismogram], not all
-            attributes and methods need to be redifined here (e.g. the
-            read-only `end_time`).
-
         Attributes:
-            data: Seismogram data.
-            sampling_rate: Seismogram sampling rate.
             begin_time: Seismogram begin timedate.
+            end_time: Seismogram end time.
+            sampling_rate: Seismogram sampling rate.
+            data: Seismogram data.
         """
+
+        def __len__(self) -> int:
+            return np.size(self.data)
 
         @property
         def data(self) -> np.ndarray:
@@ -132,7 +137,14 @@ class SAC(SacIO):
             # reference time in seconds.
             self.parent.b = (value - self._ref_datetime).total_seconds()
 
-    class SacEvent(_SacNested, MiniEvent):
+        @property
+        def end_time(self) -> datetime.datetime:
+            if len(self) == 0:
+                return self.begin_time
+            return self.begin_time + datetime.timedelta(seconds=self.sampling_rate*(len(self)-1))
+
+    @dataclass(kw_only=True)
+    class SacEvent(_SacNested):
         """Helper class for event attributes.
 
         The `SacEvent` class is used to map SAC attributes in a way that
@@ -148,9 +160,8 @@ class SAC(SacIO):
 
         @property
         def latitude(self) -> float:
-            # TODO: better error message
             if self.parent.evla is None:
-                raise ValueError("Value for event latitude is None.")
+                raise SacHeaderUndefined(header='evla')
             return self.parent.evla
 
         @latitude.setter
@@ -159,9 +170,8 @@ class SAC(SacIO):
 
         @property
         def longitude(self) -> float:
-            # TODO: better error message
             if self.parent.evlo is None:
-                raise ValueError("Value for event longitude is None.")
+                raise SacHeaderUndefined(header='evlo')
             return self.parent.evlo
 
         @longitude.setter
@@ -170,9 +180,8 @@ class SAC(SacIO):
 
         @property
         def depth(self) -> float:
-            # TODO: better error message
             if self.parent.evdp is None:
-                raise ValueError("Value for event depth is None.")
+                raise SacHeaderUndefined(header='evdp')
             return self.parent.evdp * 1000
 
         @depth.setter
@@ -183,8 +192,7 @@ class SAC(SacIO):
         def time(self) -> datetime.datetime:
             # Event origin time is reference datetime + "o" sac header
             if self.parent.o is None:
-                raise ValueError(f"Value for SAC header 'o' is {self.parent.o}. " +
-                                 "Unable to set new event origin time.")
+                raise SacHeaderUndefined(header='o')
             return self._ref_datetime + datetime.timedelta(seconds=self.parent.o)
 
         @time.setter
@@ -195,7 +203,8 @@ class SAC(SacIO):
             # reference time in seconds.
             self.parent.o = (value - self._ref_datetime).total_seconds()
 
-    class SacStation(_SacNested, MiniStation):
+    @dataclass(kw_only=True)
+    class SacStation(_SacNested):
         """Helper class for SAC event attributes.
 
         The `SacStation` class is used to map SAC attributes in a way that
@@ -214,8 +223,7 @@ class SAC(SacIO):
         @property
         def name(self) -> str:
             if self.parent.kstnm is None:
-                raise ValueError("Value for SAC header 'kstnm' is undefined." +
-                                 "Unable to get station name.")
+                raise SacHeaderUndefined(header='kstnm')
             return self.parent.kstnm
 
         @name.setter
@@ -223,7 +231,7 @@ class SAC(SacIO):
             setattr(self.parent, 'kstnm', value)
 
         @property
-        def network(self) -> Optional[str]:
+        def network(self) -> str | None:
             return self.parent.knetwk
 
         @network.setter
@@ -233,8 +241,7 @@ class SAC(SacIO):
         @property
         def latitude(self) -> float:
             if self.parent.stla is None:
-                raise ValueError("Value for SAC header 'stla' is undefined." +
-                                 "Unable to get station latitude.")
+                raise SacHeaderUndefined(header='stla')
             return self.parent.stla
 
         @latitude.setter
@@ -244,8 +251,7 @@ class SAC(SacIO):
         @property
         def longitude(self) -> float:
             if self.parent.stlo is None:
-                raise ValueError("Value for SAC header 'stlo' is undefined." +
-                                 "Unable to get station longitude.")
+                raise SacHeaderUndefined(header='stlo')
             return self.parent.stlo
 
         @longitude.setter
@@ -253,7 +259,7 @@ class SAC(SacIO):
             setattr(self.parent, 'stlo', value)
 
         @property
-        def elevation(self) -> Optional[float]:
+        def elevation(self) -> float | None:
             return self.parent.stel
 
         @elevation.setter

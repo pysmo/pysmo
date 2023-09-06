@@ -5,19 +5,7 @@ are used as output objects in functions.
 
 The classes are all named using the pattern `Mini<Type>`. Thus the
 [`Seismogram`][pysmo.types.Seismogram] type has a corresponding
-[`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class. The *Mini* classes
-may be used directly to store and process data, or serve as base classes when
-creating new or modifying existing classes.
-
-warning: Important
-    Using mini classes as base doesn't magically make other classes compatible
-    with pysmo types! Remember that type checking merely checks for correct
-    type structure, not for functionality. It is therefore important that the
-    *attributes* are correctly mapped to the corresponding attributes in
-    whatever class it is you are trying to make compatible.
-
-    The *methods* inherrited from the mini classes work out of the box,
-    however.
+[`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 """
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import (
@@ -25,7 +13,6 @@ from pysmo.lib.functions import (
     _detrend,
     _resample
 )
-from typing import Optional
 from datetime import datetime, timedelta
 from pydantic.dataclasses import dataclass
 from pydantic import ConfigDict, Field
@@ -60,13 +47,15 @@ class MiniSeismogram:
     begin_time: datetime = Field(default=SEISMOGRAM_DEFAULTS.begin_time)
     sampling_rate: float = Field(default=SEISMOGRAM_DEFAULTS.sampling_rate)
     data: np.ndarray = Field(default_factory=lambda: np.array([]))
-    id: Optional[str] = None
+    id: str | None = None
 
     def __len__(self) -> int:
         return np.size(self.data)
 
     @property
     def end_time(self) -> datetime:
+        if len(self) == 0:
+            return self.begin_time
         return self.begin_time + timedelta(seconds=self.sampling_rate*(len(self)-1))
 
     def normalize(self) -> None:
@@ -116,7 +105,7 @@ class MiniSeismogram:
         self.data, self.sampling_rate = _resample(self, sampling_rate), sampling_rate
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, config=ConfigDict(validate_assignment=True))
 class MiniLocation:
     """Minimal class for geographical locations.
 
@@ -161,9 +150,9 @@ class MiniStation(MiniLocation):
         >>> isinstance(my_station, Location)
         True
     """
-    name: str
-    network: Optional[str] = None
-    elevation: Optional[float] = None
+    name: str = Field(default='')
+    network: str | None = Field(default=None)
+    elevation: float | None = Field(default=None)
 
 
 @dataclass(kw_only=True)
