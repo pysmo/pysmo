@@ -1,7 +1,29 @@
 # Not so Fast!
 
-Before getting your feet wet with pysmo, it is a good idea to review some Python concepts
-that are important to pysmo (and good to know when using Python in general).
+Pysmo relies on certain more recent concepts of the Python programming language. These
+concepts also dictate how pysmo is used, and it is important to understand them before
+properly getting started. Fortunately, most of this is actually pretty mainstream these
+days, so there is a good chance you already know a lot of what is discussed here. If not,
+we urge you to really try and understand what is written in this section. We promise it
+will come in handy in the future even if you decide pysmo is not for you!
+
+
+!!! tip "Important"
+    Keep in mind that not only do programming languages themselves evolve,
+    but also the *tools* used for writing code. This naturally effects the
+    code we write too. For example, most code editors support auto-completion,
+    and because of that we are more likely to use longer (and more descriptive)
+    variable names instead of confusing single letter ones.
+
+    However, the ways in which an editor can assist us with writing code go
+    way beyond just auto-completing variable names. Modern code editors are
+    able to understand how different parts of our code are connected (even
+    across multiple files), and thus able to warn us about things like: "hey,
+    you're trying to perform a string operation on a float!". These features
+    don't come completely for free, however. Our code editor needs to be given
+    a few hints to do this, and that is a big part of what this section is
+    about.
+
 
 ## Dynamic and Static Typing
 
@@ -16,7 +38,7 @@ def division(a, b):
 ```
 
 We load load this function into an interactive Python session and call it with the
-arguments 5 and 2. Thus both variables `a=5` and `b=2` are numbers and we get the
+arguments '5' and '2'. Thus both variables `a=5` and `b=2` are numbers and we get the
 expected result
 
 ```python
@@ -220,32 +242,37 @@ be to make it easy to understand and as reusable as possible, after all.
 [Protocol][typing.Protocol] classes help with exactly that. They are almost always going
 to be far less complex than a generic class(1). As such they allow breaking up a problem
 into smaller pieces, and write e.g. a function that works with a certain protocol rather
-than one particular class. As the protocols are far less likely to change than
-the class, updating the function to work with the latest implementation of a class won't
-be necessary.
+than one particular class. The protocols define an interface a function can work with.
+It's as if a contract exists between a class and a function, whereby the class guarantees
+that the part they have a contract for is never going to change, regardless of what might
+happen elsewhere in the class. In pysmo, these contracts are the *types* we will discuss
+in greater detail later on.
 { .annotate }
 
 1.  A generic class is a *proper* class, which holds data, has methods and attributes
     etc (unlike a [protocol][typing.Protocol] class, which only contains the structure
     of a class).
 
-It is also much easier to design a new class to work with existing functions using
-protocols (provided the functions were also written with protocols in mind, of course).
-Consider for example a problem that typically would involve storing data in files of a
-particular format, and using a Python class to access and manipulate data in this files.
-The file format, Python class, and scripts would likely be strongly coupled to each other
-in such a scenario. Given how much data are produced these days, it is conceivable that
-our hypothetical project might also grow to a point where storing data in individual
-files is no longer feasible, and instead something like a database must be used. A class
-to access a database is likely wildly different to one designed for accessing a
-particular file format. Thus it would be quite a big task to create a new class to work
-with the database, while also being compatible with the existing code that up until now
-was always using data from files. This would be trivial had protocols been used from the
-beginning. The *types* defined by protocols are always going to be simpler than types
-defined by generic classes, as they strip away the intrinsic complexities stemming from
-things like file or database access. In short, because the existing functions would not
-have to concern themselves with things like file access, the newly designed "database
-class" would also not have to.
+!!! note
+    It is also much easier to design a new class to work with existing functions
+    using protocols (provided the functions were also written with protocols in
+    mind, of course). Consider for example a problem that typically would involve
+    storing data in files of a particular format, and using a Python class to
+    access and manipulate data in these files. The file format, Python class, and
+    all the Python scripts would likely be strongly coupled to each other in such
+    a scenario. Given how much data are produced these days, it is conceivable that
+    our hypothetical project might also grow to a point where storing data in
+    individual files is no longer feasible, and instead something like a database
+    must be used. A class to access a database is likely wildly different to one
+    designed for accessing a particular file format. Thus it would be quite a big
+    task to create a new class that works with the database, while also being
+    compatible with the existing code that up until now was always using data
+    from files. This would be trivial had protocols been used from the beginning.
+    The types defined by protocols are always going to be simpler than types
+    defined by generic classes, as they strip away the intrinsic complexities
+    stemming from things like file or database access. In short, because the
+    existing functions would not have to concern themselves with things like
+    file access, the newly designed "database class" would also not have to.
 
 
 ## Next steps
