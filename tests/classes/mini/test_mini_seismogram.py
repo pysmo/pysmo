@@ -1,7 +1,8 @@
 import numpy as np
+import numpy.testing as npt
 import pytest
-from datetime import datetime, timedelta
-from pysmo import Seismogram, MiniSeismogram
+from datetime import datetime, timedelta, timezone
+from pysmo import Seismogram, MiniSeismogram, SAC
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
 
@@ -73,6 +74,37 @@ class TestMiniSeismogramMethods:
     @pytest.fixture
     def mini_seismogram(self) -> MiniSeismogram:
         return MiniSeismogram(data=np.random.rand(1000))
+
+    def test_clone(self) -> None:
+        # create sac seismogram and add data
+        data = np.random.rand(1000)
+        sac_seis = SAC().seismogram
+        sac_seis.data = data
+        sac_seis.sampling_rate = 0.1
+        sac_seis.begin_time = datetime.now(timezone.utc)
+
+        # clone and check attributes are identical
+        mini_seis = MiniSeismogram.clone(sac_seis)
+        npt.assert_allclose(sac_seis.data, mini_seis.data)
+        assert sac_seis.data is not mini_seis.data
+        assert sac_seis.begin_time == mini_seis.begin_time
+        assert sac_seis.begin_time is not mini_seis.begin_time
+        assert sac_seis.sampling_rate == mini_seis.sampling_rate
+        assert sac_seis.end_time == mini_seis.end_time
+
+        # verify changes in clone don't affect input seismogram
+        mini_seis.data[0] *= 2
+        with npt.assert_raises(AssertionError):
+            npt.assert_allclose(sac_seis.data, mini_seis.data)
+        mini_seis.begin_time = datetime.now(timezone.utc)
+        assert sac_seis.begin_time != mini_seis.begin_time
+        mini_seis.sampling_rate *= 2
+        assert sac_seis.sampling_rate != mini_seis.sampling_rate
+        assert sac_seis.end_time != mini_seis.end_time
+
+        # create clone without data
+        mini_seis = MiniSeismogram.clone(sac_seis, skip_data=True)
+        npt.assert_allclose(mini_seis.data, np.array([]))
 
     def test_normalize(self, mini_seismogram: MiniSeismogram) -> None:
         mini_seismogram.normalize()
