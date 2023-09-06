@@ -1,5 +1,5 @@
 import numpy as np
-from pysmo import Seismogram, MiniSeismogram, clone_to_miniseismogram
+from pysmo import Seismogram, MiniSeismogram
 
 
 def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
@@ -22,7 +22,7 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
     clone.data = __gauss(seismogram, Tn, alpha)[0]
     return clone
 
@@ -47,7 +47,7 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
     clone.data = __gauss(seismogram, Tn, alpha)[1]
     return clone
 

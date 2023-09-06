@@ -1,7 +1,11 @@
-from __future__ import annotations
 from pysmo.lib.exceptions import SacHeaderUndefined
 from pysmo.lib.functions import _azdist
 from pysmo.lib.defaults import SACIO_DEFAULTS
+try:
+    from typing import Any, Self  # py311+
+except ImportError:
+    from typing import Any
+    from typing_extensions import Self  # py310
 from pydantic.dataclasses import dataclass
 from pydantic import (
     FieldValidationInfo,
@@ -11,8 +15,6 @@ from pydantic import (
     ConfigDict,
     computed_field
 )
-from typing import Any
-from typing_extensions import Self
 import struct
 import datetime
 import io
