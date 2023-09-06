@@ -1,22 +1,26 @@
 """
 Pysmo includes minimal implementations of a class for each type. They serve as
 reference classes to be used with the corresponding types, and where applicable,
-are used as output objects in functions.
-
-The classes are all named using the pattern `Mini<Type>`. Thus the
-[`Seismogram`][pysmo.types.Seismogram] type has a corresponding
-[`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
+are used as output objects in functions. The classes are all named using the
+pattern `Mini<Type>`. Thus the [`Seismogram`][pysmo.types.Seismogram] type has
+a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 """
+try:
+    from typing import Self  # py311+
+except ImportError:
+    from typing_extensions import Self  # py310
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import (
     _normalize,
     _detrend,
     _resample
 )
+from pysmo import Seismogram
 from datetime import datetime, timedelta
 from pydantic.dataclasses import dataclass
 from pydantic import ConfigDict, Field
 import numpy as np
+import copy
 
 
 @dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
@@ -57,6 +61,45 @@ class MiniSeismogram:
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + timedelta(seconds=self.sampling_rate*(len(self)-1))
+
+    @classmethod
+    def clone(cls, seismogram: Seismogram, skip_data: bool = False) -> Self:
+        """Create a new MiniSeismogram instance from an existing
+        [Seismogram][pysmo.types.Seismogram] object.
+
+        Attributes:
+            seismogram: The Seismogram to be cloned.
+            skip_data: Create clone witout copying data.
+
+        Returns:
+            A copy of the original Seismogram object.
+
+        Examples:
+            Create a copy of a [SAC][pysmo.classes.sac.SAC] object without data:
+
+            >>> from pysmo import SAC, MiniSeismogram
+            >>> original_seis = SAC.from_file('testfile.sac').seismogram
+            >>> cloned_seis = MiniSeismogram.clone(original_seis, skip_data=True)
+            >>> print(cloned_seis.data)
+            []
+
+            Create a copy of a [SAC][pysmo.classes.sac.SAC] object with data:
+
+            >>> from pysmo import SAC, MiniSeismogram
+            >>> from numpy.testing import assert_allclose
+            >>> original_seis = SAC.from_file('testfile.sac').seismogram
+            >>> cloned_seis = MiniSeismogram.clone(original_seis)
+            >>> assert_allclose(original_seis.data, cloned_seis.data)
+            True
+            >>> print(cloned_seis.data)
+            [2302. 2313. 2345. ... 2836. 2772. 2723.]
+        """
+        cloned_seismogram = cls()
+        cloned_seismogram.begin_time = copy.copy(seismogram.begin_time)
+        cloned_seismogram.sampling_rate = seismogram.sampling_rate
+        if not skip_data:
+            cloned_seismogram.data = copy.copy(seismogram.data)
+        return cloned_seismogram
 
     def normalize(self) -> None:
         """Normalize the seismogram data with its absolute max value.

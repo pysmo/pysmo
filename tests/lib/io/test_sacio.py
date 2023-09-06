@@ -144,7 +144,7 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.imagsrc is None
     # try reading non-existing header
     with pytest.raises(AttributeError):
-        _ = sac.nonexistingheader  # type: ignore
+        _ = sac.nonexistingheader  # type: ignore[attr-defined]
 
 
 @pytest.mark.depends(on=['test_create_instance_from_file'])
