@@ -5,7 +5,6 @@ match pysmo's types.
 import matplotlib.pyplot as plt  # type: ignore
 import matplotlib.dates as mdates  # type: ignore
 import numpy as np
-import copy
 from pysmo import Seismogram, MiniSeismogram, Location
 from pysmo.lib.functions import (
     _azdist,
@@ -14,43 +13,6 @@ from pysmo.lib.functions import (
     _resample
 )
 from pysmo.lib.defaults import DEFAULT_ELLPS
-
-
-def clone_to_miniseismogram(seismogram: Seismogram,
-                            skip_data: bool = False) -> MiniSeismogram:
-    """Create a MiniSeismogram object from another Seismogram.
-
-    Parameters:
-        seismogram: Seismogram object to clone.
-        skip_data: Create clone without data.
-
-    Returns:
-        A copy of the original Seismogram object.
-
-    Examples:
-        Create a copy of a [SAC][pysmo.classes.sac.SAC] object without data:
-
-        >>> from pysmo import SAC, MiniSeismogram, clone_to_miniseismogram
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> cloned_seis = clone_to_miniseismogram(original_seis, skip_data=True)
-        >>> print(cloned_seis.data)
-        []
-
-        Create a copy of a [SAC][pysmo.classes.sac.SAC] object with data:
-
-        >>> from pysmo import SAC, MiniSeismogram, clone_to_miniseismogram
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> cloned_seis = clone_to_miniseismogram(original_seis)
-        >>> print(cloned_seis.data)
-        [2302. 2313. 2345. ... 2836. 2772. 2723.]
-    """
-
-    cloned_seismogram = MiniSeismogram()
-    cloned_seismogram.begin_time = copy.copy(seismogram.begin_time)
-    cloned_seismogram.sampling_rate = copy.copy(seismogram.sampling_rate)
-    if not skip_data:
-        cloned_seismogram.data = copy.copy(seismogram.data)
-    return cloned_seismogram
 
 
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
@@ -65,9 +27,9 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
     Note:
         This function is also available as a method in the
         [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
-        class (and classes that inherit from it). Thus, if
-        you intend normalizing seismogram data **in-place**,
-        instead of writing:
+        class. Thus, if you intend normalizing data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
 
         ```python
         my_seis.data = normalize(my_seis)
@@ -87,7 +49,7 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         >>> assert np.max(normalized_seis.data) <= 1
         True
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
     clone.data = _normalize(seismogram)
     return clone
 
@@ -104,9 +66,9 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
     Note:
         This function is also available as a method in the
         [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
-        class (and classes that inherit from it). Thus, if
-        you intend detrending seismogram data **in-place**,
-        instead of writing:
+        class. Thus, if you intend detrending data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
 
         ```python
         my_seis.data = detrend(my_seis)
@@ -129,7 +91,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         >>> assert 0 == pytest.approx(np.mean(detrended_seis.data), abs=1e-11)
         True
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
     clone.data = _detrend(seismogram)
     return clone
 
@@ -147,9 +109,9 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
     Note:
         This function is also available as a method in the
         [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
-        class (and classes that inherit from it). Thus, if
-        you intend resample seismogram data **in-place**,
-        instead of writing:
+        class. Thus, if you intend resampling data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
 
         ```python
         my_seis.data = resample(my_seis)
@@ -172,7 +134,7 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         >>> len(resampled_seis)
         90000
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
     clone.data = _resample(seismogram, sampling_rate)
     clone.sampling_rate = sampling_rate
     return clone
