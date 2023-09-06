@@ -1,5 +1,7 @@
 from __future__ import annotations
+from pysmo.lib.exceptions import SacHeaderUndefined
 from pysmo.lib.functions import _azdist
+from pysmo.lib.defaults import SACIO_DEFAULTS
 from pydantic.dataclasses import dataclass
 from pydantic import (
     FieldValidationInfo,
@@ -9,7 +11,7 @@ from pydantic import (
     ConfigDict,
     computed_field
 )
-from typing import Any, Optional
+from typing import Any
 from typing_extensions import Self
 import struct
 import datetime
@@ -233,145 +235,145 @@ class SacIO:
         kinst: Generic name of recording instrument.
     """
 
-    b: float = 0
-    delta: float = 1
-    odelta: Optional[float] = None
-    scale: Optional[float] = None
-    o: Optional[float] = None
-    a: Optional[float] = None
-    fmt: Optional[float] = None
-    t0: Optional[float] = None
-    t1: Optional[float] = None
-    t2: Optional[float] = None
-    t3: Optional[float] = None
-    t4: Optional[float] = None
-    t5: Optional[float] = None
-    t6: Optional[float] = None
-    t7: Optional[float] = None
-    t8: Optional[float] = None
-    t9: Optional[float] = None
-    f: Optional[float] = None
-    resp0: Optional[float] = None
-    resp1: Optional[float] = None
-    resp2: Optional[float] = None
-    resp3: Optional[float] = None
-    resp4: Optional[float] = None
-    resp5: Optional[float] = None
-    resp6: Optional[float] = None
-    resp7: Optional[float] = None
-    resp8: Optional[float] = None
-    resp9: Optional[float] = None
-    stla: Optional[float] = Field(default=None, ge=-90, le=90)
-    stlo: Optional[float] = Field(default=None, gt=-180, le=180)
-    stel: Optional[float] = None
-    stdp: Optional[float] = None
-    evla: Optional[float] = Field(default=None, ge=-90, le=90)
-    evlo: Optional[float] = Field(default=None, gt=-180, le=180)
-    evel: Optional[float] = None
-    evdp: Optional[float] = None
-    mag: Optional[float] = None
-    user0: Optional[float] = None
-    user1: Optional[float] = None
-    user2: Optional[float] = None
-    user3: Optional[float] = None
-    user4: Optional[float] = None
-    user5: Optional[float] = None
-    user6: Optional[float] = None
-    user7: Optional[float] = None
-    user8: Optional[float] = None
-    user9: Optional[float] = None
-    sb: Optional[float] = None
-    sdelta: Optional[float] = None
-    cmpaz: Optional[float] = None
-    cmpinc: Optional[float] = None
-    unused6: Optional[float] = None
-    unused7: Optional[float] = None
-    unused8: Optional[float] = None
-    unused9: Optional[float] = None
-    unused10: Optional[float] = None
-    unused11: Optional[float] = None
-    unused12: Optional[float] = None
-    nzyear: Optional[int] = None
-    nzjday: Optional[int] = None
-    nzhour: Optional[int] = None
-    nzmin: Optional[int] = None
-    nzsec: Optional[int] = None
-    nzmsec: Optional[int] = None
-    nvhdr: int = 6
-    norid: Optional[int] = None
-    nevid: Optional[int] = None
-    nsnpts: Optional[int] = None
-    nwfid: Optional[int] = None
-    unused15: Optional[int] = None
-    iftype: str = "time"
-    idep: str = "unkn"
-    iztype: str = "unkn"
-    unused16: Optional[str] = None
-    iinst: Optional[str] = None
-    istreg: Optional[str] = None
-    ievreg: Optional[str] = None
-    ievtyp: str = "unkn"
-    iqual: Optional[str] = None
-    isynth: Optional[str] = None
-    imagtyp: Optional[str] = None
-    imagsrc: Optional[str] = None
-    unused19: Optional[str] = None
-    unused20: Optional[str] = None
-    unused21: Optional[str] = None
-    unused22: Optional[str] = None
-    unused23: Optional[str] = None
-    unused24: Optional[str] = None
-    unused25: Optional[str] = None
-    unused26: Optional[str] = None
+    b: float = SACIO_DEFAULTS.b
+    delta: float = SACIO_DEFAULTS.delta
+    odelta: float | None = None
+    scale: float | None = None
+    o: float | None = None
+    a: float | None = None
+    fmt: float | None = None
+    t0: float | None = None
+    t1: float | None = None
+    t2: float | None = None
+    t3: float | None = None
+    t4: float | None = None
+    t5: float | None = None
+    t6: float | None = None
+    t7: float | None = None
+    t8: float | None = None
+    t9: float | None = None
+    f: float | None = None
+    resp0: float | None = None
+    resp1: float | None = None
+    resp2: float | None = None
+    resp3: float | None = None
+    resp4: float | None = None
+    resp5: float | None = None
+    resp6: float | None = None
+    resp7: float | None = None
+    resp8: float | None = None
+    resp9: float | None = None
+    stla: float | None = Field(default=None, ge=-90, le=90)
+    stlo: float | None = Field(default=None, gt=-180, le=180)
+    stel: float | None = None
+    stdp: float | None = None
+    evla: float | None = Field(default=None, ge=-90, le=90)
+    evlo: float | None = Field(default=None, gt=-180, le=180)
+    evel: float | None = None
+    evdp: float | None = None
+    mag: float | None = None
+    user0: float | None = None
+    user1: float | None = None
+    user2: float | None = None
+    user3: float | None = None
+    user4: float | None = None
+    user5: float | None = None
+    user6: float | None = None
+    user7: float | None = None
+    user8: float | None = None
+    user9: float | None = None
+    sb: float | None = None
+    sdelta: float | None = None
+    cmpaz: float | None = None
+    cmpinc: float | None = None
+    unused6: float | None = None
+    unused7: float | None = None
+    unused8: float | None = None
+    unused9: float | None = None
+    unused10: float | None = None
+    unused11: float | None = None
+    unused12: float | None = None
+    nzyear: int | None = None
+    nzjday: int | None = None
+    nzhour: int | None = None
+    nzmin: int | None = None
+    nzsec: int | None = None
+    nzmsec: int | None = None
+    nvhdr: int = SACIO_DEFAULTS.nvhdr
+    norid: int | None = None
+    nevid: int | None = None
+    nsnpts: int | None = None
+    nwfid: int | None = None
+    unused15: int | None = None
+    iftype: str = SACIO_DEFAULTS.iftype
+    idep: str = SACIO_DEFAULTS.idep
+    iztype: str = SACIO_DEFAULTS.iztype
+    unused16: str | None = None
+    iinst: str | None = None
+    istreg: str | None = None
+    ievreg: str | None = None
+    ievtyp: str = SACIO_DEFAULTS.ievtyp
+    iqual: str | None = None
+    isynth: str | None = None
+    imagtyp: str | None = None
+    imagsrc: str | None = None
+    unused19: str | None = None
+    unused20: str | None = None
+    unused21: str | None = None
+    unused22: str | None = None
+    unused23: str | None = None
+    unused24: str | None = None
+    unused25: str | None = None
+    unused26: str | None = None
     # TODO: Unevenly spaced data
-    leven: bool = True
-    lpspol: Optional[bool] = None
-    lovrok: Optional[bool] = None
-    unused27: Optional[bool] = None
-    kstnm: Optional[str] = Field(default=None, max_length=8)
-    kevnm: Optional[str] = Field(default=None, max_length=16)
-    khole: Optional[str] = Field(default=None, max_length=8)
-    ko: Optional[str] = Field(default=None, max_length=8)
-    ka: Optional[str] = Field(default=None, max_length=8)
-    kt0: Optional[str] = Field(default=None, max_length=8)
-    kt1: Optional[str] = Field(default=None, max_length=8)
-    kt2: Optional[str] = Field(default=None, max_length=8)
-    kt3: Optional[str] = Field(default=None, max_length=8)
-    kt4: Optional[str] = Field(default=None, max_length=8)
-    kt5: Optional[str] = Field(default=None, max_length=8)
-    kt6: Optional[str] = Field(default=None, max_length=8)
-    kt7: Optional[str] = Field(default=None, max_length=8)
-    kt8: Optional[str] = Field(default=None, max_length=8)
-    kt9: Optional[str] = Field(default=None, max_length=8)
-    kf: Optional[str] = Field(default=None, max_length=8)
-    kuser0: Optional[str] = Field(default=None, max_length=8)
-    kuser1: Optional[str] = Field(default=None, max_length=8)
-    kuser2: Optional[str] = Field(default=None, max_length=8)
-    kcmpnm: Optional[str] = Field(default=None, max_length=8)
-    knetwk: Optional[str] = Field(default=None, max_length=8)
-    kdatrd: Optional[str] = Field(default=None, max_length=8)
-    kinst: Optional[str] = Field(default=None, max_length=8)
+    leven: bool = SACIO_DEFAULTS.leven
+    lpspol: bool | None = None
+    lovrok: bool | None = None
+    unused27: bool | None = None
+    kstnm: str | None = Field(default=None, max_length=8)
+    kevnm: str | None = Field(default=None, max_length=16)
+    khole: str | None = Field(default=None, max_length=8)
+    ko: str | None = Field(default=None, max_length=8)
+    ka: str | None = Field(default=None, max_length=8)
+    kt0: str | None = Field(default=None, max_length=8)
+    kt1: str | None = Field(default=None, max_length=8)
+    kt2: str | None = Field(default=None, max_length=8)
+    kt3: str | None = Field(default=None, max_length=8)
+    kt4: str | None = Field(default=None, max_length=8)
+    kt5: str | None = Field(default=None, max_length=8)
+    kt6: str | None = Field(default=None, max_length=8)
+    kt7: str | None = Field(default=None, max_length=8)
+    kt8: str | None = Field(default=None, max_length=8)
+    kt9: str | None = Field(default=None, max_length=8)
+    kf: str | None = Field(default=None, max_length=8)
+    kuser0: str | None = Field(default=None, max_length=8)
+    kuser1: str | None = Field(default=None, max_length=8)
+    kuser2: str | None = Field(default=None, max_length=8)
+    kcmpnm: str | None = Field(default=None, max_length=8)
+    knetwk: str | None = Field(default=None, max_length=8)
+    kdatrd: str | None = Field(default=None, max_length=8)
+    kinst: str | None = Field(default=None, max_length=8)
     data: np.ndarray = Field(default_factory=lambda: np.array([]))
     x: np.ndarray = Field(default_factory=lambda: np.array([]))
     y: np.ndarray = Field(default_factory=lambda: np.array([]))
 
     @computed_field  # type: ignore[misc]
     @property
-    def depmin(self) -> Optional[float]:
+    def depmin(self) -> float | None:
         if self.npts == 0:
             return None
         return np.min(self.data)
 
     @computed_field  # type: ignore[misc]
     @property
-    def depmax(self) -> Optional[float]:
+    def depmax(self) -> float | None:
         if self.npts == 0:
             return None
         return np.max(self.data)
 
     @computed_field  # type: ignore[misc]
     @property
-    def depmen(self) -> Optional[float]:
+    def depmen(self) -> float | None:
         if self.npts == 0:
             return None
         return np.mean(self.data)
@@ -379,6 +381,8 @@ class SacIO:
     @computed_field  # type: ignore[misc]
     @property
     def e(self) -> float:
+        if self.npts == 0:
+            return self.b
         return self.b + (self.npts - 1) * self.delta
 
     @computed_field  # type: ignore[misc]
@@ -386,21 +390,21 @@ class SacIO:
     def dist(self) -> float:
         if self.stla and self.stlo and self.evla and self.evlo:
             return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[2] / 1000
-        raise ValueError("Unable to calculate dist: not all coordinates available.")
+        raise SacHeaderUndefined("One or more coordinates are None.")
 
     @computed_field  # type: ignore[misc]
     @property
     def az(self) -> float:
         if self.stla and self.stlo and self.evla and self.evlo:
             return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[0]
-        raise ValueError("Unable to calculate az: not all coordinates available.")
+        raise SacHeaderUndefined("One or more coordinates are None.")
 
     @computed_field  # type: ignore[misc]
     @property
     def baz(self) -> float:
         if self.stla and self.stlo and self.evla and self.evlo:
             return _azdist(lat1=self.stla, lon1=self.stlo, lat2=self.evla, lon2=self.evlo)[1]
-        raise ValueError("Unable to calculate baz: not all coordinates available.")
+        raise SacHeaderUndefined("One or more coordinates are None.")
 
     @computed_field  # type: ignore[misc]
     @property
@@ -410,32 +414,32 @@ class SacIO:
             lat2, lon2 = np.deg2rad(self.evla), np.deg2rad(self.evlo)
             return np.rad2deg(np.arccos(np.sin(lat1) * np.sin(lat2) + np.cos(lat1)
                               * np.cos(lat2) * np.cos(np.abs(lon1 - lon2))))
-        raise ValueError("Unable to calculate gcarc: not all coordinates available.")
+        raise SacHeaderUndefined("One or more coordinates are None.")
 
     @computed_field  # type: ignore[misc]
     @property
-    def xminimum(self) -> Optional[float]:
+    def xminimum(self) -> float | None:
         if self.nxsize == 0 or not self.nxsize:
             return None
         return float(np.min(self.x))
 
     @computed_field  # type: ignore[misc]
     @property
-    def xmaximum(self) -> Optional[float]:
+    def xmaximum(self) -> float | None:
         if self.nxsize == 0 or not self.nxsize:
             return None
         return np.max(self.x)
 
     @computed_field  # type: ignore[misc]
     @property
-    def yminimum(self) -> Optional[float]:
+    def yminimum(self) -> float | None:
         if self.nysize == 0 or not self.nysize:
             return None
         return np.min(self.y)
 
     @computed_field  # type: ignore[misc]
     @property
-    def ymaximum(self) -> Optional[float]:
+    def ymaximum(self) -> float | None:
         if self.nysize == 0 or not self.nysize:
             return None
         return np.max(self.y)
@@ -447,14 +451,14 @@ class SacIO:
 
     @computed_field  # type: ignore[misc]
     @property
-    def nxsize(self) -> Optional[int]:
+    def nxsize(self) -> float | None:
         if np.size(self.x) == 0:
             return None
         return np.size(self.x)
 
     @computed_field  # type: ignore[misc]
     @property
-    def nysize(self) -> Optional[int]:
+    def nysize(self) -> float | None:
         if np.size(self.y) == 0:
             return None
         return np.size(self.y)
@@ -552,13 +556,15 @@ class SacIO:
         # Read first data block
         start = 632
         length = npts * 4
-        end = start + length
-        data_format = file_byteorder + str(npts) + 'f'
-        if end > len(buffer):
-            raise EOFError()
-        content = buffer[start:end]
-        data = struct.unpack(data_format, content)
-        self.data = np.array(data)
+        self.data = np.array([])
+        if length > 0:
+            end = start + length
+            data_format = file_byteorder + str(npts) + 'f'
+            if end > len(buffer):
+                raise EOFError()
+            content = buffer[start:end]
+            data = struct.unpack(data_format, content)
+            self.data = np.array(data)
 
         # TODO: implement reading and writing footer with double precision values.
         # Warn users for now that footer is not read in case of SAC header version 7.
@@ -649,7 +655,11 @@ class SacIO:
                 header_format = header_dict.get("format", HEADER_TYPES[header_type]["format"])
                 header_undefined = HEADER_TYPES[header_type]["undefined"]
 
-                value = getattr(self, header)
+                value = None
+                try:
+                    value = getattr(self, header)
+                except SacHeaderUndefined:
+                    value = None
 
                 # convert enumerated header to integer if it is not None
                 if header_type == "i" and value:
@@ -668,28 +678,31 @@ class SacIO:
                 file_handle.write(struct.pack(header_format, value))
 
             # write data (if npts > 0)
+            start1 = 632
+            file_handle.truncate(start1)
             if self.npts > 0:
-                start1 = 632
-                file_handle.truncate(start1)
                 file_handle.seek(start1)
-
                 for x in self.data:
                     file_handle.write(struct.pack('f', x))
 
     @property
-    def kzdate(self) -> str:
+    def kzdate(self) -> str | None:
         """
         Returns:
             ISO 8601 format of GMT reference date.
         """
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)  # type: ignore
+        if self.nzyear is None or self.nzjday is None:
+            return None
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
         return _kzdate.isoformat()
 
     @property
-    def kztime(self) -> str:
+    def kztime(self) -> str | None:
         """
         Returns:
             Alphanumeric form of GMT reference time.
         """
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)  # type: ignore
+        if self.nzhour is None or self.nzmin is None or self.nzsec is None or self.nzmsec is None:
+            return None
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
         return _kztime.isoformat(timespec='milliseconds')

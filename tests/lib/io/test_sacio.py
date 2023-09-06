@@ -4,18 +4,48 @@ import copy
 import pickle
 import pytest
 import numpy as np
+import numpy.testing as npt
 
 
-def test_is_sac_type(sacio_instances: tuple[SacIO, ...]) -> None:
-    """Test if a SacIO instance is created."""
-    for sacio_instance in sacio_instances:
-        assert isinstance(sacio_instance, SacIO)
+def test_create_instance() -> None:
+    sac = SacIO()
+    assert isinstance(sac, SacIO)
 
 
-@pytest.mark.depends(on=['test_is_sac_type', 'test_read_data'])
-def test_read_headers(sacio_instances: tuple) -> None:
+# TODO add all defaults
+@pytest.mark.depends(on=['test_create_instance'])
+def test_defaults() -> None:
+    sac = SacIO()
+    assert sac.b == 0
+
+
+@pytest.mark.depends(on=['test_create_instance'])
+def test_create_instance_from_file(sacfile: str) -> None:
+    sac = SacIO.from_file(sacfile)
+    assert isinstance(sac, SacIO)
+
+
+@pytest.mark.depends(on=['test_create_instance'])
+def test_write_to_file(empty_file: str) -> None:
+    # create an "empty" instance
+    sac = SacIO()
+    sac.write(empty_file)
+    sac = SacIO.from_file(empty_file)
+    assert isinstance(sac, SacIO)
+
+    # try again with some data
+    random_data = np.random.rand(1000)
+    sac = SacIO(b=21.1, data=random_data)
+    sac.write(empty_file)
+    sac = SacIO.from_file(empty_file)
+    assert pytest.approx(sac.b) == 21.1
+    npt.assert_allclose(sac.data, random_data)
+
+
+@pytest.mark.depends(on=['test_create_instance_from_file'])
+def test_read_headers(sacfile: str) -> None:
     """Read all SacIO headers from a test file."""
-    sac, *_, sac_iztype_IS_IB = sacio_instances
+    sac = SacIO.from_file(sacfile)
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
@@ -45,7 +75,6 @@ def test_read_headers(sacio_instances: tuple) -> None:
     # kztime is a derived header
     assert sac.kztime == '07:24:05.500'
     assert sac.iztype == 'o'
-    assert sac_iztype_IS_IB.iztype == 'b'
     assert sac.kinst is None
     assert sac.resp0 is None
     assert sac.resp1 is None
@@ -115,121 +144,117 @@ def test_read_headers(sacio_instances: tuple) -> None:
     assert sac.imagsrc is None
     # try reading non-existing header
     with pytest.raises(AttributeError):
-        _ = sac.nonexistingheader
+        _ = sac.nonexistingheader  # type: ignore
 
 
-@pytest.mark.depends(on=['test_is_sac_type'])
-def test_read_data(sacio_instances: tuple[SacIO, ...]) -> None:
+@pytest.mark.depends(on=['test_create_instance_from_file'])
+def test_sacfile_IB(sacfile_IB: str) -> None:
+    sac = SacIO.from_file(sacfile_IB)
+    assert sac.iztype == 'b'
+
+
+@pytest.mark.depends(on=['test_create_instance_from_file'])
+def test_read_data(sacfile: str) -> None:
     """Test reading data."""
-    sac, *_ = sacio_instances
+    sac = SacIO.from_file(sacfile)
     assert all(sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0, 2378.0, 2358.0, 2398.0, 2331.0])
 
 
-@pytest.mark.depends(on=['test_read_headers'])
-def test_change_headers(sacio_instances: tuple) -> None:
+# @pytest.mark.depends(on=['test_read_headers'])
+def test_change_headers(sacfile: str) -> None:
     """Test changing header values."""
 
-    sac1, sac2, *_ = sacio_instances
+    sac = SacIO.from_file(sacfile)
+    sac2 = SacIO.from_file(sacfile)
 
     iftype_valid = 'time'
     iftype_invalid = 'asdfasdf'
 
     # set iftype to a valid value
-    sac2.iftype = iftype_valid
-    assert sac2.iftype == iftype_valid
+    sac.iftype = iftype_valid
+    assert sac.iftype == iftype_valid
 
     # set iftype to an invalid value
     with pytest.raises(ValidationError):
-        sac2.iftype = iftype_invalid
+        sac.iftype = iftype_invalid
 
     # Try setting a header that should only accept integers with something else
     with pytest.raises(ValidationError):
-        sac2.nzmsec = 3.3
+        sac.nzmsec = 3.3  # type: ignore
 
     # ... same for floats
     with pytest.raises(ValidationError):
-        sac2.delta = [3.3]
+        sac.delta = [3.3]  # type: ignore
 
     # ... same for strings
     with pytest.raises(ValidationError):
-        sac2.kuser0 = True
+        sac.kuser0 = True  # type: ignore
 
     # ... same for boolean
     with pytest.raises(ValidationError):
-        sac2.leven = "abc"
+        sac.leven = "abc"  # type: ignore
 
     # Try setting a string that is too long
     with pytest.raises(ValidationError):
-        sac2.kuser0 = 'too long string'
+        sac.kuser0 = 'too long string'
 
     # # Are trailing spaces removed?
     # sac2.kuser0 = 'aaaa   '
     # assert sac2.kuser0 == 'aaaa'
 
     # Does changing header fields in one instance effect another?
-    delta_old = sac2.delta
+    delta_old = sac.delta
     sac2.delta = 2 * delta_old
-    assert sac1.delta == pytest.approx(delta_old)
+    assert sac.delta == pytest.approx(delta_old)
     assert sac2.delta == pytest.approx(2 * delta_old)
 
     # has the end time changed by changing delta?
-    assert sac1.e != sac2.e
+    assert sac.e != sac2.e
 
     # try changing read only header
     with pytest.raises(ValidationError):
-        sac1.npts = 123
+        sac.npts = 123  # type: ignore
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_change_data(sacio_instances: tuple) -> None:
+def test_change_data(sacfile: str) -> None:
     """Test changing data."""
-    _, sac2, *_ = sacio_instances
+    sac = SacIO.from_file(sacfile)
     newdata = np.array([132, 232, 3465, 111])
-    sac2.data = newdata
-    assert all(sac2.data == newdata)
-    assert sac2.depmin == min(newdata)
-    assert sac2.depmax == max(newdata)
-    assert sac2.depmen == sum(newdata)/sac2.npts
-
-
-@pytest.mark.depends(on=['test_change_headers', 'test_change_data'])
-def test_write_to_file(sacio_instances: tuple[SacIO, ...], sacfiles: tuple[str, ...]) -> None:
-    sac1, _, sac_empty, *_ = sacio_instances
-    _, _, tmpfile3, *_ = sacfiles
-    sac1.write(tmpfile3)
-    sac3 = SacIO.from_file(tmpfile3)
-    assert all(sac1.data == sac3.data)
-    assert sac1.b == sac3.b
-    sac_empty.write(tmpfile3)
+    sac.data = newdata
+    assert all(sac.data == newdata)
+    assert sac.depmin == min(newdata)
+    assert sac.depmax == max(newdata)
+    assert sac.depmen == sum(newdata)/sac.npts
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_pickling(sacio_instances: tuple[SacIO, ...], picklefiles: tuple[str, ...]) -> None:
-    sac1, *_ = sacio_instances
-    picklefile, *_ = picklefiles
+def test_pickling(sacfile: str, empty_file: str) -> None:
+    sac = SacIO.from_file(sacfile)
+    picklefile = empty_file
     with open(picklefile, "wb") as output_file:
-        pickle.dump(sac1, output_file)
+        pickle.dump(sac, output_file)
     with open(picklefile, "rb") as input_file:
-        sac4 = pickle.load(input_file)
-    assert all(sac1.data == sac4.data)
-    assert sac1.b == sac4.b
+        sac2 = pickle.load(input_file)
+    npt.assert_allclose(sac.data, sac2.data)
+    assert sac.b == sac2.b
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data', 'test_change_headers'])
-def test_deepcopy(sacio_instances: tuple) -> None:
-    sac1, *_ = sacio_instances
-    sac5 = copy.deepcopy(sac1)
-    assert all(sac1.data == sac5.data)
-    assert sac1.e == sac5.e
-    sac5.delta = sac1.delta * 2
-    assert sac1.e != sac5.e
+def test_deepcopy(sacfile: str) -> None:
+    sac = SacIO.from_file(sacfile)
+    sac2 = copy.deepcopy(sac)
+    assert all(sac.data == sac2.data)
+    assert sac.data is not sac2.data
+    assert sac.e == sac2.e
+    sac2.delta = sac.delta * 2
+    assert sac.e != sac2.e
 
 
 @pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
-def test_file_and_buffer(sacfiles: tuple[str, ...]) -> None:
-    orgfile_special_IB = sacfiles[3]
-    from_file = SacIO.from_file(orgfile_special_IB)
-    with open(orgfile_special_IB, "rb") as f:
+def test_file_and_buffer(sacfile: str) -> None:
+    from_file = SacIO.from_file(sacfile)
+    with open(sacfile, "rb") as f:
         from_buffer = SacIO.from_buffer(f.read())
 
     assert from_file.npts == from_buffer.npts

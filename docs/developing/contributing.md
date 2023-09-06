@@ -137,9 +137,9 @@ We also need to create an associated test file to ensure that the function retur
 correct output. In most instances, it actually makes sense to write the test case first
 ([test-driven development](https://en.wikipedia.org/wiki/Test-driven_development)).
 
-The tests in pysmo are in the `tests` folder, where we keep the structure identical to
-the pysmo source in the `pysmo` folder. Hence we add the following content to the
-`tests/test_functions.py` file:
+The tests in pysmo are in the `tests` folder, where we keep the structure somewhat
+similar to the pysmo source in the `pysmo` folder. Hence we add the following content
+to the `tests/test_functions.py` file:
 
 ```python title="tests/test_functions.py" linenums="27" hl_lines="3-8"
 --8<-- "docs/snippets/test_functions.py:27:34"
