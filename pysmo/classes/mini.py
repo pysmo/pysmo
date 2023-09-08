@@ -17,13 +17,13 @@ from pysmo.lib.functions import (
 )
 from pysmo import Seismogram
 from datetime import datetime, timedelta
-from pydantic.dataclasses import dataclass
-from pydantic import ConfigDict, Field
+from attrs import define, field, validators, converters
+from attrs_strict import type_validator
 import numpy as np
 import copy
 
 
-@dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
+@define(kw_only=True)
 class MiniSeismogram:
     """Minimal class for seismogram data.
 
@@ -48,10 +48,22 @@ class MiniSeismogram:
         True
     """
 
-    begin_time: datetime = Field(default=SEISMOGRAM_DEFAULTS.begin_time)
-    sampling_rate: float = Field(default=SEISMOGRAM_DEFAULTS.sampling_rate)
-    data: np.ndarray = Field(default_factory=lambda: np.array([]))
-    id: str | None = None
+    begin_time: datetime = field(
+        default=SEISMOGRAM_DEFAULTS.begin_time,
+        validator=type_validator()
+    )
+    sampling_rate: float = field(
+        default=SEISMOGRAM_DEFAULTS.sampling_rate,
+        converter=float,
+        validator=type_validator()
+    )
+    data: np.ndarray = field(
+        factory=lambda: np.array([]),
+        validator=type_validator())
+    id: str | None = field(
+        default=None,
+        validator=validators.optional(type_validator())
+    )
 
     def __len__(self) -> int:
         return np.size(self.data)
@@ -148,7 +160,7 @@ class MiniSeismogram:
         self.data, self.sampling_rate = _resample(self, sampling_rate), sampling_rate
 
 
-@dataclass(kw_only=True, config=ConfigDict(validate_assignment=True))
+@define(kw_only=True)
 class MiniLocation:
     """Minimal class for geographical locations.
 
@@ -165,11 +177,25 @@ class MiniLocation:
         >>> isinstance(my_location, Location)
         True
     """
-    latitude: float = Field(ge=-90, le=90)
-    longitude: float = Field(gt=-180, le=180)
+    latitude: float = field(
+        converter=float,
+        validator=[
+            validators.ge(-90),
+            validators.le(90),
+            type_validator()
+        ]
+    )
+    longitude: float = field(
+        converter=float,
+        validator=[
+            validators.gt(-180),
+            validators.le(180),
+            type_validator()
+        ]
+    )
 
 
-@dataclass(kw_only=True)
+@define(kw_only=True)
 class MiniStation(MiniLocation):
     """Minimal class for seismic stations.
 
@@ -193,12 +219,25 @@ class MiniStation(MiniLocation):
         >>> isinstance(my_station, Location)
         True
     """
-    name: str = Field(default='')
-    network: str | None = Field(default=None)
-    elevation: float | None = Field(default=None)
+    name: str = field(validator=type_validator())
+    network: str | None = field(
+        default=None,
+        validator=type_validator()
+    )
+    elevation: float | None = field(
+        default=None,
+        converter=converters.optional(float),
+        validator=validators.optional(
+            [
+                validators.gt(-180),
+                validators.le(180),
+                type_validator()
+            ]
+        )
+    )
 
 
-@dataclass(kw_only=True)
+@define(kw_only=True)
 class MiniHypocenter(MiniLocation):
     """Minimal class for hypocententers.
 
@@ -220,10 +259,13 @@ class MiniHypocenter(MiniLocation):
         >>> isinstance(my_hypo, Location)
         True
     """
-    depth: float
+    depth: float = field(
+        converter=float,
+        validator=type_validator()
+    )
 
 
-@dataclass(kw_only=True)
+@define(kw_only=True)
 class MiniEvent(MiniHypocenter):
     """Minimal class for events.
 
@@ -252,4 +294,4 @@ class MiniEvent(MiniHypocenter):
         >>> isinstance(my_event, Location)
         True
     """
-    time: datetime
+    time: datetime = field(validator=type_validator())

@@ -163,3 +163,6 @@ class TestSAC:
             sacevent.longitude = 500
         with pytest.raises(ValueError):
             sacevent.longitude = -500
+        sac.evdp = None
+        with pytest.raises(SacHeaderUndefined):
+            sacevent.depth

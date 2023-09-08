@@ -1,4 +1,4 @@
-from pydantic import ValidationError
+from attrs_strict import AttributeTypeError, UnionError
 from pysmo.lib.io import SacIO
 import copy
 import pickle
@@ -174,28 +174,32 @@ def test_change_headers(sacfile: str) -> None:
     sac.iftype = iftype_valid
     assert sac.iftype == iftype_valid
 
-    # set iftype to an invalid value
-    with pytest.raises(ValidationError):
+    # set iftype to an enum that doesn't exist
+    with pytest.raises(ValueError):
         sac.iftype = iftype_invalid
 
+    # set iftype to an invalid value
+    with pytest.raises(ValueError):
+        sac.iftype = 'unkn'
+
     # Try setting a header that should only accept integers with something else
-    with pytest.raises(ValidationError):
+    with pytest.raises(UnionError):
         sac.nzmsec = 3.3  # type: ignore
 
     # ... same for floats
-    with pytest.raises(ValidationError):
+    with pytest.raises(TypeError):
         sac.delta = [3.3]  # type: ignore
 
     # ... same for strings
-    with pytest.raises(ValidationError):
+    with pytest.raises(UnionError):
         sac.kuser0 = True  # type: ignore
 
     # ... same for boolean
-    with pytest.raises(ValidationError):
+    with pytest.raises(AttributeTypeError):
         sac.leven = "abc"  # type: ignore
 
     # Try setting a string that is too long
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         sac.kuser0 = 'too long string'
 
     # # Are trailing spaces removed?
@@ -212,7 +216,7 @@ def test_change_headers(sacfile: str) -> None:
     assert sac.e != sac2.e
 
     # try changing read only header
-    with pytest.raises(ValidationError):
+    with pytest.raises(AttributeError):
         sac.npts = 123  # type: ignore
 
 

@@ -31,7 +31,7 @@ header_types:
 
   k:
     definition: alphanumeric
-    undefined: "-12345"
+    undefined: '"-12345"'
     description: Name begins with a "K". Either 8 or 16 characters long.
     length: 8
     format: 8s
