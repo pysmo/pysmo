@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 import pytest
-from pydantic import ValidationError
 from pysmo import Event, MiniEvent
 
 
@@ -9,7 +8,8 @@ class TestMiniEvent:
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
-        with pytest.raises(ValidationError):
+        # shouldn'b be able to create an instance with kwargs
+        with pytest.raises(TypeError):
             minievent = MiniEvent()  # type: ignore
         latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
         minievent = MiniEvent(latitude=latitude, longitude=longitude,
@@ -41,11 +41,11 @@ class TestMiniEvent:
         minievent.time = new_time
         assert minievent.time == new_time
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minievent.latitude = -100
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minievent.latitude = 100
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minievent.longitude = -180
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minievent.latitude = 181
