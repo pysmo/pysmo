@@ -47,10 +47,7 @@ def test_plot_gauss_env(seismogram: Seismogram = SACSEIS) -> plt.figure:
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
     seismogram.data = seismogram.data - np.mean(seismogram.data)
-    seismogram.label = "Unfiltered"  # type: ignore
     gauss_seis = gauss(seismogram, Tn, alpha)
-    gauss_seis.label = "Gaussian filtered"  # type: ignore
     env_seis = envelope(seismogram, Tn, alpha)
-    env_seis.label = "Envelope"  # type: ignore
     fig = plotseis(seismogram, gauss_seis, env_seis, showfig=False)
     return fig
