@@ -1,15 +1,14 @@
 import pytest
 from pysmo import Station, MiniStation
-from pydantic import ValidationError
 
 
-class TestMiniLocation:
+class TestMiniStation:
 
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
-        # can't create an instnce without kwargs
-        with pytest.raises(ValidationError):
+        # can't create an instance without kwargs
+        with pytest.raises(TypeError):
             ministation = MiniStation()  # type: ignore
 
         name, latitude, longitude = 'station', 1.1, 2.2
@@ -28,7 +27,7 @@ class TestMiniLocation:
         ministation = MiniStation(name=name, latitude=latitude, longitude=longitude)
         ministation.network = 'newnetwork'
         assert ministation.network == 'newnetwork'
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ministation.elevation = 'abc'  # type: ignore
         ministation.elevation = 123
         assert ministation.elevation == 123
@@ -37,14 +36,14 @@ class TestMiniLocation:
         ministation.latitude = -90
         ministation.latitude = 90
         assert ministation.latitude == 90
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ministation.latitude = -91
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ministation.latitude = 91
         ministation.longitude = -179.9
         ministation.longitude = 180
         assert ministation.longitude == 180
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ministation.longitude = -180
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ministation.longitude = 181
