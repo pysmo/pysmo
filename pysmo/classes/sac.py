@@ -1,13 +1,12 @@
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.exceptions import SacHeaderUndefined
-from pydantic.dataclasses import dataclass
-from pydantic import Field, ConfigDict
+from attrs import define, field
 import datetime
 import numpy as np
 
 
-@dataclass
+@define(kw_only=True)
 class SAC(SacIO):
     """Class for SAC files.
 
@@ -65,8 +64,7 @@ class SAC(SacIO):
         station: Maps pysmo compatible attributes to the internal SAC attributes.
         event: Maps pysmo compatible attributes to the internal SAC attributes.
     """
-
-    @dataclass
+    @define(kw_only=True)
     class _SacNested:
         """Base class for nested SAC classes"""
 
@@ -89,7 +87,7 @@ class SAC(SacIO):
             ref_date = datetime.date.fromisoformat(self.parent.kzdate)
             return datetime.datetime.combine(ref_date, ref_time)
 
-    @dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
+    @define(kw_only=True)
     class SacSeismogram(_SacNested):
         """Helper class for seismogram attributes.
 
@@ -143,7 +141,7 @@ class SAC(SacIO):
                 return self.begin_time
             return self.begin_time + datetime.timedelta(seconds=self.sampling_rate*(len(self)-1))
 
-    @dataclass(kw_only=True)
+    @define(kw_only=True)
     class SacEvent(_SacNested):
         """Helper class for event attributes.
 
@@ -203,7 +201,7 @@ class SAC(SacIO):
             # reference time in seconds.
             self.parent.o = (value - self._ref_datetime).total_seconds()
 
-    @dataclass(kw_only=True)
+    @define(kw_only=True)
     class SacStation(_SacNested):
         """Helper class for SAC event attributes.
 
@@ -266,11 +264,11 @@ class SAC(SacIO):
         def elevation(self, value: float) -> None:
             setattr(self.parent, 'stel', value)
 
-    seismogram: SacSeismogram = Field(default=None)
-    station: SacStation = Field(default=None)
-    event: SacEvent = Field(default=None)
+    seismogram: SacSeismogram = field(init=False)
+    station: SacStation = field(init=False)
+    event: SacEvent = field(init=False)
 
-    def __post_init__(self) -> None:
+    def __attrs_post_init__(self) -> None:
         self.seismogram = self.SacSeismogram(parent=self)
         self.station = self.SacStation(parent=self)
         self.event = self.SacEvent(parent=self)

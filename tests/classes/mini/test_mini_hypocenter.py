@@ -1,14 +1,13 @@
 from pysmo import Hypocenter, MiniHypocenter
-from pydantic import ValidationError
 import pytest
 
 
-class test_MiniHypocenter:
+class TestMiniHypocenter:
 
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             minihypocenter = MiniHypocenter()  # type: ignore
         latitude, longitude, depth = 1.1, 2.2, 1000
         minihypocenter = MiniHypocenter(latitude=latitude, longitude=longitude, depth=depth)
@@ -36,11 +35,11 @@ class test_MiniHypocenter:
         minihypocenter.longitude = new_longitude
         assert minihypocenter.longitude == new_longitude
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minihypocenter.latitude = -100
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minihypocenter.latitude = 100
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minihypocenter.longitude = -180
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             minihypocenter.latitude = 181
