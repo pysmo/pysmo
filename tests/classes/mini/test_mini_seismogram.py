@@ -30,7 +30,6 @@ class TestMiniSeismogram:
         assert miniseis.sampling_rate == SEISMOGRAM_DEFAULTS.sampling_rate == 1
         assert miniseis.data.size == 0
         assert len(miniseis) == 0
-        assert miniseis.id is None
 
     @pytest.mark.depends(name='test_create_instance')
     def test_change_attributes(self) -> None:
@@ -50,8 +49,6 @@ class TestMiniSeismogram:
         assert miniseis.sampling_rate == 0.1
         assert miniseis.end_time - miniseis.begin_time == timedelta(
             seconds=miniseis.sampling_rate * (len(miniseis)-1))
-        miniseis.id = 'test'
-        assert miniseis.id == 'test'
 
     @pytest.mark.depends(name='test_change_attributes')
     def test_as_seismogram(self) -> None:

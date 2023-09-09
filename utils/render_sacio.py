@@ -4,15 +4,18 @@ import os
 import yaml
 from black import FileMode, format_file_contents
 
+MYDIR = os.path.dirname(__file__)
 
 # Read yaml file with dictionaries describing SAC headers
-with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r') as stream:
+with open(os.path.join(MYDIR, 'sacheader.yml'), 'r') as stream:
     _HEADER_DEFS: dict = yaml.safe_load(stream)
 
 # Dictionary of header types (default values etc)
 header_types: dict = _HEADER_DEFS.pop('header_types')
 # Dictionary of header fields (format, type, etc)
 headers: dict = _HEADER_DEFS.pop('header_fields')
+# Dictionary of footer fields (format, type, etc)
+footers: dict = _HEADER_DEFS.pop('footer_fields')
 # Dictionary of enumerated headers (to convert int to str).
 enum_dict: dict = _HEADER_DEFS.pop('enumerated_header_values')
 
@@ -70,7 +73,7 @@ for header, header_dict in headers.items():
         else:
             validators[header] = "validators.optional(validate_sacenum)"
 
-environment = Environment(loader=FileSystemLoader('templates/'))
+environment = Environment(loader=FileSystemLoader(os.path.join(MYDIR, 'templates/')))
 template = environment.get_template('sacio-template.py')
 outfile = 'sacio.py'
 
@@ -79,6 +82,7 @@ header_types.pop('a')
 
 content = template.render(
     headers=headers,
+    footers=footers,
     header_types=header_types,
     enum_dict=enum_dict,
     properties=properties,

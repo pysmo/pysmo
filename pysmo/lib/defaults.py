@@ -14,7 +14,7 @@ DEFAULT_ELLPS = 'WGS84'
 class _SACIO_DEFAULTS:
     b: float = 0
     delta: float = 1
-    nvhdr: int = 6
+    nvhdr: int = 7
     iftype: str = "time"
     idep: str = "unkn"
     iztype: str = "unkn"
