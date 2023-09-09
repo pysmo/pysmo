@@ -28,8 +28,8 @@ install: check-poetry ## Install this project and its dependencies in a virtual 
 update: check-poetry ## Update dependencies to their latest versions.
 	poetry update
 
-lint: check-poetry ## Lint code with flake8
-	poetry run flake8 --statistics
+lint: check-poetry ## Lint code with ruff
+	poetry run ruff . --statistics
 
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
