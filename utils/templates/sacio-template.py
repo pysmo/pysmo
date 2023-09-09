@@ -17,7 +17,6 @@ import io
 import requests
 import urllib.parse
 import zipfile
-import warnings
 import numpy as np
 
 
@@ -51,6 +50,19 @@ SAC_HEADERS = dict(
     {%- endfor %}
 )
 
+
+@define(frozen=True)
+class Footer:
+    start: int
+    length: int = 8
+    format: str = 'f'
+    type: str = 'd'
+
+SAC_FOOTERS = dict(
+    {%- for footer, values in footers.items() %}
+    {{ footer }}=Footer(start={{ values.start }}),
+    {%- endfor %}
+)
 
 class SacEnum(Enum):
 {%- for k, v in enum_dict.items() %}
@@ -138,11 +150,14 @@ class SacIO:
 
     Attributes:
     {%- for header, header_dict in headers.items() %}
+    {%- if 'unused' not in header and 'internal' not in header %}
         {{ header }}:
             {{ header_dict.description | wordwrap(70) | indent(12) -}}
-    {% endfor %}
+    {%- endif %}
+    {%- endfor %}
     """
     {%- for header, header_dict in headers.items() -%}
+    {%- if 'unused' not in header and 'internal' not in header %}
     {%- if header not in properties %}
     {{ header }}: {{ header_dict.python_type+ " "-}}
 
@@ -169,10 +184,11 @@ class SacIO:
      {%- if header_dict.python_type == 'str' -%}, validators.max_len({{ header_dict.length }}){%- endif -%}]))
     {%- endif -%}
     {%- endif -%}
+    {%- endif %}
     {%- endfor %}
-    data: np.ndarray = field(factory=lambda: np.array([]))
-    x: np.ndarray = field(factory=lambda: np.array([]))
-    y: np.ndarray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    x: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    y: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
 
     @property
     def depmin(self) -> float | None:
@@ -324,16 +340,16 @@ class SacIO:
         # Loop over all header fields and store them in the SAC object under their
         # respective private names.
         npts = 0
-        for header, metadata in SAC_HEADERS.items():
-            header_type = metadata.type
+        for header, header_metadata in SAC_HEADERS.items():
+            header_type = header_metadata.type
             header_undefined = HEADER_TYPES[header_type].undefined
-            start = metadata.start
-            length = metadata.length
+            start = header_metadata.start
+            length = header_metadata.length
             end = start + length
             if end >= len(buffer):
                 continue
             content = buffer[start:end]
-            value = struct.unpack(file_byteorder + metadata.format, content)[0]
+            value = struct.unpack(file_byteorder + header_metadata.format, content)[0]
             if isinstance(value, bytes):
                 # strip spaces and "\x00" chars
                 value = value.decode().rstrip(" \x00")
@@ -367,21 +383,42 @@ class SacIO:
         # Read first data block
         start = 632
         length = npts * 4
+        data_end = start + length
         self.data = np.array([])
         if length > 0:
-            end = start + length
+            data_end = start + length
             data_format = file_byteorder + str(npts) + 'f'
-            if end > len(buffer):
+            if data_end > len(buffer):
                 raise EOFError()
-            content = buffer[start:end]
+            content = buffer[start:data_end]
             data = struct.unpack(data_format, content)
             self.data = np.array(data)
 
-        # TODO: implement reading and writing footer with double precision values.
-        # Warn users for now that footer is not read in case of SAC header version 7.
         if self.nvhdr == 7:
-            warnings.warn(f"SAC header version {self.nvhdr} not implemented. Reverting to version 6")
-            self.nvhdr = 6
+            for footer, footer_metadata in SAC_FOOTERS.items():
+                undefined = -12345.0
+                length = 8
+                start = footer_metadata.start + data_end
+                end = start + length
+
+                if end > len(buffer):
+                    raise EOFError()
+                content = buffer[start:end]
+
+                value = struct.unpack(file_byteorder + 'd', content)[0]
+
+                # skip if undefined (value == -12345...)
+                if value == undefined:
+                    continue
+
+                # SAC file has headers fields which are read only attributes in this
+                # class. We skip them with this try/except.
+                # TODO: This is a bit crude, should maybe be a bit more specific.
+                try:
+                    setattr(self, footer, value)
+                except AttributeError as e:
+                    if "object has no setter" in str(e):
+                        pass
 
     @classmethod
     def from_file(cls, filename: str) -> Self:
@@ -461,24 +498,25 @@ class SacIO:
         """
         with open(filename, 'wb') as file_handle:
             # loop over all valid header fields and write them to the file
-            for header, metadata in SAC_HEADERS.items():
-                header_type = metadata.type
-                header_format = metadata.format
-                start = metadata.start
+            for header, header_metadata in SAC_HEADERS.items():
+                header_type = header_metadata.type
+                header_format = header_metadata.format
+                start = header_metadata.start
                 header_undefined = HEADER_TYPES[header_type].undefined
 
                 value = None
                 try:
-                    value = getattr(self, header)
+                    if hasattr(self, header):
+                        value = getattr(self, header)
                 except SacHeaderUndefined:
                     value = None
 
                 # convert enumerated header to integer if it is not None
-                if header_type == "i" and value:
+                if header_type == "i" and value is not None:
                     value = SacEnum[value].value
 
                 # set None to -12345
-                if not value:
+                if value is None:
                     value = header_undefined
 
                 # Encode strings to bytes
@@ -490,9 +528,29 @@ class SacIO:
                 file_handle.write(struct.pack(header_format, value))
 
             # write data (if npts > 0)
-            start1 = 632
-            file_handle.truncate(start1)
+            data_1_start = 632
+            data_1_end = data_1_start + self.npts * 4
+            file_handle.truncate(data_1_start)
             if self.npts > 0:
-                file_handle.seek(start1)
+                file_handle.seek(data_1_start)
                 for x in self.data:
                     file_handle.write(struct.pack('f', x))
+
+            if self.nvhdr == 7:
+                for footer, footer_metadata in SAC_FOOTERS.items():
+                    undefined = -12345.0
+                    start = footer_metadata.start + data_1_end
+                    value = None
+                    try:
+                        if hasattr(self, footer):
+                            value = getattr(self, footer)
+                    except SacHeaderUndefined:
+                        value = None
+
+                    # set None to -12345
+                    if value is None:
+                        value = undefined
+
+                    # write to file
+                    file_handle.seek(start)
+                    file_handle.write(struct.pack("d", value))
