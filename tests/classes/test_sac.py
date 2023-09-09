@@ -1,3 +1,4 @@
+from attrs_strict import AttributeTypeError
 import numpy as np
 import numpy.testing as npt
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
@@ -84,6 +85,12 @@ class TestSAC:
         assert sacseis.begin_time == new_time1
         assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacseis.sampling_rate * (len(sacseis.data)-1))
 
+        # Setting attributes that are not optional in the types
+        # should also not be optional in the classes:
+        for item in ['begin_time', 'sampling_rate', 'data']:
+            with pytest.raises((TypeError, AttributeTypeError)):
+                setattr(sacseis, item, None)
+
     @pytest.mark.depends(on=['test_create_instance_from_file'])
     def test_sac_as_station(self, sacfile: str) -> None:
         sac = SAC.from_file(sacfile)
@@ -118,7 +125,14 @@ class TestSAC:
         with pytest.raises(ValueError):
             sacstation.longitude = bad_longitude
 
-        # errors when information is missing.
+        # Setting attributes that are not optional in the types
+        # should also not be optional in the classes:
+        for item in ['name', 'latitude', 'longitude']:
+            with pytest.raises((TypeError, AttributeTypeError)):
+                setattr(sacstation, item, None)
+
+        # This is also true for getting None back from attributes.
+        # They may be None in sacio, but not in sac.station
         sac.kstnm = None
         with pytest.raises(SacHeaderUndefined):
             sacstation.name
@@ -163,6 +177,12 @@ class TestSAC:
             sacevent.longitude = 500
         with pytest.raises(ValueError):
             sacevent.longitude = -500
+        #
+        # Setting attributes that are not optional in the types
+        # should also not be optional in the classes:
+        for item in ['depth', 'latitude', 'longitude', 'time']:
+            with pytest.raises((TypeError, AttributeTypeError)):
+                setattr(sacevent, item, None)
         sac.evdp = None
         with pytest.raises(SacHeaderUndefined):
             sacevent.depth

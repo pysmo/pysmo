@@ -18,7 +18,6 @@ import io
 import requests
 import urllib.parse
 import zipfile
-import warnings
 import numpy as np
 
 
@@ -37,6 +36,7 @@ HEADER_TYPES = dict(
     i=HeaderType(definition="enumerated", undefined=-12345, length=4, format="i"),
     l=HeaderType(definition="logical", undefined=False, length=1, format="?"),
     k=HeaderType(definition="alphanumeric", undefined="-12345", length=8, format="8s"),
+    d=HeaderType(definition="double", undefined=-12345, length=8, format="d"),
 )
 
 
@@ -52,13 +52,13 @@ SAC_HEADERS = dict(
     delta=Header(start=0, length=4, format="f", type="f"),
     depmin=Header(start=4, length=4, format="f", type="f"),
     depmax=Header(start=8, length=4, format="f", type="f"),
-    scale=Header(start=12, length=4, format="f", type="f"),
+    unused3=Header(start=12, length=4, format="f", type="f"),
     odelta=Header(start=16, length=4, format="f", type="f"),
     b=Header(start=20, length=4, format="f", type="f"),
     e=Header(start=24, length=4, format="f", type="f"),
     o=Header(start=28, length=4, format="f", type="f"),
     a=Header(start=32, length=4, format="f", type="f"),
-    fmt=Header(start=36, length=4, format="f", type="f"),
+    internal9=Header(start=36, length=4, format="f", type="f"),
     t0=Header(start=40, length=4, format="f", type="f"),
     t1=Header(start=44, length=4, format="f", type="f"),
     t2=Header(start=48, length=4, format="f", type="f"),
@@ -103,8 +103,8 @@ SAC_HEADERS = dict(
     az=Header(start=204, length=4, format="f", type="f"),
     baz=Header(start=208, length=4, format="f", type="f"),
     gcarc=Header(start=212, length=4, format="f", type="f"),
-    sb=Header(start=216, length=4, format="f", type="f"),
-    sdelta=Header(start=220, length=4, format="f", type="f"),
+    internal54=Header(start=216, length=4, format="f", type="f"),
+    internal55=Header(start=220, length=4, format="f", type="f"),
     depmen=Header(start=224, length=4, format="f", type="f"),
     cmpaz=Header(start=228, length=4, format="f", type="f"),
     cmpinc=Header(start=232, length=4, format="f", type="f"),
@@ -112,13 +112,13 @@ SAC_HEADERS = dict(
     xmaximum=Header(start=240, length=4, format="f", type="f"),
     yminimum=Header(start=244, length=4, format="f", type="f"),
     ymaximum=Header(start=248, length=4, format="f", type="f"),
-    unused6=Header(start=254, length=4, format="f", type="f"),
-    unused7=Header(start=258, length=4, format="f", type="f"),
-    unused8=Header(start=262, length=4, format="f", type="f"),
-    unused9=Header(start=264, length=4, format="f", type="f"),
-    unused10=Header(start=268, length=4, format="f", type="f"),
-    unused11=Header(start=272, length=4, format="f", type="f"),
-    unused12=Header(start=276, length=4, format="f", type="f"),
+    unused63=Header(start=254, length=4, format="f", type="f"),
+    unused64=Header(start=258, length=4, format="f", type="f"),
+    unused65=Header(start=262, length=4, format="f", type="f"),
+    unused66=Header(start=264, length=4, format="f", type="f"),
+    unused67=Header(start=268, length=4, format="f", type="f"),
+    unused68=Header(start=272, length=4, format="f", type="f"),
+    unused69=Header(start=276, length=4, format="f", type="f"),
     nzyear=Header(start=280, length=4, format="i", type="n"),
     nzjday=Header(start=284, length=4, format="i", type="n"),
     nzhour=Header(start=288, length=4, format="i", type="n"),
@@ -129,15 +129,15 @@ SAC_HEADERS = dict(
     norid=Header(start=308, length=4, format="i", type="n"),
     nevid=Header(start=312, length=4, format="i", type="n"),
     npts=Header(start=316, length=4, format="i", type="n"),
-    nsnpts=Header(start=320, length=4, format="i", type="n"),
+    internal80=Header(start=320, length=4, format="i", type="n"),
     nwfid=Header(start=324, length=4, format="i", type="n"),
     nxsize=Header(start=328, length=4, format="i", type="n"),
     nysize=Header(start=332, length=4, format="i", type="n"),
-    unused15=Header(start=336, length=4, format="i", type="n"),
+    unused84=Header(start=336, length=4, format="i", type="n"),
     iftype=Header(start=340, length=4, format="i", type="i"),
     idep=Header(start=344, length=4, format="i", type="i"),
     iztype=Header(start=348, length=4, format="i", type="i"),
-    unused16=Header(start=352, length=4, format="i", type="i"),
+    unused88=Header(start=352, length=4, format="i", type="i"),
     iinst=Header(start=356, length=4, format="i", type="i"),
     istreg=Header(start=360, length=4, format="i", type="i"),
     ievreg=Header(start=364, length=4, format="i", type="i"),
@@ -146,19 +146,19 @@ SAC_HEADERS = dict(
     isynth=Header(start=376, length=4, format="i", type="i"),
     imagtyp=Header(start=380, length=4, format="i", type="i"),
     imagsrc=Header(start=384, length=4, format="i", type="i"),
-    unused19=Header(start=388, length=4, format="i", type="i"),
-    unused20=Header(start=392, length=4, format="i", type="i"),
-    unused21=Header(start=396, length=4, format="i", type="i"),
-    unused22=Header(start=400, length=4, format="i", type="i"),
-    unused23=Header(start=404, length=4, format="i", type="i"),
-    unused24=Header(start=408, length=4, format="i", type="i"),
-    unused25=Header(start=412, length=4, format="i", type="i"),
-    unused26=Header(start=416, length=4, format="i", type="i"),
+    ibody=Header(start=388, length=4, format="i", type="i"),
+    unused98=Header(start=392, length=4, format="i", type="i"),
+    unused99=Header(start=396, length=4, format="i", type="i"),
+    unused100=Header(start=400, length=4, format="i", type="i"),
+    unused101=Header(start=404, length=4, format="i", type="i"),
+    unused102=Header(start=408, length=4, format="i", type="i"),
+    unused103=Header(start=412, length=4, format="i", type="i"),
+    unused104=Header(start=416, length=4, format="i", type="i"),
     leven=Header(start=420, length=1, format="?", type="l"),
     lpspol=Header(start=424, length=1, format="?", type="l"),
     lovrok=Header(start=428, length=1, format="?", type="l"),
     lcalda=Header(start=432, length=1, format="?", type="l"),
-    unused27=Header(start=436, length=1, format="?", type="l"),
+    unused109=Header(start=436, length=1, format="?", type="l"),
     kstnm=Header(start=440, length=8, format="8s", type="k"),
     kevnm=Header(start=448, length=16, format="16s", type="k"),
     khole=Header(start=464, length=8, format="8s", type="k"),
@@ -182,6 +182,40 @@ SAC_HEADERS = dict(
     knetwk=Header(start=608, length=8, format="8s", type="k"),
     kdatrd=Header(start=616, length=8, format="8s", type="k"),
     kinst=Header(start=624, length=8, format="8s", type="k"),
+)
+
+
+@define(frozen=True)
+class Footer:
+    start: int
+    length: int = 8
+    format: str = "f"
+    type: str = "d"
+
+
+SAC_FOOTERS = dict(
+    delta=Footer(start=0),
+    b=Footer(start=8),
+    e=Footer(start=16),
+    o=Footer(start=24),
+    a=Footer(start=32),
+    t0=Footer(start=40),
+    t1=Footer(start=48),
+    t2=Footer(start=56),
+    t3=Footer(start=64),
+    t4=Footer(start=72),
+    t5=Footer(start=80),
+    t6=Footer(start=88),
+    t7=Footer(start=96),
+    t8=Footer(start=104),
+    t9=Footer(start=112),
+    f=Footer(start=120),
+    evlo=Footer(start=128),
+    evla=Footer(start=136),
+    stlo=Footer(start=144),
+    stla=Footer(start=152),
+    sb=Footer(start=160),
+    sdelta=Footer(start=168),
 )
 
 
@@ -282,7 +316,12 @@ class SacEnum(Enum):
     lit = 95
     met = 96
     odor = 97
-    os = 103
+    sun = 98
+    mercury = 99
+    venus = 100
+    earth = 101
+    moon = 102
+    mars = 103
 
 
 ENUM_DICT = dict(
@@ -296,8 +335,8 @@ ENUM_DICT = dict(
         "unkn",
         "disp",
         "vel",
-        "volts",
         "acc",
+        "volts",
     ],
     iztype=[
         "unkn",
@@ -375,6 +414,14 @@ ENUM_DICT = dict(
         "jsop",
         "user",
         "unknown",
+    ],
+    ibody=[
+        "sun",
+        "mercury",
+        "venus",
+        "earth",
+        "moon",
+        "mars",
     ],
 )
 
@@ -455,8 +502,6 @@ class SacIO:
             Minimum value of dependent variable.
         depmax:
             Maximum value of dependent variable.
-        scale:
-            Multiplying scale factor for dependent variable (not currently used).
         odelta:
             Observed increment if different from nominal value.
         b:
@@ -467,8 +512,6 @@ class SacIO:
             Event origin time (seconds relative to reference time).
         a:
             First arrival time (seconds relative to reference time).
-        fmt:
-            Internal.
         t0:
             User defined time pick or marker 0 (seconds relative to reference
             time).
@@ -567,16 +610,13 @@ class SacIO:
             Station to event azimuth (degrees).
         gcarc:
             Station to event great circle arc length (degrees).
-        sb:
-            Internal.
-        sdelta:
-            Internal.
         depmen:
             Mean value of dependent variable.
         cmpaz:
             Component azimuth (degrees clockwise from north).
         cmpinc:
-            Component incident angle (degrees from vertical).
+            Component incident angle (degrees from upward vertical; SEED/MINISEED
+            uses dip: degrees from horizontal down).
         xminimum:
             Minimum value of X (Spectral files only).
         xmaximum:
@@ -585,20 +625,6 @@ class SacIO:
             Minimum value of Y (Spectral files only).
         ymaximum:
             Maximum value of Y (Spectral files only).
-        unused6:
-            Unused.
-        unused7:
-            Unused.
-        unused8:
-            Unused.
-        unused9:
-            Unused.
-        unused10:
-            Unused.
-        unused11:
-            Unused.
-        unused12:
-            Unused.
         nzyear:
             GMT year corresponding to reference (zero) time in file.
         nzjday:
@@ -619,24 +645,18 @@ class SacIO:
             Event ID (CSS 3.0).
         npts:
             Number of points per data component.
-        nsnpts:
-            Internal.
         nwfid:
             Waveform ID (CSS 3.0).
         nxsize:
             Spectral Length (Spectral files only).
         nysize:
             Spectral Length (Spectral files only).
-        unused15:
-            Unused.
         iftype:
             Type of file.
         idep:
             Type of dependent variable.
         iztype:
             Reference time equivalence.
-        unused16:
-            Unused.
         iinst:
             Type of recording instrument.
         istreg:
@@ -653,22 +673,8 @@ class SacIO:
             Magnitude type.
         imagsrc:
             Source of magnitude information.
-        unused19:
-            Unused.
-        unused20:
-            Unused.
-        unused21:
-            Unused.
-        unused22:
-            Unused.
-        unused23:
-            Unused.
-        unused24:
-            Unused.
-        unused25:
-            Unused.
-        unused26:
-            Unused.
+        ibody:
+            Body / Spheroid definition used in Distance Calculations.
         leven:
             TRUE if data is evenly spaced.
         lpspol:
@@ -678,14 +684,12 @@ class SacIO:
         lcalda:
             TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and
             event coordinates.
-        unused27:
-            Unused.
         kstnm:
             Station name.
         kevnm:
             Event name.
         khole:
-            Nuclear: hole identifier; Other: location identifier.
+            Nuclear: hole identifier; Other: location identifier (LOCID).
         ko:
             Event origin time identification.
         ka:
@@ -733,11 +737,6 @@ class SacIO:
     delta: float = field(
         default=SACIO_DEFAULTS.delta, converter=float, validator=[type_validator()]
     )
-    scale: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
     odelta: float | None = field(
         default=None,
         converter=converters.optional(float),
@@ -752,11 +751,6 @@ class SacIO:
         validator=validators.optional([type_validator()]),
     )
     a: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    fmt: float | None = field(
         default=None,
         converter=converters.optional(float),
         validator=validators.optional([type_validator()]),
@@ -969,57 +963,12 @@ class SacIO:
         converter=converters.optional(float),
         validator=validators.optional([type_validator()]),
     )
-    sb: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    sdelta: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
     cmpaz: float | None = field(
         default=None,
         converter=converters.optional(float),
         validator=validators.optional([type_validator()]),
     )
     cmpinc: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused6: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused7: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused8: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused9: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused10: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused11: float | None = field(
-        default=None,
-        converter=converters.optional(float),
-        validator=validators.optional([type_validator()]),
-    )
-    unused12: float | None = field(
         default=None,
         converter=converters.optional(float),
         validator=validators.optional([type_validator()]),
@@ -1049,22 +998,12 @@ class SacIO:
     nevid: int | None = field(
         default=None, validator=validators.optional([type_validator()])
     )
-    nsnpts: int | None = field(
-        default=None, validator=validators.optional([type_validator()])
-    )
     nwfid: int | None = field(
-        default=None, validator=validators.optional([type_validator()])
-    )
-    unused15: int | None = field(
         default=None, validator=validators.optional([type_validator()])
     )
     iftype: str = field(default=SACIO_DEFAULTS.iftype, validator=validate_sacenum)
     idep: str = field(default=SACIO_DEFAULTS.idep, validator=validate_sacenum)
     iztype: str = field(default=SACIO_DEFAULTS.iztype, validator=validate_sacenum)
-    unused16: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
     iinst: str | None = field(
         default=None,
         validator=validators.optional([type_validator(), validators.max_len(4)]),
@@ -1090,46 +1029,14 @@ class SacIO:
     imagsrc: str | None = field(
         default=None, validator=validators.optional(validate_sacenum)
     )
-    unused19: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused20: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused21: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused22: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused23: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused24: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused25: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
-    )
-    unused26: str | None = field(
-        default=None,
-        validator=validators.optional([type_validator(), validators.max_len(4)]),
+    ibody: str | None = field(
+        default=None, validator=validators.optional(validate_sacenum)
     )
     leven: bool = field(default=SACIO_DEFAULTS.leven, validator=[type_validator()])
     lpspol: bool | None = field(
         default=None, validator=validators.optional([type_validator()])
     )
     lovrok: bool | None = field(
-        default=None, validator=validators.optional([type_validator()])
-    )
-    unused27: bool | None = field(
         default=None, validator=validators.optional([type_validator()])
     )
     kstnm: str | None = field(
@@ -1224,9 +1131,9 @@ class SacIO:
         default=None,
         validator=validators.optional([type_validator(), validators.max_len(8)]),
     )
-    data: np.ndarray = field(factory=lambda: np.array([]))
-    x: np.ndarray = field(factory=lambda: np.array([]))
-    y: np.ndarray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    x: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    y: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
 
     @property
     def depmin(self) -> float | None:
@@ -1396,16 +1303,16 @@ class SacIO:
         # Loop over all header fields and store them in the SAC object under their
         # respective private names.
         npts = 0
-        for header, metadata in SAC_HEADERS.items():
-            header_type = metadata.type
+        for header, header_metadata in SAC_HEADERS.items():
+            header_type = header_metadata.type
             header_undefined = HEADER_TYPES[header_type].undefined
-            start = metadata.start
-            length = metadata.length
+            start = header_metadata.start
+            length = header_metadata.length
             end = start + length
             if end >= len(buffer):
                 continue
             content = buffer[start:end]
-            value = struct.unpack(file_byteorder + metadata.format, content)[0]
+            value = struct.unpack(file_byteorder + header_metadata.format, content)[0]
             if isinstance(value, bytes):
                 # strip spaces and "\x00" chars
                 value = value.decode().rstrip(" \x00")
@@ -1441,23 +1348,42 @@ class SacIO:
         # Read first data block
         start = 632
         length = npts * 4
+        data_end = start + length
         self.data = np.array([])
         if length > 0:
-            end = start + length
+            data_end = start + length
             data_format = file_byteorder + str(npts) + "f"
-            if end > len(buffer):
+            if data_end > len(buffer):
                 raise EOFError()
-            content = buffer[start:end]
+            content = buffer[start:data_end]
             data = struct.unpack(data_format, content)
             self.data = np.array(data)
 
-        # TODO: implement reading and writing footer with double precision values.
-        # Warn users for now that footer is not read in case of SAC header version 7.
         if self.nvhdr == 7:
-            warnings.warn(
-                f"SAC header version {self.nvhdr} not implemented. Reverting to version 6"
-            )
-            self.nvhdr = 6
+            for footer, footer_metadata in SAC_FOOTERS.items():
+                undefined = -12345.0
+                length = 8
+                start = footer_metadata.start + data_end
+                end = start + length
+
+                if end > len(buffer):
+                    raise EOFError()
+                content = buffer[start:end]
+
+                value = struct.unpack(file_byteorder + "d", content)[0]
+
+                # skip if undefined (value == -12345...)
+                if value == undefined:
+                    continue
+
+                # SAC file has headers fields which are read only attributes in this
+                # class. We skip them with this try/except.
+                # TODO: This is a bit crude, should maybe be a bit more specific.
+                try:
+                    setattr(self, footer, value)
+                except AttributeError as e:
+                    if "object has no setter" in str(e):
+                        pass
 
     @classmethod
     def from_file(cls, filename: str) -> Self:
@@ -1544,24 +1470,25 @@ class SacIO:
         """
         with open(filename, "wb") as file_handle:
             # loop over all valid header fields and write them to the file
-            for header, metadata in SAC_HEADERS.items():
-                header_type = metadata.type
-                header_format = metadata.format
-                start = metadata.start
+            for header, header_metadata in SAC_HEADERS.items():
+                header_type = header_metadata.type
+                header_format = header_metadata.format
+                start = header_metadata.start
                 header_undefined = HEADER_TYPES[header_type].undefined
 
                 value = None
                 try:
-                    value = getattr(self, header)
+                    if hasattr(self, header):
+                        value = getattr(self, header)
                 except SacHeaderUndefined:
                     value = None
 
                 # convert enumerated header to integer if it is not None
-                if header_type == "i" and value:
+                if header_type == "i" and value is not None:
                     value = SacEnum[value].value
 
                 # set None to -12345
-                if not value:
+                if value is None:
                     value = header_undefined
 
                 # Encode strings to bytes
@@ -1573,9 +1500,29 @@ class SacIO:
                 file_handle.write(struct.pack(header_format, value))
 
             # write data (if npts > 0)
-            start1 = 632
-            file_handle.truncate(start1)
+            data_1_start = 632
+            data_1_end = data_1_start + self.npts * 4
+            file_handle.truncate(data_1_start)
             if self.npts > 0:
-                file_handle.seek(start1)
+                file_handle.seek(data_1_start)
                 for x in self.data:
                     file_handle.write(struct.pack("f", x))
+
+            if self.nvhdr == 7:
+                for footer, footer_metadata in SAC_FOOTERS.items():
+                    undefined = -12345.0
+                    start = footer_metadata.start + data_1_end
+                    value = None
+                    try:
+                        if hasattr(self, footer):
+                            value = getattr(self, footer)
+                    except SacHeaderUndefined:
+                        value = None
+
+                    # set None to -12345
+                    if value is None:
+                        value = undefined
+
+                    # write to file
+                    file_handle.seek(start)
+                    file_handle.write(struct.pack("d", value))

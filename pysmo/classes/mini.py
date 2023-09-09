@@ -35,7 +35,6 @@ class MiniSeismogram:
         end_time: Seismogram end time.
         sampling_rate: Seismogram sampling rate.
         data: Seismogram data.
-        id: Optional identifier
 
     Examples:
         >>> from pysmo import MiniSeismogram, Seismogram
@@ -59,10 +58,7 @@ class MiniSeismogram:
     )
     data: np.ndarray = field(
         factory=lambda: np.array([]),
-        validator=type_validator())
-    id: str | None = field(
-        default=None,
-        validator=validators.optional(type_validator())
+        validator=type_validator()
     )
 
     def __len__(self) -> int:

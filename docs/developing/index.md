@@ -22,6 +22,7 @@ paramount. This stability is achieved by keeping the type definitions simple, an
 close as possible to whatever they represent in the physical world. Other rules to follow
 are:
 
+- Avoid using `Optional` attributes as much as possible.
 - Types should be top level importable (i.e. `from pysmo import <type>`). Any new type
   should therefore be added to the
   [`pysmo/__init__.py`](https://github.com/pysmo/pysmo/blob/master/pysmo/__init__.py)
@@ -58,6 +59,9 @@ such only check for type compatibility. It is therefore up to the programmer to 
 they behave as expected (which is verified using the unit tests provided by pysmo).
 The classes are similarly essential to pysmo as the types, and similar rules apply:
 
+- If a class is meant to work with a pysmo type, its type signature needs to be the
+  same. For example, if a type defines an attribute to be a `float`, you may not
+  use `float | None` for that attribute.
 - Classes should also be top level importable
   (i.e. `from pysmo import <class>`). Any new class should therefore be added
   to the
