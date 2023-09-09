@@ -1,6 +1,7 @@
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.exceptions import SacHeaderUndefined
+from pysmo.lib.decorators import value_not_none
 from attrs import define, field
 import datetime
 import numpy as np
@@ -8,7 +9,12 @@ import numpy as np
 
 @define(kw_only=True)
 class SAC(SacIO):
-    """Class for SAC files.
+    """Class for accessing data in SAC files.
+
+    Tip:
+        This class inherits the numerous attributes and methods from the
+        [SacIO][pysmo.lib.io.sacio.SacIO] class. This gives access to all
+        SAC headers, ability to load from a file, download data, and so on.
 
     Examples:
         The `SAC` class provides a data structure that mirrors header fields and
@@ -55,9 +61,17 @@ class SAC(SacIO):
         >>> my_sac.delta is my_seismogram.sampling_rate
         True
 
-    Tip:
-        This class inherits the numerous attributes and methods from the
-        [SacIO][pysmo.lib.io.sacio.SacIO] class.
+        Because the SAC file format defines a large amount of header fields for metadata,
+        it needs to allow for many of these to be optional. Since the helper classes are
+        more specific (and intended to be used with pysmo types), their attributes
+        typically may *not* be [`None`][None]:
+
+        >>> my_sac.evla = None
+        >>> # No error: a SAC file doesn't have to contain event information.
+        >>> my_sac.event.latitude = None
+        TypeError: SacEvent.latitude may not be of None type.
+        >>> # Error: the my_sac.event object may not have attributes set to `None`.
+
 
     Attributes:
         seismogram: Maps pysmo compatible attributes to the internal SAC attributes.
@@ -68,7 +82,7 @@ class SAC(SacIO):
     class _SacNested:
         """Base class for nested SAC classes"""
 
-        parent: SacIO
+        _parent: SacIO
 
         @property
         def _ref_datetime(self) -> datetime.datetime:
@@ -81,10 +95,10 @@ class SAC(SacIO):
             # to define the reference time in case it is missing in
             # the parent SacIO object.
             # TODO: maybe it needs setting in the SacIO object too?
-            if self.parent.kztime is None or self.parent.kzdate is None:
-                return SEISMOGRAM_DEFAULTS.begin_time - datetime.timedelta(seconds=self.parent.b)
-            ref_time = datetime.time.fromisoformat(self.parent.kztime)
-            ref_date = datetime.date.fromisoformat(self.parent.kzdate)
+            if self._parent.kztime is None or self._parent.kzdate is None:
+                return SEISMOGRAM_DEFAULTS.begin_time - datetime.timedelta(seconds=self._parent.b)
+            ref_time = datetime.time.fromisoformat(self._parent.kztime)
+            ref_date = datetime.date.fromisoformat(self._parent.kzdate)
             return datetime.datetime.combine(ref_date, ref_time)
 
     @define(kw_only=True)
@@ -108,32 +122,33 @@ class SAC(SacIO):
 
         @property
         def data(self) -> np.ndarray:
-            return self.parent.data
+            return self._parent.data
 
         @data.setter
         def data(self, value: np.ndarray) -> None:
-            self.parent.data = value
+            self._parent.data = value
 
         @property
         def sampling_rate(self) -> float:
-            return self.parent.delta
+            return self._parent.delta
 
         @sampling_rate.setter
         def sampling_rate(self, value: float) -> None:
-            self.parent.delta = value
+            self._parent.delta = value
 
         @property
         def begin_time(self) -> datetime.datetime:
             # Begin time is reference time/date + "b" sac header
-            return self._ref_datetime + datetime.timedelta(seconds=self.parent.b)
+            return self._ref_datetime + datetime.timedelta(seconds=self._parent.b)
 
         @begin_time.setter
+        @value_not_none
         def begin_time(self, value: datetime.datetime) -> None:
             # Since other sac headers depend on the reference time (e.g . "o"),
             # we don't touch the sac reference time. Instead set the "b"
             # header, which is the difference between event time and
             # reference time in seconds.
-            self.parent.b = (value - self._ref_datetime).total_seconds()
+            self._parent.b = (value - self._ref_datetime).total_seconds()
 
         @property
         def end_time(self) -> datetime.datetime:
@@ -158,48 +173,52 @@ class SAC(SacIO):
 
         @property
         def latitude(self) -> float:
-            if self.parent.evla is None:
+            if self._parent.evla is None:
                 raise SacHeaderUndefined(header='evla')
-            return self.parent.evla
+            return self._parent.evla
 
         @latitude.setter
+        @value_not_none
         def latitude(self, value: float) -> None:
-            setattr(self.parent, 'evla', value)
+            setattr(self._parent, 'evla', value)
 
         @property
         def longitude(self) -> float:
-            if self.parent.evlo is None:
+            if self._parent.evlo is None:
                 raise SacHeaderUndefined(header='evlo')
-            return self.parent.evlo
+            return self._parent.evlo
 
         @longitude.setter
+        @value_not_none
         def longitude(self, value: float) -> None:
-            setattr(self.parent, 'evlo', value)
+            setattr(self._parent, 'evlo', value)
 
         @property
         def depth(self) -> float:
-            if self.parent.evdp is None:
+            if self._parent.evdp is None:
                 raise SacHeaderUndefined(header='evdp')
-            return self.parent.evdp * 1000
+            return self._parent.evdp * 1000
 
         @depth.setter
+        @value_not_none
         def depth(self, value: float) -> None:
-            setattr(self.parent, 'evdp', value/1000)
+            setattr(self._parent, 'evdp', value/1000)
 
         @property
         def time(self) -> datetime.datetime:
             # Event origin time is reference datetime + "o" sac header
-            if self.parent.o is None:
+            if self._parent.o is None:
                 raise SacHeaderUndefined(header='o')
-            return self._ref_datetime + datetime.timedelta(seconds=self.parent.o)
+            return self._ref_datetime + datetime.timedelta(seconds=self._parent.o)
 
         @time.setter
+        @value_not_none
         def time(self, value: datetime.datetime) -> None:
             # Since other sac headers depend on the reference time (e.g . "b"),
             # we don't touch the sac reference time. Instead set the "o"
             # header, which is the difference between event time and
             # reference time in seconds.
-            self.parent.o = (value - self._ref_datetime).total_seconds()
+            self._parent.o = (value - self._ref_datetime).total_seconds()
 
     @define(kw_only=True)
     class SacStation(_SacNested):
@@ -220,49 +239,52 @@ class SAC(SacIO):
 
         @property
         def name(self) -> str:
-            if self.parent.kstnm is None:
+            if self._parent.kstnm is None:
                 raise SacHeaderUndefined(header='kstnm')
-            return self.parent.kstnm
+            return self._parent.kstnm
 
         @name.setter
+        @value_not_none
         def name(self, value: str) -> None:
-            setattr(self.parent, 'kstnm', value)
+            setattr(self._parent, 'kstnm', value)
 
         @property
         def network(self) -> str | None:
-            return self.parent.knetwk
+            return self._parent.knetwk
 
         @network.setter
         def network(self, value: str) -> None:
-            setattr(self.parent, 'knetwk', value)
+            setattr(self._parent, 'knetwk', value)
 
         @property
         def latitude(self) -> float:
-            if self.parent.stla is None:
+            if self._parent.stla is None:
                 raise SacHeaderUndefined(header='stla')
-            return self.parent.stla
+            return self._parent.stla
 
         @latitude.setter
+        @value_not_none
         def latitude(self, value: float) -> None:
-            setattr(self.parent, 'stla', value)
+            setattr(self._parent, 'stla', value)
 
         @property
         def longitude(self) -> float:
-            if self.parent.stlo is None:
+            if self._parent.stlo is None:
                 raise SacHeaderUndefined(header='stlo')
-            return self.parent.stlo
+            return self._parent.stlo
 
         @longitude.setter
+        @value_not_none
         def longitude(self, value: float) -> None:
-            setattr(self.parent, 'stlo', value)
+            setattr(self._parent, 'stlo', value)
 
         @property
         def elevation(self) -> float | None:
-            return self.parent.stel
+            return self._parent.stel
 
         @elevation.setter
         def elevation(self, value: float) -> None:
-            setattr(self.parent, 'stel', value)
+            setattr(self._parent, 'stel', value)
 
     seismogram: SacSeismogram = field(init=False)
     station: SacStation = field(init=False)
