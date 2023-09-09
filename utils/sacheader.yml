@@ -41,6 +41,13 @@ header_types:
     undefined: ''
     description: Not really in the header. Derived from other header fields.
 
+  d:
+    definition: double
+    undefined: -12345
+    description: Double Precision.
+    length: 8
+    format: d
+
 header_fields:
   delta:
     description: Increment between evenly spaced samples (nominal value).
@@ -52,16 +59,14 @@ header_fields:
     description: Minimum value of dependent variable.
     start: 4
     header_type: f
-    read_only: true
 
   depmax:
     description: Maximum value of dependent variable.
     start: 8
     header_type: f
-    read_only: true
 
-  scale:
-    description: Multiplying scale factor for dependent variable (not currently used).
+  unused3:
+    description: Unused.
     start: 12
     header_type: f
 
@@ -71,17 +76,16 @@ header_fields:
     header_type: f
 
   b:
-    required: true
     start: 20
     header_type: f
     description: Beginning value of the independent variable.
+    required: true
 
   e:
     description: Ending value of the independent variable.
     start: 24
     header_type: f
     required: true
-    read_only: true
 
   o:
     description: Event origin time (seconds relative to reference time).
@@ -93,7 +97,7 @@ header_fields:
     start: 32
     header_type: f
 
-  fmt:
+  internal9:
     description: Internal.
     start: 36
     header_type: f
@@ -318,12 +322,12 @@ header_fields:
     start: 212
     header_type: f
 
-  sb:
+  internal54:
     description: Internal.
     start: 216
     header_type: f
 
-  sdelta:
+  internal55:
     description: Internal.
     start: 220
     header_type: f
@@ -332,7 +336,6 @@ header_fields:
     description: Mean value of dependent variable.
     start: 224
     header_type: f
-    read_only: true
 
   cmpaz:
     description: Component azimuth (degrees clockwise from north).
@@ -340,7 +343,7 @@ header_fields:
     header_type: f
 
   cmpinc:
-    description: Component incident angle (degrees from vertical).
+    description: "Component incident angle (degrees from upward vertical; SEED/MINISEED uses dip: degrees from horizontal down)."
     start: 232
     header_type: f
 
@@ -364,37 +367,37 @@ header_fields:
     start: 248
     header_type: f
 
-  unused6:
+  unused63:
     description: Unused.
     start: 254
     header_type: f
 
-  unused7:
+  unused64:
     description: Unused.
     start: 258
     header_type: f
 
-  unused8:
+  unused65:
     description: Unused.
     start: 262
     header_type: f
 
-  unused9:
+  unused66:
     description: Unused.
     start: 264
     header_type: f
 
-  unused10:
+  unused67:
     description: Unused.
     start: 268
     header_type: f
 
-  unused11:
+  unused68:
     description: Unused.
     start: 272
     header_type: f
 
-  unused12:
+  unused69:
     description: Unused.
     start: 276
     header_type: f
@@ -433,7 +436,6 @@ header_fields:
     description: Header version number.
     start: 304
     header_type: n
-    required: true
 
   norid:
     description: Origin ID (CSS 3.0).
@@ -450,9 +452,8 @@ header_fields:
     start: 316
     header_type: n
     required: true
-    read_only: true
 
-  nsnpts:
+  internal80:
     description: Internal.
     start: 320
     header_type: n
@@ -472,7 +473,7 @@ header_fields:
     start: 332
     header_type: n
 
-  unused15:
+  unused84:
     description: Unused.
     start: 336
     header_type: n
@@ -498,8 +499,8 @@ header_fields:
       unkn: Unknown.
       disp: Displacement in nm.
       vel: Velocity in nm/sec.
-      volts: Velocity in volts.
       acc: Acceleration in nm/sec/sec.
+      volts: Velocity in volts.
 
   iztype:
     description: Reference time equivalence.
@@ -522,7 +523,7 @@ header_fields:
       t8: User defined time pick 8.
       t9: User defined time pick 9.
 
-  unused16:
+  unused88:
     description: Unused.
     start: 352
     header_type: i
@@ -622,42 +623,50 @@ header_fields:
       user: The individual using SAC2000.
       unknown: unknown.
 
-  unused19:
-    description: Unused.
+  # if undefined uses sac historical spheroid
+  ibody:
+    description: Body / Spheroid definition used in Distance Calculations.
     start: 388
     header_type: i
+    allowed_vals:
+      sun: Sun Meftah2015 Rozelot2001.
+      mercury: Mercury IAU2000 IAU-WGCCRE.
+      venus: Venus IAU2000 IAU-WGCCRE.
+      earth: "WGS-84, EPSG:4325."
+      moon: Moon IAU2000 IAU-WGCCRE.
+      mars: Mars IAU2000 IAU-WGCCRE.
 
-  unused20:
+  unused98:
     description: Unused.
     start: 392
     header_type: i
 
-  unused21:
+  unused99:
     description: Unused.
     start: 396
     header_type: i
 
-  unused22:
+  unused100:
     description: Unused.
     start: 400
     header_type: i
 
-  unused23:
+  unused101:
     description: Unused.
     start: 404
     header_type: i
 
-  unused24:
+  unused102:
     description: Unused.
     start: 408
     header_type: i
 
-  unused25:
+  unused103:
     description: Unused.
     start: 412
     header_type: i
 
-  unused26:
+  unused104:
     description: Unused.
     start: 416
     header_type: i
@@ -683,7 +692,7 @@ header_fields:
     start: 432
     header_type: l
 
-  unused27:
+  unused109:
     description: Unused.
     start: 436
     header_type: l
@@ -701,7 +710,7 @@ header_fields:
     header_type: k
 
   khole:
-    description: 'Nuclear: hole identifier; Other: location identifier.'
+    description: 'Nuclear: hole identifier; Other: location identifier (LOCID).'
     start: 464
     header_type: k
 
@@ -805,6 +814,95 @@ header_fields:
     start: 624
     header_type: k
 
+footer_fields:
+  delta:
+    start: 0
+    header_type: d
+
+  b:
+    start: 8
+    header_type: d
+
+  e:
+    start: 16
+    header_type: d
+
+  o:
+    start: 24
+    header_type: d
+
+  a:
+    start: 32
+    header_type: d
+
+  t0:
+    start: 40
+    header_type: d
+
+  t1:
+    start: 48
+    header_type: d
+
+  t2:
+    start: 56
+    header_type: d
+
+  t3:
+    start: 64
+    header_type: d
+
+  t4:
+    start: 72
+    header_type: d
+
+  t5:
+    start: 80
+    header_type: d
+
+  t6:
+    start: 88
+    header_type: d
+
+  t7:
+    start: 96
+    header_type: d
+
+  t8:
+    start: 104
+    header_type: d
+
+  t9:
+    start: 112
+    header_type: d
+
+  f:
+    start: 120
+    header_type: d
+
+  evlo:
+    start: 128
+    header_type: d
+
+  evla:
+    start: 136
+    header_type: d
+
+  stlo:
+    start: 144
+    header_type: d
+
+  stla:
+    start: 152
+    header_type: d
+
+  sb:
+    start: 160
+    header_type: d
+
+  sdelta:
+    start: 168
+    header_type: d
+
 enumerated_header_values:
   time: 1
   rlim: 2
@@ -902,4 +1000,9 @@ enumerated_header_values:
   lit: 95
   met: 96
   odor: 97
-  os: 103
+  sun: 98
+  mercury: 99
+  venus: 100
+  earth: 101
+  moon: 102
+  mars: 103
