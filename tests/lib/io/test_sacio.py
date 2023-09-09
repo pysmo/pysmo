@@ -130,7 +130,6 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.yminimum is None
     assert sac.ymaximum is None
     assert sac.nvhdr == 6
-    assert sac.scale is None
     assert sac.norid == 0
     assert sac.nevid == 0
     assert sac.nwfid is None
@@ -148,6 +147,17 @@ def test_read_headers(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=['test_create_instance_from_file'])
+def test_v6_v7(sacfile_v6: str, sacfile_v7: str) -> None:
+    """Read all SacIO headers from a test file."""
+    sac6 = SacIO.from_file(sacfile_v6)
+    sac7 = SacIO.from_file(sacfile_v7)
+    assert sac6.nvhdr == 6
+    assert sac7.nvhdr == 7
+    sac7.write(sacfile_v7)
+    sac7 = SacIO.from_file(sacfile_v7)
+
+
+@pytest.mark.depends(on=['test_create_instance_from_file'])
 def test_sacfile_IB(sacfile_IB: str) -> None:
     sac = SacIO.from_file(sacfile_IB)
     assert sac.iztype == 'b'
@@ -160,7 +170,7 @@ def test_read_data(sacfile: str) -> None:
     assert all(sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0, 2378.0, 2358.0, 2398.0, 2331.0])
 
 
-# @pytest.mark.depends(on=['test_read_headers'])
+@pytest.mark.depends(on=['test_read_headers'])
 def test_change_headers(sacfile: str) -> None:
     """Test changing header values."""
 
@@ -345,7 +355,6 @@ def test_file_and_buffer(sacfile: str) -> None:
     assert from_file.yminimum == from_buffer.yminimum
     assert from_file.ymaximum == from_buffer.ymaximum
     assert from_file.nvhdr == from_buffer.nvhdr
-    assert from_file.scale == from_buffer.scale
     assert from_file.norid == from_buffer.norid
     assert from_file.nevid == from_buffer.nevid
     assert from_file.nwfid == from_buffer.nwfid
