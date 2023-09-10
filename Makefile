@@ -1,5 +1,5 @@
-.PHONY: help check-poetry install update lint test-figs tests mypy docs docs-export \
-	live-docs notebook build publish clean shell python
+.PHONY: help check-poetry install update lint test-figs test-tutorial tests \
+	mypy docs docs-export live-docs notebook build publish clean shell python
 
 ifeq ($(OS),Windows_NT)
   POETRY_VERSION := $(shell poetry --version 2> NUL)
@@ -34,7 +34,10 @@ lint: check-poetry ## Lint code with ruff
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
-tests: check-poetry lint mypy ## Run all tests with pytest.
+test-tutorial: check-poetry ## Check if the tutorial notebook runs error-free
+	poetry run py.test --nbmake docs/first-steps/tutorial.ipynb
+
+tests: check-poetry lint test-tutorial mypy ## Run all tests with pytest.
 	poetry run pytest --mypy --cov=pysmo --cov-report=xml --mpl -v
 
 mypy: check-poetry ## Run typing tests with pytest.

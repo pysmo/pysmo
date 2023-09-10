@@ -50,6 +50,7 @@ pytest-cov = "^4.1.0"
 pytest-mypy = "^0.10.3"
 pytest-depends = "^1.0.1"
 pytest-sugar = "^0.9.7"
+nbmake = "^1.4.3"
 
 [tool.poetry.group.docs.dependencies]
 ipython = "^8.14.0"
