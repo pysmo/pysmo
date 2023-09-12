@@ -19,3 +19,7 @@ nohup.out
 .nfs*
 docs/source/apidocs/
 .tox
+.idea
+blah.py
+foo.py
+bar.py
