@@ -168,6 +168,16 @@ will run all tests in the `tests` folder. A single test file may be executed by 
 $ poetry run pytest tests/test_functions.py
 ```
 
+### Formatting and linting
+
+Pysmo code is formatted with [black](https://black.readthedocs.io/en/stable/). It can
+be applied by running `make format`. To see if anything else needs changing after that
+we run `make lint`.
+
+!!! warning
+    If `make lint` doesn't pass in your working environment, the automatic tests on
+    GitHub will also fail. Please make sure `make lint` runs without errors before
+    submitting a pull request to the pysmo repository!
 
 ### Pushing the code
 
