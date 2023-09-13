@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 
 # Default model for distance and azimuth calculations
-DEFAULT_ELLPS = 'WGS84'
+DEFAULT_ELLPS = "WGS84"
 
 
 # SacIO defaults

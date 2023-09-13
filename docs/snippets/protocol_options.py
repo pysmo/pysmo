@@ -5,7 +5,6 @@ from typing import Protocol, runtime_checkable
 # Option 1
 @runtime_checkable
 class StationEvent(Protocol):
-
     @property
     def stat_coords(self) -> Location:
         ...
@@ -26,7 +25,6 @@ class StationEvent(Protocol):
 # Option 2
 @runtime_checkable
 class StationDistAzi(Protocol):
-
     @property
     def stat_coords(self) -> Location:
         ...

@@ -5,7 +5,7 @@ description = "Python module for seismologists."
 readme = "README.md"
 authors = ["Simon M. Lloyd <simon@slloyd.net>"]
 license = "GPL-3.0-or-later"
-documentation = "https://pysmo.readthedocs.io"
+documentation = "https://docs.pysmo.org"
 packages = [
    {include = "pysmo"},
 ]
@@ -38,7 +38,7 @@ types-pyyaml = "^6.0.12.11"
 types-requests = "^2.31.0.2"
 pytest-cases = "^3.6.14"
 jinja2 = "^3.1.2"
-black = "^23.7.0"
+black = {extras = ["jupyter"], version = "^23.9.1"}
 pyyaml = "^6.0.1"
 ruff = "^0.0.287"
 
@@ -92,8 +92,14 @@ exclude_also = [
     "plt.savefig(.*)",
     ]
 
+[tool.black]
+target-version = [
+  "py310",
+  "py311",
+]
+
 [tool.ruff]
-line-length = 120
+line-length = 88
 extend-exclude = ["utils/templates"]
 
 [tool.ruff.extend-per-file-ignores]

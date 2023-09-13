@@ -13,19 +13,19 @@ def test_create_instance() -> None:
 
 
 # TODO add all defaults
-@pytest.mark.depends(on=['test_create_instance'])
+@pytest.mark.depends(on=["test_create_instance"])
 def test_defaults() -> None:
     sac = SacIO()
     assert sac.b == 0
 
 
-@pytest.mark.depends(on=['test_create_instance'])
+@pytest.mark.depends(on=["test_create_instance"])
 def test_create_instance_from_file(sacfile: str) -> None:
     sac = SacIO.from_file(sacfile)
     assert isinstance(sac, SacIO)
 
 
-@pytest.mark.depends(on=['test_create_instance'])
+@pytest.mark.depends(on=["test_create_instance"])
 def test_write_to_file(empty_file: str) -> None:
     # create an "empty" instance
     sac = SacIO()
@@ -42,18 +42,18 @@ def test_write_to_file(empty_file: str) -> None:
     npt.assert_allclose(sac.data, random_data)
 
 
-@pytest.mark.depends(on=['test_create_instance_from_file'])
+@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_headers(sacfile: str) -> None:
     """Read all SacIO headers from a test file."""
     sac = SacIO.from_file(sacfile)
     assert sac.npts == 180000
     assert sac.b == pytest.approx(-63.34000015258789)
     assert sac.e == pytest.approx(3536.639892578125)
-    assert sac.iftype == 'time'
+    assert sac.iftype == "time"
     assert sac.leven is True
     assert pytest.approx(sac.delta) == 0.02
     assert sac.odelta is None
-    assert sac.idep == 'unkn'
+    assert sac.idep == "unkn"
     assert sac.depmin == 451
     assert sac.depmax == 4178
     assert sac.depmen == pytest.approx(2323.753022222222)
@@ -71,10 +71,10 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.t9 is None
     assert sac.f is None
     # kzdate is a derived header
-    assert sac.kzdate == '2005-03-01'
+    assert sac.kzdate == "2005-03-01"
     # kztime is a derived header
-    assert sac.kztime == '07:24:05.500'
-    assert sac.iztype == 'o'
+    assert sac.kztime == "07:24:05.500"
+    assert sac.iztype == "o"
     assert sac.kinst is None
     assert sac.resp0 is None
     assert sac.resp1 is None
@@ -87,7 +87,7 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.resp8 is None
     assert sac.resp9 is None
     assert sac.kdatrd is None
-    assert sac.kstnm == 'VOH01'
+    assert sac.kstnm == "VOH01"
     assert sac.cmpaz == 0
     assert sac.cmpinc == 0
     assert sac.istreg is None
@@ -95,14 +95,14 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.stlo == pytest.approx(-72.56145477294922)
     assert sac.stel is None
     assert sac.stdp is None
-    assert sac.kevnm == '050600723BHZ'
+    assert sac.kevnm == "050600723BHZ"
     assert sac.ievreg is None
     assert sac.evla == pytest.approx(-31.465999603271484)
     assert sac.evlo == pytest.approx(-71.71800231933594)
     assert sac.evel is None
     assert sac.evdp == 26
-    assert sac.ievtyp == 'quake'
-    assert sac.khole == ''
+    assert sac.ievtyp == "quake"
+    assert sac.khole == ""
     assert sac.dist == pytest.approx(1889.1549940066523)
     assert sac.az == pytest.approx(2.4677533885335987)
     assert sac.baz == pytest.approx(181.9199258637492)
@@ -136,8 +136,8 @@ def test_read_headers(sacfile: str) -> None:
     assert sac.iinst is None
     assert sac.lpspol is True
     assert sac.lcalda is True
-    assert sac.kcmpnm == 'BHZ'
-    assert sac.knetwk == 'YJ'
+    assert sac.kcmpnm == "BHZ"
+    assert sac.knetwk == "YJ"
     assert sac.mag is None
     assert sac.imagtyp is None
     assert sac.imagsrc is None
@@ -146,7 +146,7 @@ def test_read_headers(sacfile: str) -> None:
         _ = sac.nonexistingheader  # type: ignore[attr-defined]
 
 
-@pytest.mark.depends(on=['test_create_instance_from_file'])
+@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_v6_v7(sacfile_v6: str, sacfile_v7: str) -> None:
     """Read all SacIO headers from a test file."""
     sac6 = SacIO.from_file(sacfile_v6)
@@ -157,28 +157,42 @@ def test_v6_v7(sacfile_v6: str, sacfile_v7: str) -> None:
     sac7 = SacIO.from_file(sacfile_v7)
 
 
-@pytest.mark.depends(on=['test_create_instance_from_file'])
+@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_sacfile_IB(sacfile_IB: str) -> None:
     sac = SacIO.from_file(sacfile_IB)
-    assert sac.iztype == 'b'
+    assert sac.iztype == "b"
 
 
-@pytest.mark.depends(on=['test_create_instance_from_file'])
+@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_data(sacfile: str) -> None:
     """Test reading data."""
     sac = SacIO.from_file(sacfile)
-    assert all(sac.data[:10] == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0, 2407.0, 2378.0, 2358.0, 2398.0, 2331.0])
+    assert all(
+        sac.data[:10]
+        == [
+            2302.0,
+            2313.0,
+            2345.0,
+            2377.0,
+            2375.0,
+            2407.0,
+            2378.0,
+            2358.0,
+            2398.0,
+            2331.0,
+        ]
+    )
 
 
-@pytest.mark.depends(on=['test_read_headers'])
+@pytest.mark.depends(on=["test_read_headers"])
 def test_change_headers(sacfile: str) -> None:
     """Test changing header values."""
 
     sac = SacIO.from_file(sacfile)
     sac2 = SacIO.from_file(sacfile)
 
-    iftype_valid = 'time'
-    iftype_invalid = 'asdfasdf'
+    iftype_valid = "time"
+    iftype_invalid = "asdfasdf"
 
     # set iftype to a valid value
     sac.iftype = iftype_valid
@@ -190,7 +204,7 @@ def test_change_headers(sacfile: str) -> None:
 
     # set iftype to an invalid value
     with pytest.raises(ValueError):
-        sac.iftype = 'unkn'
+        sac.iftype = "unkn"
 
     # Try setting a header that should only accept integers with something else
     with pytest.raises(UnionError):
@@ -210,7 +224,7 @@ def test_change_headers(sacfile: str) -> None:
 
     # Try setting a string that is too long
     with pytest.raises(ValueError):
-        sac.kuser0 = 'too long string'
+        sac.kuser0 = "too long string"
 
     # # Are trailing spaces removed?
     # sac2.kuser0 = 'aaaa   '
@@ -230,7 +244,7 @@ def test_change_headers(sacfile: str) -> None:
         sac.npts = 123  # type: ignore
 
 
-@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
+@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
 def test_change_data(sacfile: str) -> None:
     """Test changing data."""
     sac = SacIO.from_file(sacfile)
@@ -239,10 +253,10 @@ def test_change_data(sacfile: str) -> None:
     assert all(sac.data == newdata)
     assert sac.depmin == min(newdata)
     assert sac.depmax == max(newdata)
-    assert sac.depmen == sum(newdata)/sac.npts
+    assert sac.depmen == sum(newdata) / sac.npts
 
 
-@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
+@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
 def test_pickling(sacfile: str, empty_file: str) -> None:
     sac = SacIO.from_file(sacfile)
     picklefile = empty_file
@@ -254,7 +268,7 @@ def test_pickling(sacfile: str, empty_file: str) -> None:
     assert sac.b == sac2.b
 
 
-@pytest.mark.depends(on=['test_read_headers', 'test_read_data', 'test_change_headers'])
+@pytest.mark.depends(on=["test_read_headers", "test_read_data", "test_change_headers"])
 def test_deepcopy(sacfile: str) -> None:
     sac = SacIO.from_file(sacfile)
     sac2 = copy.deepcopy(sac)
@@ -265,7 +279,7 @@ def test_deepcopy(sacfile: str) -> None:
     assert sac.e != sac2.e
 
 
-@pytest.mark.depends(on=['test_read_headers', 'test_read_data'])
+@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
 def test_file_and_buffer(sacfile: str) -> None:
     from_file = SacIO.from_file(sacfile)
     with open(sacfile, "rb") as f:
@@ -369,7 +383,7 @@ def test_file_and_buffer(sacfile: str) -> None:
     assert all(from_file.data == from_buffer.data)
 
 
-@pytest.mark.depends(on=['test_file_and_buffer'])
+@pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service() -> None:
     mysac = SacIO.from_iris(
         net="C1",
@@ -380,11 +394,12 @@ def test_iris_service() -> None:
         duration=1 * 60 * 60,
         scale="AUTO",
         demean="true",
-        force_single_result=True)
+        force_single_result=True,
+    )
     assert mysac.npts == 144001  # type: ignore
 
 
-@pytest.mark.depends(on=['test_file_and_buffer'])
+@pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service_params_error() -> None:
     try:
         SacIO.from_iris(
@@ -396,13 +411,14 @@ def test_iris_service_params_error() -> None:
             duration=1 * 60 * 60,
             scale="AUTO",
             demean="true",
-            force_single_result=True)
+            force_single_result=True,
+        )
         assert False
     except ValueError as error:
         assert str(error).startswith("Error 404: Not Found")
 
 
-@pytest.mark.depends(on=['test_file_and_buffer'])
+@pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service_multi_result() -> None:
     mysacs = SacIO.from_iris(
         net="IU",
@@ -413,14 +429,15 @@ def test_iris_service_multi_result() -> None:
         duration=1 * 60 * 60,
         scale="AUTO",
         demean="true",
-        force_single_result=False)
+        force_single_result=False,
+    )
     assert isinstance(mysacs, dict)
     assert len(mysacs) == 4
     data = [
         ("IU.MAKZ.00.HHZ.D.2015.252.150941.SAC", 36790),
         ("IU.MAKZ.00.HHZ.D.2015.252.152559.SAC", 39196),
         ("IU.MAKZ.00.HHZ.D.2015.252.154438.SAC", 40349),
-        ("IU.MAKZ.00.HHZ.D.2015.252.155301.SAC", 37711)
+        ("IU.MAKZ.00.HHZ.D.2015.252.155301.SAC", 37711),
     ]
 
     for name, npts in data:
@@ -428,7 +445,7 @@ def test_iris_service_multi_result() -> None:
         assert mysacs[name].npts == npts
 
 
-@pytest.mark.depends(on=['test_file_and_buffer'])
+@pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service_multi_result_forced() -> None:
     mysacs = SacIO.from_iris(
         net="IU",
@@ -439,6 +456,7 @@ def test_iris_service_multi_result_forced() -> None:
         duration=1 * 60 * 60,
         scale="AUTO",
         demean="true",
-        force_single_result=True)
+        force_single_result=True,
+    )
     assert isinstance(mysacs, SacIO)
     assert mysacs.npts == 36790
