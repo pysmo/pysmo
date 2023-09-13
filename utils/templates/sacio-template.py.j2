@@ -43,11 +43,12 @@ class Header:
     length: int
     format: str
     type: str
+    required: bool
 
 
 SAC_HEADERS = dict(
     {%- for header, values in headers.items() %}
-    {{ header }}=Header(start={{ values.start }}, length={{ values.length }}, format='{{ values.format }}', type='{{ values.header_type }}'),
+    {{ header }}=Header(start={{ values.start }}, length={{ values.length }}, format='{{ values.format }}', type='{{ values.header_type }}', required={{ values.required | default(False) }}),
     {%- endfor %}
 )
 
@@ -343,6 +344,7 @@ class SacIO:
         npts = 0
         for header, header_metadata in SAC_HEADERS.items():
             header_type = header_metadata.type
+            header_required = header_metadata.required
             header_undefined = HEADER_TYPES[header_type].undefined
             start = header_metadata.start
             length = header_metadata.length
@@ -359,8 +361,12 @@ class SacIO:
             if header == "npts":
                 npts = int(value)
 
-            # skip if undefined (value == -12345...)
-            if value == header_undefined:
+            # raise error if header is undefined AND required
+            if value == header_undefined and header_required:
+                raise RuntimeError(f"Required {header=} is undefined - invalid SAC file!")
+
+            # skip if undefined (value == -12345...) and not required
+            if value == header_undefined and not header_required:
                 continue
 
             # convert enumerated header to string and format others
