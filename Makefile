@@ -1,5 +1,6 @@
 .PHONY: help check-poetry install update lint test-figs test-tutorial tests \
-	mypy docs docs-export live-docs notebook build publish clean shell python
+	mypy docs docs-export live-docs notebook build publish clean shell python \
+	format format-check
 
 ifeq ($(OS),Windows_NT)
   POETRY_VERSION := $(shell poetry --version 2> NUL)
@@ -28,16 +29,17 @@ install: check-poetry ## Install this project and its dependencies in a virtual 
 update: check-poetry ## Update dependencies to their latest versions.
 	poetry update
 
-lint: check-poetry ## Lint code with ruff
-	poetry run ruff . --statistics
+lint: check-poetry ## Check formatting with black and lint code with ruff.
+	poetry run black . --check --diff --color
+	poetry run ruff .
 
 test-figs: check-poetry ## Generate baseline figures for testing. Only run this if you know what you are doing!
 	poetry run py.test --mpl-generate-path=tests/baseline
 
-test-tutorial: check-poetry ## Check if the tutorial notebook runs error-free
+test-tutorial: check-poetry ## Check if the tutorial notebook runs error-free.
 	poetry run py.test --nbmake docs/first-steps/tutorial.ipynb
 
-tests: check-poetry lint test-tutorial mypy ## Run all tests with pytest.
+tests: check-poetry test-tutorial mypy ## Run all tests with pytest.
 	poetry run pytest --mypy --cov=pysmo --cov-report=xml --mpl -v
 
 mypy: check-poetry ## Run typing tests with pytest.
@@ -52,7 +54,7 @@ docs-export: check-poetry install ## Export installed package information to doc
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
 	poetry run mkdocs serve -w README.md -w pysmo -w changelog.md -w contributors.md
 
-notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment
+notebook: check-poetry install ## Run a jupyter-notebook in the poetry environment.
 	poetry run jupyter-notebook
 
 build: clean check-poetry install ## Build distribution.
@@ -69,3 +71,9 @@ shell: check-poetry ## Start a shell in the project virtual environment.
 
 python: check-poetry ## Start an interactive python shell in the project virtual environment.
 	poetry run python
+
+format: check-poetry ## Format python code with black.
+	poetry run black .
+
+format-check: check-poetry ## See what running 'make format' would change instead of actually running it.
+	poetry run black . --diff --color

@@ -106,9 +106,14 @@ $ git checkout -b func-normalize
 Pysmo functions belong in the `pysmo/functions.py` file, so we add the following
 (highlighted) content:
 
-```python title="pysmo/functions.py" linenums="48" hl_lines="5-25"
---8<-- "docs/snippets/functions.py:48:78"
+```python title="pysmo/functions.py" linenums="8" hl_lines="6-42"
+--8<-- "docs/snippets/functions.py:8:53"
 ```
+
+1.  The actual implementation of the normalize function lives in the file
+    `pysmo/lib/functions.py` (imported in line 9), so that it's code can
+     be shared with a corresponding method in the
+    [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 
 !!! note
     Notice that the code is making use of [type hinting](../first-steps/index.md) and
@@ -120,14 +125,14 @@ To ensure that this newly created function can be imported correctly, it must be
 added to the pysmo `__init__.py` file in two places. First, it needs to be imported
 from the `.py` file itself:
 
-```python title="pysmo/__init__.py" linenums="45" hl_lines="3"
---8<-- "docs/snippets/sample_init.py:45:55"
+```python title="pysmo/__init__.py" linenums="41" hl_lines="2"
+--8<-- "docs/snippets/sample_init.py:41:49"
 ```
 
 Then it must be added to the `__all__` list:
 
-```python title="pysmo/__init__.py" linenums="58" hl_lines="11"
---8<-- "docs/snippets/sample_init.py:58:70"
+```python title="pysmo/__init__.py" linenums="53" hl_lines="13"
+--8<-- "docs/snippets/sample_init.py:53:73"
 ```
 
 
@@ -141,8 +146,8 @@ The tests in pysmo are in the `tests` folder, where we keep the structure somewh
 similar to the pysmo source in the `pysmo` folder. Hence we add the following content
 to the `tests/test_functions.py` file:
 
-```python title="tests/test_functions.py" linenums="27" hl_lines="3-8"
---8<-- "docs/snippets/test_functions.py:27:34"
+```python title="tests/test_functions.py" linenums="31" hl_lines="2-7"
+--8<-- "docs/snippets/test_functions.py:31:38"
 ```
 
 !!! important
@@ -163,6 +168,16 @@ will run all tests in the `tests` folder. A single test file may be executed by 
 $ poetry run pytest tests/test_functions.py
 ```
 
+### Formatting and linting
+
+Pysmo code is formatted with [black](https://black.readthedocs.io/en/stable/). It can
+be applied by running `make format`. To see if anything else needs changing after that
+we run `make lint`.
+
+!!! warning
+    If `make lint` doesn't pass in your working environment, the automatic tests on
+    GitHub will also fail. Please make sure `make lint` runs without errors before
+    submitting a pull request to the pysmo repository!
 
 ### Pushing the code
 

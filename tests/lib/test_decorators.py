@@ -8,7 +8,6 @@ def test_value_not_none() -> None:
 
     @dataclass
     class A:
-
         _foo: float = 0
 
         @property

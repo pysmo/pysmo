@@ -5,8 +5,9 @@ import numpy as np
 import scipy.signal  # type: ignore
 
 
-def _azdist(lat1: float, lon1: float, lat2: float, lon2: float,
-            ellps: str = DEFAULT_ELLPS) -> tuple[float, float, float]:
+def _azdist(
+    lat1: float, lon1: float, lat2: float, lon2: float, ellps: str = DEFAULT_ELLPS
+) -> tuple[float, float, float]:
     """Return forward/backazimuth and distance using pyproj (proj4 bindings).
 
     Parameters:
