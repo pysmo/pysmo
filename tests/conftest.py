@@ -8,6 +8,7 @@ TESTDATA = dict(
     orgfile_special_IB=os.path.join(
         os.path.dirname(__file__), "assets/testfile_iztype_is_IB.sac"
     ),
+    bad_no_b=os.path.join(os.path.dirname(__file__), "assets/no_b.sac"),
     funcgen6=os.path.join(os.path.dirname(__file__), "assets/funcgen6.sac"),
     funcgen7=os.path.join(os.path.dirname(__file__), "assets/funcgen7.sac"),
 )
@@ -18,6 +19,7 @@ def assets() -> Dict[str, str]:
     return dict(
         sacfile=TESTDATA["orgfile"],
         sacfile_IB=TESTDATA["orgfile_special_IB"],
+        sacfile_no_b=TESTDATA["bad_no_b"],
         sacfile_v6=TESTDATA["funcgen6"],
         sacfile_v7=TESTDATA["funcgen7"],
     )
@@ -32,6 +34,15 @@ def empty_file(tmpdir_factory: pytest.TempdirFactory) -> str:
 @pytest.fixture()
 def sacfile(tmpdir_factory: pytest.TempdirFactory, assets: Dict[str, str]) -> str:
     orgfile = assets["sacfile"]
+    tmpdir = tmpdir_factory.mktemp("sacfiles")
+    testfile = os.path.join(tmpdir, "testfile.sac")
+    shutil.copyfile(orgfile, testfile)
+    return testfile
+
+
+@pytest.fixture()
+def sacfile_no_b(tmpdir_factory: pytest.TempdirFactory, assets: Dict[str, str]) -> str:
+    orgfile = assets["sacfile_no_b"]
     tmpdir = tmpdir_factory.mktemp("sacfiles")
     testfile = os.path.join(tmpdir, "testfile.sac")
     shutil.copyfile(orgfile, testfile)
