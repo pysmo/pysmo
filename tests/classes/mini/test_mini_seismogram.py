@@ -7,7 +7,6 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
 
 class TestMiniSeismogram:
-
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
@@ -15,7 +14,7 @@ class TestMiniSeismogram:
         assert isinstance(miniseis, MiniSeismogram)
         assert isinstance(miniseis, Seismogram)
 
-    @pytest.mark.depends(name='test_create_instance')
+    @pytest.mark.depends(name="test_create_instance")
     def test_defaults(self) -> None:
         """Test default attributes."""
 
@@ -26,36 +25,41 @@ class TestMiniSeismogram:
         assert miniseis.begin_time.hour == SEISMOGRAM_DEFAULTS.begin_time.hour == 0
         assert miniseis.begin_time.minute == SEISMOGRAM_DEFAULTS.begin_time.minute == 0
         assert miniseis.begin_time.second == SEISMOGRAM_DEFAULTS.begin_time.second == 0
-        assert miniseis.begin_time.microsecond == SEISMOGRAM_DEFAULTS.begin_time.microsecond == 0
+        assert (
+            miniseis.begin_time.microsecond
+            == SEISMOGRAM_DEFAULTS.begin_time.microsecond
+            == 0
+        )
         assert miniseis.sampling_rate == SEISMOGRAM_DEFAULTS.sampling_rate == 1
         assert miniseis.data.size == 0
         assert len(miniseis) == 0
 
-    @pytest.mark.depends(name='test_create_instance')
+    @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
-
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
-        new_time = datetime.fromisoformat('2011-11-04T00:05:23.123')
+        new_time = datetime.fromisoformat("2011-11-04T00:05:23.123")
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis)-1))
+            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+        )
         miniseis.begin_time = new_time
         assert miniseis.begin_time == new_time
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis)-1))
+            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+        )
         miniseis.sampling_rate = 0.1
         assert miniseis.sampling_rate == 0.1
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis)-1))
+            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+        )
 
-    @pytest.mark.depends(name='test_change_attributes')
+    @pytest.mark.depends(name="test_change_attributes")
     def test_as_seismogram(self) -> None:
         """check if it works in a functionfor Seismogram types."""
 
         def seis_func(seismogram: Seismogram) -> None:
-
             _ = len(seismogram)
             _ = np.mean(seismogram.data)
             _ = seismogram.sampling_rate * 1.1
@@ -67,7 +71,6 @@ class TestMiniSeismogram:
 
 
 class TestMiniSeismogramMethods:
-
     @pytest.fixture
     def mini_seismogram(self) -> MiniSeismogram:
         return MiniSeismogram(data=np.random.rand(1000))

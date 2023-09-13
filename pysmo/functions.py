@@ -6,12 +6,7 @@ import matplotlib.pyplot as plt  # type: ignore
 import matplotlib.dates as mdates  # type: ignore
 import numpy as np
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import (
-    _azdist,
-    _detrend,
-    _normalize,
-    _resample
-)
+from pysmo.lib.functions import _azdist, _detrend, _normalize, _resample
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
@@ -140,8 +135,13 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
     return clone
 
 
-def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
-             title: str = "", **kwargs: dict) -> plt.FigureBase:
+def plotseis(
+    *seismograms: Seismogram,
+    outfile: str = "",
+    showfig: bool = True,
+    title: str = "",
+    **kwargs: dict,
+) -> plt.FigureBase:
     """Plot Seismogram objects.
 
     Parameters:
@@ -163,13 +163,13 @@ def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
         end = mdates.date2num(seis.end_time)
         time = np.linspace(start, end, len(seis))
         plt.plot(time, seis.data, **kwargs)
-    plt.xlabel('Time')
+    plt.xlabel("Time")
     plt.gcf().autofmt_xdate()
-    fmt = mdates.DateFormatter('%H:%M:%S')
+    fmt = mdates.DateFormatter("%H:%M:%S")
     plt.gca().xaxis.set_major_formatter(fmt)
     if not title:
         left, _ = plt.xlim()
-        title = mdates.num2date(left).strftime('%Y-%m-%d %H:%M:%S')
+        title = mdates.num2date(left).strftime("%Y-%m-%d %H:%M:%S")
     plt.title(title)
     if outfile:
         plt.savefig(outfile)
@@ -202,12 +202,18 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
         >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
         181.92001941872516
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[0]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[0]
 
 
-def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
+def backazimuth(
+    point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS
+) -> float:
     """Calculate backazimuth (in DEG) between two points.
 
     info:
@@ -231,9 +237,13 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[1]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[1]
 
 
 def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -260,6 +270,10 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
         >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
         1889121.778136402
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[2]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[2]
