@@ -7,7 +7,6 @@ class SacHeaderUndefined(Exception):
     """
 
     def __init__(self, message: str | None = None, header: str | None = None) -> None:
-
         self.message = f"Value for SAC header {header} is None."
         if message is not None:
             self.message = message

@@ -2,7 +2,6 @@ from typing import Protocol  # (1)!
 
 
 class Ducklike(Protocol):  # (2)!
-
     def quack(self) -> str:  # (3)!
         ...
 
@@ -11,7 +10,6 @@ class Ducklike(Protocol):  # (2)!
 
 
 class Duck:  # (4)!
-
     def quack(self) -> str:
         return "quack, quack!"
 
@@ -20,7 +18,6 @@ class Duck:  # (4)!
 
 
 class Human:  # (5)!
-
     def quack(self) -> str:
         return "quack, quack!"
 

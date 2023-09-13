@@ -15,8 +15,8 @@ class Seismogram(Protocol):
         end_time: Seismogram end time (read only).
 
     Examples:
-        Usage for a function that takes a Seismogram compatible class instance as argument
-        and returns the begin time in isoformat:
+        Usage for a function that takes a Seismogram compatible class instance as
+        argument and returns the begin time in isoformat:
 
         >>> from pysmo import SAC, Seismogram  # SAC is a class that "speaks" Seismogram
         >>> def begin_time_in_isoformat(seis_in: Seismogram) -> str:
@@ -68,6 +68,7 @@ class Location(Protocol):
         latitude: Latitude in degrees.
         longitude: Longitude in degrees.
     """
+
     @property
     def latitude(self) -> float:
         ...
@@ -96,6 +97,7 @@ class Station(Location, Protocol):
         longitude (float): Station longitude in degrees.
         elevation: Station elevation in metres.
     """
+
     @property
     def name(self) -> str:
         ...
@@ -130,6 +132,7 @@ class Hypocenter(Location, Protocol):
         latitude (float): Latitude in degrees.
         longitude (float): Longitude in degrees.
     """
+
     @property
     def depth(self) -> float:
         ...
@@ -149,6 +152,7 @@ class Event(Hypocenter, Protocol):
         longitude (float): Longitude in degrees.
         time: Event origin time.
     """
+
     @property
     def time(self) -> datetime.datetime:
         ...
