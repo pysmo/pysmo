@@ -1,5 +1,4 @@
 class Duck:  # (1)!
-
     def quack(self):
         return "quack, quack!"
 
@@ -8,7 +7,6 @@ class Duck:  # (1)!
 
 
 class Human:  # (2)!
-
     def quack(self):
         return "quack, quack!"
 
@@ -17,7 +15,6 @@ class Human:  # (2)!
 
 
 def is_a_duck(thing):  # (3)!
-
     try:
         thing.quack()
         thing.waddle()

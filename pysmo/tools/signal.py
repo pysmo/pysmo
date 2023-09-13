@@ -58,7 +58,7 @@ def __gauss(seis: Seismogram, Tn: float, alpha: float) -> tuple[np.ndarray, np.n
     npts = len(seis)
     spec = np.fft.fft(seis.data)
     W = np.array(np.linspace(0, Nyq, npts))
-    Hn = spec * np.exp(-1 * alpha * ((W-Wn)/Wn)**2)
+    Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
     Qn = complex(0, 1) * Hn.real - Hn.imag
     hn = np.fft.ifft(Hn).real
     qn = np.fft.ifft(Qn).real

@@ -10,11 +10,7 @@ try:
 except ImportError:
     from typing_extensions import Self  # py310
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.lib.functions import (
-    _normalize,
-    _detrend,
-    _resample
-)
+from pysmo.lib.functions import _normalize, _detrend, _resample
 from pysmo import Seismogram
 from datetime import datetime, timedelta
 from attrs import define, field, validators, converters
@@ -48,18 +44,14 @@ class MiniSeismogram:
     """
 
     begin_time: datetime = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time,
-        validator=type_validator()
+        default=SEISMOGRAM_DEFAULTS.begin_time, validator=type_validator()
     )
     sampling_rate: float = field(
         default=SEISMOGRAM_DEFAULTS.sampling_rate,
         converter=float,
-        validator=type_validator()
+        validator=type_validator(),
     )
-    data: np.ndarray = field(
-        factory=lambda: np.array([]),
-        validator=type_validator()
-    )
+    data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
 
     def __len__(self) -> int:
         return np.size(self.data)
@@ -68,7 +60,7 @@ class MiniSeismogram:
     def end_time(self) -> datetime:
         if len(self) == 0:
             return self.begin_time
-        return self.begin_time + timedelta(seconds=self.sampling_rate*(len(self)-1))
+        return self.begin_time + timedelta(seconds=self.sampling_rate * (len(self) - 1))
 
     @classmethod
     def clone(cls, seismogram: Seismogram, skip_data: bool = False) -> Self:
@@ -173,21 +165,14 @@ class MiniLocation:
         >>> isinstance(my_location, Location)
         True
     """
+
     latitude: float = field(
         converter=float,
-        validator=[
-            validators.ge(-90),
-            validators.le(90),
-            type_validator()
-        ]
+        validator=[validators.ge(-90), validators.le(90), type_validator()],
     )
     longitude: float = field(
         converter=float,
-        validator=[
-            validators.gt(-180),
-            validators.le(180),
-            type_validator()
-        ]
+        validator=[validators.gt(-180), validators.le(180), type_validator()],
     )
 
 
@@ -215,21 +200,15 @@ class MiniStation(MiniLocation):
         >>> isinstance(my_station, Location)
         True
     """
+
     name: str = field(validator=type_validator())
-    network: str | None = field(
-        default=None,
-        validator=type_validator()
-    )
+    network: str | None = field(default=None, validator=type_validator())
     elevation: float | None = field(
         default=None,
         converter=converters.optional(float),
         validator=validators.optional(
-            [
-                validators.gt(-180),
-                validators.le(180),
-                type_validator()
-            ]
-        )
+            [validators.gt(-180), validators.le(180), type_validator()]
+        ),
     )
 
 
@@ -255,10 +234,8 @@ class MiniHypocenter(MiniLocation):
         >>> isinstance(my_hypo, Location)
         True
     """
-    depth: float = field(
-        converter=float,
-        validator=type_validator()
-    )
+
+    depth: float = field(converter=float, validator=type_validator())
 
 
 @define(kw_only=True)
@@ -290,4 +267,5 @@ class MiniEvent(MiniHypocenter):
         >>> isinstance(my_event, Location)
         True
     """
+
     time: datetime = field(validator=type_validator())
