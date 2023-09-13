@@ -20,9 +20,12 @@ def test_defaults() -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance"])
-def test_create_instance_from_file(sacfile: str) -> None:
+def test_create_instance_from_file(sacfile: str, sacfile_no_b: str) -> None:
     sac = SacIO.from_file(sacfile)
     assert isinstance(sac, SacIO)
+    # reading invalid SAC file with undefined mandatory field should fail
+    with pytest.raises(RuntimeError):
+        SacIO.from_file(sacfile_no_b)
 
 
 @pytest.mark.depends(on=["test_create_instance"])
