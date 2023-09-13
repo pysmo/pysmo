@@ -10,7 +10,6 @@ import pytest
 
 
 class TestSAC:
-
     def test_create_instance(self) -> None:
         sac = SAC()
         assert isinstance(sac, SAC)
@@ -22,7 +21,7 @@ class TestSAC:
         with pytest.raises(SacHeaderUndefined):
             assert isinstance(sac.event, Event)
 
-    @pytest.mark.depends(on=['test_create_instance'])
+    @pytest.mark.depends(on=["test_create_instance"])
     def test_defaults(self) -> None:
         sac = SAC()
 
@@ -38,7 +37,7 @@ class TestSAC:
         with pytest.raises(SacHeaderUndefined):
             sac.event.time
 
-    @pytest.mark.depends(on=['test_create_instance'])
+    @pytest.mark.depends(on=["test_create_instance"])
     def test_create_instance_from_file(self, sacfile: str) -> None:
         sac = SAC.from_file(sacfile)
         assert isinstance(sac, SAC)
@@ -46,7 +45,7 @@ class TestSAC:
         assert isinstance(sac.station, Station)
         assert isinstance(sac.event, Event)
 
-    @pytest.mark.depends(on=['test_create_instance_from_file'])
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: str) -> None:
         sacseis = SAC.from_file(sacfile).seismogram
         sacio = SacIO.from_file(sacfile)
@@ -58,40 +57,53 @@ class TestSAC:
         assert sacseis.begin_time == datetime(2005, 3, 1, 7, 23, 2, 160000)
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
-            assert sacseis.begin_time.timetuple().tm_yday == sacio.nzjday + int(sacio.b / 3600)
+            assert sacseis.begin_time.timetuple().tm_yday == sacio.nzjday + int(
+                sacio.b / 3600
+            )
         if sacio.nzmin:
             assert sacseis.begin_time.minute == (sacio.nzmin + int(sacio.b / 60)) % 60
         if sacio.nzsec:
             assert sacseis.begin_time.second == (sacio.nzsec + int(sacio.b)) % 60
         if sacio.nzmsec:
-            assert sacseis.begin_time.microsecond == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
+            assert (
+                sacseis.begin_time.microsecond
+                == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
+            )
         assert sacseis.end_time == datetime(2005, 3, 1, 8, 23, 2, 139920)
-        assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacio.delta * (sacio.npts - 1))
+        assert sacseis.end_time - sacseis.begin_time == timedelta(
+            seconds=sacio.delta * (sacio.npts - 1)
+        )
 
         # Change some values
         random_data = np.random.randn(100)
-        new_time1 = datetime.fromisoformat('2011-11-04T00:05:23.123')
+        new_time1 = datetime.fromisoformat("2011-11-04T00:05:23.123")
         sacseis.data = random_data
         # changing data should also change end time
         assert sacseis.data.all() == random_data.all()
-        assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacseis.sampling_rate * (len(sacseis.data)-1))
+        assert sacseis.end_time - sacseis.begin_time == timedelta(
+            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+        )
         # changing sampling rate also changes end time
         new_sampling_rate = sacseis.sampling_rate * 2
         sacseis.sampling_rate = new_sampling_rate
         assert sacseis.sampling_rate == new_sampling_rate
-        assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacseis.sampling_rate * (len(sacseis.data)-1))
+        assert sacseis.end_time - sacseis.begin_time == timedelta(
+            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+        )
         # changing the begin time changes end time
         sacseis.begin_time = new_time1
         assert sacseis.begin_time == new_time1
-        assert sacseis.end_time - sacseis.begin_time == timedelta(seconds=sacseis.sampling_rate * (len(sacseis.data)-1))
+        assert sacseis.end_time - sacseis.begin_time == timedelta(
+            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+        )
 
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
-        for item in ['begin_time', 'sampling_rate', 'data']:
+        for item in ["begin_time", "sampling_rate", "data"]:
             with pytest.raises((TypeError, AttributeTypeError)):
                 setattr(sacseis, item, None)
 
-    @pytest.mark.depends(on=['test_create_instance_from_file'])
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_station(self, sacfile: str) -> None:
         sac = SAC.from_file(sacfile)
         sacstation = sac.station
@@ -100,7 +112,9 @@ class TestSAC:
         assert sacstation.network == sacio.knetwk
         assert sacstation.latitude == sacio.stla == pytest.approx(-48.46787643432617)
         assert sacstation.longitude == sacio.stlo == pytest.approx(-72.56145477294922)
-        assert sacstation.elevation == sacio.stel is None  # testfile happens to not have this set...
+        assert (
+            sacstation.elevation == sacio.stel is None
+        )  # testfile happens to not have this set...
 
         # try changing values
         new_name = "new_name"
@@ -127,7 +141,7 @@ class TestSAC:
 
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
-        for item in ['name', 'latitude', 'longitude']:
+        for item in ["name", "latitude", "longitude"]:
             with pytest.raises((TypeError, AttributeTypeError)):
                 setattr(sacstation, item, None)
 
@@ -143,7 +157,7 @@ class TestSAC:
         with pytest.raises(SacHeaderUndefined):
             sacstation.longitude
 
-    @pytest.mark.depends(on=['test_create_instance_from_file'])
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_event(self, sacfile: str) -> None:
         sac = SAC.from_file(sacfile)
         sacevent = sac.event
@@ -153,8 +167,9 @@ class TestSAC:
         if sacio.evdp is not None:
             assert sacevent.depth == sacio.evdp * 1000 == 26000
         if sac.o is not None:
-            assert sacevent.time == sac.seismogram.begin_time + \
-                timedelta(seconds=sac.o - sac.b)
+            assert sacevent.time == sac.seismogram.begin_time + timedelta(
+                seconds=sac.o - sac.b
+            )
         newtime = sacevent.time + timedelta(seconds=30)
         old_o = sac.o
         sacevent.time = newtime
@@ -180,7 +195,7 @@ class TestSAC:
         #
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
-        for item in ['depth', 'latitude', 'longitude', 'time']:
+        for item in ["depth", "latitude", "longitude", "time"]:
             with pytest.raises((TypeError, AttributeTypeError)):
                 setattr(sacevent, item, None)
         sac.evdp = None

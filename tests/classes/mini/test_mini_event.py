@@ -4,7 +4,6 @@ from pysmo import Event, MiniEvent
 
 
 class TestMiniEvent:
-
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
@@ -12,18 +11,25 @@ class TestMiniEvent:
         with pytest.raises(TypeError):
             minievent = MiniEvent()  # type: ignore
         latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
-        minievent = MiniEvent(latitude=latitude, longitude=longitude,
-                              depth=depth, time=time)
+        minievent = MiniEvent(
+            latitude=latitude, longitude=longitude, depth=depth, time=time
+        )
         assert isinstance(minievent, MiniEvent)
         assert isinstance(minievent, Event)
 
-    @pytest.mark.depends(name='test_create_instance')
+    @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
-
         latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
-        new_latitude, new_longitude, new_depth, new_time = -21.1, -22.2, 500.2, time + timedelta(minutes=3)
+        new_latitude, new_longitude, new_depth, new_time = (
+            -21.1,
+            -22.2,
+            500.2,
+            time + timedelta(minutes=3),
+        )
 
-        minievent = MiniEvent(latitude=latitude, longitude=longitude, depth=depth, time=time)
+        minievent = MiniEvent(
+            latitude=latitude, longitude=longitude, depth=depth, time=time
+        )
 
         assert isinstance(minievent, Event)
 

@@ -4,59 +4,37 @@ match pysmo's types.
 
 import matplotlib.pyplot as plt  # type: ignore
 import matplotlib.dates as mdates  # type: ignore
-import scipy.signal  # type: ignore
 import numpy as np
-import copy
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import _azdist
+from pysmo.lib.functions import _azdist, _detrend, _normalize, _resample
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
-def clone_to_miniseismogram(seismogram: Seismogram,
-                            skip_data: bool = False) -> MiniSeismogram:
-    """Create a MiniSeismogram object from another Seismogram.
-
-    Parameters:
-        seismogram: Seismogram object to clone.
-        skip_data: Create clone without data.
-
-    Returns:
-        A copy of the original Seismogram object.
-
-    Examples:
-        Create a copy of a [SAC][pysmo.classes.sac.SAC] object without data:
-
-        >>> from pysmo import SAC, MiniSeismogram, clone_to_miniseismogram
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> cloned_seis = clone_to_miniseismogram(original_seis, skip_data=True)
-        >>> print(cloned_seis.data)
-        []
-
-        Create a copy of a [SAC][pysmo.classes.sac.SAC] object with data:
-
-        >>> from pysmo import SAC, MiniSeismogram, clone_to_miniseismogram
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> cloned_seis = clone_to_miniseismogram(original_seis)
-        >>> print(cloned_seis.data)
-        [2302. 2313. 2345. ... 2836. 2772. 2723.]
-    """
-
-    cloned_seismogram = MiniSeismogram()
-    cloned_seismogram.begin_time = copy.copy(seismogram.begin_time)
-    cloned_seismogram.sampling_rate = copy.copy(seismogram.sampling_rate)
-    if not skip_data:
-        cloned_seismogram.data = copy.copy(seismogram.data)
-    return cloned_seismogram
-
-
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
-    """Normalize the seismogram with its absolute max value
+    """Normalize a seismogram with its absolute max value
 
     Parameters:
         seismogram: Seismogram object.
 
     Returns:
         Normalized seismogram.
+
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class. Thus, if you intend normalizing data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
+
+        ```python
+        my_seis.data = normalize(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.normalize()
+        ```
 
     Examples:
         >>> import numpy as np
@@ -66,14 +44,13 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         >>> assert np.max(normalized_seis.data) <= 1
         True
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    norm = np.max(np.abs(seismogram.data))
-    clone.data = seismogram.data / norm
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = _normalize(seismogram)  # (1)!
     return clone
 
 
 def detrend(seismogram: Seismogram) -> MiniSeismogram:
-    """Remove linear and/or constant trends from SAC object data.
+    """Remove linear and/or constant trends from a seismogram.
 
     Parameters:
         seismogram: Seismogram object.
@@ -81,16 +58,36 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
     Returns:
         Detrended seismogram.
 
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class. Thus, if you intend detrending data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
+
+        ```python
+        my_seis.data = detrend(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.detrend()
+        ```
+
     Examples:
         >>> import numpy as np
+        >>> import pytest
         >>> from pysmo import SAC, detrend
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
+        >>> assert 0 == pytest.approx(np.mean(original_seis.data), abs=1e-11)
+        False
         >>> detrended_seis = detrend(original_seis)
-        >>> assert np.mean(detrended_seis.data) == 0
+        >>> assert 0 == pytest.approx(np.mean(detrended_seis.data), abs=1e-11)
         True
     """
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    clone.data = scipy.signal.detrend(seismogram.data)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = _detrend(seismogram)
     return clone
 
 
@@ -102,30 +99,49 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         sampling_rate: New sampling rate.
 
     Returns:
-        Detrended seismogram.
+        Resampled seismogram.
+
+    Note:
+        This function is also available as a method in the
+        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        class. Thus, if you intend resampling data of a
+        MiniSeismogram object **in-place**, instead of
+        writing:
+
+        ```python
+        my_seis.data = resample(my_seis)
+        ```
+
+        you should instead use:
+
+        ```python
+        my_seis.resample()
+        ```
 
     Examples:
         >>> from pysmo import SAC, resample
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
         >>> len(original_seis)
-        20000
+        180000
         >>> original_sampling_rate = original_seis.sampling_rate
         >>> new_sampling_rate = original_sampling_rate * 2
         >>> resampled_seis = resample(original_seis, new_sampling_rate)
         >>> len(resampled_seis)
-        10000
+        90000
     """
-    len_in = len(seismogram)
-    sampling_rate_in = seismogram.sampling_rate
-    len_out = int(len_in * sampling_rate_in / sampling_rate)
-    clone = clone_to_miniseismogram(seismogram, skip_data=True)
-    clone.data = scipy.signal.resample(seismogram.data, len_out)
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = _resample(seismogram, sampling_rate)
     clone.sampling_rate = sampling_rate
     return clone
 
 
-def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
-             title: str = "", **kwargs: dict) -> plt.FigureBase:
+def plotseis(
+    *seismograms: Seismogram,
+    outfile: str = "",
+    showfig: bool = True,
+    title: str = "",
+    **kwargs: dict,
+) -> plt.FigureBase:
     """Plot Seismogram objects.
 
     Parameters:
@@ -141,27 +157,19 @@ def plotseis(*seismograms: Seismogram, outfile: str = "", showfig: bool = True,
         >>> seis = SAC.from_file('testfile.sac').seismogram
         >>> plotseis(seis)
     """
-    legend: bool = False
     fig = plt.figure()
     for seis in seismograms:
         start = mdates.date2num(seis.begin_time)
         end = mdates.date2num(seis.end_time)
         time = np.linspace(start, end, len(seis))
-        try:
-            kwargs['label'] = seis.label  # type: ignore
-            legend = True
-        except AttributeError:
-            pass
         plt.plot(time, seis.data, **kwargs)
-    if legend:
-        plt.legend()
-    plt.xlabel('Time')
+    plt.xlabel("Time")
     plt.gcf().autofmt_xdate()
-    fmt = mdates.DateFormatter('%H:%M:%S')
+    fmt = mdates.DateFormatter("%H:%M:%S")
     plt.gca().xaxis.set_major_formatter(fmt)
     if not title:
         left, _ = plt.xlim()
-        title = mdates.num2date(left).strftime('%Y-%m-%d %H:%M:%S')
+        title = mdates.num2date(left).strftime("%Y-%m-%d %H:%M:%S")
     plt.title(title)
     if outfile:
         plt.savefig(outfile)
@@ -186,19 +194,26 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
 
     Examples:
         >>> from pysmo import SAC, azimuth
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = azimuth(sacobj.event, sacobj.station)
+        >>> azimuth(sacobj.event, sacobj.station)
+        181.9199258637492
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = azimuth(sacobj.event, sacobj.station, ellps='clrk66')
-
+        >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        181.92001941872516
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[0]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[0]
 
 
-def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
+def backazimuth(
+    point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS
+) -> float:
     """Calculate backazimuth (in DEG) between two points.
 
     info:
@@ -214,15 +229,21 @@ def backazimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) 
 
     Examples:
         >>> from pysmo import SAC, backazimuth
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = backazimuth(sacobj.event, sacobj.station)
+        >>> backazimuth(sacobj.event, sacobj.station)
+        2.4677533885335947
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        2.467847115319614
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[1]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[1]
 
 
 def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
@@ -241,12 +262,18 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
 
     Examples:
         >>> from pysmo import SAC, distance
-        >>> sacobj = SAC.from_file('sacfile.sac')
+        >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth = distance(sacobj.event, sacobj.station)
+        >>> distance(sacobj.event, sacobj.station)
+        1889154.9940066522
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth = distance(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
+        1889121.778136402
     """
-    return _azdist(lat1=point1.latitude, lon1=point1.longitude,
-                   lat2=point2.latitude, lon2=point2.longitude,
-                   ellps=ellps)[2]
+    return _azdist(
+        lat1=point1.latitude,
+        lon1=point1.longitude,
+        lat2=point2.latitude,
+        lon2=point2.longitude,
+        ellps=ellps,
+    )[2]
