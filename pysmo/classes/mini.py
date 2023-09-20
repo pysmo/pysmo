@@ -5,9 +5,11 @@ are used as output objects in functions. The classes are all named using the
 pattern `Mini<Type>`. Thus the [`Seismogram`][pysmo.types.Seismogram] type has
 a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 """
-try:
+import sys
+
+if sys.version_info >= (3, 11):
     from typing import Self  # py311+
-except ImportError:
+else:
     from typing_extensions import Self  # py310
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import _normalize, _detrend, _resample

@@ -4,10 +4,11 @@ from __future__ import annotations
 from pysmo.lib.exceptions import SacHeaderUndefined
 from pysmo.lib.functions import _azdist
 from pysmo.lib.defaults import SACIO_DEFAULTS
+import sys
 
-try:
+if sys.version_info >= (3, 11):
     from typing import Any, Self  # py311+
-except ImportError:
+else:
     from typing import Any
     from typing_extensions import Self  # py310
 from attrs import define, field, validators, Attribute, converters
