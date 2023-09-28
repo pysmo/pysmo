@@ -91,12 +91,12 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
     return clone
 
 
-def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
+def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:
         seismogram: Seismogram object.
-        sampling_rate: New sampling rate.
+        delta: New sampling interval.
 
     Returns:
         Resampled seismogram.
@@ -123,15 +123,15 @@ def resample(seismogram: Seismogram, sampling_rate: float) -> MiniSeismogram:
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
         >>> len(original_seis)
         180000
-        >>> original_sampling_rate = original_seis.sampling_rate
-        >>> new_sampling_rate = original_sampling_rate * 2
-        >>> resampled_seis = resample(original_seis, new_sampling_rate)
+        >>> original_delta = original_seis.delta
+        >>> new_delta = original_delta * 2
+        >>> resampled_seis = resample(original_seis, new_delta)
         >>> len(resampled_seis)
         90000
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _resample(seismogram, sampling_rate)
-    clone.sampling_rate = sampling_rate
+    clone.data = _resample(seismogram, delta)
+    clone.delta = delta
     return clone
 
 

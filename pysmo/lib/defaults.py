@@ -26,7 +26,7 @@ class _SACIO_DEFAULTS:
 @dataclass(frozen=True)
 class _SEISMOGRAM_DEFAULTS:
     begin_time: datetime = datetime.fromtimestamp(0, tz=timezone.utc)
-    sampling_rate: float = 1
+    delta: float = 1
 
 
 SACIO_DEFAULTS = _SACIO_DEFAULTS()

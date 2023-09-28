@@ -12,7 +12,7 @@ matplotlib.use("Agg")
 SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
-    sampling_rate=SACSEIS.sampling_rate,
+    delta=SACSEIS.delta,
     data=SACSEIS.data,
 )
 

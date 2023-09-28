@@ -10,7 +10,7 @@ class Seismogram(Protocol):
     Attributes:
         __len__: The length of the Seismogram.
         data: Seismogram data.
-        sampling_rate: The sampling rate [s].
+        delta: The sampling interval [s].
         begin_time: Seismogram begin time.
         end_time: Seismogram end time (read only).
 
@@ -52,11 +52,11 @@ class Seismogram(Protocol):
         ...
 
     @property
-    def sampling_rate(self) -> float:
+    def delta(self) -> float:
         ...
 
-    @sampling_rate.setter
-    def sampling_rate(self, value: float) -> None:
+    @delta.setter
+    def delta(self, value: float) -> None:
         ...
 
 
