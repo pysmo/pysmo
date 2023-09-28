@@ -16,9 +16,9 @@ Functions:
 Examples:
     >>> from pysmo.tools.noise import generate_noise, peterson
     >>> NLNM = peterson(noise_level=0)
-    >>> sampling_rate = 0.05
+    >>> delta = 0.05
     >>> npts = 5000
-    >>> low_noise_seismogram = generate_noise(NLMN, npts, sampling_rate)
+    >>> low_noise_seismogram = generate_noise(NLMN, npts, delta)
 """
 
 import numpy as np
@@ -179,7 +179,7 @@ def peterson(noise_level: float) -> NoiseModel:
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    sampling_rate: float = SEISMOGRAM_DEFAULTS.sampling_rate,
+    delta: float = SEISMOGRAM_DEFAULTS.delta,
     begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time,
     return_velocity: bool = False,
     seed: int | None = None,
@@ -191,7 +191,7 @@ def generate_noise(
     Parameters:
         model: Noise model used to compute seismic noise.
         npts: Number of points of generated noise
-        sampling_rate: Sampling rate of generated noise
+        delta: Sampling interval  of generated noise
         begin_time: Seismogram begin time
         return_velocity: Return velocity instead of acceleration.
         seed: set random seed manually (usually for testing purposes).
@@ -200,10 +200,10 @@ def generate_noise(
         Seismogram with random seismic noise as data.
     """
     # Sampling frequency
-    Fs = 1 / sampling_rate
+    Fs = 1 / delta
 
     # Nyquist frequency
-    Fnyq = 0.5 / sampling_rate
+    Fnyq = 0.5 / delta
 
     # get next power of 2 of the nunmber of points and calculate frequencies from
     # Fs/NPTS to Fnyq (we skip a frequency of 0 for now to avoid dividing by 0)
@@ -213,9 +213,7 @@ def generate_noise(
     # interpolate psd and recreate amplitude spectrum with the first
     # term=0 (i.e. mean=0).
     Pxx = np.interp(1 / freqs, model.T, model.psd)
-    spectrum = np.append(
-        np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / sampling_rate * 2)
-    )
+    spectrum = np.append(np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / delta * 2))
 
     # phase is randomly generated
     rng = np.random.default_rng(seed)
@@ -228,12 +226,8 @@ def generate_noise(
     start = int((NPTS - npts) / 2)
     end = start + npts
     if return_velocity:
-        velocity = cumtrapz(acceleration, dx=sampling_rate)
+        velocity = cumtrapz(acceleration, dx=delta)
         velocity = velocity[start:end]
-        return MiniSeismogram(
-            begin_time=begin_time, sampling_rate=sampling_rate, data=velocity
-        )
+        return MiniSeismogram(begin_time=begin_time, delta=delta, data=velocity)
     acceleration = acceleration[start:end]
-    return MiniSeismogram(
-        begin_time=begin_time, sampling_rate=sampling_rate, data=acceleration
-    )
+    return MiniSeismogram(begin_time=begin_time, delta=delta, data=acceleration)

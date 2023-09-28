@@ -30,7 +30,7 @@ class TestMiniSeismogram:
             == SEISMOGRAM_DEFAULTS.begin_time.microsecond
             == 0
         )
-        assert miniseis.sampling_rate == SEISMOGRAM_DEFAULTS.sampling_rate == 1
+        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta == 1
         assert miniseis.data.size == 0
         assert len(miniseis) == 0
 
@@ -42,17 +42,17 @@ class TestMiniSeismogram:
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+            seconds=miniseis.delta * (len(miniseis) - 1)
         )
         miniseis.begin_time = new_time
         assert miniseis.begin_time == new_time
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+            seconds=miniseis.delta * (len(miniseis) - 1)
         )
-        miniseis.sampling_rate = 0.1
-        assert miniseis.sampling_rate == 0.1
+        miniseis.delta = 0.1
+        assert miniseis.delta == 0.1
         assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.sampling_rate * (len(miniseis) - 1)
+            seconds=miniseis.delta * (len(miniseis) - 1)
         )
 
     @pytest.mark.depends(name="test_change_attributes")
@@ -62,7 +62,7 @@ class TestMiniSeismogram:
         def seis_func(seismogram: Seismogram) -> None:
             _ = len(seismogram)
             _ = np.mean(seismogram.data)
-            _ = seismogram.sampling_rate * 1.1
+            _ = seismogram.delta * 1.1
             _ = seismogram.begin_time + timedelta(seconds=12)
             _ = seismogram.end_time + timedelta(seconds=12)
 
@@ -80,7 +80,7 @@ class TestMiniSeismogramMethods:
         data = np.random.rand(1000)
         sac_seis = SAC().seismogram
         sac_seis.data = data
-        sac_seis.sampling_rate = 0.1
+        sac_seis.delta = 0.1
         sac_seis.begin_time = datetime.now(timezone.utc)
 
         # clone and check attributes are identical
@@ -89,7 +89,7 @@ class TestMiniSeismogramMethods:
         assert sac_seis.data is not mini_seis.data
         assert sac_seis.begin_time == mini_seis.begin_time
         assert sac_seis.begin_time is not mini_seis.begin_time
-        assert sac_seis.sampling_rate == mini_seis.sampling_rate
+        assert sac_seis.delta == mini_seis.delta
         assert sac_seis.end_time == mini_seis.end_time
 
         # verify changes in clone don't affect input seismogram
@@ -98,8 +98,8 @@ class TestMiniSeismogramMethods:
             npt.assert_allclose(sac_seis.data, mini_seis.data)
         mini_seis.begin_time = datetime.now(timezone.utc)
         assert sac_seis.begin_time != mini_seis.begin_time
-        mini_seis.sampling_rate *= 2
-        assert sac_seis.sampling_rate != mini_seis.sampling_rate
+        mini_seis.delta *= 2
+        assert sac_seis.delta != mini_seis.delta
         assert sac_seis.end_time != mini_seis.end_time
 
         # create clone without data
@@ -115,9 +115,9 @@ class TestMiniSeismogramMethods:
         assert 0 == pytest.approx(np.mean(mini_seismogram.data), abs=1e-11)
 
     def test_resample(self, mini_seismogram: MiniSeismogram) -> None:
-        old_sampling_rate = mini_seismogram.sampling_rate
+        old_delta = mini_seismogram.delta
         old_len = len(mini_seismogram)
-        new_sampling_rate = old_sampling_rate * 2
-        mini_seismogram.resample(new_sampling_rate)
+        new_delta = old_delta * 2
+        mini_seismogram.resample(new_delta)
         assert len(mini_seismogram) * 2 == old_len
-        assert mini_seismogram.sampling_rate == new_sampling_rate
+        assert mini_seismogram.delta == new_delta

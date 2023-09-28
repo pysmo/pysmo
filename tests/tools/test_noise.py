@@ -106,10 +106,10 @@ def test_generate_noise():  # type: ignore
     )
 
     nhnm_data_acc = noise.generate_noise(
-        model=nhnm, npts=npts, sampling_rate=srate, seed=0
+        model=nhnm, npts=npts, delta=srate, seed=0
     ).data
     nhnm_data_vel = noise.generate_noise(
-        model=nhnm, npts=npts, sampling_rate=srate, return_velocity=True, seed=0
+        model=nhnm, npts=npts, delta=srate, return_velocity=True, seed=0
     ).data
     freqs_acc, power_acc = signal.welch(
         nhnm_data_acc, sfrec, nperseg=nperseg, nfft=nfft, scaling="density"

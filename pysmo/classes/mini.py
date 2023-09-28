@@ -8,9 +8,9 @@ a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 import sys
 
 if sys.version_info >= (3, 11):
-    from typing import Self  # py311+
+    from typing import Self
 else:
-    from typing_extensions import Self  # py310
+    from typing_extensions import Self
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import _normalize, _detrend, _resample
 from pysmo import Seismogram
@@ -31,7 +31,7 @@ class MiniSeismogram:
     Attributes:
         begin_time: Seismogram begin time.
         end_time: Seismogram end time.
-        sampling_rate: Seismogram sampling rate.
+        delta: Seismogram sampling interval.
         data: Seismogram data.
 
     Examples:
@@ -39,7 +39,7 @@ class MiniSeismogram:
         >>> from datetime import datetime, timezone
         >>> import numpy as np
         >>> now = datetime.now(timezone.utc)
-        >>> my_seismogram = MiniSeismogram(begin_time=now, sampling_rate=0.1,
+        >>> my_seismogram = MiniSeismogram(begin_time=now, delta=0.1,
                                            data=np.random.rand(100), id='myseis')
         >>> isinstance(my_seismogram, Seismogram)
         True
@@ -48,8 +48,8 @@ class MiniSeismogram:
     begin_time: datetime = field(
         default=SEISMOGRAM_DEFAULTS.begin_time, validator=type_validator()
     )
-    sampling_rate: float = field(
-        default=SEISMOGRAM_DEFAULTS.sampling_rate,
+    delta: float = field(
+        default=SEISMOGRAM_DEFAULTS.delta,
         converter=float,
         validator=type_validator(),
     )
@@ -62,7 +62,7 @@ class MiniSeismogram:
     def end_time(self) -> datetime:
         if len(self) == 0:
             return self.begin_time
-        return self.begin_time + timedelta(seconds=self.sampling_rate * (len(self) - 1))
+        return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
 
     @classmethod
     def clone(cls, seismogram: Seismogram, skip_data: bool = False) -> Self:
@@ -98,7 +98,7 @@ class MiniSeismogram:
         """
         cloned_seismogram = cls()
         cloned_seismogram.begin_time = copy.copy(seismogram.begin_time)
-        cloned_seismogram.sampling_rate = seismogram.sampling_rate
+        cloned_seismogram.delta = seismogram.delta
         if not skip_data:
             cloned_seismogram.data = copy.copy(seismogram.data)
         return cloned_seismogram
@@ -131,23 +131,23 @@ class MiniSeismogram:
         """
         self.data = _detrend(self)
 
-    def resample(self, sampling_rate: float) -> None:
+    def resample(self, delta: float) -> None:
         """Resample Seismogram object data using the Fourier method.
 
         Parameters:
-            sampling_rate: New sampling rate.
+            delta: New sampling interval.
 
         Examples:
             >>> from pysmo import MiniSeismogram
             >>> my_seis = MiniSeismogram(data=np.random.rand(10000))
             >>> len(my_seis)
             10000
-            >>> new_sampling_rate = my_seis.sampling_rate * 2
-            >>> my_seis.resample(new_sampling_rate)
+            >>> new_delta = my_seis.delta * 2
+            >>> my_seis.resample(new_delta)
             >>> len(my_seis)
             5000
         """
-        self.data, self.sampling_rate = _resample(self, sampling_rate), sampling_rate
+        self.data, self.delta = _resample(self, delta), delta
 
 
 @define(kw_only=True)
