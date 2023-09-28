@@ -72,18 +72,18 @@ def xcorr(
 ) -> np.ndarray:
     """
     The function cross-correlates two real arrays, denoted as 'a' and 'v,' utilizing the
-    [scipy.signal.correlate function](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate.html#scipy.signal.correlate)
-    with the 'valid' mode. In this mode, the resulting array's length is equal to 2 times
-    the difference between the lengths of 'a' and 'v.' This operation is often applied to
-    scenarios where 'a' represents a time series, while 'v' serves as a template. If you
-    intend to perform cross-correlation between two signals, each with a duration of 'z'
-    units along the x-axis (e.g., seconds), spanning both negative and positive shifts
-    (lags) of 'y' units on the x-axis (e.g., seconds), it is crucial to ensure that the
-    'a' array commences at x=-y and concludes at x=z+y. The 'v' array, representing the
-    template, may begin at the same starting point or, alternatively, initiate at x=0 and
-    terminate at x=z. Here, 'z' denotes the signal's duration, while 'y' signifies the
-    maximum lag of interest, both in the positive and negative directions. The output is
-    normalized with autocorrelation of v (squared norm of v).
+    scipy.signal.correlate function with the 'valid' mode. In this mode, the resulting
+    array's length is equal to 2 times the difference between the lengths of 'a' and
+    'v.' This operation is often applied to scenarios where 'a' represents a
+    time series, while 'v' serves as a template. If you intend to perform
+    cross-correlation between two signals, each with a duration of 'z' units along the
+    x-axis (e.g., seconds), spanning both negative and positive shifts (lags) of 'y'
+    units on the x-axis (e.g., seconds), it is crucial to ensure that the 'a' array
+    commences at x=-y and concludes at x=z+y. The 'v' array, representing the
+    template, may begin at the same starting point or, alternatively, initiate at x=0
+    and terminate at x=z. Here, 'z' denotes the signal's duration, while 'y' signifies
+    the maximum lag of interest, both in the positive and negative directions. The
+    output is normalized with autocorrelation of v (squared norm of v).
 
     Parameters:
         seis1: Seismogram object containing array a.
