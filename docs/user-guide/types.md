@@ -156,35 +156,35 @@ used just like any class. For example:
 from pysmo import Seismogram
 
 def my_func(my_seis: Seismogram) -> float:
-   """Return the sampling rate of a seismogram"""
+   """Return the sampling interval of a seismogram"""
 
-   return my_seis.sampling_rate
+   return my_seis.delta
 ```
 
 One thing to keep in mind, is to only ever use attributes and methods defined by the
 types. For example, if a class `MyClass` that matches the `Seismogram` type were to give
-access to the seismogram sampling rate also via either a `.delta`(1), one might
-accidentally write a function using the wrong attribute:
+access to the seismogram sampling interval also via either a `.sampling_interval`(1),
+one might accidentally write a function using the wrong attribute:
 { .annotate }
 
-1.  The sampling rate is specified as `sampling_rate` in
-    the [`Seismogram`][pysmo.types.Seismogram] type.
+1.  The sampling interval is specified as `delta` in the
+    [`Seismogram`][pysmo.types.Seismogram] type.
 
 ```python hl_lines="6"
 from pysmo import Seismogram
 
 def my_bad_func(my_seis: Seismogram) -> float:
-   """Return the sampling rate of a seismogram"""
+   """Return the sampling interval of a seismogram"""
 
-   return my_seis.delta
+   return my_seis.sampling_interval
 ```
 
 This will run without error for any instances of `MyClass`. However, since we are also
 using a class specific attribute inside the function, it is not possible to guarantee
 it will also work with other classes. If we were to only ever use `MyClass` instances,
 we might not notice our programming error for a long time (until we try a class without
-the `.delta` attribute). These are exactly the kinds of errors that are avoided by using
-type hinting together with a good code editor or mypy.
+the `.sampling_interval` attribute). These are exactly the kinds of errors that are
+avoided by using type hinting together with a good code editor or mypy.
 
 !!! tip
     Testing code for typing errors with mypy is as simple as running:

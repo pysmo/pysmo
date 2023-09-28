@@ -28,15 +28,9 @@ mid_noise_model = peterson(noise_level=0.5)
 high_noise_model = peterson(noise_level=1)
 
 # Generate random noise seismograms
-low_noise_seismogram = generate_noise(
-    npts=npts, model=low_noise_model, sampling_rate=delta
-)
-mid_noise_seismogram = generate_noise(
-    npts=npts, model=mid_noise_model, sampling_rate=delta
-)
-high_noise_seismogram = generate_noise(
-    npts=npts, model=high_noise_model, sampling_rate=delta
-)
+low_noise_seismogram = generate_noise(npts=npts, model=low_noise_model, delta=delta)
+mid_noise_seismogram = generate_noise(npts=npts, model=mid_noise_model, delta=delta)
+high_noise_seismogram = generate_noise(npts=npts, model=high_noise_model, delta=delta)
 
 # Calculuate power spectral density
 f_low, Pxx_dens_low = calc_power(low_noise_seismogram.data, sampling_frequency)
