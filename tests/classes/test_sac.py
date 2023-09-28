@@ -27,7 +27,7 @@ class TestSAC:
 
         assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time
         assert sac.seismogram.end_time == SEISMOGRAM_DEFAULTS.begin_time
-        assert sac.seismogram.sampling_rate == SEISMOGRAM_DEFAULTS.sampling_rate
+        assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 
         with pytest.raises(SacHeaderUndefined):
@@ -53,7 +53,7 @@ class TestSAC:
         assert isinstance(sacseis.data, np.ndarray)
         assert sacseis.data.all() == sacio.data.all()
         assert list(sacseis.data[:5]) == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0]
-        assert sacseis.sampling_rate == sacio.delta == pytest.approx(0.02, 0.001)
+        assert sacseis.delta == sacio.delta == pytest.approx(0.02, 0.001)
         assert sacseis.begin_time == datetime(2005, 3, 1, 7, 23, 2, 160000)
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
@@ -81,25 +81,25 @@ class TestSAC:
         # changing data should also change end time
         assert sacseis.data.all() == random_data.all()
         assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+            seconds=sacseis.delta * (len(sacseis.data) - 1)
         )
-        # changing sampling rate also changes end time
-        new_sampling_rate = sacseis.sampling_rate * 2
-        sacseis.sampling_rate = new_sampling_rate
-        assert sacseis.sampling_rate == new_sampling_rate
+        # changing delta also changes end time
+        new_delta = sacseis.delta * 2
+        sacseis.delta = new_delta
+        assert sacseis.delta == new_delta
         assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+            seconds=sacseis.delta * (len(sacseis.data) - 1)
         )
         # changing the begin time changes end time
         sacseis.begin_time = new_time1
         assert sacseis.begin_time == new_time1
         assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.sampling_rate * (len(sacseis.data) - 1)
+            seconds=sacseis.delta * (len(sacseis.data) - 1)
         )
 
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
-        for item in ["begin_time", "sampling_rate", "data"]:
+        for item in ["begin_time", "delta", "data"]:
             with pytest.raises((TypeError, AttributeTypeError)):
                 setattr(sacseis, item, None)
 

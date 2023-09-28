@@ -58,20 +58,20 @@ def _detrend(seismogram: Seismogram) -> np.ndarray:
     return scipy.signal.detrend(seismogram.data)
 
 
-def _resample(seismogram: Seismogram, sampling_rate: float) -> np.ndarray:
+def _resample(seismogram: Seismogram, delta: float) -> np.ndarray:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:
         seismogram: Seismogram object.
-        sampling_rate: New sampling rate.
+        delta: New sampling interval.
 
     Returns:
         Resampled data.
 
     Warning:
-        sampling_rate attribute still needs to be set!
+        interval attribute still needs to be set!
     """
     len_in = len(seismogram)
-    sampling_rate_in = seismogram.sampling_rate
-    len_out = int(len_in * sampling_rate_in / sampling_rate)
+    delta_in = seismogram.delta
+    len_out = int(len_in * delta_in / delta)
     return scipy.signal.resample(seismogram.data, len_out)
