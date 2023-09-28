@@ -54,7 +54,7 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
 
 def __gauss(seis: Seismogram, Tn: float, alpha: float) -> tuple[np.ndarray, np.ndarray]:
     Wn = 1 / float(Tn)
-    Nyq = 0.5 / seis.sampling_rate
+    Nyq = 0.5 / seis.delta
     npts = len(seis)
     spec = np.fft.fft(seis.data)
     W = np.array(np.linspace(0, Nyq, npts))

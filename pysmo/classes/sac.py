@@ -62,7 +62,7 @@ class SAC(SacIO):
         True
         >>> # Verify the helper object is indeed just providing access to the same thing
         >>> # under a different name:
-        >>> my_sac.delta is my_seismogram.sampling_rate
+        >>> my_sac.delta is my_seismogram.delta
         True
 
         Because the SAC file format defines a large amount of header fields for
@@ -120,7 +120,7 @@ class SAC(SacIO):
         Attributes:
             begin_time: Seismogram begin timedate.
             end_time: Seismogram end time.
-            sampling_rate: Seismogram sampling rate.
+            delta: Seismogram sampling interval.
             data: Seismogram data.
 
         Note:
@@ -145,11 +145,11 @@ class SAC(SacIO):
             self._parent.data = value
 
         @property
-        def sampling_rate(self) -> float:
+        def delta(self) -> float:
             return self._parent.delta
 
-        @sampling_rate.setter
-        def sampling_rate(self, value: float) -> None:
+        @delta.setter
+        def delta(self, value: float) -> None:
             self._parent.delta = value
 
         @property
@@ -166,9 +166,7 @@ class SAC(SacIO):
         def end_time(self) -> datetime:
             if len(self) == 0:
                 return self.begin_time
-            return self.begin_time + timedelta(
-                seconds=self.sampling_rate * (len(self) - 1)
-            )
+            return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
 
     @define(kw_only=True)
     class SacEvent(_SacNested):
