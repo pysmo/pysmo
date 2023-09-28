@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
-    sampling_rate=SACSEIS.sampling_rate,
+    delta=SACSEIS.delta,
     data=SACSEIS.data,
 )
 
@@ -46,11 +46,9 @@ class TestSeismogramFunctions:
         """Resample Seismogram object and verify resampled data."""
         from pysmo import resample
 
-        new_sampling_rate = seismogram.sampling_rate * 2
-        resampled_seis = resample(seismogram, new_sampling_rate)
-        assert (
-            pytest.approx(resampled_seis.sampling_rate) == seismogram.sampling_rate * 2
-        )
+        new_delta = seismogram.delta * 2
+        resampled_seis = resample(seismogram, new_delta)
+        assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
         assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
 
 
