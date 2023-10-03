@@ -2,8 +2,9 @@
 match pysmo's types.
 """
 
-import matplotlib.pyplot as plt  # type: ignore
-import matplotlib.dates as mdates  # type: ignore
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.figure
 import numpy as np
 from pysmo import Seismogram, MiniSeismogram, Location
 from pysmo.lib.functions import _azdist, _detrend, _normalize, _resample
@@ -141,7 +142,7 @@ def plotseis(
     showfig: bool = True,
     title: str = "",
     **kwargs: dict,
-) -> plt.FigureBase:
+) -> matplotlib.figure.Figure:
     """Plot Seismogram objects.
 
     Parameters:
@@ -162,7 +163,7 @@ def plotseis(
         start = mdates.date2num(seis.begin_time)
         end = mdates.date2num(seis.end_time)
         time = np.linspace(start, end, len(seis))
-        plt.plot(time, seis.data, **kwargs)
+        plt.plot(time, seis.data, scalex=True, scaley=True, **kwargs)
     plt.xlabel("Time")
     plt.gcf().autofmt_xdate()
     fmt = mdates.DateFormatter("%H:%M:%S")
