@@ -7,10 +7,10 @@ from pysmo.lib.defaults import SACIO_DEFAULTS
 import sys
 
 if sys.version_info >= (3, 11):
-    from typing import Any, Self  # py311+
+    from typing import Any, Self
 else:
     from typing import Any
-    from typing_extensions import Self  # py310
+    from typing_extensions import Self
 from attrs import define, field, validators, Attribute, converters
 from attrs_strict import type_validator
 from enum import Enum
