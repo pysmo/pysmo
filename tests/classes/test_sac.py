@@ -18,8 +18,10 @@ class TestSAC:
         # coordinates for event and station are None.
         with pytest.raises(SacHeaderUndefined):
             assert isinstance(sac.station, Station)
+            sac.station.latitude
         with pytest.raises(SacHeaderUndefined):
             assert isinstance(sac.event, Event)
+            sac.event.latitude
 
     @pytest.mark.depends(on=["test_create_instance"])
     def test_defaults(self) -> None:
