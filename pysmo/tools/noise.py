@@ -24,7 +24,7 @@ Examples:
 import numpy as np
 from datetime import datetime
 from dataclasses import dataclass, field
-from scipy.integrate import cumtrapz  # type: ignore
+from scipy.integrate import cumulative_trapezoid  # type: ignore
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
@@ -226,7 +226,7 @@ def generate_noise(
     start = int((NPTS - npts) / 2)
     end = start + npts
     if return_velocity:
-        velocity = cumtrapz(acceleration, dx=delta)
+        velocity = cumulative_trapezoid(acceleration, dx=delta)
         velocity = velocity[start:end]
         return MiniSeismogram(begin_time=begin_time, delta=delta, data=velocity)
     acceleration = acceleration[start:end]
