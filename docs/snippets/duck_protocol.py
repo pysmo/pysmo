@@ -5,8 +5,7 @@ class Ducklike(Protocol):  # (2)!
     def quack(self) -> str:  # (3)!
         ...
 
-    def waddle(self) -> str:
-        ...
+    def waddle(self) -> str: ...
 
 
 class Duck:  # (4)!
