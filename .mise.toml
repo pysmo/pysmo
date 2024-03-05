@@ -1,0 +1,8 @@
+[tools]
+poetry = {version = "latest" }
+
+[env]
+POETRY_ACTIVE="true"
+POETRY_VIRTUALENVS_IN_PROJECT="true"
+POETRY_VIRTUALENVS_PATH=".venv"
+_.python.venv = { path = ".venv", create = true }

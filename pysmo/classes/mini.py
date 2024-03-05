@@ -5,6 +5,7 @@ are used as output objects in functions. The classes are all named using the
 pattern `Mini<Type>`. Thus the [`Seismogram`][pysmo.types.Seismogram] type has
 a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 """
+
 import sys
 
 if sys.version_info >= (3, 11):
