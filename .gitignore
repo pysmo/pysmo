@@ -24,3 +24,4 @@ blah.py
 foo.py
 bar.py
 .venv
+.direnv
