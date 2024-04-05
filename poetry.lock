@@ -2109,13 +2109,13 @@ test = ["pep440", "pre-commit", "pytest", "testpath"]
 
 [[package]]
 name = "nbmake"
-version = "1.5.2"
+version = "1.5.3"
 description = "Pytest plugin for testing notebooks"
 optional = false
 python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "nbmake-1.5.2-py3-none-any.whl", hash = "sha256:b8669c248177e2bc61139b7ce1bcbeb2ef2435e59e2308927737d6c84c53fc40"},
-    {file = "nbmake-1.5.2.tar.gz", hash = "sha256:fc423b1f0d5e964a3928c77ff7b18fe50067444ee3479fdc1f82fc77504f0a30"},
+    {file = "nbmake-1.5.3-py3-none-any.whl", hash = "sha256:6cfa2b926d335e9c6dce7e8543d01b2398b0a56c03131c5c0bce2b1722116212"},
+    {file = "nbmake-1.5.3.tar.gz", hash = "sha256:0b76b829e8b128eb1895539bacf515a1ee85e5b7b492cdfe76e3a12f804e069e"},
 ]
 
 [package.dependencies]
@@ -2618,13 +2618,13 @@ certifi = "*"
 
 [[package]]
 name = "pytest"
-version = "7.4.4"
+version = "8.1.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-7.4.4-py3-none-any.whl", hash = "sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8"},
-    {file = "pytest-7.4.4.tar.gz", hash = "sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280"},
+    {file = "pytest-8.1.1-py3-none-any.whl", hash = "sha256:2a8386cfc11fa9d2c50ee7b2a57e7d898ef90470a7a34c4b949ff59662bb78b7"},
+    {file = "pytest-8.1.1.tar.gz", hash = "sha256:ac978141a75948948817d360297b7aae0fcb9d6ff6bc9ec6d514b85d5a65c044"},
 ]
 
 [package.dependencies]
@@ -2632,21 +2632,21 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=0.12,<2.0"
-tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
+pluggy = ">=1.4,<2.0"
+tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 
 [package.extras]
-testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+testing = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "pytest-cases"
-version = "3.8.2"
+version = "3.8.5"
 description = "Separate test code from test cases in pytest."
 optional = false
 python-versions = "*"
 files = [
-    {file = "pytest-cases-3.8.2.tar.gz", hash = "sha256:24cec0128c822f51b5f402face09e7049954d9675db2ca675fce1ef7f8f749e8"},
-    {file = "pytest_cases-3.8.2-py2.py3-none-any.whl", hash = "sha256:1ad5ee85e580433caff42f59398d2812d9b8de470f593393c02e4249ddff3996"},
+    {file = "pytest-cases-3.8.5.tar.gz", hash = "sha256:c92054187847a7d30d8ab6709fb1670a830e4e19234be700c85c96b6d7102c16"},
+    {file = "pytest_cases-3.8.5-py2.py3-none-any.whl", hash = "sha256:0c8e3727f6494e65b47321adbd94c767277c7b5de1bd40dd518a13f7443b1fff"},
 ]
 
 [package.dependencies]
@@ -2656,13 +2656,13 @@ packaging = "*"
 
 [[package]]
 name = "pytest-cov"
-version = "4.1.0"
+version = "5.0.0"
 description = "Pytest plugin for measuring coverage."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-cov-4.1.0.tar.gz", hash = "sha256:3904b13dfbfec47f003b8e77fd5b589cd11904a21ddf1ab38a64f204d6a10ef6"},
-    {file = "pytest_cov-4.1.0-py3-none-any.whl", hash = "sha256:6ba70b9e97e69fcc3fb45bfeab2d0a138fb65c4d0d6a41ef33983ad114be8c3a"},
+    {file = "pytest-cov-5.0.0.tar.gz", hash = "sha256:5837b58e9f6ebd335b0f8060eecce69b662415b16dc503883a02f45dfeb14857"},
+    {file = "pytest_cov-5.0.0-py3-none-any.whl", hash = "sha256:4f0764a1219df53214206bf1feea4633c3b558a2925c8b59f144f682861ce652"},
 ]
 
 [package.dependencies]
@@ -2670,7 +2670,7 @@ coverage = {version = ">=5.2.1", extras = ["toml"]}
 pytest = ">=4.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
+testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-depends"
@@ -3765,4 +3765,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "9e48c011f51387be07152f6a37a8a812cf87524fdd587db7f05468d73a106e0b"
+content-hash = "24a4664994edef68f6c8bff0f7375d09b3e72094c98277eea5538f2373b7308b"
