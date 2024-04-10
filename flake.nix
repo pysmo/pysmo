@@ -35,11 +35,13 @@
               python310
               python312Packages.tox
               autoPatchelfHook
+              zlib
             ];
 
             shellHook = ''
               export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
                 pkgs.stdenv.cc.cc.lib
+                pkgs.zlib
               ]}:$LD_LIBRARY_PATH
               VENV=.venv
               export POETRY_ACTIVE="true"
@@ -49,11 +51,12 @@
                 poetry env use -- 3.12
                 poetry install
               fi
-              autoPatchelf .venv/bin/ .tox/lint/bin/
+              autoPatchelf .venv/bin .tox/lint/bin/
               source $VENV/bin/activate
             '';
           };
         }
       );
+      formatter = forEachSystem (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
     };
 }
