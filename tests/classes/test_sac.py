@@ -203,3 +203,19 @@ class TestSAC:
         sac.evdp = None
         with pytest.raises(SacHeaderUndefined):
             sacevent.depth
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_sac_timestamps(self, sacfile: str) -> None:
+        sac = SAC.from_file(sacfile)
+        sacio = SacIO.from_file(sacfile)
+        assert sac.timestamps.e is not None
+        assert sac.timestamps.b is not None
+        assert (sac.timestamps.e - sac.timestamps.b).total_seconds() == pytest.approx(
+            sacio.e - sacio.b, 0.000001
+        )
+        now = datetime.now()
+        with pytest.raises(AttributeError):
+            sac.timestamps.e = now
+        assert sac.timestamps.t0 is None
+        sac.timestamps.b = now
+        assert sac.timestamps.b == now
