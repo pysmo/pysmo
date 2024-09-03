@@ -25,3 +25,4 @@ foo.py
 bar.py
 .venv
 .direnv
+junit.xml
