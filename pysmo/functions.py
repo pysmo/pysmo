@@ -136,6 +136,35 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
     return clone
 
 
+def time_array(seismogram: Seismogram) -> np.ndarray:
+    """Create an array containing Matplotlib dates (number of days since 1970)
+    of each point in the Seismogram data.
+
+    Parameters:
+        seismogram: Seismogram object.
+
+    Returns:
+        Array containing the Matplotlib dates of seismogram data.
+
+    Examples:
+        >>> from pysmo import SAC, time_array
+        >>> my_seis = SAC.from_file('testfile.sac').seismogram
+        >>> seis_data = my_seis.data
+        >>> seis_times = time_array(my_seis)
+        >>> for t, v in zip(seis_times, seis_data):
+        ...     print(t,v)
+        ...
+        12843.30766388889 2302.0
+        12843.307664120372 2313.0
+        12843.307664351854 2345.0
+        12843.307664583335 2377.0
+        ...
+    """
+    start = mdates.date2num(seismogram.begin_time)
+    end = mdates.date2num(seismogram.end_time)
+    return np.linspace(start, end, len(seismogram))
+
+
 def plotseis(
     *seismograms: Seismogram,
     outfile: str = "",
@@ -160,9 +189,7 @@ def plotseis(
     """
     fig = plt.figure()
     for seis in seismograms:
-        start = mdates.date2num(seis.begin_time)
-        end = mdates.date2num(seis.end_time)
-        time = np.linspace(start, end, len(seis))
+        time = time_array(seis)
         plt.plot(time, seis.data, scalex=True, scaley=True, **kwargs)
     plt.xlabel("Time")
     plt.gcf().autofmt_xdate()

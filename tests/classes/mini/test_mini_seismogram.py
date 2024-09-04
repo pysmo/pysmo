@@ -19,6 +19,7 @@ class TestMiniSeismogram:
         """Test default attributes."""
 
         miniseis = MiniSeismogram()
+        assert miniseis.begin_time.tzinfo == SEISMOGRAM_DEFAULTS.begin_time.tzinfo
         assert miniseis.begin_time.year == SEISMOGRAM_DEFAULTS.begin_time.year == 1970
         assert miniseis.begin_time.month == SEISMOGRAM_DEFAULTS.begin_time.month == 1
         assert miniseis.begin_time.day == SEISMOGRAM_DEFAULTS.begin_time.day == 1
@@ -38,14 +39,17 @@ class TestMiniSeismogram:
     def test_change_attributes(self) -> None:
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
-        new_time = datetime.fromisoformat("2011-11-04T00:05:23.123")
+        new_time_no_tz = datetime.fromisoformat("2011-11-04T00:05:23.123")
+        new_time_utc = datetime.fromisoformat("2011-11-04T00:05:23.123").replace(
+            tzinfo=timezone.utc
+        )
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
         assert miniseis.end_time - miniseis.begin_time == timedelta(
             seconds=miniseis.delta * (len(miniseis) - 1)
         )
-        miniseis.begin_time = new_time
-        assert miniseis.begin_time == new_time
+        miniseis.begin_time = new_time_utc
+        assert miniseis.begin_time == new_time_utc
         assert miniseis.end_time - miniseis.begin_time == timedelta(
             seconds=miniseis.delta * (len(miniseis) - 1)
         )
@@ -54,6 +58,8 @@ class TestMiniSeismogram:
         assert miniseis.end_time - miniseis.begin_time == timedelta(
             seconds=miniseis.delta * (len(miniseis) - 1)
         )
+        with pytest.raises(TypeError):
+            miniseis.begin_time = new_time_no_tz
 
     @pytest.mark.depends(name="test_change_attributes")
     def test_as_seismogram(self) -> None:
