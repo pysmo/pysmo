@@ -10,10 +10,19 @@ class TestMiniEvent:
         # shouldn'b be able to create an instance with kwargs
         with pytest.raises(TypeError):
             minievent = MiniEvent()  # type: ignore
-        latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
-        minievent = MiniEvent(
-            latitude=latitude, longitude=longitude, depth=depth, time=time
+        latitude, longitude = (
+            1.1,
+            2.2,
         )
+        depth = 1000
+        time_utc, time_no_tz = datetime.now(timezone.utc), datetime.now()
+        minievent = MiniEvent(
+            latitude=latitude, longitude=longitude, depth=depth, time=time_utc
+        )
+        with pytest.raises(TypeError):
+            minievent = MiniEvent(
+                latitude=latitude, longitude=longitude, depth=depth, time=time_no_tz
+            )
         assert isinstance(minievent, MiniEvent)
         assert isinstance(minievent, Event)
 
