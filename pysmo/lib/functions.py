@@ -1,3 +1,11 @@
+"""This module provides functions that are not intended to be used directly.
+Reasons for putting functions here:
+
+    - They do not use pysmo types as input or output
+    - They are used in 'real' pysmo functions and pysmo
+      classes within methods at the same time
+"""
+
 from pyproj import Geod
 from pysmo.lib.defaults import DEFAULT_ELLPS
 from pysmo import Seismogram

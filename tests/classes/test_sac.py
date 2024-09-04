@@ -5,7 +5,7 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.exceptions import SacHeaderUndefined
 from pysmo.lib.io import SacIO
 from pysmo import Seismogram, SAC, Station, Event
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytest
 
 
@@ -56,7 +56,9 @@ class TestSAC:
         assert sacseis.data.all() == sacio.data.all()
         assert list(sacseis.data[:5]) == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0]
         assert sacseis.delta == sacio.delta == pytest.approx(0.02, 0.001)
-        assert sacseis.begin_time == datetime(2005, 3, 1, 7, 23, 2, 160000)
+        assert sacseis.begin_time == datetime(
+            2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc
+        )
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
             assert sacseis.begin_time.timetuple().tm_yday == sacio.nzjday + int(
@@ -71,14 +73,18 @@ class TestSAC:
                 sacseis.begin_time.microsecond
                 == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
             )
-        assert sacseis.end_time == datetime(2005, 3, 1, 8, 23, 2, 139920)
+        assert sacseis.end_time == datetime(
+            2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc
+        )
         assert sacseis.end_time - sacseis.begin_time == timedelta(
             seconds=sacio.delta * (sacio.npts - 1)
         )
 
         # Change some values
         random_data = np.random.randn(100)
-        new_time1 = datetime.fromisoformat("2011-11-04T00:05:23.123")
+        new_time1 = datetime.fromisoformat("2011-11-04T00:05:23.123").replace(
+            tzinfo=timezone.utc
+        )
         sacseis.data = random_data
         # changing data should also change end time
         assert sacseis.data.all() == random_data.all()
@@ -213,9 +219,11 @@ class TestSAC:
         assert (sac.timestamps.e - sac.timestamps.b).total_seconds() == pytest.approx(
             sacio.e - sacio.b, 0.000001
         )
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         with pytest.raises(AttributeError):
             sac.timestamps.e = now
         assert sac.timestamps.t0 is None
         sac.timestamps.b = now
         assert sac.timestamps.b == now
+        with pytest.raises(TypeError):
+            sac.timestamps.b = datetime.now()

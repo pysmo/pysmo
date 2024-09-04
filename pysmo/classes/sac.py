@@ -10,7 +10,7 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.exceptions import SacHeaderUndefined
 from pysmo.lib.decorators import value_not_none
 from attrs import define, field
-from datetime import datetime, timedelta, time, date
+from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
 
 TSacTimeHeaders = Literal[
@@ -44,7 +44,7 @@ class _SacNested:
             return SEISMOGRAM_DEFAULTS.begin_time - timedelta(seconds=self._parent.b)
         ref_time = time.fromisoformat(self._parent.kztime)
         ref_date = date.fromisoformat(self._parent.kzdate)
-        return datetime.combine(ref_date, ref_time)
+        return datetime.combine(date=ref_date, time=ref_time, tzinfo=timezone.utc)
 
     def _get_datetime_from_sac(
         self, sac_time_header: TSacTimeHeaders
@@ -97,7 +97,7 @@ class SacSeismogram(_SacNested):
         >>> from pysmo import SAC
         >>> my_sac = SAC.from_file("testfile.sac")
         >>> my_sac.seismogram.begin_time
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000)
+        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
         >>>
     """
 
@@ -362,7 +362,7 @@ class SacTimestamps(_SacNested):
         >>> # Accessing the same SAC header via a `SacTimestamps` object
         >>> # yields a corresponding datetime object with the absolute time:
         >>> my_sac.timestamps.b
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000)
+        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
         ```
 
         Changing timestamp values:
