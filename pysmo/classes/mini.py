@@ -9,17 +9,22 @@ a corresponding [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
 import sys
 
 if sys.version_info >= (3, 11):
-    from typing import Self
+    from typing import Self, Any
 else:
-    from typing_extensions import Self
+    from typing_extensions import Self, Any
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import _normalize, _detrend, _resample
 from pysmo import Seismogram
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from attrs import define, field, validators, converters
 from attrs_strict import type_validator
 import numpy as np
 import copy
+
+
+def datetime_is_utc(_: Any, attribute: Any, value: datetime) -> None:
+    if value.tzinfo != timezone.utc:
+        raise TypeError(f"datetime object {attribute} doesn't have tzdata=timezone.utc")
 
 
 @define(kw_only=True)
@@ -47,7 +52,8 @@ class MiniSeismogram:
     """
 
     begin_time: datetime = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time, validator=type_validator()
+        default=SEISMOGRAM_DEFAULTS.begin_time,
+        validator=[type_validator(), datetime_is_utc],
     )
     delta: float = field(
         default=SEISMOGRAM_DEFAULTS.delta,
@@ -271,4 +277,4 @@ class MiniEvent(MiniHypocenter):
         True
     """
 
-    time: datetime = field(validator=type_validator())
+    time: datetime = field(validator=[type_validator(), datetime_is_utc])

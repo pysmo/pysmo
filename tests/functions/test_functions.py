@@ -51,6 +51,16 @@ class TestSeismogramFunctions:
         assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
         assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
 
+    def test_time_array(self, seismogram: Seismogram) -> None:
+        """Get times from Seismogram object and verify them."""
+        from pysmo import time_array
+        from matplotlib.dates import num2date
+
+        times = time_array(seismogram)
+        assert len(times) == len(seismogram)
+        assert num2date(times[0]) == seismogram.begin_time
+        assert num2date(times[-1]) == seismogram.end_time
+
 
 def test_azimuth(
     stations: tuple[Location, ...], hypocenters: tuple[Location, ...]
