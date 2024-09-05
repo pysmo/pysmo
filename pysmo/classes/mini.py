@@ -16,7 +16,7 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.functions import _normalize, _detrend, _resample
 from pysmo import Seismogram
 from datetime import datetime, timedelta, timezone
-from attrs import define, field, validators, converters
+from attrs import define, field, validators
 from attrs_strict import type_validator
 import numpy as np
 import copy
@@ -55,9 +55,8 @@ class MiniSeismogram:
         default=SEISMOGRAM_DEFAULTS.begin_time,
         validator=[type_validator(), datetime_is_utc],
     )
-    delta: float = field(
+    delta: float | int = field(
         default=SEISMOGRAM_DEFAULTS.delta,
-        converter=float,
         validator=type_validator(),
     )
     data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
@@ -175,12 +174,10 @@ class MiniLocation:
         True
     """
 
-    latitude: float = field(
-        converter=float,
+    latitude: float | int = field(
         validator=[validators.ge(-90), validators.le(90), type_validator()],
     )
-    longitude: float = field(
-        converter=float,
+    longitude: float | int = field(
         validator=[validators.gt(-180), validators.le(180), type_validator()],
     )
 
@@ -212,9 +209,8 @@ class MiniStation(MiniLocation):
 
     name: str = field(validator=type_validator())
     network: str | None = field(default=None, validator=type_validator())
-    elevation: float | None = field(
+    elevation: float | int | None = field(
         default=None,
-        converter=converters.optional(float),
         validator=validators.optional(
             [validators.gt(-180), validators.le(180), type_validator()]
         ),
@@ -244,7 +240,7 @@ class MiniHypocenter(MiniLocation):
         True
     """
 
-    depth: float = field(converter=float, validator=type_validator())
+    depth: float | int = field(validator=type_validator())
 
 
 @define(kw_only=True)
