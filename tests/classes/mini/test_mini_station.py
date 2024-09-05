@@ -26,7 +26,7 @@ class TestMiniStation:
         ministation = MiniStation(name=name, latitude=latitude, longitude=longitude)
         ministation.network = "newnetwork"
         assert ministation.network == "newnetwork"
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ministation.elevation = "abc"  # type: ignore
         ministation.elevation = 123
         assert ministation.elevation == 123
