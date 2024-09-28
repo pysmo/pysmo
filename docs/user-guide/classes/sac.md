@@ -1,18 +1,18 @@
 # The SAC Classes
 
-[SAC](<https://ds.iris.edu/ds/nodes/dmc/software/downloads/sac/>) (Seismic Analysis Code)
-is a commonly used program that uses its own file format. The names, conventions, types,
-as well as the large number of "header" fields (metadata) mean the structure within SAC
-files is very different from the types pysmo uses. To use SAC files with pysmo therefore
-requires not only reading a SAC file into a Python object, but also translating SAC
-header fields so that they can be accessed as pysmo types. Pysmo provides two classes
-for this:
+[SAC](<https://ds.iris.edu/ds/nodes/dmc/software/downloads/sac/>) (Seismic Analysis
+Code) is a commonly used program that uses its own file format. The names, conventions,
+types, as well as the large number of "header" fields (metadata) mean the structure
+within SAC files is very different from the types pysmo uses. To use SAC files with
+pysmo therefore requires not only reading a SAC file into a Python object, but also
+translating SAC header fields so that they can be accessed as pysmo types. Pysmo
+provides two classes for this:
 
-  1. [`SacIO`][pysmo.lib.io.sacio.SacIO] to read SAC files and access data and headers
-     using the same formats and naming conventions as used in the SAC file format.
+  1. [`SacIO`][pysmo.lib.io.sacio.SacIO] to read SAC files and access data and
+     headers using the same formats and naming conventions as used in the SAC file
+     format.
   2. [`SAC`][pysmo.classes.sac.SAC] to translate data stored in SAC header fields so that
      they become compatible with pysmo types.
-
 
 ::: pysmo.classes.sac
     options:
@@ -20,7 +20,6 @@ for this:
       allow_inspection: true
       members:
         - SAC
-
 
 ## SAC helper classes
 
@@ -42,10 +41,10 @@ True
 >>>
 ```
 
-1.  `my_sac.seismogram` is an instance of [`SacSeismogram`][pysmo.classes.sac.SacSeismogram]
+1. `my_sac.seismogram` is an instance of [`SacSeismogram`][pysmo.classes.sac.SacSeismogram]
     and is therefore compatible with the
     [`Seismogram`][pysmo.types.Seismogram] type.
-2.  `my_sac.station` is an instance of [`SacStation`][pysmo.classes.sac.SacStation]
+2. `my_sac.station` is an instance of [`SacStation`][pysmo.classes.sac.SacStation]
     and is therefore compatible with the
     [`Station`][pysmo.types.Station] type.
 
@@ -90,7 +89,6 @@ True
         - SacStation
         - SacEvent
         - SacTimestamps
-
 
 ::: pysmo.lib.io.sacio
     options:

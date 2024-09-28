@@ -23,9 +23,9 @@ The [`exceptions.py`](exceptions.py) file contains custom exception classes for 
 ## functions.py
 
 The [`functions.py`](functions.py) file contains functions that don't
-use pysmo types, but used to create functions that do use pysmo
-types. Of course, they may be otherwise useful.
-
+use pysmo types directly, but are used within functions that do.
+To make it clear that these functions are more for internal use,
+they are prefixed with `lib_`.
 
 ## io
 
