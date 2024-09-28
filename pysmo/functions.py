@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
 import numpy as np
+import numpy.typing as npt
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import _azdist, _detrend, _normalize, _resample
+from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
@@ -46,7 +47,7 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _normalize(seismogram)
+    clone.data = lib_normalize(seismogram)
     return clone
 
 
@@ -88,7 +89,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _detrend(seismogram)
+    clone.data = lib_detrend(seismogram)
     return clone
 
 
@@ -131,12 +132,12 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
         90000
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _resample(seismogram, delta)
+    clone.data = lib_resample(seismogram, delta)
     clone.delta = delta
     return clone
 
 
-def time_array(seismogram: Seismogram) -> np.ndarray:
+def time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     """Create an array containing Matplotlib dates (number of days since 1970)
     of each point in the Seismogram data.
 
@@ -230,7 +231,7 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
         >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
         181.92001941872516
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,
@@ -265,7 +266,7 @@ def backazimuth(
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,
@@ -298,7 +299,7 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
         >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
         1889121.778136402
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,

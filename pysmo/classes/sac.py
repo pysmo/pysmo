@@ -1,9 +1,9 @@
 import sys
 
 if sys.version_info >= (3, 11):
-    from typing import Literal, Tuple, get_args, overload, Self
+    from typing import Literal, get_args, overload, Self
 else:
-    from typing import Literal, Tuple, get_args, overload
+    from typing import Literal, get_args, overload
     from typing_extensions import Self
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
@@ -12,11 +12,12 @@ from pysmo.lib.decorators import value_not_none
 from attrs import define, field
 from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
+import numpy.typing as npt
 
 TSacTimeHeaders = Literal[
     "b", "e", "o", "a", "f", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"
 ]
-SAC_TIME_HEADERS: Tuple[TSacTimeHeaders, ...] = get_args(TSacTimeHeaders)
+SAC_TIME_HEADERS: tuple[TSacTimeHeaders, ...] = get_args(TSacTimeHeaders)
 
 
 @define(kw_only=True)
@@ -105,11 +106,11 @@ class SacSeismogram(_SacNested):
         return np.size(self.data)
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> npt.NDArray[np.float64]:
         return self._parent.data
 
     @data.setter
-    def data(self, value: np.ndarray) -> None:
+    def data(self, value: npt.NDArray[np.float64]) -> None:
         self._parent.data = value
 
     @property
@@ -292,7 +293,6 @@ class SacEvent(_SacNested):
 
 
 class SacTimeConverter:
-
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
