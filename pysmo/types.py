@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
 import numpy as np
+import numpy.typing as npt
 import datetime
 
 
@@ -31,10 +32,10 @@ class Seismogram(Protocol):
     def __len__(self) -> int: ...
 
     @property
-    def data(self) -> np.ndarray: ...
+    def data(self) -> npt.NDArray[np.float64]: ...
 
     @data.setter
-    def data(self, value: np.ndarray) -> None: ...
+    def data(self, value: npt.NDArray[np.float64]) -> None: ...
 
     @property
     def begin_time(self) -> datetime.datetime: ...

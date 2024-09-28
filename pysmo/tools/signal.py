@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 from pysmo import Seismogram, MiniSeismogram
 
 
@@ -52,7 +53,9 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
     return clone
 
 
-def __gauss(seis: Seismogram, Tn: float, alpha: float) -> tuple[np.ndarray, np.ndarray]:
+def __gauss(
+    seis: Seismogram, Tn: float, alpha: float
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     Wn = 1 / float(Tn)
     Nyq = 0.5 / seis.delta
     npts = len(seis)

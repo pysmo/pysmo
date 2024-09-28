@@ -6,39 +6,6 @@ from black import FileMode, format_file_contents
 
 MYDIR = os.path.dirname(__file__)
 
-# Read yaml file with dictionaries describing SAC headers
-with open(os.path.join(MYDIR, "sacheader.yml"), "r") as stream:
-    _HEADER_DEFS: dict = yaml.safe_load(stream)
-
-# Dictionary of header types (default values etc)
-header_types: dict = _HEADER_DEFS.pop("header_types")
-# Dictionary of header fields (format, type, etc)
-headers: dict = _HEADER_DEFS.pop("header_fields")
-# Dictionary of footer fields (format, type, etc)
-footers: dict = _HEADER_DEFS.pop("footer_fields")
-# Dictionary of enumerated headers (to convert int to str).
-enum_dict: dict = _HEADER_DEFS.pop("enumerated_header_values")
-
-# Add extra fields to headers dictionary if they aren't there
-for header, header_dict in headers.items():
-    header_type = header_dict["header_type"]
-    if "format" not in header_dict:
-        default_format_for_type = header_types[header_type]["format"]
-        headers[header]["format"] = default_format_for_type
-    if "length" not in header_dict:
-        default_length_for_type = header_types[header_type]["length"]
-        headers[header]["length"] = default_length_for_type
-    if header_type == "f":
-        headers[header]["python_type"] = "float"
-    elif header_type == "n":
-        headers[header]["python_type"] = "int"
-    elif header_type == "i":
-        headers[header]["python_type"] = "str"
-    elif header_type == "k":
-        headers[header]["python_type"] = "str"
-    elif header_type == "l":
-        headers[header]["python_type"] = "bool"
-
 # skip these from being rendered automatically and define
 # them in the template file directly
 properties = [
@@ -67,12 +34,48 @@ validators = dict(
     evlo="validators.optional([type_validator(), validators.gt(-180), validators.le(180)])",  # noqa: E501
 )
 
+# Read yaml file with dictionaries describing SAC headers
+with open(os.path.join(MYDIR, "sacheader.yml"), "r") as stream:
+    _HEADER_DEFS: dict = yaml.safe_load(stream)
+
+# Dictionary of header types (default values etc)
+header_types: dict = _HEADER_DEFS.pop("header_types")
+# Dictionary of header fields (format, type, etc)
+headers: dict = _HEADER_DEFS.pop("header_fields")
+# Dictionary of footer fields (format, type, etc)
+footers: dict = _HEADER_DEFS.pop("footer_fields")
+# Dictionary of enumerated headers (to convert int to str).
+enum_dict: dict = _HEADER_DEFS.pop("enumerated_header_values")
+
+# Add extra fields to headers dictionary if they aren't there
 for header, header_dict in headers.items():
+    header_type = header_dict["header_type"]
+    if "format" not in header_dict:
+        default_format_for_type = header_types[header_type]["format"]
+        headers[header]["format"] = default_format_for_type
+
+    if "length" not in header_dict:
+        default_length_for_type = header_types[header_type]["length"]
+        headers[header]["length"] = default_length_for_type
+
     if "allowed_vals" in header_dict:
+        headers[header]["python_type"] = "str"
+        headers[header]["is_enum"] = True
         if hasattr(SACIO_DEFAULTS, header):
             validators[header] = "validate_sacenum"
         else:
             validators[header] = "validators.optional(validate_sacenum)"
+    elif header_type == "f":
+        headers[header]["python_type"] = "float"
+    elif header_type == "n":
+        headers[header]["python_type"] = "int"
+    elif header_type == "i":
+        headers[header]["python_type"] = "str"
+    elif header_type == "k":
+        headers[header]["python_type"] = "str"
+    elif header_type == "l":
+        headers[header]["python_type"] = "bool"
+
 
 environment = Environment(loader=FileSystemLoader(os.path.join(MYDIR, "templates/")))
 template = environment.get_template("sacio-template.py.j2")

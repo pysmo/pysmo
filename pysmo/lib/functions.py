@@ -10,10 +10,11 @@ from pyproj import Geod
 from pysmo.lib.defaults import DEFAULT_ELLPS
 from pysmo import Seismogram
 import numpy as np
+import numpy.typing as npt
 import scipy.signal  # type: ignore
 
 
-def _azdist(
+def lib_azdist(
     lat1: float, lon1: float, lat2: float, lon2: float, ellps: str = DEFAULT_ELLPS
 ) -> tuple[float, float, float]:
     """Return forward/backazimuth and distance using pyproj (proj4 bindings).
@@ -41,7 +42,7 @@ def _azdist(
     return az, baz, dist
 
 
-def _normalize(seismogram: Seismogram) -> np.ndarray:
+def lib_normalize(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -54,7 +55,7 @@ def _normalize(seismogram: Seismogram) -> np.ndarray:
     return seismogram.data / norm
 
 
-def _detrend(seismogram: Seismogram) -> np.ndarray:
+def lib_detrend(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -66,7 +67,7 @@ def _detrend(seismogram: Seismogram) -> np.ndarray:
     return scipy.signal.detrend(seismogram.data)
 
 
-def _resample(seismogram: Seismogram, delta: float) -> np.ndarray:
+def lib_resample(seismogram: Seismogram, delta: float) -> npt.NDArray[np.float64]:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:
