@@ -2,15 +2,14 @@
 
 ## Git repository
 
-We use [GitHub](https://github.com) for the development of pysmo. If you have never used
-git and/or GitHub we recommend you first have a look at their
+We use [GitHub](https://github.com) for the development of pysmo. If you have
+never used git and/or GitHub we recommend you first have a look at their
 [documentation](https://docs.github.com/en/get-started). You can clone the pysmo
 repository two different ways:
 
 1. Clone the psymo repository directly to your desktop.
-2. Fork the repository on GitHub, and then clone it to your desktop (recommended if
-   you plan on submitting your changes to be included in pysmo).
-
+2. Fork the repository on GitHub, and then clone it to your desktop (recommended
+   if you plan on submitting your changes to be included in pysmo).
 
 ### Clone directly
 
@@ -39,16 +38,16 @@ $ cd pysmo
 
 !!! note
     We used
-    [ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) to
-    clone the repository this time round. With an _ssh-agent_ running, this will save
-    you from having to constantly enter your credentials when pushing changes back to
-    GitHub.
+    [ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+    to clone the repository this time round. With an _ssh-agent_ running, this
+    will save you from having to constantly enter your credentials when pushing
+    changes back to GitHub.
 
-In order to pull in changes in the upstream pysmo repository, we suggest adding it as
-an additional remote:
+In order to pull in changes in the upstream pysmo repository, we suggest adding
+it as an additional remote:
 
 ```bash
-$ git remote add upstream https://github.com/pysmo/pysmo.git
+git remote add upstream https://github.com/pysmo/pysmo.git
 ```
 
 ## Project Layout
@@ -67,17 +66,17 @@ items are:
     [development container](https://containers.dev/), which performs the necessary
     setup tasks (all the steps below) for you automatically.
 
-
 ## Requirements
 
 ### Setting up Windows
 
 To set up the development environment on Windows a few additional steps may be needed:
 
-* Install [Chocolatey](https://chocolatey.org/install#individual), a package manager for
-  Windows which greatly simplifies installing additional dependencies correctly.
-* Once Chocolatey is installed, run the following commands (run as administrator) using
-  either PowerShell or the Command Prompt to install the dependencies:
+* Install [Chocolatey](https://chocolatey.org/install#individual), a package manager
+  for Windows which greatly simplifies installing additional dependencies correctly.
+* Once Chocolatey is installed, run the following commands (run as administrator)
+  using either PowerShell or the Command Prompt to install the dependencies:
+
   ```powershell
   PS > choco install make
   PS > choco install awk
@@ -85,11 +84,11 @@ To set up the development environment on Windows a few additional steps may be n
 
 ### Python
 
-Pysmo is written in Python, and therefore requires Python to be installed on your system.
-A safe bet is a recent version of the
-[Anaconda Distribution](https://www.anaconda.com/download). If you prefer another option,
-or your system already has a recent version of Python installed, that is likely fine too
-(we'll just assume you know what you are doing).
+Pysmo is written in Python, and therefore requires Python to be installed on your
+system. A safe bet is a recent version of the
+[Anaconda Distribution](https://www.anaconda.com/download). If you prefer another
+option, or your system already has a recent version of Python installed, that is likely
+fine too (we'll just assume you know what you are doing).
 
 !!! tip
     If you are running Windows and have Chocolatey installed, you can use the
@@ -107,7 +106,6 @@ installation and basic usage instructions.
 !!! note
     For convenience we wrap the most used poetry commands in a `Makefile`, so
     interaction with Poetry is rarely required.
-
 
 ## Makefile
 
@@ -130,17 +128,18 @@ AVAILABLE COMMANDS
 To get you started run
 
 ```bash
-$ make install
+make install
 ```
 
-in a shell. This will first create a Python virtual environment for development of pysmo
-(unless the environment already already exists), then install pysmo and its dependencies.
+in a shell. This will first create a Python virtual environment for development of
+pysmo (unless the environment already already exists), then install pysmo and its
+dependencies.
 
 To activate this virtual environment run
 
 ```bash
-$ make shell
+make shell
 ```
 
-Inside this virtual Python environment all dependencies for pysmo have been installed and
-you can start developing.
+Inside this virtual Python environment all dependencies for pysmo have been installed
+and you can start developing.
