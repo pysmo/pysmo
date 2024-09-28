@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt  # type: ignore
 import matplotlib.dates as mdates  # type: ignore
 import numpy as np
 from pysmo import Seismogram, MiniSeismogram, Location
-from pysmo.lib.functions import _azdist, _detrend, _normalize, _resample
+from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
@@ -45,7 +45,7 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _normalize(seismogram)  # (1)!
+    clone.data = lib_normalize(seismogram)  # (1)!
     return clone
 
 
@@ -87,7 +87,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _detrend(seismogram)
+    clone.data = lib_detrend(seismogram)
     return clone
 
 
@@ -130,7 +130,7 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
         90000
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _resample(seismogram, delta)
+    clone.data = lib_resample(seismogram, delta)
     clone.delta = delta
     return clone
 
@@ -202,7 +202,7 @@ def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> f
         >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
         181.92001941872516
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,
@@ -237,7 +237,7 @@ def backazimuth(
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,
@@ -270,7 +270,7 @@ def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> 
         >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
         1889121.778136402
     """
-    return _azdist(
+    return lib_azdist(
         lat1=point1.latitude,
         lon1=point1.longitude,
         lat2=point2.latitude,

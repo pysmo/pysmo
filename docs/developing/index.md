@@ -1,21 +1,20 @@
 # Rules of the Land
 
-Regardless of whether you plan on introducing changes (or new code) to pysmo just for
-yourself, or want to contribute back to pysmo at some point, it makes sense to understand
-the project organisation, conventions, and tools used.
-
+Regardless of whether you plan on introducing changes (or new code) to pysmo just
+for yourself, or want to contribute back to pysmo at some point, it makes sense to
+understand the project organisation, conventions, and tools used.
 
 ## What goes where
 
 For the most part, the same components presented to a pysmo user
 ([Types](../user-guide/types.md), [Classes](../user-guide/classes/index.md),
 [Functions](../user-guide/functions.md), [Tools](../user-guide/tools/index.md))
-are also how the code itself is organised. It should be fairly easy to determine where a
-new piece of code should go. Keep in mind that types, classes, and functions are treated
-as a single module, and therefore any additions need to be reflected in the contents of
-the `pysmo/__init__.py` file. Tools are all separate modules, and therefore either don't
-need an `__init__.py` file at all (if they consist of a single file), or their own
-independent one.
+are also how the code itself is organised. It should be fairly easy to determine
+where a new piece of code should go. Keep in mind that types, classes, and functions
+are treated as a single module, and therefore any additions need to be reflected in
+the contents of the `pysmo/__init__.py` file. Tools are all separate modules, and
+therefore either don't need an `__init__.py` file at all (if they consist of a single
+file), or their own independent one.
 
 ## Types
 
@@ -35,6 +34,7 @@ paramount. This ensure continued stability, please:
   they can quite easily inherit from each other. If a new type were to
   contain all attributes of an existing type, that existing type should be
   reused. For example:
+
   ```python title="type_A_B.py"
   class A(Protocol):
     """Pysmo type A, which has properties prop1 and prop2."""
@@ -52,6 +52,7 @@ paramount. This ensure continued stability, please:
     def prop3(self):
       ...
   ```
+
 - **Don't confuse data grouping with a type:** Just because it makes sense
   to group data a certain way (e.g. the way we present data in the
   [`SAC`][pysmo.classes.sac.SAC] class to make it work with pysmo types),
@@ -63,15 +64,15 @@ paramount. This ensure continued stability, please:
   the `.py` files. No changes are required in the documentation
   files to include new types.
 
-
 ## Classes
 
 The generic classes serve as containers for data, which are used via the pysmo types.
 When writing a new class (or modifying an existing one to become compatible with
-pysmo), it is important to remember that the pysmo types are protocol classes, and as
-such only check for type compatibility. It is therefore up to the programmer to ensure
-they behave as expected (which may be verified using the unit tests provided by pysmo).
-The classes are similarly essential to pysmo as the types, and similar rules apply:
+pysmo), it is important to remember that the pysmo types are protocol classes, and
+as such only check for type compatibility. It is therefore up to the programmer to
+ensure they behave as expected (which may be verified using the unit tests provided
+by pysmo). The classes are similarly essential to pysmo as the types, and similar
+rules apply:
 
 - **Exact signature:** If a class is meant to work with a pysmo type, its type
   signature needs to be the exactly the same. For example, if an attribute
@@ -89,14 +90,14 @@ The classes are similarly essential to pysmo as the types, and similar rules app
   [docs/user-guide/classes](https://github.com/pysmo/pysmo/tree/master/docs/user-guide/classes)
   for the documentation to included here.
 
-
 ## Functions
 
-Items that belong to this category are basic functions that typically operate on pysmo
-types. It is not a hard requirement that functions defined here always use pysmo types,
-but if you do write a function that *doesn't* use pysmo types, it is worth asking
-yourself if perhaps it is worth defining a new type, or if it makes more sense to add
-your function to one of the [tools](#tools) modules. Considerations for functions:
+Items that belong to this category are basic functions that typically operate on
+pysmo types. It is not a hard requirement that functions defined here always use
+pysmo types, but if you do write a function that *doesn't* use pysmo types, it is
+worth asking yourself if perhaps it is worth defining a new type, or if it makes
+more sense to add your function to one of the [tools](#tools) modules. Considerations
+for functions:
 
 - **Return types:** if the output type of a function is a pysmo type, please use
   use the corresponding [mini](../user-guide/classes/minimal.md) class instead
@@ -109,7 +110,6 @@ your function to one of the [tools](#tools) modules. Considerations for function
 - **Documentation:** pysmo functions are documented in the docstrings of
   the `.py` files. No changes are required in the documentation
   files to include new functions.
-
 
 ## Tools
 
@@ -124,28 +124,27 @@ processing). It also may serve as a place for "anything else".
   the module as docstrings. A markdown file needs to be added to
   [docs/user-guide/tools](https://github.com/pysmo/pysmo/tree/master/docs/user-guide/tools).
 
-
 ## Testing
 
-Testing may present a chicken and egg type of situation, where the reference test data
-are calculated from the code that is being tested itself. While this does help avoid
-future code changes from breaking things, there is no way to know if the initial code is
-actually correct (e.g. free from logical errors). Ideally, test data should therefore be
-calculated using external tools. Where this is not possible, we suggest writing tests
-that involve creating figures (with [matplotlib][]) that can be manually inspected to see
-if the output makes sense. These figures then become the reference data that future test
-runs can use via the [pytest-mpl][] extension automatically.
-
+Testing may present a chicken and egg type of situation, where the reference test
+data are calculated from the code that is being tested itself. While this does help
+avoid future code changes from breaking things, there is no way to know if the
+initial code is actually correct (e.g. free from logical errors). Ideally, test data
+should therefore be calculated using external tools. Where this is not possible,
+we suggest writing tests that involve creating figures (with [matplotlib][]) that
+can be manually inspected to see if the output makes sense. These figures then become
+the reference data that future test runs can use via the [pytest-mpl][] extension
+automatically.
 
 ## Formatting and Style
 
 ### Code
 
-Adhering to python conventions such as [PEP 8](https://peps.python.org/pep-0008/) and
-linting code with e.g. [flake8](https://flake8.pycqa.org/en/latest/) results in clean and
-easily readable code. Aside from using those kinds of tools, we highly encourage writing
-[self-documenting code](https://en.wikipedia.org/wiki/Self-documenting_code). For
-example, instead of writing code to calculate velocity like this:
+Adhering to python conventions such as [PEP 8](https://peps.python.org/pep-0008/)
+and linting code with e.g. [flake8](https://flake8.pycqa.org/en/latest/) results
+in clean and easily readable code. Aside from using those kinds of tools, we highly
+encourage writing [self-documenting code](https://en.wikipedia.org/wiki/Self-documenting_code).
+For example, instead of writing code to calculate velocity like this:
 
 ```python title="documented-code.py"
 # Calculate the velocity v
@@ -170,8 +169,8 @@ def velocity(distance: float, time: float) -> float:
 This documentation is built using [mkdocs](https://www.mkdocs.org/) using the
 [material](https://squidfunk.github.io/mkdocs-material/) theme. Thus the main
 documentation source files are written in
-[Markdown](https://en.wikipedia.org/wiki/Markdown). The docstrings in the `.py` files are
-included via the [mkdocstrings](https://mkdocstrings.github.io) plugin. Please write the
-docstrings using the
+[Markdown](https://en.wikipedia.org/wiki/Markdown). The docstrings in the `.py`
+files are included via the [mkdocstrings](https://mkdocstrings.github.io)
+plugin. Please write the docstrings using the
 [google](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 style.
