@@ -13,16 +13,17 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self, Any
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.lib.functions import _normalize, _detrend, _resample
+from pysmo.lib.functions import lib_normalize, lib_detrend, lib_resample
 from pysmo import Seismogram
 from datetime import datetime, timedelta, timezone
-from attrs import define, field, validators
+from attrs import define, field, validators, Attribute
 from attrs_strict import type_validator
 import numpy as np
+import numpy.typing as npt
 import copy
 
 
-def datetime_is_utc(_: Any, attribute: Any, value: datetime) -> None:
+def datetime_is_utc(_: Any, attribute: Attribute, value: datetime) -> None:
     if value.tzinfo != timezone.utc:
         raise TypeError(f"datetime object {attribute} doesn't have tzdata=timezone.utc")
 
@@ -59,7 +60,9 @@ class MiniSeismogram:
         default=SEISMOGRAM_DEFAULTS.delta,
         validator=type_validator(),
     )
-    data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    data: npt.NDArray[np.float64] = field(
+        factory=lambda: np.array([]), validator=type_validator()
+    )
 
     def __len__(self) -> int:
         return np.size(self.data)
@@ -120,7 +123,7 @@ class MiniSeismogram:
             >>> my_seis.data
             array([0.71428571, 0.42857143, 1.        ])
         """
-        self.data = _normalize(self)
+        self.data = lib_normalize(self)
 
     def detrend(self) -> None:
         """Remove linear and/or constant trends from a seismogram.
@@ -135,7 +138,7 @@ class MiniSeismogram:
             >>> assert 0 == pytest.approx(np.mean(my_seis.data))
             True
         """
-        self.data = _detrend(self)
+        self.data = lib_detrend(self)
 
     def resample(self, delta: float) -> None:
         """Resample Seismogram object data using the Fourier method.
@@ -153,7 +156,7 @@ class MiniSeismogram:
             >>> len(my_seis)
             5000
         """
-        self.data, self.delta = _resample(self, delta), delta
+        self.data, self.delta = lib_resample(self, delta), delta
 
 
 @define(kw_only=True)
