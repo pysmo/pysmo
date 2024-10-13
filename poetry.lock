@@ -944,6 +944,20 @@ python-dateutil = ">=2.8.1"
 dev = ["flake8", "markdown", "twine", "wheel"]
 
 [[package]]
+name = "griffe"
+version = "1.4.1"
+description = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "griffe-1.4.1-py3-none-any.whl", hash = "sha256:84295ee0b27743bd880aea75632830ef02ded65d16124025e4c263bb826ab645"},
+    {file = "griffe-1.4.1.tar.gz", hash = "sha256:911a201b01dc92e08c0e84c38a301e9da5ec067f00e7d9f2e39bc24dbfa3c176"},
+]
+
+[package.dependencies]
+colorama = ">=0.4"
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -2049,6 +2063,7 @@ Markdown = ">=3.6"
 MarkupSafe = ">=1.1"
 mkdocs = ">=1.4"
 mkdocs-autorefs = ">=1.2"
+mkdocstrings-python = {version = ">=0.5.2", optional = true, markers = "extra == \"python\""}
 platformdirs = ">=2.2"
 pymdown-extensions = ">=6.3"
 
@@ -2056,6 +2071,22 @@ pymdown-extensions = ">=6.3"
 crystal = ["mkdocstrings-crystal (>=0.3.4)"]
 python = ["mkdocstrings-python (>=0.5.2)"]
 python-legacy = ["mkdocstrings-python-legacy (>=0.2.1)"]
+
+[[package]]
+name = "mkdocstrings-python"
+version = "1.12.0"
+description = "A Python handler for mkdocstrings."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "mkdocstrings_python-1.12.0-py3-none-any.whl", hash = "sha256:1f48c9ea6d1d6cd1fefc7389f003841e9c65e50016ba40342f340ca901bc60b9"},
+    {file = "mkdocstrings_python-1.12.0.tar.gz", hash = "sha256:2121671354fff208fff1278ce9c961aee2b736a1688f70064c4fa76a00241b34"},
+]
+
+[package.dependencies]
+griffe = ">=0.49"
+mkdocs-autorefs = ">=1.2"
+mkdocstrings = ">=0.26"
 
 [[package]]
 name = "mypy"
@@ -3889,4 +3920,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.14"
-content-hash = "f5d74eb5c0dd7aa5976a798e80eb1df60d3a192dcc109c0854ffbbb9fb3b72d0"
+content-hash = "210d58f27aa487a6f2e88e7a8440e2b5619a46fc2103c00c02cbd727414811b0"
