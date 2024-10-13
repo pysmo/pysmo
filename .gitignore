@@ -27,3 +27,4 @@ bar.py
 .direnv
 junit.xml
 sacio.py
+.sync-conflict-*
