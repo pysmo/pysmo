@@ -1,5 +1,5 @@
 site_name: pysmo
-copyright: Copyright &copy; 2012 - 2023 Simon Lloyd
+copyright: Copyright &copy; 2012 - 2024 Simon Lloyd
 
 # Repository
 repo_name: pysmo/pysmo
@@ -22,11 +22,11 @@ theme:
     # - navigation.tabs
     - navigation.top
   palette:
-    # # Palette toggle for automatic mode
-    # - media: "(prefers-color-scheme)"
-    #   toggle:
-    #     icon: material/brightness-auto
-    #     name: Switch to light mode
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
 
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
@@ -44,8 +44,11 @@ theme:
       accent: cyan
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
-        # name: Switch to system preference
+        name: Switch to system preference
+
+extra:
+  version:
+    provider: mike
 
 markdown_extensions:
   - admonition
@@ -59,15 +62,16 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji ""
-      emoji_generator: !!python/name:materialx.emoji.to_svg ""
-  # - markdown_include.include:
-  #     base_path: docs
-  # - termynal:
-  #     prompt_literal_start:
-  #       - "$"
-  #       - ">"
-  #       - ">>>"
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+        # - markdown_include.include:
+        #     base_path: docs
+        # - termynal:
+        #     prompt_literal_start:
+        #       - "$"
+        #       - ">"
+        #       - ">>>"
+
 
 plugins:
   - search
