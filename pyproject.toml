@@ -56,7 +56,7 @@ ipython = "^8.27.0"
 jupyter = "^1.1.1"
 mkdocs-material = "^9.5.38"
 markdown-include = "^0.8.1"
-mkdocstrings = "^0.26.2"
+mkdocstrings = {extras = ["python"], version = "^0.26.2"}
 mkdocs-jupyter = "^0.25.0"
 termynal = "^0.12.1"
 
