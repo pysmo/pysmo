@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 import matplotlib.figure
 import numpy as np
 import numpy.typing as npt
-from pysmo import Seismogram, MiniSeismogram, Location
+from pysmo import Seismogram, Location, MiniSeismogram
 from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
 from pysmo.lib.defaults import DEFAULT_ELLPS
 
@@ -163,6 +163,35 @@ def time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     """
     start = mdates.date2num(seismogram.begin_time)
     end = mdates.date2num(seismogram.end_time)
+    return np.linspace(start, end, len(seismogram))
+
+
+def unix_time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
+    """Create an array containing unix epoch dates (number of seconds since 1970)
+    of each point in the Seismogram data.
+
+    Parameters:
+        seismogram: Seismogram object.
+
+    Returns:
+        Array containing the unix epoch times of seismogram data.
+
+    Examples:
+        >>> from pysmo import SAC, unix_time_array
+        >>> my_seis = SAC.from_file('testfile.sac').seismogram
+        >>> seis_data = my_seis.data
+        >>> seis_times = unix_time_array(my_seis)
+        >>> for t, v in zip(seis_times, seis_data):
+        ...     print(t,v)
+        ...
+        1109661782.16 2302.0
+        1109661782.18 2313.0
+        1109661782.2 2345.0
+        1109661782.22 2377.0
+        ...
+    """
+    start = seismogram.begin_time.timestamp()
+    end = seismogram.end_time.timestamp()
     return np.linspace(start, end, len(seismogram))
 
 
