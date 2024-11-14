@@ -61,6 +61,20 @@ class TestSeismogramFunctions:
         assert num2date(times[0]) == seismogram.begin_time
         assert num2date(times[-1]) == seismogram.end_time
 
+    def test_unix_time_array(self, seismogram: Seismogram) -> None:
+        """Get times from Seismogram object and verify them."""
+        from pysmo import unix_time_array
+        from datetime import datetime, timezone
+
+        unix_times = unix_time_array(seismogram)
+        assert len(unix_times) == len(seismogram)
+        assert (
+            datetime.fromtimestamp(unix_times[0], timezone.utc) == seismogram.begin_time
+        )
+        assert (
+            datetime.fromtimestamp(unix_times[-1], timezone.utc) == seismogram.end_time
+        )
+
 
 def test_azimuth(
     stations: tuple[Location, ...], hypocenters: tuple[Location, ...]
