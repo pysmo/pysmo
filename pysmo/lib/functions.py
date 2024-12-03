@@ -11,7 +11,7 @@ from pysmo.lib.defaults import DEFAULT_ELLPS
 from pysmo import Seismogram
 import numpy as np
 import numpy.typing as npt
-import scipy.signal  # type: ignore
+import scipy.signal
 
 
 def lib_azdist(
@@ -42,7 +42,7 @@ def lib_azdist(
     return az, baz, dist
 
 
-def lib_normalize(seismogram: Seismogram) -> npt.NDArray[np.float64]:
+def lib_normalize(seismogram: Seismogram) -> npt.NDArray:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -55,7 +55,7 @@ def lib_normalize(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     return seismogram.data / norm
 
 
-def lib_detrend(seismogram: Seismogram) -> npt.NDArray[np.float64]:
+def lib_detrend(seismogram: Seismogram) -> npt.NDArray:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -67,7 +67,7 @@ def lib_detrend(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     return scipy.signal.detrend(seismogram.data)
 
 
-def lib_resample(seismogram: Seismogram, delta: float) -> npt.NDArray[np.float64]:
+def lib_resample(seismogram: Seismogram, delta: float) -> npt.NDArray:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:

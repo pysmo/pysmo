@@ -1046,15 +1046,9 @@ class SacIO:
         default=None,
         validator=validators.optional([type_validator(), validators.max_len(8)]),
     )
-    data: npt.NDArray[np.float64] = field(
-        factory=lambda: np.array([]), validator=type_validator()
-    )
-    x: npt.NDArray[np.float64] = field(
-        factory=lambda: np.array([]), validator=type_validator()
-    )
-    y: npt.NDArray[np.float64] = field(
-        factory=lambda: np.array([]), validator=type_validator()
-    )
+    data: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
+    x: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
+    y: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
 
     @property
     def depmin(self) -> float | None:

@@ -2,14 +2,14 @@
 match pysmo's types.
 """
 
+from pysmo import Seismogram, Location, MiniSeismogram
+from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
+from pysmo.lib.defaults import DEFAULT_ELLPS
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
 import numpy as np
 import numpy.typing as npt
-from pysmo import Seismogram, Location, MiniSeismogram
-from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
-from pysmo.lib.defaults import DEFAULT_ELLPS
 
 
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
@@ -137,7 +137,7 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
     return clone
 
 
-def time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
+def time_array(seismogram: Seismogram) -> npt.NDArray:
     """Create an array containing Matplotlib dates (number of days since 1970)
     of each point in the Seismogram data.
 
@@ -166,7 +166,7 @@ def time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
     return np.linspace(start, end, len(seismogram))
 
 
-def unix_time_array(seismogram: Seismogram) -> npt.NDArray[np.float64]:
+def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
     """Create an array containing unix epoch dates (number of seconds since 1970)
     of each point in the Seismogram data.
 

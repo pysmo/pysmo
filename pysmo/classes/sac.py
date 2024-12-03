@@ -106,11 +106,11 @@ class SacSeismogram(_SacNested):
         return np.size(self.data)
 
     @property
-    def data(self) -> npt.NDArray[np.float64]:
+    def data(self) -> npt.NDArray:
         return self._parent.data
 
     @data.setter
-    def data(self, value: npt.NDArray[np.float64]) -> None:
+    def data(self, value: npt.NDArray) -> None:
         self._parent.data = value
 
     @property
