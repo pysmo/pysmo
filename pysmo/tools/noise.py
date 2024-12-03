@@ -25,7 +25,7 @@ import numpy as np
 import numpy.typing as npt
 from datetime import datetime
 from dataclasses import dataclass, field
-from scipy.integrate import cumulative_trapezoid  # type: ignore
+from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
@@ -39,8 +39,8 @@ class NoiseModel:
         T: Period [seconds].
     """
 
-    psd: npt.NDArray[np.float64] = field(default_factory=lambda: np.array([]))
-    T: npt.NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+    psd: npt.NDArray = field(default_factory=lambda: np.array([]))
+    T: npt.NDArray = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self) -> None:
         if np.size(self.psd) != np.size(self.T):
