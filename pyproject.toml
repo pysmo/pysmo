@@ -39,6 +39,7 @@ types-requests = "^2.32.0.20241016"
 jinja2 = "^3.1.4"
 black = {extras = ["jupyter"], version = "^24.10.0"}
 pyyaml = "^6.0.2"
+scipy-stubs = "^1.14.1.4"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.3"

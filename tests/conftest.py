@@ -1,3 +1,4 @@
+from pysmo import SAC
 from typing import Dict
 import pytest
 import os
@@ -38,6 +39,11 @@ def sacfile(tmpdir_factory: pytest.TempdirFactory, assets: Dict[str, str]) -> st
     testfile = os.path.join(tmpdir, "testfile.sac")
     shutil.copyfile(orgfile, testfile)
     return testfile
+
+
+@pytest.fixture()
+def sac_instance(sacfile: str) -> SAC:
+    return SAC.from_file(sacfile)
 
 
 @pytest.fixture()
