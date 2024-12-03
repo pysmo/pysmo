@@ -2279,6 +2279,23 @@ files = [
 ]
 
 [[package]]
+name = "optype"
+version = "0.7.2"
+description = "Building blocks for precise & flexible type hints"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "optype-0.7.2-py3-none-any.whl", hash = "sha256:08f20668ac30618506e0d1a56601a581e3ab632e2ede810eaf79242e29ecb1d4"},
+    {file = "optype-0.7.2.tar.gz", hash = "sha256:bb24ad58fdbf0d59ae55cfa42d8e1e750f04d3a36d274921455ac90857d178b6"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.10", markers = "python_version < \"3.13\""}
+
+[package.extras]
+numpy = ["numpy (>=1.24)"]
+
+[[package]]
 name = "overrides"
 version = "7.7.0"
 description = "A decorator to automatically detect mismatch when overriding a method."
@@ -3405,6 +3422,23 @@ doc = ["jupyterlite-pyodide-kernel", "jupyterlite-sphinx (>=0.13.1)", "jupytext"
 test = ["Cython", "array-api-strict (>=2.0)", "asv", "gmpy2", "hypothesis (>=6.30)", "meson", "mpmath", "ninja", "pooch", "pytest", "pytest-cov", "pytest-timeout", "pytest-xdist", "scikit-umfpack", "threadpoolctl"]
 
 [[package]]
+name = "scipy-stubs"
+version = "1.14.1.4"
+description = "Typing Stubs for SciPy"
+optional = false
+python-versions = "<4.0,>=3.10"
+files = [
+    {file = "scipy_stubs-1.14.1.4-py3-none-any.whl", hash = "sha256:137523d0eb4936ec249ddb01a3afd172ae8ad52cef9fddffc913a32a5f71c412"},
+    {file = "scipy_stubs-1.14.1.4.tar.gz", hash = "sha256:215a2c9d865e355a5c5cc088ec6d87f489a584396256113d72d7d24cfb0e889c"},
+]
+
+[package.dependencies]
+optype = ">=0.7.1"
+
+[package.extras]
+scipy = ["scipy (>=1.10)"]
+
+[[package]]
 name = "send2trash"
 version = "1.8.3"
 description = "Send file to trash natively under Mac OS X, Windows and Linux"
@@ -3821,4 +3855,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.14"
-content-hash = "2675217e285ff12aee2168ee8c9d3ab005f7c238f8b6107ae3c9eae2357e5f95"
+content-hash = "5f0bccd77e03cb716d027d7fb1c277661a245acd0fa8b972782b24ffc9243a7e"

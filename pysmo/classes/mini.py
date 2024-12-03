@@ -60,9 +60,7 @@ class MiniSeismogram:
         default=SEISMOGRAM_DEFAULTS.delta,
         validator=type_validator(),
     )
-    data: npt.NDArray[np.float64] = field(
-        factory=lambda: np.array([]), validator=type_validator()
-    )
+    data: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
 
     def __len__(self) -> int:
         return np.size(self.data)
