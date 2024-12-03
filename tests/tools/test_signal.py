@@ -1,11 +1,13 @@
 from tests.conftest import TESTDATA
-from pysmo.tools.signal import gauss, envelope
-from pysmo import Seismogram, plotseis, SAC, MiniSeismogram
+from pysmo.tools.signal import gauss, envelope, delay
+from pysmo import Seismogram, plotseis, SAC, MiniSeismogram, detrend
 import matplotlib.figure
 import pytest
 import pytest_cases
 import numpy as np
 import matplotlib
+from datetime import timedelta
+import random
 
 matplotlib.use("Agg")
 
@@ -55,3 +57,70 @@ def test_plot_gauss_env(seismogram: Seismogram = SACSEIS) -> matplotlib.figure.F
     env_seis = envelope(seismogram, Tn, alpha)
     fig = plotseis(seismogram, gauss_seis, env_seis, showfig=False)
     return fig
+
+
+@pytest_cases.parametrize(
+    "seismogram", (SACSEIS, MINISEIS), ids=("SacSeismogram", "MiniSeismogram")
+)
+def test_delay_with_seismogram(seismogram: Seismogram) -> None:
+    rand_int = int(random.uniform(10, 100))
+    seismogram1 = MiniSeismogram.clone(seismogram, skip_data=True)
+    seismogram1.data = seismogram.data[1000:10000]
+    seismogram1 = detrend(seismogram1)
+
+    seismogram2 = MiniSeismogram.clone(seismogram1)
+    seismogram2.delta = seismogram1.delta * 2
+    with pytest.raises(ValueError):
+        cc_delay, _ = delay(seismogram1, seismogram2)
+
+    seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
+    seismogram2.data = seismogram1.data[0:rand_int]
+    with pytest.raises(ValueError):
+        cc_delay, _ = delay(seismogram1, seismogram2, max_delay=timedelta(seconds=1))
+
+    # create seismogram2 by cutting off first rand_int samples
+    seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
+    seismogram2.data = seismogram1.data[rand_int:]
+    cc_delay, _ = delay(seismogram1, seismogram2)
+    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+    cc_delay, _ = delay(seismogram2, seismogram1)
+    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+
+    # create seismogram2 by cutting off first rand_int samples and flipping polarity
+    seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
+    seismogram2.data = -seismogram1.data[rand_int:]
+    cc_delay, _ = delay(seismogram1, seismogram2, allow_negative=True)
+    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+    cc_delay, _ = delay(seismogram2, seismogram1, allow_negative=True)
+    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+
+    # create seismogram2 with a delay of rand_int * delta
+    seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
+    seismogram2.data = np.roll(seismogram1.data, rand_int)
+
+    cc_delay, _ = delay(
+        seismogram1, seismogram2, timedelta(seconds=rand_int * seismogram1.delta + 2)
+    )
+
+    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+
+    cc_delay, _ = delay(
+        seismogram2, seismogram1, timedelta(seconds=rand_int * seismogram1.delta + 2)
+    )
+
+    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+
+
+def test_delay_with_made_up_data() -> None:
+    data1 = np.array([1, 1, 1, 1, 2, 3, 4, 1, 1])
+    data2 = np.array([1, 1, 1, 2, 3, 4, 1])
+    seismogram1 = MiniSeismogram(data=data1)
+    seismogram2 = MiniSeismogram(data=data2)
+    seismogram3 = MiniSeismogram(data=-data2)
+    seismogram3 = detrend(seismogram3)
+    cc_delay, cc_coeff = delay(seismogram1, seismogram2)
+    assert cc_delay.total_seconds() == pytest.approx(-1)
+    assert cc_coeff == pytest.approx(1)
+    cc_delay, cc_coeff = delay(seismogram1, seismogram3, allow_negative=True)
+    assert cc_delay.total_seconds() == pytest.approx(-1)
+    assert cc_coeff < 0
