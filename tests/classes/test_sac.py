@@ -1,10 +1,11 @@
 from attrs_strict import AttributeTypeError
 import numpy as np
 import numpy.testing as npt
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.lib.exceptions import SacHeaderUndefined
-from pysmo.lib.io import SacIO
-from pysmo import Seismogram, SAC, Station, Event
+from pysmo import Seismogram, Station, Event
+from pysmo.classes import SAC
+from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo._io import SacIO
+from pysmo.exc import SacHeaderUndefined
 from datetime import datetime, timedelta, timezone
 import pytest
 
