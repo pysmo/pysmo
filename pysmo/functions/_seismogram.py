@@ -3,9 +3,9 @@ match pysmo's types.
 """
 
 from pysmo import Seismogram, MiniSeismogram
-from pysmo._lib.functions import lib_detrend, lib_normalize, lib_resample
 from datetime import datetime, timedelta
 from math import floor, ceil
+import scipy.signal
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
@@ -82,23 +82,6 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
     Returns:
         Normalized seismogram.
 
-    Note:
-        This function is also available as a method in the
-        [MiniSeismogram][pysmo.MiniSeismogram]
-        class. Thus, if you intend normalizing data of a
-        MiniSeismogram object **in-place**, instead of
-        writing:
-
-        ```python
-        my_seis.data = normalize(my_seis).data
-        ```
-
-        you should instead use:
-
-        ```python
-        my_seis.normalize()
-        ```
-
     Examples:
         >>> import numpy as np
         >>> from pysmo import SAC, normalize
@@ -107,8 +90,10 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         >>> assert np.max(normalized_seis.data) <= 1
         True
     """
+
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = lib_normalize(seismogram)
+    norm = np.max(np.abs(seismogram.data))
+    clone.data = seismogram.data / norm
     return clone
 
 
@@ -120,23 +105,6 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
 
     Returns:
         Detrended seismogram.
-
-    Note:
-        This function is also available as a method in the
-        [MiniSeismogram][pysmo.MiniSeismogram]
-        class. Thus, if you intend detrending data of a
-        MiniSeismogram object **in-place**, instead of
-        writing:
-
-        ```python
-        my_seis.data = detrend(my_seis).data
-        ```
-
-        you should instead use:
-
-        ```python
-        my_seis.detrend()
-        ```
 
     Examples:
         >>> import numpy as np
@@ -150,7 +118,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = lib_detrend(seismogram)
+    clone.data = scipy.signal.detrend(seismogram.data)
     return clone
 
 
@@ -164,23 +132,6 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
     Returns:
         Resampled seismogram.
 
-    Note:
-        This function is also available as a method in the
-        [MiniSeismogram][pysmo.MiniSeismogram]
-        class. Thus, if you intend resampling data of a
-        MiniSeismogram object **in-place**, instead of
-        writing:
-
-        ```python
-        my_seis.data = resample(my_seis).data
-        ```
-
-        you should instead use:
-
-        ```python
-        my_seis.resample()
-        ```
-
     Examples:
         >>> from pysmo import SAC, resample
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
@@ -193,7 +144,12 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
         90000
     """
     clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = lib_resample(seismogram, delta)
+
+    len_in = len(seismogram)
+    delta_in = seismogram.delta
+    len_out = int(len_in * delta_in / delta)
+
+    clone.data = scipy.signal.resample(seismogram.data, len_out)
     clone.delta = delta
     return clone
 
