@@ -1,6 +1,8 @@
 from tests.conftest import TESTDATA
 from pysmo.tools.signal import gauss, envelope, delay
-from pysmo import Seismogram, plotseis, SAC, MiniSeismogram, detrend
+from pysmo import Seismogram, MiniSeismogram
+from pysmo.functions import plotseis, detrend
+from pysmo.classes import SAC
 import matplotlib.figure
 import pytest
 import pytest_cases

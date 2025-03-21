@@ -1,75 +1,18 @@
+"""
+This module provides functions commonly used in signal processing.
+
+Functions:
+    delay: Cross correlates two seismograms to determine signal delay.
+    envelope: Calculates the envelope of a gaussian filtered seismogram.
+    gauss: Returns a gaussian filtered seismogram.
+"""
+
 from datetime import timedelta
 import numpy as np
 import numpy.typing as npt
 from scipy.signal import correlate as _correlate
 from scipy.stats import pearsonr as _pearsonr
 from pysmo import Seismogram, MiniSeismogram
-
-
-def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
-    """
-    Calculates the envelope of a gaussian filtered seismogram.
-
-    Parameters:
-        seismogram: Name of the seismogram object passed to this function.
-        Tn: Center period of Gaussian filter [in seconds]
-        alpha: Set alpha (which determines filterwidth)
-
-    Returns:
-        Seismogram containing the envelope
-
-    Examples:
-        >>> from pysmo import SAC
-        >>> from pysmo.tools.signal import envelope
-        >>> seis = SAC.from_file('sacfile.sac').seismogram
-        >>> Tn = 50 # Center Gaussian filter at 50s period
-        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> envelope_seis = envelope(seis, Tn, alpha)
-    """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _gauss(seismogram, Tn, alpha)[0]
-    return clone
-
-
-def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
-    """
-    Returns a gaussian filtered seismogram.
-
-    Parameters:
-        seismogram: Name of the SAC object passed to this function.
-        Tn: Center period of Gaussian filter [in seconds]
-        alpha: Set alpha (which determines filterwidth)
-
-    Returns:
-        Gaussian filtered seismogram.
-
-    Examples:
-        >>> from pysmo import SAC
-        >>> from pysmo.tools.signal import gauss
-        >>> seis = SAC.from_file('sacfile.sac').seismogram
-        >>> Tn = 50 # Center Gaussian filter at 50s period
-        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> gauss_seis = gauss(seis, Tn, alpha)
-    """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
-    clone.data = _gauss(seismogram, Tn, alpha)[1]
-    return clone
-
-
-def _gauss(
-    seis: Seismogram, Tn: float, alpha: float
-) -> tuple[npt.NDArray, npt.NDArray]:
-    Wn = 1 / float(Tn)
-    Nyq = 0.5 / seis.delta
-    npts = len(seis)
-    spec = np.fft.fft(seis.data)
-    W = np.array(np.linspace(0, Nyq, npts))
-    Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
-    Qn = complex(0, 1) * Hn.real - Hn.imag
-    hn = np.fft.ifft(Hn).real
-    qn = np.fft.ifft(Qn).real
-    an = np.sqrt(hn**2 + qn**2)  # envelope
-    return (an, hn)
 
 
 def delay(
@@ -165,7 +108,7 @@ def delay(
     corr = _correlate(in1, in2, mode=mode)
     corr_index = np.argmax(corr)
 
-    if allow_negative and np.max(corr) < -np.min(corr):
+    if allow_negative and np.max(corr) < -1 * np.min(corr):
         corr_index = np.argmin(corr)
 
     if max_delay is not None:
@@ -188,3 +131,69 @@ def delay(
     covr, _ = _pearsonr(in1, in2)
 
     return delay, float(covr)
+
+
+def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
+    """
+    Calculates the envelope of a gaussian filtered seismogram.
+
+    Parameters:
+        seismogram: Name of the seismogram object passed to this function.
+        Tn: Center period of Gaussian filter [in seconds]
+        alpha: Set alpha (which determines filterwidth)
+
+    Returns:
+        Seismogram containing the envelope
+
+    Examples:
+        >>> from pysmo import SAC
+        >>> from pysmo.tools.signal import envelope
+        >>> seis = SAC.from_file('sacfile.sac').seismogram
+        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
+        >>> envelope_seis = envelope(seis, Tn, alpha)
+    """
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = _gauss(seismogram, Tn, alpha)[0]
+    return clone
+
+
+def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
+    """
+    Returns a gaussian filtered seismogram.
+
+    Parameters:
+        seismogram: Name of the SAC object passed to this function.
+        Tn: Center period of Gaussian filter [in seconds]
+        alpha: Set alpha (which determines filterwidth)
+
+    Returns:
+        Gaussian filtered seismogram.
+
+    Examples:
+        >>> from pysmo import SAC
+        >>> from pysmo.tools.signal import gauss
+        >>> seis = SAC.from_file('sacfile.sac').seismogram
+        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
+        >>> gauss_seis = gauss(seis, Tn, alpha)
+    """
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = _gauss(seismogram, Tn, alpha)[1]
+    return clone
+
+
+def _gauss(
+    seis: Seismogram, Tn: float, alpha: float
+) -> tuple[npt.NDArray, npt.NDArray]:
+    Wn = 1 / float(Tn)
+    Nyq = 0.5 / seis.delta
+    npts = len(seis)
+    spec = np.fft.fft(seis.data)
+    W = np.array(np.linspace(0, Nyq, npts))
+    Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
+    Qn = complex(0, 1) * Hn.real - Hn.imag
+    hn = np.fft.ifft(Hn).real
+    qn = np.fft.ifft(Qn).real
+    an = np.sqrt(hn**2 + qn**2)  # envelope
+    return (an, hn)

@@ -1,4 +1,4 @@
-from pysmo import SAC
+from pysmo.classes import SAC
 from typing import Dict
 import pytest
 import os

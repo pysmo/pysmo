@@ -1,6 +1,6 @@
 """
-This module provides support for calculating random synthetic noise that matches the
-naturally observed amplitude spectrum.
+This module provides support for calculating random synthetic noise that
+matches the naturally observed amplitude spectrum.
 
 See also:
     Peterson, J., 1993. Observations and modelling of background seismic noise.
@@ -27,7 +27,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
 
 
 @dataclass(frozen=True)
