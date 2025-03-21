@@ -1,6 +1,5 @@
 from pysmo._lib.utils import datetime_is_utc
 from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo._lib.functions import lib_normalize, lib_detrend, lib_resample
 from typing import Self, Protocol, runtime_checkable
 from attrs import define, field
 from attrs_strict import type_validator
@@ -142,49 +141,3 @@ class MiniSeismogram:
         if not skip_data:
             cloned_seismogram.data = copy(seismogram.data)
         return cloned_seismogram
-
-    def normalize(self) -> None:
-        """Normalize the seismogram data with its absolute max value.
-
-        Examples:
-            >>> import numpy as np
-            >>> from pysmo import MiniSeismogram
-            >>> my_seis = MiniSeismogram(data=np.array([5, 3, 7]))
-            >>> my_seis.normalize()
-            >>> my_seis.data
-            array([0.71428571, 0.42857143, 1.        ])
-        """
-        self.data = lib_normalize(self)
-
-    def detrend(self) -> None:
-        """Remove linear and/or constant trends from a seismogram.
-
-        Examples:
-            >>> import numpy as np
-            >>> import pytest
-            >>> from pysmo import MiniSeismogram
-            >>> my_seis = MiniSeismogram(data=np.array([5, 3, 7]))
-            >>> my_seis.detrend()
-            >>> np.mean(my_seis.data)
-            >>> assert 0 == pytest.approx(np.mean(my_seis.data))
-            True
-        """
-        self.data = lib_detrend(self)
-
-    def resample(self, delta: float) -> None:
-        """Resample Seismogram object data using the Fourier method.
-
-        Parameters:
-            delta: New sampling interval.
-
-        Examples:
-            >>> from pysmo import MiniSeismogram
-            >>> my_seis = MiniSeismogram(data=np.random.rand(10000))
-            >>> len(my_seis)
-            10000
-            >>> new_delta = my_seis.delta * 2
-            >>> my_seis.resample(new_delta)
-            >>> len(my_seis)
-            5000
-        """
-        self.data, self.delta = lib_resample(self, delta), delta
