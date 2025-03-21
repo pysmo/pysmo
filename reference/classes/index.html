@@ -1,0 +1,4156 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../functions/">
+      
+      
+        <link rel="next" href="../tools/noise/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
+    
+    
+      
+        <title>pysmo.classes - pysmo</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../termynal.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pysmo.classes.SAC" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pysmo" class="md-header__button md-logo" aria-label="pysmo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pysmo
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              pysmo.classes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="blue-grey"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="blue-grey"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pysmo/pysmo" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pysmo/pysmo
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pysmo" class="md-nav__button md-logo" aria-label="pysmo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pysmo
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pysmo/pysmo" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pysmo/pysmo
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../first-steps/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    First Steps
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            First Steps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../first-steps/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installing pysmo
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../first-steps/tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../user-guide/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/in-the-box/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What is in the Box?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Types
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/classes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Classes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../base/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pysmo
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pysmo.functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    pysmo.classes
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    pysmo.classes
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC" class="md-nav__link">
+    <span class="md-ellipsis">
+      SAC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SAC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC--direct-access-to-sac-data-and-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      Direct access to SAC data and metadata
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC--access-to-sac-data-and-metadata-via-helper-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access to SAC data and metadata via helper objects
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.kzdate" class="md-nav__link">
+    <span class="md-ellipsis">
+      kzdate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.kztime" class="md-nav__link">
+    <span class="md-ellipsis">
+      kztime
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_buffer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_iris" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_iris
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.read" class="md-nav__link">
+    <span class="md-ellipsis">
+      read
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.read_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_buffer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.write" class="md-nav__link">
+    <span class="md-ellipsis">
+      write
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helper-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helper classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helper classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacSeismogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacSeismogram
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacStation" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacStation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacEvent" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacEvent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacTimestamps" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacTimestamps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/noise/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pysmo.tools.noise
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/signal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pysmo.tools.signal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../_io/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pysmo._io
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../gallery/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Gallery
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Gallery
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../developing/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Developing pysmo
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Developing pysmo
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developing/developing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development Environment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developing/contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC" class="md-nav__link">
+    <span class="md-ellipsis">
+      SAC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SAC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC--direct-access-to-sac-data-and-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      Direct access to SAC data and metadata
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC--access-to-sac-data-and-metadata-via-helper-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access to SAC data and metadata via helper objects
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.kzdate" class="md-nav__link">
+    <span class="md-ellipsis">
+      kzdate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.kztime" class="md-nav__link">
+    <span class="md-ellipsis">
+      kztime
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_buffer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.from_iris" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_iris
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.read" class="md-nav__link">
+    <span class="md-ellipsis">
+      read
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.read_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      read_buffer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.SAC.write" class="md-nav__link">
+    <span class="md-ellipsis">
+      write
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helper-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helper classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helper classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacSeismogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacSeismogram
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacStation" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacStation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacEvent" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacEvent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pysmo.classes.sac.SacTimestamps" class="md-nav__link">
+    <span class="md-ellipsis">
+      SacTimestamps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/pysmo/pysmo/edit/master/docs/reference/classes.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/pysmo/pysmo/raw/master/docs/reference/classes.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+  <h1>pysmo.classes</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>This module contains extra classes that provide access to data in a way that is
+consistent with pysmo protocols.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pysmo.classes.SAC" class="doc doc-heading">
+            <code>SAC</code>
+
+
+<a href="#pysmo.classes.SAC" class="headerlink" title="Permanent link">#</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="SacIO (&lt;code&gt;pysmo._io.SacIO&lt;/code&gt;)" href="../_io/#pysmo._io.SacIO">SacIO</a></code></p>
+
+
+        <p>Access and modify data stored in SAC files.</p>
+<p>The <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> class is responsible for accessing data
+stored in SAC files directly using the file format naming conventions and
+formats, as well as via "helper" objects which make the data available in
+pysmo-compatible form (i.e. they can be used as inputs for code expecting
+pysmo types).</p>
+
+
+<details class="tip" open>
+  <summary>Tip</summary>
+  <p>The <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> class directly inherits from the
+<a class="autorefs autorefs-internal" href="../_io/#pysmo._io.SacIO"><code>SacIO</code></a> class. This gives access to all
+SAC headers, ability to load from a file, download data, and so on.
+Using <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> is therefore almost always
+preferred over using <a class="autorefs autorefs-internal" href="../_io/#pysmo._io.SacIO"><code>SacIO</code></a>.</p>
+</details>        <h4 id="pysmo.classes.SAC--direct-access-to-sac-data-and-metadata">Direct access to SAC data and metadata<a class="headerlink" href="#pysmo.classes.SAC--direct-access-to-sac-data-and-metadata" title="Permanent link">#</a></h4>
+<p>The <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> class can be used to read a SAC
+file and access its data as presented by the sac file format. SAC
+instances are typically created by reading sac file. Data and header
+fields can be accessed as attributes:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;testfile.sac&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">delta</span>
+<span class="mf">0.019999999552965164</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">data</span>
+<span class="n">array</span><span class="p">([</span><span class="mf">2302.</span><span class="p">,</span> <span class="mf">2313.</span><span class="p">,</span> <span class="mf">2345.</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mf">2836.</span><span class="p">,</span> <span class="mf">2772.</span><span class="p">,</span> <span class="mf">2723.</span><span class="p">])</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">evla</span>
+<span class="mf">23.14</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+<h4 id="pysmo.classes.SAC--access-to-sac-data-and-metadata-via-helper-objects">Access to SAC data and metadata via helper objects<a class="headerlink" href="#pysmo.classes.SAC--access-to-sac-data-and-metadata-via-helper-objects" title="Permanent link">#</a></h4>
+<p>Presenting the data in the above way is <em>not</em> compatible with pysmo types.
+For example, event coordinates are stored in the <code>evla</code> and <code>evlo</code>
+attributes, which do not match the pysmo <a class="autorefs autorefs-internal" href="../base/#pysmo.Location"><code>Location</code></a>
+type. Renaming or aliasing <code>evla</code> to <code>latitude</code> and <code>evlo</code> to <code>longitude</code>
+would solve the problem for the event coordinates, but since the SAC format
+also specifies station coordinates (<code>stla</code>, <code>stlo</code>) we still would run
+into compatibility issues.</p>
+<p>In order to map these incompatible attributes to ones that can be
+used with pysmo types, we use helper classes as a way to access the attributes
+under different names that <em>are</em> compatible with pysmo types:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="c1"># Import the Seismogram type to check if the nested class is compatible.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Seismogram</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># First verify that a SAC instance is not a pysmo Seismogram:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">my_sac</span><span class="p">,</span> <span class="n">Seismogram</span><span class="p">)</span>
+<span class="kc">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># The my_sac.seismogram object is, however:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">my_sac</span><span class="o">.</span><span class="n">seismogram</span><span class="p">,</span> <span class="n">Seismogram</span><span class="p">)</span>
+<span class="kc">True</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+<p>Because the SAC file format defines a large amount of header fields for
+metadata, it needs to allow for many of these to be optional. Since the helper
+classes are more specific (and intended to be used with pysmo types), their
+attributes typically may <em>not</em> be <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#None"><code>None</code></a>:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">evla</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># No error: a SAC file doesn&#39;t have to contain event information.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">latitude</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="n">SacEvent</span><span class="o">.</span><span class="n">latitude</span> <span class="n">may</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">of</span> <span class="kc">None</span> <span class="nb">type</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Error: the my_sac.event object may not have attributes set to `None`.</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.SAC.seismogram">seismogram</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SacSeismogram (&lt;code&gt;pysmo.classes.sac.SacSeismogram&lt;/code&gt;)" href="#pysmo.classes.sac.SacSeismogram">SacSeismogram</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maps pysmo compatible attributes to the internal SAC attributes.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.SAC.station">station</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SacStation (&lt;code&gt;pysmo.classes.sac.SacStation&lt;/code&gt;)" href="#pysmo.classes.sac.SacStation">SacStation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maps pysmo compatible attributes to the internal SAC attributes.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.SAC.event">event</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SacEvent (&lt;code&gt;pysmo.classes.sac.SacEvent&lt;/code&gt;)" href="#pysmo.classes.sac.SacEvent">SacEvent</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maps pysmo compatible attributes to the internal SAC attributes.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.SAC.timestamps">timestamps</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SacTimestamps (&lt;code&gt;pysmo.classes.sac.SacTimestamps&lt;/code&gt;)" href="#pysmo.classes.sac.SacTimestamps">SacTimestamps</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maps a SAC times such as B, E, O, T0-T9 to datetime objects.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>pysmo/classes/sac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@define</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SAC</span><span class="p">(</span><span class="n">SacIO</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Access and modify data stored in SAC files.</span>
+
+<span class="sd">    The [`SAC`][pysmo.classes.SAC] class is responsible for accessing data</span>
+<span class="sd">    stored in SAC files directly using the file format naming conventions and</span>
+<span class="sd">    formats, as well as via &quot;helper&quot; objects which make the data available in</span>
+<span class="sd">    pysmo-compatible form (i.e. they can be used as inputs for code expecting</span>
+<span class="sd">    pysmo types).</span>
+
+<span class="sd">    Tip:</span>
+<span class="sd">        The [`SAC`][pysmo.classes.SAC] class directly inherits from the</span>
+<span class="sd">        [`SacIO`][pysmo._io.SacIO] class. This gives access to all</span>
+<span class="sd">        SAC headers, ability to load from a file, download data, and so on.</span>
+<span class="sd">        Using [`SAC`][pysmo.classes.sac.SAC] is therefore almost always</span>
+<span class="sd">        preferred over using [`SacIO`][pysmo._io.SacIO].</span>
+
+<span class="sd">    ## Direct access to SAC data and metadata</span>
+
+<span class="sd">    The [`SAC`][pysmo.classes.SAC] class can be used to read a SAC</span>
+<span class="sd">    file and access its data as presented by the sac file format. SAC</span>
+<span class="sd">    instances are typically created by reading sac file. Data and header</span>
+<span class="sd">    fields can be accessed as attributes:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    &gt;&gt;&gt; from pysmo.classes import SAC</span>
+<span class="sd">    &gt;&gt;&gt; my_sac = SAC.from_file(&#39;testfile.sac&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; my_sac.delta</span>
+<span class="sd">    0.019999999552965164</span>
+<span class="sd">    &gt;&gt;&gt; my_sac.data</span>
+<span class="sd">    array([2302., 2313., 2345., ..., 2836., 2772., 2723.])</span>
+<span class="sd">    &gt;&gt;&gt; my_sac.evla</span>
+<span class="sd">    23.14</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    ## Access to SAC data and metadata via helper objects</span>
+
+<span class="sd">    Presenting the data in the above way is *not* compatible with pysmo types.</span>
+<span class="sd">    For example, event coordinates are stored in the `evla` and `evlo`</span>
+<span class="sd">    attributes, which do not match the pysmo [`Location`][pysmo.Location]</span>
+<span class="sd">    type. Renaming or aliasing `evla` to `latitude` and `evlo` to `longitude`</span>
+<span class="sd">    would solve the problem for the event coordinates, but since the SAC format</span>
+<span class="sd">    also specifies station coordinates (`stla`, `stlo`) we still would run</span>
+<span class="sd">    into compatibility issues.</span>
+
+<span class="sd">    In order to map these incompatible attributes to ones that can be</span>
+<span class="sd">    used with pysmo types, we use helper classes as a way to access the attributes</span>
+<span class="sd">    under different names that *are* compatible with pysmo types:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    &gt;&gt;&gt; # Import the Seismogram type to check if the nested class is compatible.</span>
+<span class="sd">    &gt;&gt;&gt; from pysmo import Seismogram</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # First verify that a SAC instance is not a pysmo Seismogram:</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(my_sac, Seismogram)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; # The my_sac.seismogram object is, however:</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(my_sac.seismogram, Seismogram)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    Because the SAC file format defines a large amount of header fields for</span>
+<span class="sd">    metadata, it needs to allow for many of these to be optional. Since the helper</span>
+<span class="sd">    classes are more specific (and intended to be used with pysmo types), their</span>
+<span class="sd">    attributes typically may *not* be [`None`][None]:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    &gt;&gt;&gt; my_sac.evla = None</span>
+<span class="sd">    &gt;&gt;&gt; # No error: a SAC file doesn&#39;t have to contain event information.</span>
+<span class="sd">    &gt;&gt;&gt; my_sac.event.latitude = None</span>
+<span class="sd">    TypeError: SacEvent.latitude may not be of None type.</span>
+<span class="sd">    &gt;&gt;&gt; # Error: the my_sac.event object may not have attributes set to `None`.</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    ```</span>
+
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        seismogram: Maps pysmo compatible attributes to the internal SAC attributes.</span>
+<span class="sd">        station: Maps pysmo compatible attributes to the internal SAC attributes.</span>
+<span class="sd">        event: Maps pysmo compatible attributes to the internal SAC attributes.</span>
+<span class="sd">        timestamps: Maps a SAC times such as B, E, O, T0-T9 to datetime objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">seismogram</span><span class="p">:</span> <span class="n">SacSeismogram</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">station</span><span class="p">:</span> <span class="n">SacStation</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">event</span><span class="p">:</span> <span class="n">SacEvent</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">timestamps</span><span class="p">:</span> <span class="n">SacTimestamps</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__attrs_post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seismogram</span> <span class="o">=</span> <span class="n">SacSeismogram</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">station</span> <span class="o">=</span> <span class="n">SacStation</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">SacEvent</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">SacTimestamps</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pysmo.classes.SAC.kzdate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">kzdate</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#pysmo.classes.SAC.kzdate" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>ISO 8601 format of GMT reference date.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pysmo.classes.SAC.kztime" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">kztime</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#pysmo.classes.SAC.kztime" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Alphanumeric form of GMT reference time.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.from_buffer" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#pysmo.classes.SAC.from_buffer" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a new SAC instance from a SAC data buffer.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>buffer</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Buffer containing SAC file content.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new SacIO instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_buffer</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">buffer</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new SAC instance from a SAC data buffer.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        buffer: Buffer containing SAC file content.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new SacIO instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newinstance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+    <span class="n">newinstance</span><span class="o">.</span><span class="n">read_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newinstance</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.from_file" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#pysmo.classes.SAC.from_file" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a new SAC instance from a SAC file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the SAC file to read.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new SacIO instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1303</span>
+<span class="normal">1304</span>
+<span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span>
+<span class="normal">1308</span>
+<span class="normal">1309</span>
+<span class="normal">1310</span>
+<span class="normal">1311</span>
+<span class="normal">1312</span>
+<span class="normal">1313</span>
+<span class="normal">1314</span>
+<span class="normal">1315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new SAC instance from a SAC file.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        filename: Name of the SAC file to read.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new SacIO instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newinstance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+    <span class="n">newinstance</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newinstance</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.from_iris" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_iris</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">cha</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">force_single_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#pysmo.classes.SAC.from_iris" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a list of SAC instances from a single IRIS
+request using the output format as "sac.zip".</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>force_single_result</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If true, the function will return a single SAC
+                 object or None if the requests returns nothing.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new SacIO instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1331</span>
+<span class="normal">1332</span>
+<span class="normal">1333</span>
+<span class="normal">1334</span>
+<span class="normal">1335</span>
+<span class="normal">1336</span>
+<span class="normal">1337</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span>
+<span class="normal">1345</span>
+<span class="normal">1346</span>
+<span class="normal">1347</span>
+<span class="normal">1348</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span>
+<span class="normal">1359</span>
+<span class="normal">1360</span>
+<span class="normal">1361</span>
+<span class="normal">1362</span>
+<span class="normal">1363</span>
+<span class="normal">1364</span>
+<span class="normal">1365</span>
+<span class="normal">1366</span>
+<span class="normal">1367</span>
+<span class="normal">1368</span>
+<span class="normal">1369</span>
+<span class="normal">1370</span>
+<span class="normal">1371</span>
+<span class="normal">1372</span>
+<span class="normal">1373</span>
+<span class="normal">1374</span>
+<span class="normal">1375</span>
+<span class="normal">1376</span>
+<span class="normal">1377</span>
+<span class="normal">1378</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_iris</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span>
+    <span class="n">net</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">sta</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">cha</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">force_single_result</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Self</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a list of SAC instances from a single IRIS</span>
+<span class="sd">    request using the output format as &quot;sac.zip&quot;.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        force_single_result: If true, the function will return a single SAC</span>
+<span class="sd">                             object or None if the requests returns nothing.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new SacIO instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;net&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">net</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;sta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sta</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;cha&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cha</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sac.zip&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="n">end</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="s2">&quot;https://service.iris.edu/irisws/timeseries/1/query&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlencode</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">doseq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">?</span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+    <span class="nb">zip</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
+        <span class="n">buffer</span> <span class="o">=</span> <span class="nb">zip</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">sac</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">force_single_result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sac</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">sac</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">force_single_result</span> <span class="k">else</span> <span class="n">result</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.read" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></code>
+
+<a href="#pysmo.classes.SAC.read" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read data and headers from a SAC file into an existing SAC instance.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the sac file to read.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read data and headers from a SAC file into an existing SAC instance.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        filename: Name of the sac file to read.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_handle</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_buffer</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.read_buffer" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span></code>
+
+<a href="#pysmo.classes.SAC.read_buffer" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read data and headers from a SAC byte buffer into an existing SAC instance.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>buffer</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Buffer containing SAC file content.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span>
+<span class="normal">1243</span>
+<span class="normal">1244</span>
+<span class="normal">1245</span>
+<span class="normal">1246</span>
+<span class="normal">1247</span>
+<span class="normal">1248</span>
+<span class="normal">1249</span>
+<span class="normal">1250</span>
+<span class="normal">1251</span>
+<span class="normal">1252</span>
+<span class="normal">1253</span>
+<span class="normal">1254</span>
+<span class="normal">1255</span>
+<span class="normal">1256</span>
+<span class="normal">1257</span>
+<span class="normal">1258</span>
+<span class="normal">1259</span>
+<span class="normal">1260</span>
+<span class="normal">1261</span>
+<span class="normal">1262</span>
+<span class="normal">1263</span>
+<span class="normal">1264</span>
+<span class="normal">1265</span>
+<span class="normal">1266</span>
+<span class="normal">1267</span>
+<span class="normal">1268</span>
+<span class="normal">1269</span>
+<span class="normal">1270</span>
+<span class="normal">1271</span>
+<span class="normal">1272</span>
+<span class="normal">1273</span>
+<span class="normal">1274</span>
+<span class="normal">1275</span>
+<span class="normal">1276</span>
+<span class="normal">1277</span>
+<span class="normal">1278</span>
+<span class="normal">1279</span>
+<span class="normal">1280</span>
+<span class="normal">1281</span>
+<span class="normal">1282</span>
+<span class="normal">1283</span>
+<span class="normal">1284</span>
+<span class="normal">1285</span>
+<span class="normal">1286</span>
+<span class="normal">1287</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span>
+<span class="normal">1294</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span>
+<span class="normal">1300</span>
+<span class="normal">1301</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read data and headers from a SAC byte buffer into an existing SAC instance.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        buffer: Buffer containing SAC file content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">632</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">EOFError</span><span class="p">()</span>
+
+    <span class="c1"># Guess the file endianness first using the unused12 header field.</span>
+    <span class="c1"># It is located at position 276 and its value should be -12345.0.</span>
+    <span class="c1"># Try reading with little endianness</span>
+    <span class="k">if</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;f&quot;</span><span class="p">,</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">276</span><span class="p">:</span><span class="mi">280</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">12345.0</span><span class="p">:</span>
+        <span class="n">file_byteorder</span> <span class="o">=</span> <span class="s2">&quot;&lt;&quot;</span>
+    <span class="c1"># otherwise assume big endianness.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_byteorder</span> <span class="o">=</span> <span class="s2">&quot;&gt;&quot;</span>
+
+    <span class="c1"># Loop over all header fields and store them in the SAC object under their</span>
+    <span class="c1"># respective private names.</span>
+    <span class="n">npts</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">header_metadata</span> <span class="ow">in</span> <span class="n">SAC_HEADERS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">header_type</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">type</span>
+        <span class="n">header_required</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">required</span>
+        <span class="n">header_undefined</span> <span class="o">=</span> <span class="n">HEADER_TYPES</span><span class="p">[</span><span class="n">header_type</span><span class="p">]</span><span class="o">.</span><span class="n">undefined</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">start</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">length</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">length</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">file_byteorder</span> <span class="o">+</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">content</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="c1"># strip spaces and &quot;\x00&quot; chars</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot; </span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># npts is read only property in this class, but is needed for reading data</span>
+        <span class="k">if</span> <span class="n">header</span> <span class="o">==</span> <span class="s2">&quot;npts&quot;</span><span class="p">:</span>
+            <span class="n">npts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># raise error if header is undefined AND required</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">header_undefined</span> <span class="ow">and</span> <span class="n">header_required</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Required </span><span class="si">{</span><span class="n">header</span><span class="si">=}</span><span class="s2"> is undefined - invalid SAC file!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># skip if undefined (value == -12345...) and not required</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">header_undefined</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">header_required</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># convert enumerated header to string and format others</span>
+        <span class="k">if</span> <span class="n">header_type</span> <span class="o">==</span> <span class="s2">&quot;i&quot;</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">SAC_ENUMS_DICT</span><span class="p">[</span><span class="n">header</span><span class="p">](</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># SAC file has headers fields which are read only attributes in this</span>
+        <span class="c1"># class. We skip them with this try/except.</span>
+        <span class="c1"># TODO: This is a bit crude, should maybe be a bit more specific.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;object has no setter&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+    <span class="c1"># Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks,</span>
+    <span class="c1"># which is something we don&#39;t support for now.</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iftype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Reading SAC files with IFTYPE=(I)</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">iftype</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span>  <span class="c1"># noqa: E501</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Read first data block</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">632</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">npts</span> <span class="o">*</span> <span class="mi">4</span>
+    <span class="n">data_end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">length</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data_end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">length</span>
+        <span class="n">data_format</span> <span class="o">=</span> <span class="n">file_byteorder</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">npts</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;f&quot;</span>
+        <span class="k">if</span> <span class="n">data_end</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">EOFError</span><span class="p">()</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">data_end</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">data_format</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nvhdr</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">footer</span><span class="p">,</span> <span class="n">footer_metadata</span> <span class="ow">in</span> <span class="n">SAC_FOOTERS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">undefined</span> <span class="o">=</span> <span class="o">-</span><span class="mf">12345.0</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">footer_metadata</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">data_end</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">length</span>
+
+            <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">EOFError</span><span class="p">()</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+
+            <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">file_byteorder</span> <span class="o">+</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># skip if undefined (value == -12345...)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">undefined</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># SAC file has headers fields which are read only attributes in this</span>
+            <span class="c1"># class. We skip them with this try/except.</span>
+            <span class="c1"># TODO: This is a bit crude, should maybe be a bit more specific.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footer</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;object has no setter&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                    <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="pysmo.classes.SAC.write" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></code>
+
+<a href="#pysmo.classes.SAC.write" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Writes data and header values to a SAC file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the sacfile to write to.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>pysmo/_io/sacio.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1380</span>
+<span class="normal">1381</span>
+<span class="normal">1382</span>
+<span class="normal">1383</span>
+<span class="normal">1384</span>
+<span class="normal">1385</span>
+<span class="normal">1386</span>
+<span class="normal">1387</span>
+<span class="normal">1388</span>
+<span class="normal">1389</span>
+<span class="normal">1390</span>
+<span class="normal">1391</span>
+<span class="normal">1392</span>
+<span class="normal">1393</span>
+<span class="normal">1394</span>
+<span class="normal">1395</span>
+<span class="normal">1396</span>
+<span class="normal">1397</span>
+<span class="normal">1398</span>
+<span class="normal">1399</span>
+<span class="normal">1400</span>
+<span class="normal">1401</span>
+<span class="normal">1402</span>
+<span class="normal">1403</span>
+<span class="normal">1404</span>
+<span class="normal">1405</span>
+<span class="normal">1406</span>
+<span class="normal">1407</span>
+<span class="normal">1408</span>
+<span class="normal">1409</span>
+<span class="normal">1410</span>
+<span class="normal">1411</span>
+<span class="normal">1412</span>
+<span class="normal">1413</span>
+<span class="normal">1414</span>
+<span class="normal">1415</span>
+<span class="normal">1416</span>
+<span class="normal">1417</span>
+<span class="normal">1418</span>
+<span class="normal">1419</span>
+<span class="normal">1420</span>
+<span class="normal">1421</span>
+<span class="normal">1422</span>
+<span class="normal">1423</span>
+<span class="normal">1424</span>
+<span class="normal">1425</span>
+<span class="normal">1426</span>
+<span class="normal">1427</span>
+<span class="normal">1428</span>
+<span class="normal">1429</span>
+<span class="normal">1430</span>
+<span class="normal">1431</span>
+<span class="normal">1432</span>
+<span class="normal">1433</span>
+<span class="normal">1434</span>
+<span class="normal">1435</span>
+<span class="normal">1436</span>
+<span class="normal">1437</span>
+<span class="normal">1438</span>
+<span class="normal">1439</span>
+<span class="normal">1440</span>
+<span class="normal">1441</span>
+<span class="normal">1442</span>
+<span class="normal">1443</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Writes data and header values to a SAC file.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        filename: Name of the sacfile to write to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_handle</span><span class="p">:</span>
+        <span class="c1"># loop over all valid header fields and write them to the file</span>
+        <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">header_metadata</span> <span class="ow">in</span> <span class="n">SAC_HEADERS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">header_type</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">header_format</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">format</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">header_metadata</span><span class="o">.</span><span class="n">start</span>
+            <span class="n">header_undefined</span> <span class="o">=</span> <span class="n">HEADER_TYPES</span><span class="p">[</span><span class="n">header_type</span><span class="p">]</span><span class="o">.</span><span class="n">undefined</span>
+
+            <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">SacHeaderUndefined</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># convert enumerated header to integer if it is not None</span>
+            <span class="k">if</span> <span class="n">header_type</span> <span class="o">==</span> <span class="s2">&quot;i&quot;</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">SAC_ENUMS_DICT</span><span class="p">[</span><span class="n">header</span><span class="p">][</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+            <span class="c1"># set None to -12345</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">header_undefined</span>
+
+            <span class="c1"># Encode strings to bytes</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+            <span class="c1"># write to file</span>
+            <span class="n">file_handle</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">file_handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">header_format</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+
+        <span class="c1"># write data (if npts &gt; 0)</span>
+        <span class="n">data_1_start</span> <span class="o">=</span> <span class="mi">632</span>
+        <span class="n">data_1_end</span> <span class="o">=</span> <span class="n">data_1_start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span> <span class="o">*</span> <span class="mi">4</span>
+        <span class="n">file_handle</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="n">data_1_start</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">file_handle</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">data_1_start</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">file_handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;f&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nvhdr</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">footer</span><span class="p">,</span> <span class="n">footer_metadata</span> <span class="ow">in</span> <span class="n">SAC_FOOTERS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">undefined</span> <span class="o">=</span> <span class="o">-</span><span class="mf">12345.0</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">footer_metadata</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">data_1_end</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footer</span><span class="p">):</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">SacHeaderUndefined</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="c1"># set None to -12345</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">undefined</span>
+
+                <span class="c1"># write to file</span>
+                <span class="n">file_handle</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+                <span class="n">file_handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="helper-classes">Helper classes<a class="headerlink" href="#helper-classes" title="Permanent link">#</a></h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="pysmo.classes.sac.SacSeismogram" class="doc doc-heading">
+            <code>SacSeismogram</code>
+
+
+<a href="#pysmo.classes.sac.SacSeismogram" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pysmo.classes.sac._SacNested">_SacNested</span></code></p>
+
+
+        <p>Helper class for SAC seismogram attributes.</p>
+<p>The <code>SacSeismogram</code> class is used to map SAC attributes in a way that
+matches pysmo types. An instance of this class is created for each new
+(parent) <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> instance to enable pysmo types
+compatibility.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacSeismogram.begin_time">begin_time</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.datetime&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seismogram begin (data)time.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacSeismogram.end_time">end_time</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.datetime&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seismogram end (date)time.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacSeismogram.delta">delta</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seismogram sampling interval.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacSeismogram.data">data</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;numpy.typing.NDArray&lt;/code&gt;" href="https://numpy.org/doc/stable/reference/typing.html#numpy.typing.NDArray">NDArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seismogram data.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Checking if a SacSeismogram matches the pysmo
+[<code>Seismogram</code>][pysmo.types.Seismogram] type:</p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span><span class="p">,</span> <span class="n">Seismogram</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">my_sac</span><span class="o">.</span><span class="n">seismogram</span><span class="p">,</span> <span class="n">Seismogram</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</code></pre></div>
+    <p>Timing operations in a SAC file use a reference time, and all times
+(begin time, event origin time, picks, etc.) are relative to this
+reference time. In pysmo only absolute times are used. The example
+below shows the <code>begin_time</code> is the absolute time (in UTC) of the first
+data point:</p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sac</span><span class="o">.</span><span class="n">seismogram</span><span class="o">.</span><span class="n">begin_time</span>
+<span class="go">datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>pysmo/classes/sac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@define</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SacSeismogram</span><span class="p">(</span><span class="n">_SacNested</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class for SAC seismogram attributes.</span>
+
+<span class="sd">    The `SacSeismogram` class is used to map SAC attributes in a way that</span>
+<span class="sd">    matches pysmo types. An instance of this class is created for each new</span>
+<span class="sd">    (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo types</span>
+<span class="sd">    compatibility.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        begin_time: Seismogram begin (data)time.</span>
+<span class="sd">        end_time: Seismogram end (date)time.</span>
+<span class="sd">        delta: Seismogram sampling interval.</span>
+<span class="sd">        data: Seismogram data.</span>
+
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Checking if a SacSeismogram matches the pysmo</span>
+<span class="sd">        [`Seismogram`][pysmo.types.Seismogram] type:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC, Seismogram</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(my_sac.seismogram, Seismogram)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+
+<span class="sd">        Timing operations in a SAC file use a reference time, and all times</span>
+<span class="sd">        (begin time, event origin time, picks, etc.) are relative to this</span>
+<span class="sd">        reference time. In pysmo only absolute times are used. The example</span>
+<span class="sd">        below shows the `begin_time` is the absolute time (in UTC) of the first</span>
+<span class="sd">        data point:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.seismogram.begin_time</span>
+<span class="sd">        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">delta</span>
+
+    <span class="nd">@delta</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">begin_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_datetime_from_sac</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="nd">@begin_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">begin_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_sac_from_datetime</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">begin_time</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">begin_time</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="pysmo.classes.sac.SacStation" class="doc doc-heading">
+            <code>SacStation</code>
+
+
+<a href="#pysmo.classes.sac.SacStation" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pysmo.classes.sac._SacNested">_SacNested</span></code></p>
+
+
+        <p>Helper class for SAC station attributes.</p>
+<p>The <code>SacStation</code> class is used to map SAC attributes in a way that
+matches pysmo types. An instance of this class is created for each
+new (parent) <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a>instance to enable pysmo
+types compatibility.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacStation.name">name</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Station name or code.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacStation.network">network</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional network name or code.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacStation.latitude">latitude</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Station latitude.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacStation.longitude">longitude</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Station longitude.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacStation.elevation">elevation</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional station elevation in meters.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Checking if a SacStation matches the pysmo
+<a class="autorefs autorefs-internal" href="../base/#pysmo.Station"><code>Station</code></a> type:</p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span><span class="p">,</span> <span class="n">Station</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">my_sac</span><span class="o">.</span><span class="n">station</span><span class="p">,</span> <span class="n">Station</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>pysmo/classes/sac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@define</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SacStation</span><span class="p">(</span><span class="n">_SacNested</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class for SAC station attributes.</span>
+
+<span class="sd">    The `SacStation` class is used to map SAC attributes in a way that</span>
+<span class="sd">    matches pysmo types. An instance of this class is created for each</span>
+<span class="sd">    new (parent) [`SAC`][pysmo.classes.SAC]instance to enable pysmo</span>
+<span class="sd">    types compatibility.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: Station name or code.</span>
+<span class="sd">        network: Optional network name or code.</span>
+<span class="sd">        latitude: Station latitude.</span>
+<span class="sd">        longitude: Station longitude.</span>
+<span class="sd">        elevation: Optional station elevation in meters.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Checking if a SacStation matches the pysmo</span>
+<span class="sd">        [`Station`][pysmo.Station] type:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC, Station</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(my_sac.station, Station)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">kstnm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;kstnm&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">kstnm</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;kstnm&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">network</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">knetwk</span>
+
+    <span class="nd">@network</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;knetwk&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">stla</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;stla&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">stla</span>
+
+    <span class="nd">@latitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;stla&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">stlo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;stlo&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">stlo</span>
+
+    <span class="nd">@longitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;stlo&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">elevation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">stel</span>
+
+    <span class="nd">@elevation</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">elevation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;stel&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="pysmo.classes.sac.SacEvent" class="doc doc-heading">
+            <code>SacEvent</code>
+
+
+<a href="#pysmo.classes.sac.SacEvent" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pysmo.classes.sac._SacNested">_SacNested</span></code></p>
+
+
+        <p>Helper class for event attributes.</p>
+<p>The <code>SacEvent</code> class is used to map SAC attributes in a way that
+matches pysmo types. An instance of this class is created for each
+new (parent) <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> instance to enable pysmo
+types compatibility.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacEvent.latitude">latitude</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event Latitude.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacEvent.longitude">longitude</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event Longitude.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacEvent.depth">depth</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event depth in meters.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacEvent.time">time</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.datetime&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event origin time (UTC).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Checking if a SacEvent matches the pysmo
+<a class="autorefs autorefs-internal" href="../base/#pysmo.Event"><code>Event</code></a> type:</p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span><span class="p">,</span> <span class="n">Event</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">my_sac</span><span class="o">.</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Not all SAC files contain event information.</p>
+</details>
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>pysmo/classes/sac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@define</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SacEvent</span><span class="p">(</span><span class="n">_SacNested</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class for event attributes.</span>
+
+<span class="sd">    The `SacEvent` class is used to map SAC attributes in a way that</span>
+<span class="sd">    matches pysmo types. An instance of this class is created for each</span>
+<span class="sd">    new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo</span>
+<span class="sd">    types compatibility.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        latitude: Event Latitude.</span>
+<span class="sd">        longitude: Event Longitude.</span>
+<span class="sd">        depth: Event depth in meters.</span>
+<span class="sd">        time: Event origin time (UTC).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Checking if a SacEvent matches the pysmo</span>
+<span class="sd">        [`Event`][pysmo.Event] type:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC, Event</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(my_sac.event, Event)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Not all SAC files contain event information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evla</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;evla&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evla</span>
+
+    <span class="nd">@latitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">latitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;evla&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evlo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;evlo&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evlo</span>
+
+    <span class="nd">@longitude</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">longitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;evlo&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evdp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;evdp&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">evdp</span> <span class="o">*</span> <span class="mi">1000</span>
+
+    <span class="nd">@depth</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="s2">&quot;evdp&quot;</span><span class="p">,</span> <span class="n">value</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+        <span class="n">event_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_datetime_from_sac</span><span class="p">(</span><span class="s2">&quot;o&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">event_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SacHeaderUndefined</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">event_time</span>
+
+    <span class="nd">@time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@value_not_none</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_sac_from_datetime</span><span class="p">(</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="pysmo.classes.sac.SacTimestamps" class="doc doc-heading">
+            <code>SacTimestamps</code>
+
+
+<a href="#pysmo.classes.sac.SacTimestamps" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pysmo.classes.sac._SacNested">_SacNested</span></code></p>
+
+
+        <p>Helper class to access relative times stored in SAC headers as
+absolute datetime objects.</p>
+<p>The <code>SacTimestamps</code> class is used to map SAC attributes in a way that
+matches pysmo types. An instance of this class is created for each
+new (parent) <a class="autorefs autorefs-internal" href="#pysmo.classes.SAC"><code>SAC</code></a> instance to enable pysmo
+types compatibility.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.b">b</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Beginning time of the independent variable.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.e">e</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Ending time of the independent variable (read-only).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.o">o</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event origin time.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.a">a</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>First arrival time.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.f">f</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Fini or end of event time.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t0">t0</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 0.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t1">t1</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 1.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t2">t2</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 2.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t3">t3</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 3.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t4">t4</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 4.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t5">t5</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 5.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t6">t6</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 6.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t7">t7</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 7.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t8">t8</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 8.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pysmo.classes.sac.SacTimestamps.t9">t9</span></code></td>
+            <td>
+                  <code><span title="pysmo.classes.sac.SacTimeConverter">SacTimeConverter</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>User defined time pick or marker 9.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Relative seismogram begin time as a float vs absolute begin time
+as a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#module-datetime">datetime</a> object.</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># SAC header &quot;B&quot; as stored in a SAC file</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">b</span>
+<span class="o">-</span><span class="mf">63.34</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># the output above is the number of seconds relative</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># to the reference time and date:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">kzdate</span> <span class="p">,</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">kztime</span>
+<span class="p">(</span><span class="s1">&#39;2005-03-01&#39;</span><span class="p">,</span> <span class="s1">&#39;07:24:05.500&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Accessing the same SAC header via a `SacTimestamps` object</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># yields a corresponding datetime object with the absolute time:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">timestamps</span><span class="o">.</span><span class="n">b</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2005</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">160000</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+</code></pre></div>
+<p>Changing timestamp values:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;testfile.sac&quot;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Original value of the &quot;B&quot; SAC header:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">b</span>
+<span class="o">-</span><span class="mf">63.34</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Add 30 seconds to the absolute time:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">timestamps</span><span class="o">.</span><span class="n">b</span> <span class="o">+=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># The relative time also changes by the same amount:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">my_sac</span><span class="o">.</span><span class="n">b</span>
+<span class="o">-</span><span class="mf">33.34</span>
+</code></pre></div>
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>pysmo/classes/sac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SacTimestamps</span><span class="p">(</span><span class="n">_SacNested</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class to access relative times stored in SAC headers as</span>
+<span class="sd">    absolute datetime objects.</span>
+
+<span class="sd">    The `SacTimestamps` class is used to map SAC attributes in a way that</span>
+<span class="sd">    matches pysmo types. An instance of this class is created for each</span>
+<span class="sd">    new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo</span>
+<span class="sd">    types compatibility.</span>
+
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        b: Beginning time of the independent variable.</span>
+<span class="sd">        e: Ending time of the independent variable (read-only).</span>
+<span class="sd">        o: Event origin time.</span>
+<span class="sd">        a: First arrival time.</span>
+<span class="sd">        f: Fini or end of event time.</span>
+<span class="sd">        t0: User defined time pick or marker 0.</span>
+<span class="sd">        t1: User defined time pick or marker 1.</span>
+<span class="sd">        t2: User defined time pick or marker 2.</span>
+<span class="sd">        t3: User defined time pick or marker 3.</span>
+<span class="sd">        t4: User defined time pick or marker 4.</span>
+<span class="sd">        t5: User defined time pick or marker 5.</span>
+<span class="sd">        t6: User defined time pick or marker 6.</span>
+<span class="sd">        t7: User defined time pick or marker 7.</span>
+<span class="sd">        t8: User defined time pick or marker 8.</span>
+<span class="sd">        t9: User defined time pick or marker 9.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Relative seismogram begin time as a float vs absolute begin time</span>
+<span class="sd">        as a [datetime][datetime] object.</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; # SAC header &quot;B&quot; as stored in a SAC file</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.b</span>
+<span class="sd">        -63.34</span>
+<span class="sd">        &gt;&gt;&gt; # the output above is the number of seconds relative</span>
+<span class="sd">        &gt;&gt;&gt; # to the reference time and date:</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.kzdate , my_sac.kztime</span>
+<span class="sd">        (&#39;2005-03-01&#39;, &#39;07:24:05.500&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; # Accessing the same SAC header via a `SacTimestamps` object</span>
+<span class="sd">        &gt;&gt;&gt; # yields a corresponding datetime object with the absolute time:</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.timestamps.b</span>
+<span class="sd">        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        Changing timestamp values:</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; from datetime import timedelta</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo import SAC</span>
+<span class="sd">        &gt;&gt;&gt; my_sac = SAC.from_file(&quot;testfile.sac&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; # Original value of the &quot;B&quot; SAC header:</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.b</span>
+<span class="sd">        -63.34</span>
+<span class="sd">        &gt;&gt;&gt; # Add 30 seconds to the absolute time:</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.timestamps.b += timedelta(seconds=30)</span>
+<span class="sd">        &gt;&gt;&gt; # The relative time also changes by the same amount:</span>
+<span class="sd">        &gt;&gt;&gt; my_sac.b</span>
+<span class="sd">        -33.34</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">b</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">(</span><span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">o</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t0</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t1</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t2</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t3</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t4</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t5</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t6</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t7</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t8</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+    <span class="n">t9</span><span class="p">:</span> <span class="n">SacTimeConverter</span> <span class="o">=</span> <span class="n">SacTimeConverter</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../functions/" class="md-footer__link md-footer__link--prev" aria-label="Previous: pysmo.functions">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                pysmo.functions
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../tools/noise/" class="md-footer__link md-footer__link--next" aria-label="Next: pysmo.tools.noise">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                pysmo.tools.noise
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2012 - 2025 Simon Lloyd
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "content.tabs.link", "navigation.footer", "navigation.indexes", "navigation.top"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+        <script src="../../termynal.js"></script>
+      
+    
+  </body>
+</html>
