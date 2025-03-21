@@ -7,7 +7,7 @@ import matplotlib.dates as mdates  # type: ignore
 import numpy as np
 from pysmo import Seismogram, MiniSeismogram, Location
 from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
-from pysmo.lib.defaults import DEFAULT_ELLPS
+from pysmo._lib.defaults import DEFAULT_ELLPS
 
 
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
@@ -21,7 +21,7 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend normalizing data of a
         MiniSeismogram object **in-place**, instead of
         writing:
@@ -60,7 +60,7 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend detrending data of a
         MiniSeismogram object **in-place**, instead of
         writing:
@@ -103,7 +103,7 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend resampling data of a
         MiniSeismogram object **in-place**, instead of
         writing:

@@ -25,7 +25,6 @@
               autoPatchelfHook
               poetry
               python312Packages.tox
-              python310
               python311
               python312
               python313Full

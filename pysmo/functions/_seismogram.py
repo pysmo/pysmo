@@ -2,14 +2,75 @@
 match pysmo's types.
 """
 
-from pysmo import Seismogram, Location, MiniSeismogram
-from pysmo.lib.functions import lib_azdist, lib_detrend, lib_normalize, lib_resample
-from pysmo.lib.defaults import DEFAULT_ELLPS
+from pysmo import Seismogram, MiniSeismogram
+from pysmo._lib.functions import lib_detrend, lib_normalize, lib_resample
+from datetime import datetime, timedelta
+from math import floor, ceil
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
 import numpy as np
 import numpy.typing as npt
+
+__all__ = [
+    "crop",
+    "detrend",
+    "normalize",
+    "resample",
+    "time_array",
+    "unix_time_array",
+    "plotseis",
+]
+
+
+def crop(
+    seismogram: Seismogram, new_begin_time: datetime, new_end_time: datetime
+) -> MiniSeismogram:
+    """Shorten a seismogram by providing a start and end time
+
+    Parameters:
+        seismogram: Seismogram object.
+        new_begin_time: Start time.
+        new_end_time: End time.
+
+    Returns:
+        Cropped seismogram.
+
+    Examples:
+        >>> from pysmo import crop
+        >>> from pysmo.classes import SAC
+        >>> from datetime import timedelta
+        >>> original_seis = SAC.from_file('testfile.sac').seismogram
+        >>> new_begin_time = original_seis.begin_time + timedelta(seconds=10)
+        >>> new_end_time = original_seis.end_time - timedelta(seconds=10)
+        >>> cropped_seis = crop(original_seis, new_begin_time, new_end_time)
+
+    Note:
+        The returned seismogram may not have the exact new begin and end
+        times that are specified as input, as no resampling is performed.
+        Instead the nearest earlier sample is used as new begin time, and the
+        nearest later sample as new end time.
+    """
+    old_begin_time = seismogram.begin_time
+
+    if old_begin_time > new_begin_time:
+        raise ValueError("new_begin_time cannot be before seismogram.begin_time")
+    if seismogram.end_time < new_end_time:
+        raise ValueError("new_end_time cannot be after seismogram.end_time")
+    if new_begin_time > new_end_time:
+        raise ValueError("new_begin_time cannot be after new_end_time")
+
+    start_index = floor(
+        (new_begin_time - old_begin_time).total_seconds() / seismogram.delta
+    )
+    end_index = ceil((new_end_time - old_begin_time).total_seconds() / seismogram.delta)
+
+    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone.data = seismogram.data[start_index:end_index]
+    clone.begin_time = seismogram.begin_time + timedelta(
+        seconds=clone.delta * start_index
+    )
+    return clone
 
 
 def normalize(seismogram: Seismogram) -> MiniSeismogram:
@@ -23,13 +84,13 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend normalizing data of a
         MiniSeismogram object **in-place**, instead of
         writing:
 
         ```python
-        my_seis.data = normalize(my_seis)
+        my_seis.data = normalize(my_seis).data
         ```
 
         you should instead use:
@@ -62,13 +123,13 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend detrending data of a
         MiniSeismogram object **in-place**, instead of
         writing:
 
         ```python
-        my_seis.data = detrend(my_seis)
+        my_seis.data = detrend(my_seis).data
         ```
 
         you should instead use:
@@ -105,13 +166,13 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
 
     Note:
         This function is also available as a method in the
-        [MiniSeismogram][pysmo.classes.mini.MiniSeismogram]
+        [MiniSeismogram][pysmo.MiniSeismogram]
         class. Thus, if you intend resampling data of a
         MiniSeismogram object **in-place**, instead of
         writing:
 
         ```python
-        my_seis.data = resample(my_seis)
+        my_seis.data = resample(my_seis).data
         ```
 
         you should instead use:
@@ -234,104 +295,3 @@ def plotseis(
     if showfig:
         plt.show()
     return fig
-
-
-def azimuth(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
-    """Calculate azimuth between two points.
-
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
-
-    Parameters:
-        point1: Name of the event object providing coordinates of the origin point.
-        point2: Name of the station object providing coordinates of the target point.
-        ellps: Ellipsoid to use for azimuth calculation
-
-    Returns:
-        Azimuth in degrees from point 1 to point 2.
-
-    Examples:
-        >>> from pysmo import SAC, azimuth
-        >>> sacobj = SAC.from_file('testfile.sac')
-        >>> # the SAC class provides both event and station
-        >>> azimuth(sacobj.event, sacobj.station)
-        181.9199258637492
-        >>> # Use Clarke 1966 instead of default
-        >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
-        181.92001941872516
-    """
-    return lib_azdist(
-        lat1=point1.latitude,
-        lon1=point1.longitude,
-        lat2=point2.latitude,
-        lon2=point2.longitude,
-        ellps=ellps,
-    )[0]
-
-
-def backazimuth(
-    point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS
-) -> float:
-    """Calculate backazimuth (in DEG) between two points.
-
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
-
-    Parameters:
-        point1: Name of the event object providing coordinates of the origin point.
-        point2: Name of the station object providing coordinates of the target point.
-        ellps: Ellipsoid to use for azimuth calculation
-
-    Returns:
-        Backzimuth in degrees from point 2 to point 1
-
-    Examples:
-        >>> from pysmo import SAC, backazimuth
-        >>> sacobj = SAC.from_file('testfile.sac')
-        >>> # the SAC class provides both event and station
-        >>> backazimuth(sacobj.event, sacobj.station)
-        2.4677533885335947
-        >>> # Use Clarke 1966 instead of default
-        >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
-        2.467847115319614
-    """
-    return lib_azdist(
-        lat1=point1.latitude,
-        lon1=point1.longitude,
-        lat2=point2.latitude,
-        lon2=point2.longitude,
-        ellps=ellps,
-    )[1]
-
-
-def distance(point1: Location, point2: Location, ellps: str = DEFAULT_ELLPS) -> float:
-    """Calculate the great circle distance (in metres) between two points.
-
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
-
-    Parameters:
-        point1: Name of the event object providing coordinates of the origin point.
-        point2: Name of the station object providing coordinates of the target point.
-        ellps: Ellipsoid to use for distance calculation
-
-    Returns:
-        Great Circle Distance in metres.
-
-    Examples:
-        >>> from pysmo import SAC, distance
-        >>> sacobj = SAC.from_file('testfile.sac')
-        >>> # the SAC class provides both event and station
-        >>> distance(sacobj.event, sacobj.station)
-        1889154.9940066522
-        >>> # Use Clarke 1966 instead of default
-        >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
-        1889121.778136402
-    """
-    return lib_azdist(
-        lat1=point1.latitude,
-        lon1=point1.longitude,
-        lat2=point2.latitude,
-        lon2=point2.longitude,
-        ellps=ellps,
-    )[2]

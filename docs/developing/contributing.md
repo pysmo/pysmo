@@ -114,7 +114,7 @@ Pysmo functions belong in the `pysmo/functions.py` file, so we add the following
 1. The actual implementation of the normalize function lives in the file
     `pysmo/lib/functions.py` (imported in line 9), so that it's code can
      be shared with a corresponding method in the
-    [`MiniSeismogram`][pysmo.classes.mini.MiniSeismogram] class.
+    [`MiniSeismogram`][pysmo.MiniSeismogram] class.
 
 !!! note
     Notice that the code is making use of [type hinting](../first-steps/index.md)

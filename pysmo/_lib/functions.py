@@ -6,43 +6,16 @@ Reasons for putting functions here:
       classes within methods at the same time
 """
 
-from pyproj import Geod
-from pysmo.lib.defaults import DEFAULT_ELLPS
-from pysmo import Seismogram
+from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 import scipy.signal
 
-
-def lib_azdist(
-    lat1: float, lon1: float, lat2: float, lon2: float, ellps: str = DEFAULT_ELLPS
-) -> tuple[float, float, float]:
-    """Return forward/backazimuth and distance using pyproj (proj4 bindings).
-
-    Parameters:
-        lat1: latitude of point 1.
-        lon1: longitude of point 1.
-        lat2: latitude of point 2.
-        lon2: longitude of point 2.
-        ellps: Ellipsoid to use for calculations.
-
-    Returns:
-        az: Azimuth
-        baz: Backazimuth
-        dist: Distance between the points in metres.
-    """
-    g = Geod(ellps=ellps)
-    az, baz, dist = g.inv(lons1=lon1, lats1=lat1, lons2=lon2, lats2=lat2)
-
-    # Prefer positive bearings
-    if az < 0:
-        az += 360
-    if baz < 0:
-        baz += 360
-    return az, baz, dist
+if TYPE_CHECKING:
+    from pysmo import Seismogram
 
 
-def lib_normalize(seismogram: Seismogram) -> npt.NDArray:
+def lib_normalize(seismogram: "Seismogram") -> npt.NDArray:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -55,7 +28,7 @@ def lib_normalize(seismogram: Seismogram) -> npt.NDArray:
     return seismogram.data / norm
 
 
-def lib_detrend(seismogram: Seismogram) -> npt.NDArray:
+def lib_detrend(seismogram: "Seismogram") -> npt.NDArray:
     """Normalize the seismogram with its absolute max value
 
     Parameters:
@@ -67,7 +40,7 @@ def lib_detrend(seismogram: Seismogram) -> npt.NDArray:
     return scipy.signal.detrend(seismogram.data)
 
 
-def lib_resample(seismogram: Seismogram, delta: float) -> npt.NDArray:
+def lib_resample(seismogram: "Seismogram", delta: float) -> npt.NDArray:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:

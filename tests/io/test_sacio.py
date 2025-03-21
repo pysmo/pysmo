@@ -1,5 +1,5 @@
 from attrs_strict import AttributeTypeError, UnionError
-from pysmo.lib.io import SacIO
+from pysmo._io import SacIO
 import copy
 import pickle
 import pytest
