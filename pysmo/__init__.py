@@ -1,34 +1,29 @@
 """
-The pysmo package helps seismologists write new code to processes data. It does not
-include any ready-made applications, but instead provides meaningful data structures
-that make writing code easier and more concise. Pysmo adds a layer between how data
-are stored and how they are processed. This makes it easy to switch between data
-sources, use multiple different ones simultaneously, as well as integrate with existing
-workflows. The pysmo package consists of:
+The psymo package uses protocols to define types that focus on the essence of
+seismological data (i.e. what they are in the pyhsical world, rather than the
+abstract ways they may be stored in a file or inside an application). This
+enables useres to write code that is more intuitive to understand and more
+reusable across different projects or applications.
 
-- [Pysmo types][types]: these are [*protocol classes*][typing.Protocol], which define
-  the types used in pysmo. They are intentionally kept as simple as possible, and are
-  derived from the types of data seismologists work with, rather than mirroring how
-  data are stored in files.
-- [Compatible classes][classes]: while pysmo doesn't have a particular *native*
-  (file)format, it does rely on the classes holding seismological data to be compatible
-  with the types defined by pysmo. Pysmo includes a minimal implementation of such a
-  class for each type. They include additional methods or read-only attributes for the
-  pysmo types. These minimal classes can be used as base classes when adopting existing
-  classes to work with pysmo types, so that they may provide the same methods.
-- [Functions][functions]: pysmo includes functions that perform common operations on
-  these data types. They are meant to be building blocks that can be used to construct
-  more complex processing algorithms.
-- [Tools][tools]: we place functions here that are too complex to be considered basic
-  operations, make extensive use of other functions, or can be grouped together under
-  a particular topic.
+The psymo base namespace exposes the protocol classes that are used as type
+hints, as well as reference implementations of a generic class for each
+protocol. The reference classes are subclasses of their respective protocol
+classes that contain exactly the same attributes (though some extra methods may
+be defined for convenience). They can be considered minimal implementations of
+a class that can be used with pysmo protocols, and are therefore named "Mini" +
+"name of protocol" (e.g. [`MiniSeismogram`][pysmo.MiniSeismogram] is an
+implementation of the [`Seismogram`][pysmo.Seismogram] type).
 """
 
 from importlib.metadata import version
 
-from pysmo.types import Hypocenter, Location, Seismogram, Station, Event
 
-from pysmo.classes.mini import (
+from ._types import (
+    Seismogram,
+    Location,
+    Hypocenter,
+    Station,
+    Event,
     MiniSeismogram,
     MiniLocation,
     MiniStation,
@@ -36,41 +31,19 @@ from pysmo.classes.mini import (
     MiniEvent,
 )
 
-from pysmo.classes.sac import SAC
-
-from pysmo.functions import (
-    normalize,
-    detrend,
-    resample,
-    time_array,
-    unix_time_array,
-    plotseis,
-    azimuth,
-    backazimuth,
-    distance,
-)
 
 __version__ = version("pysmo")
 
+
 __all__ = [
+    "Seismogram",
     "Location",
     "Hypocenter",
-    "Seismogram",
     "Station",
     "Event",
-    "SAC",
     "MiniSeismogram",
     "MiniLocation",
     "MiniStation",
     "MiniHypocenter",
     "MiniEvent",
-    "normalize",
-    "detrend",
-    "resample",
-    "time_array",
-    "unix_time_array",
-    "plotseis",
-    "azimuth",
-    "backazimuth",
-    "distance",
 ]

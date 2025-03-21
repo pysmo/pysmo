@@ -2,8 +2,9 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from datetime import datetime, timedelta, timezone
-from pysmo import Seismogram, MiniSeismogram, SAC
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo import Seismogram, MiniSeismogram
+from pysmo.classes import SAC
+from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
 
 
 class TestMiniSeismogram:
