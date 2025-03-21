@@ -1,14 +1,8 @@
-import sys
-
-if sys.version_info >= (3, 11):
-    from typing import Literal, get_args, overload, Self
-else:
-    from typing import Literal, get_args, overload
-    from typing_extensions import Self
-from pysmo.lib.io import SacIO
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.lib.exceptions import SacHeaderUndefined
-from pysmo.lib.decorators import value_not_none
+from typing import Literal, get_args, overload, Self
+from pysmo._io import SacIO
+from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo._lib.decorators import value_not_none
+from pysmo.exc import SacHeaderUndefined
 from attrs import define, field
 from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
@@ -70,7 +64,7 @@ class SacSeismogram(_SacNested):
 
     The `SacSeismogram` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each new
-    (parent) [`SAC`][pysmo.classes.sac.SAC] instance to enable pysmo types
+    (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo types
     compatibility.
 
     Attributes:
@@ -90,10 +84,11 @@ class SacSeismogram(_SacNested):
         True
         >>>
 
-        Timing operations in a SAC file use a reference time, and all times (begin
-        time, event origin time, picks, etc.) are relative to this reference time.
-        In pysmo only absolute times are used. The example below shows the
-        `begin_time` is the absolute time (in UTC) of the first data point:
+        Timing operations in a SAC file use a reference time, and all times
+        (begin time, event origin time, picks, etc.) are relative to this
+        reference time. In pysmo only absolute times are used. The example
+        below shows the `begin_time` is the absolute time (in UTC) of the first
+        data point:
 
         >>> from pysmo import SAC
         >>> my_sac = SAC.from_file("testfile.sac")
@@ -146,7 +141,7 @@ class SacStation(_SacNested):
 
     The `SacStation` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
-    new (parent) [`SAC`][pysmo.classes.sac.SAC]instance to enable pysmo
+    new (parent) [`SAC`][pysmo.classes.SAC]instance to enable pysmo
     types compatibility.
 
     Attributes:
@@ -158,7 +153,7 @@ class SacStation(_SacNested):
 
     Examples:
         Checking if a SacStation matches the pysmo
-        [`Station`][pysmo.types.Station] type:
+        [`Station`][pysmo.Station] type:
 
         >>> from pysmo import SAC, Station
         >>> my_sac = SAC.from_file("testfile.sac")
@@ -223,7 +218,7 @@ class SacEvent(_SacNested):
 
     The `SacEvent` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
-    new (parent) [`SAC`][pysmo.classes.sac.SAC] instance to enable pysmo
+    new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo
     types compatibility.
 
     Attributes:
@@ -234,7 +229,7 @@ class SacEvent(_SacNested):
 
     Examples:
         Checking if a SacEvent matches the pysmo
-        [`Event`][pysmo.types.Event] type:
+        [`Event`][pysmo.Event] type:
 
         >>> from pysmo import SAC, Event
         >>> my_sac = SAC.from_file("testfile.sac")
@@ -324,7 +319,7 @@ class SacTimestamps(_SacNested):
 
     The `SacTimestamps` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
-    new (parent) [`SAC`][pysmo.classes.sac.SAC] instance to enable pysmo
+    new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo
     types compatibility.
 
 
@@ -403,28 +398,28 @@ class SacTimestamps(_SacNested):
 class SAC(SacIO):
     """Access and modify data stored in SAC files.
 
-    The [`SAC`][pysmo.classes.sac.SAC] class is responsible for accessing data
+    The [`SAC`][pysmo.classes.SAC] class is responsible for accessing data
     stored in SAC files directly using the file format naming conventions and
     formats, as well as via "helper" objects which make the data available in
     pysmo-compatible form (i.e. they can be used as inputs for code expecting
     pysmo types).
 
     Tip:
-        The [`SAC`][pysmo.classes.sac.SAC] class directly inherits from the
-        [`SacIO`][pysmo.lib.io.sacio.SacIO] class. This gives access to all
+        The [`SAC`][pysmo.classes.SAC] class directly inherits from the
+        [`SacIO`][pysmo._io.SacIO] class. This gives access to all
         SAC headers, ability to load from a file, download data, and so on.
         Using [`SAC`][pysmo.classes.sac.SAC] is therefore almost always
-        preferred over using [`SacIO`][pysmo.lib.io.sacio.SacIO].
+        preferred over using [`SacIO`][pysmo._io.SacIO].
 
     ## Direct access to SAC data and metadata
 
-    The [`SAC`][pysmo.classes.sac.SAC] class can be used to read a SAC
+    The [`SAC`][pysmo.classes.SAC] class can be used to read a SAC
     file and access its data as presented by the sac file format. SAC
     instances are typically created by reading sac file. Data and header
     fields can be accessed as attributes:
 
     ```python
-    >>> from pysmo import SAC
+    >>> from pysmo.classes import SAC
     >>> my_sac = SAC.from_file('testfile.sac')
     >>> my_sac.delta
     0.019999999552965164
@@ -439,7 +434,7 @@ class SAC(SacIO):
 
     Presenting the data in the above way is *not* compatible with pysmo types.
     For example, event coordinates are stored in the `evla` and `evlo`
-    attributes, which do not match the pysmo [`Location`][pysmo.types.Location]
+    attributes, which do not match the pysmo [`Location`][pysmo.Location]
     type. Renaming or aliasing `evla` to `latitude` and `evlo` to `longitude`
     would solve the problem for the event coordinates, but since the SAC format
     also specifies station coordinates (`stla`, `stlo`) we still would run

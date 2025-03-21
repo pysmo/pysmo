@@ -13,6 +13,7 @@ build:
     pre_create_environment:
       - curl -sSL https://install.python-poetry.org | python3 -
     pre_install:
+      - /home/docs/.local/bin/poetry self add poetry-plugin-export
       - /home/docs/.local/bin/poetry export --only=docs -o docs-requirements.txt
 
 mkdocs:

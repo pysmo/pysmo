@@ -1,6 +1,5 @@
 import pytest
 from pysmo import (
-    SAC,
     Seismogram,
     Station,
     MiniSeismogram,
@@ -8,6 +7,7 @@ from pysmo import (
     MiniHypocenter,
     Hypocenter,
 )
+from pysmo.classes import SAC
 
 
 @pytest.fixture()

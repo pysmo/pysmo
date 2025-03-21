@@ -1,5 +1,5 @@
 site_name: pysmo
-copyright: Copyright &copy; 2012 - 2024 Simon Lloyd
+copyright: Copyright &copy; 2012 - 2025 Simon Lloyd
 
 # Repository
 repo_name: pysmo/pysmo
@@ -31,8 +31,8 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: cyan
-      accent: cyan
+      primary: blue-grey
+      accent: blue-grey
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -40,8 +40,8 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: cyan
-      accent: cyan
+      primary: blue-grey
+      accent: blue-grey
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
@@ -53,6 +53,7 @@ extra:
 markdown_extensions:
   - admonition
   - attr_list
+  - footnotes
   - md_in_html
   - toc:
       permalink: "#"
@@ -64,26 +65,23 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-        # - markdown_include.include:
-        #     base_path: docs
-        # - termynal:
-        #     prompt_literal_start:
-        #       - "$"
-        #       - ">"
-        #       - ">>>"
-
 
 plugins:
   - search
   - autorefs
-  - mkdocs-jupyter
-  # - termynal
+  - mkdocs-jupyter:
+      ignore:
+        - docs/gen_ref_pages.py
+        - docs/snippets/*.py
   # - gen-files:
-  # scripts:
-  # - docs/gen_ref_pages.py
+  #     scripts:
+  #       - docs/gen_ref_pages.py
   # - literate-nav:
-  # nav_file: SUMMARY.md
-  # - section-index
+  #     nav_file: SUMMARY.md
+  - termynal:
+      prompt_literal_start:
+        - "$"
+        - ">>>"
   - mkdocstrings:
       handlers:
         python:
@@ -110,23 +108,22 @@ nav:
       - first-steps/installation.md
       - first-steps/tutorial.ipynb
   - User Guide:
-      - user-guide/rationale.md
+      - user-guide/index.md
       - user-guide/in-the-box.md
       - user-guide/types.md
-      - Classes:
-          - user-guide/classes/index.md
-          - user-guide/classes/minimal.md
-          - user-guide/classes/sac.md
-      - Functions: user-guide/functions.md
-      - Tools:
-          - user-guide/tools/index.md
-          - user-guide/tools/signal.md
-          - user-guide/tools/noise.md
+      - user-guide/classes.md
+      - user-guide/functions.md
+  - API Reference:
+      - pysmo: reference/base.md
+      - pysmo.functions: reference/functions.md
+      - pysmo.classes: reference/classes.md
+      - pysmo.tools.noise: reference/tools/noise.md
+      - pysmo.tools.signal: reference/tools/signal.md
+      - pysmo._io: reference/_io.md
   - Gallery:
       - gallery/index.md
-  - Developing Pysmo:
+  - Developing pysmo:
       - developing/index.md
-      - developing/types-more.md
       - developing/developing.md
       - developing/contributing.md
   - contributors.md
