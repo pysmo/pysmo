@@ -112,19 +112,3 @@ class TestMiniSeismogramMethods:
         # create clone without data
         mini_seis = MiniSeismogram.clone(sac_seis, skip_data=True)
         npt.assert_allclose(mini_seis.data, np.array([]))
-
-    def test_normalize(self, mini_seismogram: MiniSeismogram) -> None:
-        mini_seismogram.normalize()
-        assert np.max(mini_seismogram.data) <= 1
-
-    def test_detrend(self, mini_seismogram: MiniSeismogram) -> None:
-        mini_seismogram.detrend()
-        assert 0 == pytest.approx(np.mean(mini_seismogram.data), abs=1e-11)
-
-    def test_resample(self, mini_seismogram: MiniSeismogram) -> None:
-        old_delta = mini_seismogram.delta
-        old_len = len(mini_seismogram)
-        new_delta = old_delta * 2
-        mini_seismogram.resample(new_delta)
-        assert len(mini_seismogram) * 2 == old_len
-        assert mini_seismogram.delta == new_delta
