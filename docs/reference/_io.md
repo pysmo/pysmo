@@ -1,9 +1,9 @@
-# Minimal Classes
-
-::: pysmo.classes.mini
+::: pysmo._io
     options:
       heading_level: 2
       show_root_heading: false
       show_root_toc_entry: false
-      show_category_heading: false
       inherited_members: true
+      docstring_section_style: table
+      allow_inspection: true
+      with_preloaded_modules: true
