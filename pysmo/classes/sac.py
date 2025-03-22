@@ -76,9 +76,10 @@ class SacSeismogram(_SacNested):
 
     Examples:
         Checking if a SacSeismogram matches the pysmo
-        [`Seismogram`][pysmo.types.Seismogram] type:
+        [`Seismogram`][pysmo.Seismogram] type:
 
-        >>> from pysmo import SAC, Seismogram
+        >>> from pysmo import Seismogram
+        >>> from pysmo.classes import SAC
         >>> my_sac = SAC.from_file("testfile.sac")
         >>> isinstance(my_sac.seismogram, Seismogram)
         True

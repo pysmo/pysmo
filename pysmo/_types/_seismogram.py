@@ -26,7 +26,8 @@ class Seismogram(Protocol):
         Usage for a function that takes a Seismogram compatible class instance as
         argument and returns the begin time in isoformat:
 
-        >>> from pysmo import SAC, Seismogram  # SAC is a class that "speaks" Seismogram
+        >>> from pysmo import Seismogram
+        >>> from pysmo.classes import SAC, Seismogram  # SAC is a class that "speaks" Seismogram
         >>> def begin_time_in_isoformat(seis_in: Seismogram) -> str:
         ...     return seis_in.begin_time.isoformat()
         ...
@@ -106,7 +107,7 @@ class MiniSeismogram:
     @classmethod
     def clone(cls, seismogram: Seismogram, skip_data: bool = False) -> Self:
         """Create a new MiniSeismogram instance from an existing
-        [Seismogram][pysmo.types.Seismogram] object.
+        [Seismogram][pysmo.Seismogram] object.
 
         Attributes:
             seismogram: The Seismogram to be cloned.
@@ -116,9 +117,10 @@ class MiniSeismogram:
             A copy of the original Seismogram object.
 
         Examples:
-            Create a copy of a [SAC][pysmo.classes.sac.SAC] object without data:
+            Create a copy of a [SAC][pysmo.classes.SAC] object without data:
 
-            >>> from pysmo import SAC, MiniSeismogram
+            >>> from pysmo import MiniSeismogram
+            >>> from pysmo.classes import SAC
             >>> original_seis = SAC.from_file('testfile.sac').seismogram
             >>> cloned_seis = MiniSeismogram.clone(original_seis, skip_data=True)
             >>> print(cloned_seis.data)
