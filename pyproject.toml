@@ -27,7 +27,7 @@ classifiers = [
 poetry-plugin-export = ">=1.9"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.12,<3.14"
 scipy = "^1.15.2"
 numpy = "^2.2.4"
 matplotlib = "^3.10.1"
