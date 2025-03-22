@@ -1,5 +1,3 @@
-# Gallery
-
 ## Realistic noise
 
 Given the spectral amplitude in observed seismic noise on Earth is not flat (i.e.

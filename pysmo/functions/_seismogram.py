@@ -2,8 +2,9 @@
 match pysmo's types.
 """
 
-from pysmo import Seismogram, MiniSeismogram
+from pysmo import Seismogram
 from datetime import datetime, timedelta
+from copy import deepcopy
 from math import floor, ceil
 import scipy.signal
 import matplotlib.pyplot as plt
@@ -23,9 +24,9 @@ __all__ = [
 ]
 
 
-def crop(
-    seismogram: Seismogram, new_begin_time: datetime, new_end_time: datetime
-) -> MiniSeismogram:
+def crop[T: Seismogram](
+    seismogram: T, new_begin_time: datetime, new_end_time: datetime
+) -> T:
     """Shorten a seismogram by providing a start and end time
 
     Parameters:
@@ -34,7 +35,7 @@ def crop(
         new_end_time: End time.
 
     Returns:
-        Cropped seismogram.
+        Cropped Seismogram object.
 
     Examples:
         >>> from pysmo import crop
@@ -65,7 +66,7 @@ def crop(
     )
     end_index = ceil((new_end_time - old_begin_time).total_seconds() / seismogram.delta)
 
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone = deepcopy(seismogram)
     clone.data = seismogram.data[start_index:end_index]
     clone.begin_time = seismogram.begin_time + timedelta(
         seconds=clone.delta * start_index
@@ -73,14 +74,14 @@ def crop(
     return clone
 
 
-def normalize(seismogram: Seismogram) -> MiniSeismogram:
+def normalize[T: Seismogram](seismogram: T) -> T:
     """Normalize a seismogram with its absolute max value
 
     Parameters:
         seismogram: Seismogram object.
 
     Returns:
-        Normalized seismogram.
+        Normalized Seismogram object.
 
     Examples:
         >>> import numpy as np
@@ -91,20 +92,20 @@ def normalize(seismogram: Seismogram) -> MiniSeismogram:
         True
     """
 
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone = deepcopy(seismogram)
     norm = np.max(np.abs(seismogram.data))
     clone.data = seismogram.data / norm
     return clone
 
 
-def detrend(seismogram: Seismogram) -> MiniSeismogram:
+def detrend[T: Seismogram](seismogram: T) -> T:
     """Remove linear and/or constant trends from a seismogram.
 
     Parameters:
         seismogram: Seismogram object.
 
     Returns:
-        Detrended seismogram.
+        Detrended Seismogram object.
 
     Examples:
         >>> import numpy as np
@@ -117,12 +118,12 @@ def detrend(seismogram: Seismogram) -> MiniSeismogram:
         >>> assert 0 == pytest.approx(np.mean(detrended_seis.data), abs=1e-11)
         True
     """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone = deepcopy(seismogram)
     clone.data = scipy.signal.detrend(seismogram.data)
     return clone
 
 
-def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
+def resample[T: Seismogram](seismogram: T, delta: float) -> T:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:
@@ -130,7 +131,7 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
         delta: New sampling interval.
 
     Returns:
-        Resampled seismogram.
+        Resampled Seismogram object.
 
     Examples:
         >>> from pysmo import SAC, resample
@@ -143,13 +144,10 @@ def resample(seismogram: Seismogram, delta: float) -> MiniSeismogram:
         >>> len(resampled_seis)
         90000
     """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
 
-    len_in = len(seismogram)
-    delta_in = seismogram.delta
-    len_out = int(len_in * delta_in / delta)
-
-    clone.data = scipy.signal.resample(seismogram.data, len_out)
+    npts = int(len(seismogram) * seismogram.delta / delta)
+    clone = deepcopy(seismogram)
+    clone.data = scipy.signal.resample(seismogram.data, npts)
     clone.delta = delta
     return clone
 
