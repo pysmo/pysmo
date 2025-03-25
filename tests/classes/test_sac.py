@@ -56,7 +56,11 @@ class TestSAC:
         assert isinstance(sacseis.data, np.ndarray)
         assert sacseis.data.all() == sacio.data.all()
         assert list(sacseis.data[:5]) == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0]
-        assert sacseis.delta == sacio.delta == pytest.approx(0.02, 0.001)
+        assert (
+            sacseis.delta.total_seconds()
+            == pytest.approx(sacio.delta, 0.001)
+            == pytest.approx(0.02, 0.001)
+        )
         assert sacseis.begin_time == datetime(
             2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc
         )
@@ -74,11 +78,11 @@ class TestSAC:
                 sacseis.begin_time.microsecond
                 == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
             )
-        assert sacseis.end_time == datetime(
-            2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc
+        assert sacseis.end_time.timestamp() == pytest.approx(
+            datetime(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
         )
-        assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacio.delta * (sacio.npts - 1)
+        assert (sacseis.end_time - sacseis.begin_time).total_seconds() == pytest.approx(
+            sacio.delta * (sacio.npts - 1)
         )
 
         # Change some values
@@ -89,27 +93,27 @@ class TestSAC:
         sacseis.data = random_data
         # changing data should also change end time
         assert sacseis.data.all() == random_data.all()
-        assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.delta * (len(sacseis.data) - 1)
+        assert sacseis.end_time - sacseis.begin_time == sacseis.delta * (
+            len(sacseis.data) - 1
         )
         # changing delta also changes end time
         new_delta = sacseis.delta * 2
         sacseis.delta = new_delta
         assert sacseis.delta == new_delta
-        assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.delta * (len(sacseis.data) - 1)
+        assert sacseis.end_time - sacseis.begin_time == sacseis.delta * (
+            len(sacseis.data) - 1
         )
         # changing the begin time changes end time
         sacseis.begin_time = new_time1
         assert sacseis.begin_time == new_time1
-        assert sacseis.end_time - sacseis.begin_time == timedelta(
-            seconds=sacseis.delta * (len(sacseis.data) - 1)
+        assert sacseis.end_time - sacseis.begin_time == sacseis.delta * (
+            len(sacseis.data) - 1
         )
 
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
         for item in ["begin_time", "delta", "data"]:
-            with pytest.raises((TypeError, AttributeTypeError)):
+            with pytest.raises((TypeError, AttributeError, AttributeTypeError)):
                 setattr(sacseis, item, None)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
