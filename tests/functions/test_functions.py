@@ -1,12 +1,10 @@
-from pysmo import Seismogram, Location, MiniSeismogram
+from pysmo import Seismogram, MiniSeismogram
 from pysmo.classes import SAC
+from datetime import timedelta
 import pytest
 import pytest_cases
 import numpy as np
-import matplotlib  # type: ignore
 from tests.conftest import TESTDATA
-
-matplotlib.use("Agg")
 
 
 SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
@@ -17,18 +15,34 @@ MINISEIS = MiniSeismogram(
 )
 
 
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../baseline/")
-def test_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
-    from pysmo.functions import plotseis
-
-    fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
-    return fig
-
-
 @pytest_cases.parametrize(
     "seismogram", (SACSEIS, MINISEIS), ids=("SacSeismogram", "MiniSeismogram")
 )
 class TestSeismogramFunctions:
+    def test_time2index(self, seismogram: Seismogram) -> None:
+        from pysmo.functions import time2index
+
+        time = seismogram.begin_time + timedelta(seconds=10.1 * seismogram.delta)
+        assert time2index(seismogram, time) == 10
+        assert time2index(seismogram, time, method="ceil") == 11
+        assert time2index(seismogram, time, method="floor") == 10
+
+        time = seismogram.begin_time + timedelta(seconds=10.8 * seismogram.delta)
+        assert time2index(seismogram, time) == 11
+        assert time2index(seismogram, time, method="ceil") == 11
+        assert time2index(seismogram, time, method="floor") == 10
+
+        with pytest.raises(ValueError):
+            time2index(seismogram, seismogram.begin_time - timedelta(seconds=1))
+        with pytest.raises(ValueError):
+            time2index(seismogram, seismogram.end_time + timedelta(seconds=1))
+        with pytest.raises(ValueError):
+            time2index(
+                seismogram,
+                seismogram.end_time - timedelta(seconds=1),
+                method="not a method",  # type: ignore
+            )
+
     def test_normalize(self, seismogram: Seismogram) -> None:
         """Normalize data with its absolute maximum value"""
         from pysmo.functions import normalize
@@ -51,30 +65,6 @@ class TestSeismogramFunctions:
         resampled_seis = resample(seismogram, new_delta)
         assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
         assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
-
-    def test_time_array(self, seismogram: Seismogram) -> None:
-        """Get times from Seismogram object and verify them."""
-        from pysmo.functions import time_array
-        from matplotlib.dates import num2date
-
-        times = time_array(seismogram)
-        assert len(times) == len(seismogram)
-        assert num2date(times[0]) == seismogram.begin_time
-        assert num2date(times[-1]) == seismogram.end_time
-
-    def test_unix_time_array(self, seismogram: Seismogram) -> None:
-        """Get times from Seismogram object and verify them."""
-        from pysmo.functions import unix_time_array
-        from datetime import datetime, timezone
-
-        unix_times = unix_time_array(seismogram)
-        assert len(unix_times) == len(seismogram)
-        assert (
-            datetime.fromtimestamp(unix_times[0], timezone.utc) == seismogram.begin_time
-        )
-        assert (
-            datetime.fromtimestamp(unix_times[-1], timezone.utc) == seismogram.end_time
-        )
 
     def test_crop(self, seismogram: Seismogram) -> None:
         """Crop Seismogram object and verify cropped data."""
@@ -118,31 +108,3 @@ class TestSeismogramFunctions:
             new_end_time.timestamp(), abs=seismogram.delta
         )
         assert all(seismogram.data[new_start_index:new_end_index] == cropped_seis.data)
-
-
-def test_azimuth(
-    stations: tuple[Location, ...], hypocenters: tuple[Location, ...]
-) -> None:
-    """Calculate azimuth from Event and Station objects"""
-    from pysmo.functions import azimuth, backazimuth, distance
-
-    for location1 in hypocenters:
-        for location2 in stations:
-            azimuth_wgs84 = azimuth(location1, location2)
-            azimuth_switched_wgs84 = azimuth(location2, location1)
-            azimuth_clrk66 = azimuth(location1, location2, ellps="clrk66")
-            assert pytest.approx(azimuth_wgs84) == 181.9199258637492
-            assert pytest.approx(azimuth_switched_wgs84) == 2.4677533885335947
-            assert pytest.approx(azimuth_clrk66) == 181.92001941872516
-
-            backazimuth_wgs84 = backazimuth(location1, location2)
-            backazimuth_switched_wgs84 = backazimuth(location2, location1)
-            backazimuth_clrk66 = backazimuth(location1, location2, ellps="clrk66")
-            assert pytest.approx(backazimuth_wgs84) == 2.4677533885335947
-            assert pytest.approx(backazimuth_switched_wgs84) == 181.9199258637492
-            assert pytest.approx(backazimuth_clrk66) == 2.467847115319614
-
-            distance_wgs84 = distance(location1, location2)
-            distance_clrk66 = distance(location1, location2, ellps="clrk66")
-            assert pytest.approx(distance_wgs84) == 1889154.9940066523
-            assert pytest.approx(distance_clrk66) == 1889121.7781364019
