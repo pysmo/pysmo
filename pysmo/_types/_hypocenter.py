@@ -8,16 +8,12 @@ __all__ = ["Hypocenter", "MiniHypocenter"]
 
 @runtime_checkable
 class Hypocenter(Location, Protocol):
-    """The `Hypocenter` class defines a protocol for hypocenters in pysmo.
-
-    Attributes:
-        depth: Event depth in metres.
-        latitude (float): Latitude in degrees.
-        longitude (float): Longitude in degrees.
-    """
+    """Protocol class to define the `Hypocenter` type."""
 
     @property
-    def depth(self) -> float: ...
+    def depth(self) -> float:
+        """Event depth in metres."""
+        ...
 
     @depth.setter
     def depth(self, value: float) -> None: ...
@@ -25,17 +21,12 @@ class Hypocenter(Location, Protocol):
 
 @define(kw_only=True)
 class MiniHypocenter(MiniLocation):
-    """Minimal class for hypocententers.
+    """Minimal class for use with the [`Hypocenter`][pysmo.Hypocenter] type.
 
     The `MiniHypocenter` class provides a minimal implementation of class that
     is compatible with the [`Hypocenter`][pysmo.Hypocenter] type. The
     class is a subclass of [`MiniLocation`][pysmo.MiniLocation],
     and therefore also matches the [`Location`][pysmo.Location] type.
-
-    Attributes:
-        depth: Hypocenter depth.
-        longitude (float): Event longitude.
-        latitude (float): Event latitude.
 
     Examples:
         >>> from pysmo import MiniHypocenter, Hypocenter, Location
@@ -47,3 +38,4 @@ class MiniHypocenter(MiniLocation):
     """
 
     depth: float | int = field(validator=type_validator())
+    """Event depth in metres."""

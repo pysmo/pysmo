@@ -8,30 +8,28 @@ __all__ = ["Station", "MiniStation"]
 
 @runtime_checkable
 class Station(Location, Protocol):
-    """The `Station` class defines a protocol for seismic stations in Pysmo.
-
-    Attributes:
-        name: Station name or identifier.
-        network: Network nam or identifiere.
-        latitude (float): Station latitude in degrees.
-        longitude (float): Station longitude in degrees.
-        elevation: Station elevation in metres.
-    """
+    """Protocol class to define the Station type."""
 
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Station name or identifier."""
+        ...
 
     @name.setter
     def name(self, value: str) -> None: ...
 
     @property
-    def network(self) -> str | None: ...
+    def network(self) -> str | None:
+        """Network name or identifiere."""
+        ...
 
     @network.setter
     def network(self, value: str) -> None: ...
 
     @property
-    def elevation(self) -> float | None: ...
+    def elevation(self) -> float | None:
+        """Station elevation in metres."""
+        ...
 
     @elevation.setter
     def elevation(self, value: float) -> None: ...
@@ -39,18 +37,11 @@ class Station(Location, Protocol):
 
 @define(kw_only=True)
 class MiniStation(MiniLocation):
-    """Minimal class for seismic stations.
+    """Minimal class for use with the Station type.
 
     The `MiniStation` class provides a minimal implementation of class that
     is compatible with the `Station` type. The class is a subclass of
     `MiniLocation`, and therefore also matches the `Location` type.
-
-    Attributes:
-        name: Station name.
-        network: Network name.
-        elevation: Station elevation.
-        longitude (float): Station longitude.
-        latitude (float): Station latitude.
 
     Examples:
         >>> from pysmo import MiniStation, Station, Location
@@ -63,10 +54,15 @@ class MiniStation(MiniLocation):
     """
 
     name: str = field(validator=type_validator())
+    """Station name."""
+
     network: str | None = field(default=None, validator=type_validator())
+    """Network name."""
+
     elevation: float | int | None = field(
         default=None,
         validator=validators.optional(
             [validators.gt(-180), validators.le(180), type_validator()]
         ),
     )
+    """Station elevation."""

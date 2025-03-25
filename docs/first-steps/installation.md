@@ -3,7 +3,7 @@
 ## Prerequisites
 
 Pysmo is built on top of standard [Python](https://www.python.org) and uses
-some popular third party modules (e.g. [NumPy][numpy], [SciPy][scipy]).
+some popular third party modules (e.g. [`NumPy`][numpy], [`SciPy`][scipy]).
 In order to benefit from modern Python features and up to date modules, pysmo is
 developed on the latest stable Python versions. Automatic tests are done on
 version 3.10 and newer.
