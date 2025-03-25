@@ -47,12 +47,12 @@ def time2index(
         raise ValueError("method must be 'round', 'ceil' or 'floor'")
 
     if method == "ceil":
-        return ceil((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+        return ceil((time - seismogram.begin_time) / seismogram.delta)
 
     if method == "floor":
-        return floor((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+        return floor((time - seismogram.begin_time) / seismogram.delta)
 
-    return round((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+    return round((time - seismogram.begin_time) / seismogram.delta)
 
 
 def crop[T: Seismogram](seismogram: T, begin_time: datetime, end_time: datetime) -> T:
@@ -95,10 +95,8 @@ def crop[T: Seismogram](seismogram: T, begin_time: datetime, end_time: datetime)
     end_index = time2index(seismogram, end_time, "ceil")
 
     clone = deepcopy(seismogram)
-    clone.data = seismogram.data[start_index:end_index]
-    clone.begin_time = seismogram.begin_time + timedelta(
-        seconds=clone.delta * start_index
-    )
+    clone.data = seismogram.data[start_index : end_index + 1]
+    clone.begin_time = seismogram.begin_time + clone.delta * start_index
     return clone
 
 
@@ -151,7 +149,7 @@ def detrend[T: Seismogram](seismogram: T) -> T:
     return clone
 
 
-def resample[T: Seismogram](seismogram: T, delta: float) -> T:
+def resample[T: Seismogram](seismogram: T, delta: timedelta) -> T:
     """Resample Seismogram object data using the Fourier method.
 
     Parameters:

@@ -110,13 +110,13 @@ class SacSeismogram(_SacNested):
         self._parent.data = value
 
     @property
-    def delta(self) -> float:
+    def delta(self) -> timedelta:
         """Sampling interval."""
-        return self._parent.delta
+        return timedelta(seconds=self._parent.delta)
 
     @delta.setter
-    def delta(self, value: float) -> None:
-        self._parent.delta = value
+    def delta(self, value: timedelta) -> None:
+        self._parent.delta = value.total_seconds()
 
     @property
     def begin_time(self) -> datetime:
@@ -136,7 +136,7 @@ class SacSeismogram(_SacNested):
         """Seismogram end time."""
         if len(self) == 0:
             return self.begin_time
-        return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
+        return self.begin_time + self.delta * (len(self) - 1)
 
 
 @define(kw_only=True)
