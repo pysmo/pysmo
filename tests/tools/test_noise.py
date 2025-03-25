@@ -1,5 +1,6 @@
 from dataclasses import FrozenInstanceError
 from scipy import signal  # type: ignore
+from datetime import timedelta
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
 import numpy as np
@@ -97,6 +98,7 @@ def test_generate_noise():  # type: ignore
     nperseg = npts / 4
     nfft = npts / 2
     srate = 0.1
+    delta = timedelta(seconds=srate)
     sfrec = 1 / srate
     nhnm = noise.NHNM
 
@@ -106,10 +108,10 @@ def test_generate_noise():  # type: ignore
     )
 
     nhnm_data_acc = noise.generate_noise(
-        model=nhnm, npts=npts, delta=srate, seed=0
+        model=nhnm, npts=npts, delta=delta, seed=0
     ).data
     nhnm_data_vel = noise.generate_noise(
-        model=nhnm, npts=npts, delta=srate, return_velocity=True, seed=0
+        model=nhnm, npts=npts, delta=delta, return_velocity=True, seed=0
     ).data
     freqs_acc, power_acc = signal.welch(
         nhnm_data_acc, sfrec, nperseg=nperseg, nfft=nfft, scaling="density"

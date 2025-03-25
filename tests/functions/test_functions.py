@@ -22,12 +22,15 @@ class TestSeismogramFunctions:
     def test_time2index(self, seismogram: Seismogram) -> None:
         from pysmo.functions import time2index
 
-        time = seismogram.begin_time + timedelta(seconds=10.1 * seismogram.delta)
+        assert time2index(seismogram, seismogram.begin_time) == 0
+        assert time2index(seismogram, seismogram.end_time) + 1 == len(seismogram)
+
+        time = seismogram.begin_time + 10.1 * seismogram.delta
         assert time2index(seismogram, time) == 10
         assert time2index(seismogram, time, method="ceil") == 11
         assert time2index(seismogram, time, method="floor") == 10
 
-        time = seismogram.begin_time + timedelta(seconds=10.8 * seismogram.delta)
+        time = seismogram.begin_time + 10.8 * seismogram.delta
         assert time2index(seismogram, time) == 11
         assert time2index(seismogram, time, method="ceil") == 11
         assert time2index(seismogram, time, method="floor") == 10
@@ -89,10 +92,10 @@ class TestSeismogramFunctions:
             seismogram.end_time + (seismogram.end_time - seismogram.begin_time) / 4
         )
         new_start_index = floor(
-            (new_begin_time - seismogram.begin_time).total_seconds() / seismogram.delta
+            (new_begin_time - seismogram.begin_time) / seismogram.delta
         )
-        new_end_index = ceil(
-            (new_end_time - seismogram.begin_time).total_seconds() / seismogram.delta
+        new_end_index = (
+            ceil((new_end_time - seismogram.begin_time) / seismogram.delta) + 1
         )
         with pytest.raises(ValueError):
             _ = crop(seismogram, bad_new_begin_time, new_end_time)
@@ -102,9 +105,9 @@ class TestSeismogramFunctions:
             _ = crop(seismogram, new_end_time, new_begin_time)
         cropped_seis = crop(seismogram, new_begin_time, new_end_time)
         assert cropped_seis.begin_time.timestamp() == pytest.approx(
-            new_begin_time.timestamp(), abs=seismogram.delta
+            new_begin_time.timestamp(), abs=seismogram.delta.total_seconds()
         )
         assert cropped_seis.end_time.timestamp() == pytest.approx(
-            new_end_time.timestamp(), abs=seismogram.delta
+            new_end_time.timestamp(), abs=seismogram.delta.total_seconds()
         )
         assert all(seismogram.data[new_start_index:new_end_index] == cropped_seis.data)

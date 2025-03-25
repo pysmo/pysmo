@@ -10,6 +10,7 @@ Functions:
 from datetime import timedelta
 import numpy as np
 import numpy.typing as npt
+from math import ceil
 from scipy.signal import correlate as _correlate
 from scipy.stats import pearsonr as _pearsonr
 from pysmo import Seismogram, MiniSeismogram
@@ -86,7 +87,7 @@ def delay(
         >>> seis2.data = np.roll(seis1.data, nroll)
         >>> begin_time_delay = timedelta(seconds=100)
         >>> seis2.begin_time += begin_time_delay
-        >>> signal_delay = timedelta(seconds=nroll * seis1.delta)
+        >>> signal_delay = nroll * seis1.delta
         >>> expected_delay = begin_time_delay + signal_delay
         >>> calculated_delay = delay(seis1, seis2, max_delay=signal_delay+timedelta(seconds=1)
         >>> expected_delay - calculated_delay
@@ -105,7 +106,7 @@ def delay(
                 "Input seismograms must be of equal length when using `max_delay`."
             )
         mode = "valid"
-        max_lag_in_samples = int(max_delay.total_seconds() / delta + 0.5)
+        max_lag_in_samples = ceil(max_delay / delta)
         zeros_to_add = np.zeros(max_lag_in_samples)
         in1 = np.append(zeros_to_add, in1)
         in1 = np.append(in1, zeros_to_add)
@@ -121,7 +122,7 @@ def delay(
     else:
         shift = int(len(in2) - 1 - corr_index)
 
-    delay = timedelta(seconds=shift * delta)
+    delay = shift * delta
 
     # find overlapping parts of seismograms after allignment
     if shift < 0:
@@ -189,12 +190,12 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
 
 
 def _gauss(
-    seis: Seismogram, Tn: float, alpha: float
+    seismogram: Seismogram, Tn: float, alpha: float
 ) -> tuple[npt.NDArray, npt.NDArray]:
     Wn = 1 / float(Tn)
-    Nyq = 0.5 / seis.delta
-    npts = len(seis)
-    spec = np.fft.fft(seis.data)
+    Nyq = 0.5 / seismogram.delta.total_seconds()
+    npts = len(seismogram)
+    spec = np.fft.fft(seismogram.data)
     W = np.array(np.linspace(0, Nyq, npts))
     Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
     Qn = complex(0, 1) * Hn.real - Hn.imag
