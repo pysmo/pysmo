@@ -1,7 +1,8 @@
 # Functions
 
 At this point you have probably seen quite a few examples of functions that
-use pysmo types in this documentation. Here we discuss them in greater detail.
+use pysmo types in this documentation. This chapter shows how to use pysmo
+types for the type hints in your functions.
 
 ## Pysmo types as input
 
@@ -11,7 +12,7 @@ between different compatible classes, as their "journeys" end here. For
 example, the following function takes any [`Seismogram`][pysmo.Seismogram]
 compatible object as input, and always returns a [`float`][float] regardless of
 what is used as input (e.g. [`MiniSeismogram`][pysmo.MiniSeismogram],
-[`SacSeismogram`][pysmo.classes.sac.SacSeismogram], or a custom class):
+[`SacSeismogram`][pysmo.classes.SacSeismogram], or a custom class):
 
 ```python title="double_delta_float.py"
 --8<-- "docs/snippets/double_delta_float.py"
@@ -50,7 +51,7 @@ Runtime type is 'SacSeismogram'
 ```
 
 This tells us that at runtime `my_seis_in` and `my_seis_out` are both of type
-[`SacSeismogram`][pysmo.classes.sac.SacSeismogram]. Running mypy on the code,
+[`SacSeismogram`][pysmo.classes.SacSeismogram]. Running mypy on the code,
 however, yields a different type for `my_seis_out`:
 
 <!-- termynal -->
@@ -123,7 +124,7 @@ def double_delta_generic(seismogram: MiniSeismogram) -> MiniSeismogram:
   ...
 ```
 
-Or if we use a [`SacSeismogram`][pysmo.classes.sac.SacSeismogram]:
+Or if we use a [`SacSeismogram`][pysmo.classes.SacSeismogram]:
 
 ```python
 def double_delta_generic(seismogram: SacSeismogram) -> SacSeismogram:

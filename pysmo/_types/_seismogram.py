@@ -13,22 +13,15 @@ __all__ = ["Seismogram", "MiniSeismogram"]
 
 @runtime_checkable
 class Seismogram(Protocol):
-    """The `Seismogram` class defines a type for a basic seismogram as used in pysmo.
-
-    Attributes:
-        __len__: The length of the Seismogram.
-        data: Seismogram data.
-        delta: The sampling interval [s].
-        begin_time: Seismogram begin time.
-        end_time: Seismogram end time (read only).
+    """Protocol class to define the `Seismogram` type.
 
     Examples:
         Usage for a function that takes a Seismogram compatible class instance as
         argument and returns the begin time in isoformat:
 
         >>> from pysmo import Seismogram
-        >>> from pysmo.classes import SAC, Seismogram  # SAC is a class that "speaks" Seismogram
-        >>> def begin_time_in_isoformat(seis_in: Seismogram) -> str:
+        >>> from pysmo.classes import SAC  # SAC is a class that "speaks" Seismogram
+        >>> def example_function(seis_in: Seismogram) -> str:
         ...     return seis_in.begin_time.isoformat()
         ...
         >>> my_sac = SAC.from_file('testfile.sac')
@@ -37,25 +30,39 @@ class Seismogram(Protocol):
         '2005-03-02T07:23:02.160000'
     """
 
-    def __len__(self) -> int: ...
+    def __len__(self) -> int:
+        """The length of the Seismogram.
+
+        Returns:
+            Number of samples in the data array.
+        """
+        ...
 
     @property
-    def data(self) -> npt.NDArray: ...
+    def data(self) -> npt.NDArray:
+        """Seismogram data."""
+        ...
 
     @data.setter
     def data(self, value: npt.NDArray) -> None: ...
 
     @property
-    def begin_time(self) -> datetime: ...
+    def begin_time(self) -> datetime:
+        """Seismogram begin time."""
+        ...
 
     @begin_time.setter
     def begin_time(self, value: datetime) -> None: ...
 
     @property
-    def end_time(self) -> datetime: ...
+    def end_time(self) -> datetime:
+        """Seismogram end time."""
+        ...
 
     @property
-    def delta(self) -> float: ...
+    def delta(self) -> float:
+        """The sampling interval [s]."""
+        ...
 
     @delta.setter
     def delta(self, value: float) -> None: ...
@@ -63,16 +70,10 @@ class Seismogram(Protocol):
 
 @define(kw_only=True)
 class MiniSeismogram:
-    """Minimal class for seismogram data.
+    """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
 
     The `MiniSeismogram` class provides a minimal implementation of class that
     is compatible with the [`Seismogram`][pysmo.Seismogram] type.
-
-    Attributes:
-        begin_time: Seismogram begin time.
-        end_time: Seismogram end time.
-        delta: Seismogram sampling interval.
-        data: Seismogram data.
 
     Examples:
         >>> from pysmo import MiniSeismogram, Seismogram
@@ -89,17 +90,28 @@ class MiniSeismogram:
         default=SEISMOGRAM_DEFAULTS.begin_time,
         validator=[type_validator(), datetime_is_utc],
     )
+    """Seismogram begin time."""
+
     delta: float | int = field(
         default=SEISMOGRAM_DEFAULTS.delta,
         validator=type_validator(),
     )
+    """Seismogram sampling interval."""
+
     data: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
+    """Seismogram data."""
 
     def __len__(self) -> int:
+        """The length of the Seismogram.
+
+        Returns:
+            Number of samples in the data array.
+        """
         return np.size(self.data)
 
     @property
     def end_time(self) -> datetime:
+        """Seismogram end time."""
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
@@ -109,7 +121,7 @@ class MiniSeismogram:
         """Create a new MiniSeismogram instance from an existing
         [Seismogram][pysmo.Seismogram] object.
 
-        Attributes:
+        Parameters:
             seismogram: The Seismogram to be cloned.
             skip_data: Create clone witout copying data.
 
@@ -126,9 +138,10 @@ class MiniSeismogram:
             >>> print(cloned_seis.data)
             []
 
-            Create a copy of a [SAC][pysmo.classes.sac.SAC] object with data:
+            Create a copy of a [SAC][pysmo.classes.SAC] object with data:
 
-            >>> from pysmo import SAC, MiniSeismogram
+            >>> from pysmo import MiniSeismogram
+            >>> from pysmo.classes import SAC
             >>> from numpy.testing import assert_allclose
             >>> original_seis = SAC.from_file('testfile.sac').seismogram
             >>> cloned_seis = MiniSeismogram.clone(original_seis)

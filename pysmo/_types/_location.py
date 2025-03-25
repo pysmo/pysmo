@@ -7,21 +7,20 @@ __all__ = ["Location", "MiniLocation"]
 
 @runtime_checkable
 class Location(Protocol):
-    """The `Location` defines surface coordinates in pysmo.
-
-    Attributes:
-        latitude: Latitude in degrees.
-        longitude: Longitude in degrees.
-    """
+    """Protocol class to define the `Location` type."""
 
     @property
-    def latitude(self) -> float: ...
+    def latitude(self) -> float:
+        """Latitude in degrees."""
+        ...
 
     @latitude.setter
     def latitude(self, value: float) -> None: ...
 
     @property
-    def longitude(self) -> float: ...
+    def longitude(self) -> float:
+        """Longitude in degrees."""
+        ...
 
     @longitude.setter
     def longitude(self, value: float) -> None: ...
@@ -29,14 +28,10 @@ class Location(Protocol):
 
 @define(kw_only=True)
 class MiniLocation:
-    """Minimal class for geographical locations.
+    """Minimal class for use with the [`Location`][pysmo.Location] type.
 
     The `MiniLocation` class provides a minimal implementation of class that
-    is compatible with the `Location` type.
-
-    Attributes:
-        latitude: The latitude of an object from -90 to 90 degrees.
-        longitude: The longitude of an object from -180 to 180 degrees.
+    is compatible with the [`Location`][pysmo.Location] type.
 
     Examples:
         >>> from pysmo import MiniLocation, Location
@@ -48,6 +43,9 @@ class MiniLocation:
     latitude: float | int = field(
         validator=[validators.ge(-90), validators.le(90), type_validator()],
     )
+    """Latitude from -90 to 90 degrees."""
+
     longitude: float | int = field(
         validator=[validators.gt(-180), validators.le(180), type_validator()],
     )
+    """Longitude from -180 to 180 degrees."""

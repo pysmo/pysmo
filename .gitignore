@@ -27,3 +27,4 @@ bar.py
 .direnv
 junit.xml
 .sync-conflict-*
+site/
