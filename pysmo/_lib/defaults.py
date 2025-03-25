@@ -3,7 +3,7 @@ Defaults for various pysmo functions/classes.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 # SacIO defaults
@@ -23,7 +23,7 @@ class _SACIO_DEFAULTS:
 @dataclass(frozen=True)
 class _SEISMOGRAM_DEFAULTS:
     begin_time: datetime = datetime.fromtimestamp(0, tz=timezone.utc)
-    delta: float = 1
+    delta: timedelta = timedelta(seconds=1)
 
 
 SACIO_DEFAULTS = _SACIO_DEFAULTS()

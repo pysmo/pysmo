@@ -32,7 +32,7 @@ class TestMiniSeismogram:
             == SEISMOGRAM_DEFAULTS.begin_time.microsecond
             == 0
         )
-        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta == 1
+        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta == timedelta(seconds=1)
         assert miniseis.data.size == 0
         assert len(miniseis) == 0
 
@@ -46,18 +46,18 @@ class TestMiniSeismogram:
         )
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
-        assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.delta * (len(miniseis) - 1)
+        assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
+            len(miniseis) - 1
         )
         miniseis.begin_time = new_time_utc
         assert miniseis.begin_time == new_time_utc
-        assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.delta * (len(miniseis) - 1)
+        assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
+            len(miniseis) - 1
         )
-        miniseis.delta = 0.1
-        assert miniseis.delta == 0.1
-        assert miniseis.end_time - miniseis.begin_time == timedelta(
-            seconds=miniseis.delta * (len(miniseis) - 1)
+        miniseis.delta = timedelta(seconds=0.1)
+        assert miniseis.delta.total_seconds() == 0.1
+        assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
+            len(miniseis) - 1
         )
         with pytest.raises(TypeError):
             miniseis.begin_time = new_time_no_tz
@@ -87,7 +87,7 @@ class TestMiniSeismogramMethods:
         data = np.random.rand(1000)
         sac_seis = SAC().seismogram
         sac_seis.data = data
-        sac_seis.delta = 0.1
+        sac_seis.delta = timedelta(seconds=0.1)
         sac_seis.begin_time = datetime.now(timezone.utc)
 
         # clone and check attributes are identical

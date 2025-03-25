@@ -85,33 +85,33 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
     seismogram2.data = seismogram1.data[rand_int:]
     cc_delay, _ = delay(seismogram1, seismogram2)
-    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+    assert cc_delay == -rand_int * seismogram1.delta
     cc_delay, _ = delay(seismogram2, seismogram1)
-    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+    assert cc_delay == rand_int * seismogram1.delta
 
     # create seismogram2 by cutting off first rand_int samples and flipping polarity
     seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
     seismogram2.data = -seismogram1.data[rand_int:]
     cc_delay, _ = delay(seismogram1, seismogram2, allow_negative=True)
-    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+    assert cc_delay == -rand_int * seismogram1.delta
     cc_delay, _ = delay(seismogram2, seismogram1, allow_negative=True)
-    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+    assert cc_delay == rand_int * seismogram1.delta
 
     # create seismogram2 with a delay of rand_int * delta
     seismogram2 = MiniSeismogram.clone(seismogram1, skip_data=True)
     seismogram2.data = np.roll(seismogram1.data, rand_int)
 
     cc_delay, _ = delay(
-        seismogram1, seismogram2, timedelta(seconds=rand_int * seismogram1.delta + 2)
+        seismogram1, seismogram2, rand_int * seismogram1.delta + timedelta(seconds=2)
     )
 
-    assert cc_delay.total_seconds() == pytest.approx(rand_int * seismogram1.delta)
+    assert cc_delay == rand_int * seismogram1.delta
 
     cc_delay, _ = delay(
-        seismogram2, seismogram1, timedelta(seconds=rand_int * seismogram1.delta + 2)
+        seismogram2, seismogram1, rand_int * seismogram1.delta + timedelta(seconds=2)
     )
 
-    assert cc_delay.total_seconds() == pytest.approx(-rand_int * seismogram1.delta)
+    assert cc_delay == -rand_int * seismogram1.delta
 
 
 def test_delay_with_made_up_data() -> None:

@@ -60,12 +60,12 @@ class Seismogram(Protocol):
         ...
 
     @property
-    def delta(self) -> float:
-        """The sampling interval [s]."""
+    def delta(self) -> timedelta:
+        """The sampling interval."""
         ...
 
     @delta.setter
-    def delta(self, value: float) -> None: ...
+    def delta(self, value: timedelta) -> None: ...
 
 
 @define(kw_only=True)
@@ -77,11 +77,12 @@ class MiniSeismogram:
 
     Examples:
         >>> from pysmo import MiniSeismogram, Seismogram
-        >>> from datetime import datetime, timezone
+        >>> from datetime import datetime, timedelta, timezone
         >>> import numpy as np
         >>> now = datetime.now(timezone.utc)
-        >>> my_seismogram = MiniSeismogram(begin_time=now, delta=0.1,
-                                           data=np.random.rand(100), id='myseis')
+        >>> delta0 = timedelta(seconds=0.1)
+        >>> my_seismogram = MiniSeismogram(begin_time=now, delta=delta,
+                                           data=np.random.rand(100))
         >>> isinstance(my_seismogram, Seismogram)
         True
     """
@@ -92,7 +93,7 @@ class MiniSeismogram:
     )
     """Seismogram begin time."""
 
-    delta: float | int = field(
+    delta: timedelta = field(
         default=SEISMOGRAM_DEFAULTS.delta,
         validator=type_validator(),
     )
@@ -114,7 +115,7 @@ class MiniSeismogram:
         """Seismogram end time."""
         if len(self) == 0:
             return self.begin_time
-        return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
+        return self.begin_time + self.delta * (len(self) - 1)
 
     @classmethod
     def clone(cls, seismogram: Seismogram, skip_data: bool = False) -> Self:
