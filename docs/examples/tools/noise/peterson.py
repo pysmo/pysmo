@@ -5,13 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 from pysmo.tools.noise import generate_noise, peterson
+from datetime import timedelta
 
 npts = 200000
-delta = 0.1
-sampling_frequency = 1 / delta
+delta = timedelta(seconds=0.1)
+sampling_frequency = 1 / delta.total_seconds()
 nperseg = npts / 4
 nfft = npts / 2
-time = np.linspace(0, npts * delta, npts)
+time_in_seconds = np.linspace(0, npts * delta.total_seconds(), npts)
 
 
 def calc_power(data, sampling_frequency):
@@ -40,15 +41,15 @@ f_high, Pxx_dens_high = calc_power(high_noise_seismogram.data, sampling_frequenc
 fig = plt.figure(figsize=(20, 10))
 # Plot random high and low noise
 plt.subplot(321)
-plt.plot(time, high_noise_seismogram.data, "r", linewidth=0.2)
+plt.plot(time_in_seconds, high_noise_seismogram.data, "r", linewidth=0.2)
 plt.ylabel("Ground Accelaration")
 
 plt.subplot(323)
-plt.plot(time, mid_noise_seismogram.data, "g", linewidth=0.2)
+plt.plot(time_in_seconds, mid_noise_seismogram.data, "g", linewidth=0.2)
 plt.ylabel("Ground Accelaration")
 
 plt.subplot(325)
-plt.plot(time, low_noise_seismogram.data, "b", linewidth=0.2)
+plt.plot(time_in_seconds, low_noise_seismogram.data, "b", linewidth=0.2)
 plt.ylabel("Ground Accelaration")
 plt.xlabel("Time [s]")
 
