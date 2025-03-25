@@ -6,10 +6,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 
-# Default model for distance and azimuth calculations
-DEFAULT_ELLPS = "WGS84"
-
-
 # SacIO defaults
 @dataclass(frozen=True)
 class _SACIO_DEFAULTS:

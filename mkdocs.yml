@@ -46,6 +46,10 @@ theme:
         icon: material/brightness-4
         name: Switch to system preference
 
+extra_css:
+  - css/material.css
+  - css/mkdocstrings.css
+
 extra:
   version:
     provider: mike
@@ -58,6 +62,8 @@ markdown_extensions:
   - toc:
       permalink: "#"
   - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.snippets
   - pymdownx.tabbed:
@@ -86,7 +92,22 @@ plugins:
       handlers:
         python:
           options:
+            allow_inspection: true
+            backlinks: tree
+            # docstring_section_style: spacy
             docstring_style: google
+            # extensions:
+            #   - griffe_fieldz
+            inherited_members: true
+            modernize_annotations: true
+            parameter_headings: true
+            separate_signature: true
+            show_inheritance_diagram: true
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            with_preloaded_modules: true
           import:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
@@ -99,6 +120,7 @@ plugins:
             - https://flake8.pycqa.org/en/latest/objects.inv
             - https://www.mkdocs.org/objects.inv
             - https://pyproj4.github.io/pyproj/stable/objects.inv
+            - https://attrs.org/en/stable/objects.inv
 
 nav:
   - Home:
@@ -117,8 +139,7 @@ nav:
       - pysmo: reference/base.md
       - pysmo.functions: reference/functions.md
       - pysmo.classes: reference/classes.md
-      - pysmo.tools.noise: reference/tools/noise.md
-      - pysmo.tools.signal: reference/tools/signal.md
+      - pysmo.tools: reference/tools.md
       - pysmo._io: reference/_io.md
   - Gallery:
       - gallery/index.md

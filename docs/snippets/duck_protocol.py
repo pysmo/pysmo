@@ -2,8 +2,7 @@ from typing import Protocol  # (1)!
 
 
 class Ducklike(Protocol):  # (2)!
-    def quack(self) -> str:  # (3)!
-        ...
+    def quack(self) -> str: ...  # (3)!
 
     def waddle(self) -> str: ...
 

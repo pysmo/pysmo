@@ -1,11 +1,10 @@
-::: pysmo
+::: pysmo.tools
     options:
       heading_level: 1
       show_root_heading: true
       show_root_toc_entry: true
-      inherited_members: true
-      members_order: source
+      show_submodules: true
       summary:
-        classes: true
+        modules: true
         attributes: true
         functions: true

@@ -34,7 +34,7 @@ hopefully convince you that doing things this way is indeed a good idea!
 
 ## Protocol Classes
 
-[Protocol classes][typing.Protocol] were introduced in Python 3.8, and are
+[`Protocol`][typing.Protocol] classes were introduced in Python 3.8, and are
 discussed in detail in [PEP 544](https://peps.python.org/pep-0544/). In this
 section, we explain why and how they are used in pysmo.
 
@@ -105,16 +105,14 @@ The same example code, but using pysmo types instead would look like this:
 1. One of the pysmo types is [`Location`][pysmo.Location], which is a simple
   protocol class with two attributes `latitude` and `longitude`. We use this
   class for the type hints in our function.
-2. We import the [`distance`][pysmo.functions.distance] function to calculate
-  the gcd. It actually does exactly what we want `f_pysmo` to do, so we could
-  have just used `from pysmo.functions import distance as f_pysmo` and be done.
-3. The [`SAC`][pysmo.classes.SAC] class directly mirrors the structure of sac
+1. The [`SAC`][pysmo.classes.SAC] class directly mirrors the structure of sac
   files, and as such would not work with pysmo types without some additional
   attributes to extend the functionality of the class. Two such attributes are
-  `event` and `station`, which provide access to data stored in a sac file in
-  a way that does work with pysmo types. For the purposes of this example, we
-  can verify that these attributes are indeed subclasses (and thus instances)
-  of the desired pysmo types:
+  [`event`][pysmo.classes.SAC.event] and
+  [`station`][pysmo.classes.SAC.station], which provide access to data stored in
+  a sac file in a way that does work with pysmo types. For the purposes of this
+  example, we can verify that these attributes are indeed subclasses (and thus
+  instances) of the desired pysmo types:
 
     ```python
     >>> isinstance(sac.event, Location)

@@ -24,10 +24,9 @@
               gnumake
               autoPatchelfHook
               poetry
-              python312Packages.tox
-              python311
               python312
               python313Full
+              python313Packages.tox
             ];
 
             shellHook = ''

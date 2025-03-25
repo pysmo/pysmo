@@ -40,7 +40,7 @@ an agreement about the type of data they are going to exchange. One could say
 that a contract exists that needs to be followed for our code to work properly.
 In Python we can use type hints to describe such a contract. In the simplest
 case, the information that is being exchanged consists of a built-in type such
-as a [float][float]:
+as a [`float`][float]:
 
 ```python
 def times_two(input_variable: float) -> float:
@@ -50,11 +50,12 @@ def times_two(input_variable: float) -> float:
 ```
 
 The above function makes it quite clear what the contract for its usage is: it
-expects a float as as input, and it returns a float as output. If we try to
-call this function in other parts of our code using e.g. a string as input, our
-code editor will notify us that we made a mistake before we even run our
-program! The same is true for the function output - if we use the output as if
-it were a string, we would again get an error message from our code editor.
+expects a [`float`][float] as as input, and it returns a [`float`][float] as
+output. If we try to call this function in other parts of our code using e.g. a
+[`str`][str] as input, our code editor will notify us that we made a mistake
+before we even run our program! The same is true for the function output - if
+we use the output as if it were a [`str`][str], we would again get an error
+message from our code editor.
 
 Things get more challenging when the information passed around is not just
 a built-in type, but instead a piece of code itself. To illustrate this, lets
@@ -81,7 +82,7 @@ they will all need to be refactored too. This would potentially be a lot of
 work, which can be avoided by writing the contract outside of the function(s).
 This contract would only need to be written once. If you remember the
 [first-steps](/first-steps) section, you'll likely guess that this way of
-defining the contract is by using [protocol][typing.Protocol] classes:
+defining the contract is by using [`Protocol`][typing.Protocol] classes:
 
 ```python title="signup2.py"
 --8<-- "docs/snippets/signup2.py"
