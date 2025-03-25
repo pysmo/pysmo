@@ -1,24 +1,26 @@
-"""Pysmo provides functions that perform common operations on the types of data that
-match pysmo's types.
+"""Common distance and azimuth calculations.
+
+Info:
+        For more information see: <https://pyproj4.github.io/pyproj/stable>
 """
 
 from pysmo import Location
-from pysmo._lib.defaults import DEFAULT_ELLPS
 from pyproj import Geod
 
 __all__ = ["azimuth", "backazimuth", "distance"]
 
+DEFAULT_ELLPS = "WGS84"
+"""Default model for distance and azimuth calculations."""
+
 
 def _azdist(
-    lat1: float, lon1: float, lat2: float, lon2: float, ellps: str = DEFAULT_ELLPS
+    location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> tuple[float, float, float]:
     """Return forward/backazimuth and distance using pyproj (proj4 bindings).
 
     Parameters:
-        lat1: latitude of point 1.
-        lon1: longitude of point 1.
-        lat2: latitude of point 2.
-        lon2: longitude of point 2.
+        location_1: location of point 1.
+        location_2: location of point 2.
         ellps: Ellipsoid to use for calculations.
 
     Returns:
@@ -27,7 +29,12 @@ def _azdist(
         dist: Distance between the points in metres.
     """
     g = Geod(ellps=ellps)
-    az, baz, dist = g.inv(lons1=lon1, lats1=lat1, lons2=lon2, lats2=lat2)
+    az, baz, dist = g.inv(
+        lons1=location_1.longitude,
+        lats1=location_1.latitude,
+        lons2=location_2.longitude,
+        lats2=location_2.latitude,
+    )
 
     # Prefer positive bearings
     if az < 0:
@@ -42,8 +49,6 @@ def azimuth(
 ) -> float:
     """Calculate azimuth between two points.
 
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         location_1: Name of the event object providing coordinates of the origin location.
@@ -54,7 +59,8 @@ def azimuth(
         Azimuth in degrees from location 1 to location 2.
 
     Examples:
-        >>> from pysmo import SAC, azimuth
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.azdist import azimuth
         >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
         >>> azimuth(sacobj.event, sacobj.station)
@@ -63,22 +69,13 @@ def azimuth(
         >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
         181.92001941872516
     """
-    return _azdist(
-        lat1=location_1.latitude,
-        lon1=location_1.longitude,
-        lat2=location_2.latitude,
-        lon2=location_2.longitude,
-        ellps=ellps,
-    )[0]
+    return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[0]
 
 
 def backazimuth(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
     """Calculate backazimuth (in DEG) between two points.
-
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         location_1: Name of the event object providing coordinates of the origin location.
@@ -89,7 +86,8 @@ def backazimuth(
         Backzimuth in degrees from point 2 to point 1
 
     Examples:
-        >>> from pysmo import SAC, backazimuth
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.azdist import backazimuth
         >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
         >>> backazimuth(sacobj.event, sacobj.station)
@@ -98,22 +96,13 @@ def backazimuth(
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
     """
-    return _azdist(
-        lat1=location_1.latitude,
-        lon1=location_1.longitude,
-        lat2=location_2.latitude,
-        lon2=location_2.longitude,
-        ellps=ellps,
-    )[1]
+    return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[1]
 
 
 def distance(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
     """Calculate the great circle distance (in metres) between two locations.
-
-    info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
 
     Parameters:
         location_1: Name of the event object providing coordinates of the origin location.
@@ -124,7 +113,8 @@ def distance(
         Great Circle Distance in metres.
 
     Examples:
-        >>> from pysmo import SAC, distance
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.azdist import distance
         >>> sacobj = SAC.from_file('testfile.sac')
         >>> # the SAC class provides both event and station
         >>> distance(sacobj.event, sacobj.station)
@@ -133,10 +123,4 @@ def distance(
         >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
         1889121.778136402
     """
-    return _azdist(
-        lat1=location_1.latitude,
-        lon1=location_1.longitude,
-        lat2=location_2.latitude,
-        lon2=location_2.longitude,
-        ellps=ellps,
-    )[2]
+    return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[2]

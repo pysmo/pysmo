@@ -1,26 +1,10 @@
 ::: pysmo.classes
     options:
-      heading_level: 2
-      show_root_heading: false
-      show_root_toc_entry: false
-      inherited_members: true
-      docstring_section_style: table
-      allow_inspection: true
-      with_preloaded_modules: true
-
-## Helper classes
-
-::: pysmo.classes.sac
-    options:
-      heading_level: 3
-      show_root_heading: false
-      show_root_toc_entry: false
-      inherited_members: true
-      docstring_section_style: table
-      allow_inspection: true
-      with_preloaded_modules: true
-      members:
-        - SacSeismogram
-        - SacStation
-        - SacEvent
-        - SacTimestamps
+      heading_level: 1
+      show_root_heading: true
+      show_root_toc_entry: true
+      inherited_members: false
+      summary:
+        classes: true
+        attributes: true
+        functions: true

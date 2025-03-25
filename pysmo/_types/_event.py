@@ -10,17 +10,12 @@ __all__ = ["Event", "MiniEvent"]
 
 @runtime_checkable
 class Event(Hypocenter, Protocol):
-    """The `Event` class defines a protocol for events in pysmo.
-
-    Attributes:
-        depth (float): Event depth in metres.
-        latitude (float): Latitude in degrees.
-        longitude (float): Longitude in degrees.
-        time: Event origin time.
-    """
+    """Protocol class to define the `Event` type."""
 
     @property
-    def time(self) -> datetime: ...
+    def time(self) -> datetime:
+        """Event origin time."""
+        ...
 
     @time.setter
     def time(self, value: datetime) -> None: ...
@@ -28,19 +23,13 @@ class Event(Hypocenter, Protocol):
 
 @define(kw_only=True)
 class MiniEvent(MiniHypocenter):
-    """Minimal class for events.
+    """Minimal class for use with the [`Event`][pysmo.Event] type.
 
     The `MiniEvent` class provides a minimal implementation of class that is
     compatible with the [`Event`][pysmo.Event] type. The class is a
     subclass of [`MiniHypocenter`][pysmo.MiniHypocenter], and
     therefore also matches the [`Location`][pysmo.Location] and
     [`Hypocenter`][pysmo.Hypocenter] types.
-
-    Attributes:
-        depth (float): Hypocenter depth.
-        longitude (float): Event longitude.
-        latitude (float): Event latitude.
-        time: Event origin time.
 
     Examples:
         >>> from pysmo import MiniEvent, Event, Hypocenter, Location
@@ -57,3 +46,4 @@ class MiniEvent(MiniHypocenter):
     """
 
     time: datetime = field(validator=[type_validator(), datetime_is_utc])
+    """Event origin time."""

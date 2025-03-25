@@ -8,6 +8,14 @@ from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
 import numpy.typing as npt
 
+__all__ = [
+    "SAC",
+    "SacSeismogram",
+    "SacEvent",
+    "SacStation",
+    "SacTimestamps",
+]
+
 TSacTimeHeaders = Literal[
     "b", "e", "o", "a", "f", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"
 ]
@@ -16,13 +24,10 @@ SAC_TIME_HEADERS: tuple[TSacTimeHeaders, ...] = get_args(TSacTimeHeaders)
 
 @define(kw_only=True)
 class _SacNested:
-    """Base class for nested SAC classes.
-
-    Attributes:
-        _parent (SacIO): SacIO instance.
-    """
+    """Base class for nested SAC classes."""
 
     _parent: SacIO = field(repr=False)
+    """_parent (SacIO): Parent SacIO instance."""
 
     @property
     def _ref_datetime(self) -> datetime:
@@ -67,13 +72,6 @@ class SacSeismogram(_SacNested):
     (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo types
     compatibility.
 
-    Attributes:
-        begin_time: Seismogram begin (data)time.
-        end_time: Seismogram end (date)time.
-        delta: Seismogram sampling interval.
-        data: Seismogram data.
-
-
     Examples:
         Checking if a SacSeismogram matches the pysmo
         [`Seismogram`][pysmo.Seismogram] type:
@@ -103,6 +101,8 @@ class SacSeismogram(_SacNested):
 
     @property
     def data(self) -> npt.NDArray:
+        """Seismogram data."""
+
         return self._parent.data
 
     @data.setter
@@ -111,6 +111,7 @@ class SacSeismogram(_SacNested):
 
     @property
     def delta(self) -> float:
+        """Sampling interval."""
         return self._parent.delta
 
     @delta.setter
@@ -119,6 +120,7 @@ class SacSeismogram(_SacNested):
 
     @property
     def begin_time(self) -> datetime:
+        """Seismogram begin time."""
         value = self._get_datetime_from_sac("b")
         if value is None:
             raise SacHeaderUndefined(header="b")
@@ -131,6 +133,7 @@ class SacSeismogram(_SacNested):
 
     @property
     def end_time(self) -> datetime:
+        """Seismogram end time."""
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + timedelta(seconds=self.delta * (len(self) - 1))
@@ -145,13 +148,6 @@ class SacStation(_SacNested):
     new (parent) [`SAC`][pysmo.classes.SAC]instance to enable pysmo
     types compatibility.
 
-    Attributes:
-        name: Station name or code.
-        network: Optional network name or code.
-        latitude: Station latitude.
-        longitude: Station longitude.
-        elevation: Optional station elevation in meters.
-
     Examples:
         Checking if a SacStation matches the pysmo
         [`Station`][pysmo.Station] type:
@@ -165,6 +161,8 @@ class SacStation(_SacNested):
 
     @property
     def name(self) -> str:
+        """Station name or code."""
+
         if self._parent.kstnm is None:
             raise SacHeaderUndefined(header="kstnm")
         return self._parent.kstnm
@@ -176,6 +174,7 @@ class SacStation(_SacNested):
 
     @property
     def network(self) -> str | None:
+        """Network name or code."""
         return self._parent.knetwk
 
     @network.setter
@@ -184,6 +183,7 @@ class SacStation(_SacNested):
 
     @property
     def latitude(self) -> float:
+        """Station latitude."""
         if self._parent.stla is None:
             raise SacHeaderUndefined(header="stla")
         return self._parent.stla
@@ -195,6 +195,7 @@ class SacStation(_SacNested):
 
     @property
     def longitude(self) -> float:
+        """Station longitude."""
         if self._parent.stlo is None:
             raise SacHeaderUndefined(header="stlo")
         return self._parent.stlo
@@ -206,6 +207,7 @@ class SacStation(_SacNested):
 
     @property
     def elevation(self) -> float | None:
+        """Station elevation in meters."""
         return self._parent.stel
 
     @elevation.setter
@@ -215,18 +217,12 @@ class SacStation(_SacNested):
 
 @define(kw_only=True)
 class SacEvent(_SacNested):
-    """Helper class for event attributes.
+    """Helper class for SAC event attributes.
 
     The `SacEvent` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
     new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo
     types compatibility.
-
-    Attributes:
-        latitude: Event Latitude.
-        longitude: Event Longitude.
-        depth: Event depth in meters.
-        time: Event origin time (UTC).
 
     Examples:
         Checking if a SacEvent matches the pysmo
@@ -244,6 +240,8 @@ class SacEvent(_SacNested):
 
     @property
     def latitude(self) -> float:
+        """Event Latitude."""
+
         if self._parent.evla is None:
             raise SacHeaderUndefined(header="evla")
         return self._parent.evla
@@ -255,6 +253,8 @@ class SacEvent(_SacNested):
 
     @property
     def longitude(self) -> float:
+        """Event Longitude."""
+
         if self._parent.evlo is None:
             raise SacHeaderUndefined(header="evlo")
         return self._parent.evlo
@@ -266,6 +266,7 @@ class SacEvent(_SacNested):
 
     @property
     def depth(self) -> float:
+        """Event depth in meters."""
         if self._parent.evdp is None:
             raise SacHeaderUndefined(header="evdp")
         return self._parent.evdp * 1000
@@ -277,6 +278,7 @@ class SacEvent(_SacNested):
 
     @property
     def time(self) -> datetime:
+        """Event origin time (UTC)."""
         event_time = self._get_datetime_from_sac("o")
         if event_time is None:
             raise SacHeaderUndefined(header="o")
@@ -315,31 +317,13 @@ class SacTimeConverter:
 
 
 class SacTimestamps(_SacNested):
-    """Helper class to access relative times stored in SAC headers as
-    absolute datetime objects.
+    """Helper class to access times stored in SAC headers as datetime objects.
 
     The `SacTimestamps` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
     new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo
     types compatibility.
 
-
-    Attributes:
-        b: Beginning time of the independent variable.
-        e: Ending time of the independent variable (read-only).
-        o: Event origin time.
-        a: First arrival time.
-        f: Fini or end of event time.
-        t0: User defined time pick or marker 0.
-        t1: User defined time pick or marker 1.
-        t2: User defined time pick or marker 2.
-        t3: User defined time pick or marker 3.
-        t4: User defined time pick or marker 4.
-        t5: User defined time pick or marker 5.
-        t6: User defined time pick or marker 6.
-        t7: User defined time pick or marker 7.
-        t8: User defined time pick or marker 8.
-        t9: User defined time pick or marker 9.
 
     Examples:
         Relative seismogram begin time as a float vs absolute begin time
@@ -365,7 +349,7 @@ class SacTimestamps(_SacNested):
 
         ```python
         >>> from datetime import timedelta
-        >>> from pysmo import SAC
+        >>> from pysmo.classes import SAC
         >>> my_sac = SAC.from_file("testfile.sac")
         >>> # Original value of the "B" SAC header:
         >>> my_sac.b
@@ -379,111 +363,138 @@ class SacTimestamps(_SacNested):
     """
 
     b: SacTimeConverter = SacTimeConverter()
+    """Beginning time of the independent variable."""
+
     e: SacTimeConverter = SacTimeConverter(readonly=True)
+    """Ending time of the independent variable (read-only)."""
+
     o: SacTimeConverter = SacTimeConverter()
+    """Event origin time."""
+
     a: SacTimeConverter = SacTimeConverter()
+    """First arrival time."""
+
     f: SacTimeConverter = SacTimeConverter()
+    """Fini or end of event time."""
+
     t0: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 0."""
+
     t1: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 1."""
+
     t2: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 2."""
+
     t3: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 3."""
+
     t4: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 4."""
+
     t5: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 5."""
+
     t6: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 6."""
+
     t7: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 7."""
+
     t8: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 8."""
+
     t9: SacTimeConverter = SacTimeConverter()
+    """User defined time pick or marker 9."""
 
 
 @define(kw_only=True)
 class SAC(SacIO):
     """Access and modify data stored in SAC files.
 
-    The [`SAC`][pysmo.classes.SAC] class is responsible for accessing data
-    stored in SAC files directly using the file format naming conventions and
-    formats, as well as via "helper" objects which make the data available in
-    pysmo-compatible form (i.e. they can be used as inputs for code expecting
-    pysmo types).
+    The [`SAC`][pysmo.classes.SAC] class inherits all attributes and methods
+    of the [`SacIO`][pysmo._io.SacIO] class, and extends it with attributes
+    that allow using pysmo types. The extra attributes are themselves instances
+    of "helper" classes that cannot be instantiated directly.
+
+    Examples:
+        SAC instances are typically created by reading a SAC file. Users
+        familiar with the SAC file format can access header and data using
+        the names they are used to:
+
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> my_sac = SAC.from_file('testfile.sac')
+        >>> my_sac.delta
+        0.019999999552965164
+        >>> my_sac.data
+        array([2302., 2313., 2345., ..., 2836., 2772., 2723.])
+        >>> my_sac.evla
+        23.14
+        >>>
+        ```
+
+        Presenting the data in the above way is *not* compatible with pysmo
+        types. For example, event coordinates are stored in the
+        [`evla`][pysmo._io.SacIO.evla] and [`evlo`][pysmo._io.SacIO.evlo]
+        attributes, which do not match the pysmo [`Location`][pysmo.Location]
+        type. Renaming or aliasing `evla` to `latitude` and `evlo` to
+        `longitude` would solve the problem for the event coordinates, but
+        since the SAC format also specifies station coordinates
+        ([`stla`][pysmo._io.SacIO.stla], [`stlo`][pysmo._io.SacIO.stlo]) we
+        still run into compatibility issues.
+
+        In order to map these incompatible attributes to ones that can be
+        used with pysmo types, we use helper classes as a way to access the
+        attributes under different names that *are* compatible with pysmo
+        types:
+
+        ```python
+        >>> # Import the Seismogram type to check if the nested class is compatible.
+        >>> from pysmo import Seismogram
+        >>>
+        >>> # First verify that a SAC instance is not a pysmo Seismogram:
+        >>> isinstance(my_sac, Seismogram)
+        False
+        >>> # The my_sac.seismogram object is, however:
+        >>> isinstance(my_sac.seismogram, Seismogram)
+        True
+        >>>
+        ```
+
+        Because the SAC file format defines a large amount of header fields for
+        metadata, it needs to allow for many of these to be optional. Since the
+        helper classes are more specific (and intended to be used with pysmo
+        types), their attributes typically may *not* be [`None`][None]:
+
+        ```python
+        >>> my_sac.evla = None
+        >>> # No error: a SAC file doesn't have to contain event information.
+        >>> my_sac.event.latitude = None
+        TypeError: SacEvent.latitude may not be of None type.
+        >>> # Error: the my_sac.event object may not have attributes set to `None`.
+        >>>
+        ```
 
     Tip:
         The [`SAC`][pysmo.classes.SAC] class directly inherits from the
         [`SacIO`][pysmo._io.SacIO] class. This gives access to all
         SAC headers, ability to load from a file, download data, and so on.
-        Using [`SAC`][pysmo.classes.sac.SAC] is therefore almost always
+        Using [`SAC`][pysmo.classes.SAC] is therefore almost always
         preferred over using [`SacIO`][pysmo._io.SacIO].
-
-    ## Direct access to SAC data and metadata
-
-    The [`SAC`][pysmo.classes.SAC] class can be used to read a SAC
-    file and access its data as presented by the sac file format. SAC
-    instances are typically created by reading sac file. Data and header
-    fields can be accessed as attributes:
-
-    ```python
-    >>> from pysmo.classes import SAC
-    >>> my_sac = SAC.from_file('testfile.sac')
-    >>> my_sac.delta
-    0.019999999552965164
-    >>> my_sac.data
-    array([2302., 2313., 2345., ..., 2836., 2772., 2723.])
-    >>> my_sac.evla
-    23.14
-    >>>
-    ```
-
-    ## Access to SAC data and metadata via helper objects
-
-    Presenting the data in the above way is *not* compatible with pysmo types.
-    For example, event coordinates are stored in the `evla` and `evlo`
-    attributes, which do not match the pysmo [`Location`][pysmo.Location]
-    type. Renaming or aliasing `evla` to `latitude` and `evlo` to `longitude`
-    would solve the problem for the event coordinates, but since the SAC format
-    also specifies station coordinates (`stla`, `stlo`) we still would run
-    into compatibility issues.
-
-    In order to map these incompatible attributes to ones that can be
-    used with pysmo types, we use helper classes as a way to access the attributes
-    under different names that *are* compatible with pysmo types:
-
-    ```python
-    >>> # Import the Seismogram type to check if the nested class is compatible.
-    >>> from pysmo import Seismogram
-    >>>
-    >>> # First verify that a SAC instance is not a pysmo Seismogram:
-    >>> isinstance(my_sac, Seismogram)
-    False
-    >>> # The my_sac.seismogram object is, however:
-    >>> isinstance(my_sac.seismogram, Seismogram)
-    True
-    >>>
-    ```
-
-    Because the SAC file format defines a large amount of header fields for
-    metadata, it needs to allow for many of these to be optional. Since the helper
-    classes are more specific (and intended to be used with pysmo types), their
-    attributes typically may *not* be [`None`][None]:
-
-    ```python
-    >>> my_sac.evla = None
-    >>> # No error: a SAC file doesn't have to contain event information.
-    >>> my_sac.event.latitude = None
-    TypeError: SacEvent.latitude may not be of None type.
-    >>> # Error: the my_sac.event object may not have attributes set to `None`.
-    >>>
-    ```
-
-
-    Attributes:
-        seismogram: Maps pysmo compatible attributes to the internal SAC attributes.
-        station: Maps pysmo compatible attributes to the internal SAC attributes.
-        event: Maps pysmo compatible attributes to the internal SAC attributes.
-        timestamps: Maps a SAC times such as B, E, O, T0-T9 to datetime objects.
     """
 
     seismogram: SacSeismogram = field(init=False)
+    """Access data stored in the SAC object compatible with the [`Seismogram`][pysmo.Seismogram] type."""
+
     station: SacStation = field(init=False)
+    """Access data stored in the SAC object compatible with the [`Station`][pysmo.Station] type."""
+
     event: SacEvent = field(init=False)
+    """Access data stored in the SAC object compatible with the [`Event`][pysmo.Event] type."""
+
     timestamps: SacTimestamps = field(init=False)
+    """Maps a SAC times such as B, E, O, T0-T9 to datetime objects."""
 
     def __attrs_post_init__(self) -> None:
         self.seismogram = SacSeismogram(parent=self)
