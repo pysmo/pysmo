@@ -24,10 +24,11 @@ def delay(
     """
     Cross correlates two seismograms to determine signal delay.
 
-    This functions is a wrapper around the [scipy.signal.correlate][] function.
-    The default behavior is to call the correlate function with `mode="full"` using
-    the input seismograms directly. This is the most robust option, but also the
-    slowest.
+    This functions is a wrapper around the
+    [`#!py scipy.signal.correlate()`][scipy.signal.correlate] function.
+    The default behavior is to call the correlate function with
+    `#!py mode="full"` using the input seismograms directly. This is the most
+    robust option, but also the slowest.
 
     When `max_delay` is set to a value, the search space is limited to
     +/- the equivalent number of samples for value. This is useful for finding
@@ -38,21 +39,23 @@ def delay(
     Implications of setting the `max_delay` parameter are the following:
 
     - If the true delay (i.e. the amount of time the seismograms _should_ be
-      shifted by) lies within the `max_delay` range, and also produces the highest
-      correlation, the delay time returned is identical for both methods.
-    - If the true delay lies outside the `max_delay` range and produces the highest
-      correlation, the delay time returned will be incorrect when `max_delay` is set.
-    - In the event that the true delay lies within the `max_delay` range but the
-      maximum signal correlation occurs outside, it will be correctly retrieved when
-      the `max_delay` parameter is set, while not setting it yields an incorrect
-      result.
+      shifted by) lies within the `max_delay` range, and also produces the
+      highest correlation, the delay time returned is identical for both
+      methods.
+    - If the true delay lies outside the `max_delay` range and produces the
+      highest correlation, the delay time returned will be incorrect when
+      `max_delay` is set.
+    - In the event that the true delay lies within the `max_delay` range but
+      the maximum signal correlation occurs outside, it will be correctly
+      retrieved when the `max_delay` parameter is set, while not setting it
+      yields an incorrect result.
 
     Warning:
-        This function does not take into account the `begin_time` attribute of the
-        input seismograms. Thus, using the output of this function directly aligns
-        the data of the seismograms, but not the seismograms themselves. If that
-        is desired, the difference between `begin_time` attribute of two seismograms
-        needs be added to the delay calculated here.
+        This function does not take into account the `begin_time` attribute of
+        the input seismograms. Thus, using the output of this function directly
+        aligns the data of the seismograms, but not the seismograms themselves.
+        If that is desired, the difference between `begin_time` attribute of
+        two seismograms needs be added to the delay calculated here.
 
     Parameters:
         seismogram1: First seismogram to cross correlate.
@@ -68,7 +71,9 @@ def delay(
             seismograms *after* shifting. Always between -1 and 1.
 
     Examples:
-        >>> from pysmo import SAC, MiniSeismogram, detrend
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.functions import detrend
         >>> from pysmo.tools.signal import delay
         >>> from datetime import timedelta
         >>> import numpy as np
@@ -105,7 +110,7 @@ def delay(
         in1 = np.append(zeros_to_add, in1)
         in1 = np.append(in1, zeros_to_add)
 
-    corr = _correlate(in1, in2, mode=mode)
+    corr = _correlate(in1, in2, mode=mode)  # type: ignore
     corr_index = np.argmax(corr)
 
     if allow_negative and np.max(corr) < -1 * np.min(corr):
@@ -146,7 +151,7 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
         Seismogram containing the envelope
 
     Examples:
-        >>> from pysmo import SAC
+        >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import envelope
         >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
@@ -171,7 +176,7 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         Gaussian filtered seismogram.
 
     Examples:
-        >>> from pysmo import SAC
+        >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import gauss
         >>> seis = SAC.from_file('sacfile.sac').seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period

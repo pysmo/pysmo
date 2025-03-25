@@ -1,38 +1,67 @@
-"""Pysmo provides functions that perform common operations on the types of data that
-match pysmo's types.
-"""
-
 from pysmo import Seismogram
 from datetime import datetime, timedelta
 from copy import deepcopy
 from math import floor, ceil
+from typing import Literal
 import scipy.signal
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib.figure
 import numpy as np
-import numpy.typing as npt
 
 __all__ = [
     "crop",
     "detrend",
     "normalize",
     "resample",
-    "time_array",
-    "unix_time_array",
-    "plotseis",
+    "time2index",
 ]
 
 
-def crop[T: Seismogram](
-    seismogram: T, new_begin_time: datetime, new_end_time: datetime
-) -> T:
-    """Shorten a seismogram by providing a start and end time
+def time2index(
+    seismogram: Seismogram,
+    time: datetime,
+    method: Literal["round", "ceil", "floor"] = "round",
+) -> int:
+    """Retuns data index corresponding to a given time.
+
+    This function converts time to index of a seismogram's data array. In most
+    cases the time will not have an exact match in the data array. This
+    function allows choosing how to select the index to return when that is
+    the case with the method parameter:
+
+    - round: round to nearest index.
+    - ceil: always round up to next higher index.
+    - floor: always round down to next lower index.
 
     Parameters:
         seismogram: Seismogram object.
-        new_begin_time: Start time.
-        new_end_time: End time.
+        time: Time to convert to index.
+        method: Method to use for selecting the index to return.
+
+    Returns:
+        Index of the given sample corresponding to the given time.
+    """
+
+    if not seismogram.begin_time <= time <= seismogram.end_time:
+        raise ValueError("time must be between begin_time and end_time")
+
+    if method not in ["round", "ceil", "floor"]:
+        raise ValueError("method must be 'round', 'ceil' or 'floor'")
+
+    if method == "ceil":
+        return ceil((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+
+    if method == "floor":
+        return floor((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+
+    return round((time - seismogram.begin_time).total_seconds() / seismogram.delta)
+
+
+def crop[T: Seismogram](seismogram: T, begin_time: datetime, end_time: datetime) -> T:
+    """Shorten a seismogram by providing a start and end time.
+
+    Parameters:
+        seismogram: Seismogram object.
+        begin_time: New start time.
+        end_time: New end time.
 
     Returns:
         Cropped Seismogram object.
@@ -42,9 +71,9 @@ def crop[T: Seismogram](
         >>> from pysmo.classes import SAC
         >>> from datetime import timedelta
         >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> new_begin_time = original_seis.begin_time + timedelta(seconds=10)
-        >>> new_end_time = original_seis.end_time - timedelta(seconds=10)
-        >>> cropped_seis = crop(original_seis, new_begin_time, new_end_time)
+        >>> begin_time = original_seis.begin_time + timedelta(seconds=10)
+        >>> end_time = original_seis.end_time - timedelta(seconds=10)
+        >>> cropped_seis = crop(original_seis, begin_time, end_time)
 
     Note:
         The returned seismogram may not have the exact new begin and end
@@ -52,19 +81,18 @@ def crop[T: Seismogram](
         Instead the nearest earlier sample is used as new begin time, and the
         nearest later sample as new end time.
     """
-    old_begin_time = seismogram.begin_time
 
-    if old_begin_time > new_begin_time:
-        raise ValueError("new_begin_time cannot be before seismogram.begin_time")
-    if seismogram.end_time < new_end_time:
-        raise ValueError("new_end_time cannot be after seismogram.end_time")
-    if new_begin_time > new_end_time:
-        raise ValueError("new_begin_time cannot be after new_end_time")
+    if seismogram.begin_time > begin_time:
+        raise ValueError("new begin_time cannot be before seismogram.begin_time")
 
-    start_index = floor(
-        (new_begin_time - old_begin_time).total_seconds() / seismogram.delta
-    )
-    end_index = ceil((new_end_time - old_begin_time).total_seconds() / seismogram.delta)
+    if seismogram.end_time < end_time:
+        raise ValueError("new end_time cannot be after seismogram.end_time")
+
+    if begin_time > end_time:
+        raise ValueError("new begin_time cannot be after end_time")
+
+    start_index = time2index(seismogram, begin_time, "floor")
+    end_index = time2index(seismogram, end_time, "ceil")
 
     clone = deepcopy(seismogram)
     clone.data = seismogram.data[start_index:end_index]
@@ -150,102 +178,3 @@ def resample[T: Seismogram](seismogram: T, delta: float) -> T:
     clone.data = scipy.signal.resample(seismogram.data, npts)
     clone.delta = delta
     return clone
-
-
-def time_array(seismogram: Seismogram) -> npt.NDArray:
-    """Create an array containing Matplotlib dates (number of days since 1970)
-    of each point in the Seismogram data.
-
-    Parameters:
-        seismogram: Seismogram object.
-
-    Returns:
-        Array containing the Matplotlib dates of seismogram data.
-
-    Examples:
-        >>> from pysmo import SAC, time_array
-        >>> my_seis = SAC.from_file('testfile.sac').seismogram
-        >>> seis_data = my_seis.data
-        >>> seis_times = time_array(my_seis)
-        >>> for t, v in zip(seis_times, seis_data):
-        ...     print(t,v)
-        ...
-        12843.30766388889 2302.0
-        12843.307664120372 2313.0
-        12843.307664351854 2345.0
-        12843.307664583335 2377.0
-        ...
-    """
-    start = mdates.date2num(seismogram.begin_time)
-    end = mdates.date2num(seismogram.end_time)
-    return np.linspace(start, end, len(seismogram))
-
-
-def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
-    """Create an array containing unix epoch dates (number of seconds since 1970)
-    of each point in the Seismogram data.
-
-    Parameters:
-        seismogram: Seismogram object.
-
-    Returns:
-        Array containing the unix epoch times of seismogram data.
-
-    Examples:
-        >>> from pysmo import SAC, unix_time_array
-        >>> my_seis = SAC.from_file('testfile.sac').seismogram
-        >>> seis_data = my_seis.data
-        >>> seis_times = unix_time_array(my_seis)
-        >>> for t, v in zip(seis_times, seis_data):
-        ...     print(t,v)
-        ...
-        1109661782.16 2302.0
-        1109661782.18 2313.0
-        1109661782.2 2345.0
-        1109661782.22 2377.0
-        ...
-    """
-    start = seismogram.begin_time.timestamp()
-    end = seismogram.end_time.timestamp()
-    return np.linspace(start, end, len(seismogram))
-
-
-def plotseis(
-    *seismograms: Seismogram,
-    outfile: str = "",
-    showfig: bool = True,
-    title: str = "",
-    **kwargs: dict,
-) -> matplotlib.figure.Figure:
-    """Plot Seismogram objects.
-
-    Parameters:
-        seismograms: One or more seismogram objects. If a 'label' attribute is found
-                     it will be used to label the trace in the plot.
-        outfile: Optionally save figure to this filename.
-        showfig: Display figure.
-        title: Optionally set figure title.
-        kwargs: Optionally add kwargs to pass to the plot command
-
-    Examples:
-        >>> from pysmo import SAC, plotseis
-        >>> seis = SAC.from_file('testfile.sac').seismogram
-        >>> plotseis(seis)
-    """
-    fig = plt.figure()
-    for seis in seismograms:
-        time = time_array(seis)
-        plt.plot(time, seis.data, scalex=True, scaley=True, **kwargs)
-    plt.xlabel("Time")
-    plt.gcf().autofmt_xdate()
-    fmt = mdates.DateFormatter("%H:%M:%S")
-    plt.gca().xaxis.set_major_formatter(fmt)
-    if not title:
-        left, _ = plt.xlim()
-        title = mdates.num2date(left).strftime("%Y-%m-%d %H:%M:%S")
-    plt.title(title)
-    if outfile:
-        plt.savefig(outfile)
-    if showfig:
-        plt.show()
-    return fig

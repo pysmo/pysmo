@@ -19,10 +19,11 @@ provide a brief introduction to the topic to get you started.
 
 ## Dynamic and Static Typing
 
-Python is a *dynamically* typed language. This means that the type (float, string,
-etc.) of a variable isn't set until you run code and assign a value to it. This
-is convenient, but can produce errors at runtime if you are not careful. This
-can be demonstrated with this simple function:
+Python is a *dynamically* typed language. This means that the type
+([`float`][float], [`str`][str], etc.) of a variable isn't set until you run
+code and assign a value to it. This is convenient, but can produce errors at
+runtime if you are not careful. This can be demonstrated with this simple
+function:
 
 ```python title="division.py"
 def division(a, b):
@@ -30,8 +31,8 @@ def division(a, b):
 ```
 
 We load load this function into an interactive Python session and call it with
-the arguments '5' and '2'. Thus both variables `a=5` and `b=2` are numbers and
-we get the expected result
+the arguments `#!py 5` and `#!py 2`. Thus both variables `#!py a=5` and
+`#!py b=2` are numbers and we get the expected result
 
 ```python
 $ python -i division.py
@@ -40,9 +41,10 @@ $ python -i division.py
 >>>
 ```
 
-1. :material-lightbulb: In Python, dividing two integers always creates a float!
+1. :material-lightbulb: In Python, dividing two integers always creates a
+  float!
 
-In a second run, they are set to `a="hello"` and `b="world"`. They
+In a second run, they are set to `#!py a="hello"` and `#!py b="world"`. They
 are now strings, and the code doesn't make much sense anymore...
 
 ```python
@@ -54,21 +56,22 @@ TypeError: unsupported operand type(s) for /: 'str' and 'str'
 >>>
 ```
 
-Evidently the function only can be used if the variables `a` and `b` are numbers.
-To be clear, there is nothing wrong syntactically in this example, but certain
-operations are only available to the correct types (which is why a [TypeError][]
-was raised). To keep track of what types of input a function accepts, and what
-kind of output to expect, *annotations* can be added to the above function:
+Evidently the function only can be used if the variables `#!py a` and `#!py b`
+are numbers. To be clear, there is nothing wrong syntactically in this example,
+but certain operations are only available to the correct types (which is why a
+[`TypeError`][TypeError] was raised). To keep track of what types of input a
+function accepts, and what kind of output to expect, *annotations* can be added
+to the above function:
 
 ```python title="division_annotated.py"
 def division(a: float, b: float) -> float: # (1)!
   return a / b
 ```
 
-1. Besides specifying that `a` and `b` are expected to be floats,
+1. Besides specifying that `#!py a` and `#!py b` are expected to be floats,
     we are also making it clear that the object returned by the
     function is also a float. This is important if the output of
-    the `division` function itself is used elsewhere.
+    the `#!py division` function itself is used elsewhere.
 
 These annotations, also known as *type hints*, are not enforced (i.e. Python will
 still happily try running that function with strings as arguments). However,
@@ -94,15 +97,15 @@ waddle, rather than strictly being of type `Duck`):
 --8<-- "docs/snippets/duck.py"
 ```
 
-1. The duck class has two methods: `quack`and `waddle`.
+1. The `duck` class has two methods: `quack` and `waddle`.
 
-2. A human can walk (waddle) and talk (quack) like a duck.
+2. A human can walk (`waddle`) and talk (`quack`) like a duck.
 
 3. This function, designed to answer the question of whether or not
-    a `thing` is a duck, actually doesn't really care if the thing is a
-    indeed a duck (or not). It merely requires the thing to be able to
+    a `thing` is a duck, actually doesn't really care if the `thing` is a
+    indeed a `duck` (or not). It merely requires the `thing` to be able to
     talk and walk like one. It will determine that any `thing` that is
-    able to quack and waddle is a duck.
+    able to `quack` and `waddle` is a `duck`.
 
 We then use this class in an interactive session, where the `is_a_duck` function
 tells us that `donald` (correctly) and `joe` (incorrectly) are both ducks:
@@ -118,18 +121,18 @@ I must be a duck!
 >>>
 ```
 
-1. Create an instance of Duck called donald.
-2. Create an instance of Human called joe.
+1. Create an instance of `Duck` called `donald`.
+2. Create an instance of `Human` called `joe`.
 
 The reason for this, is simply because the `is_a_duck` function doesn't check at
-all what it is given as input; as long as the `thing` object has the methods `quack`
-and `waddle` it will happily tell us something is a duck. Note that in some
-instances this is actually desired behavior.
+all what it is given as input; as long as the `thing` object has the methods
+`quack` and `waddle` it will happily tell us something is a `duck`. Note that
+in some instances this is actually desired behavior.
 
 ??? example "Duck typing in the wild."
 
     A real world example where duck typing is used in Python, is in the
-    built-in [`len()`][len] function:
+    built-in [`#!py len()`][len] function:
 
     ```python
     >>> my_string = "hello world"
@@ -145,8 +148,8 @@ instances this is actually desired behavior.
     TypeError: object of type 'int' has no len()
     ```
 
-    1.  :material-check: The len() function works with a string, where
-        it returns the number of characters in the string ...
+    1.  :material-check: The [`#!py len()`][len] function works with a string,
+        where it returns the number of characters in the string ...
     2.  :material-check: ... and with a list, where it ruturns the number
         of items in the list.
     3.  :fontawesome-solid-xmark: But not with an integer.
@@ -167,8 +170,8 @@ instances this is actually desired behavior.
 ## Structural subtyping (static duck typing)
 
 The two strategies (duck vs static typing) may appear somewhat orthogonal. In
-cases similar to the [`len()`][len] function they probably are, but what if we
-want duck typing with a bit more control? This is indeed possible with a
+cases similar to the [`#!py len()`][len] function they probably are, but what
+if we want duck typing with a bit more control? This is indeed possible with a
 strategy called
 [structural subtyping](https://mypy.readthedocs.io/en/stable/protocols.html).
 Revisiting the duck example from before, this time with with a new `Robot`
@@ -178,13 +181,13 @@ class and structural subtyping:
 --8<-- "docs/snippets/duck_protocol.py"
 ```
 
-1. We import the Protocol class ...
+1. We import the [`Protocol`][typing.Protocol] class ...
 2. ... and use it to define our `Ducklike` class. This protocol class defines a
     structure (attributes and methods with their respective types) that can be
     compared with structure present in any other class. If those classes have a
     matching structure, they are considered subclasses (in terms of typing) of
     the protocol class.
-3. Ellipses are preferred over "pass" statements here.
+3. :bulb: Ellipses (`...`) are preferred over `pass` statements here.
 4. We add type hints to the otherwise unchanged Duck class. Because it has the
     same structure as the `Ducklike` protocol class, it is implicitly considered
     a subclass of `Ducklike`.
@@ -196,7 +199,7 @@ class and structural subtyping:
     (because we are using type hints). It should be of type `Ducklike`, which
     includes the subclasses of `Ducklike` (`Duck`, and `Human`, but *not* `Robot`).
 
-Loading this new version into an interactive python session we get the
+Loading this new version into an interactive Python session we get the
 following:
 
 ```python
@@ -213,22 +216,22 @@ I must be a duck!  # (2)!
 >>>
 ```
 
-1. As before, donald and joe appear to be ducks.
+1. As before, `donald` and `joe` appear to be `ducks`.
 2. Even this prints "I must be a duck!", but mypy or your IDE will
     mark it as incompatible.
 
-The above example illustrates how protocol classes are used, but doesn't explain
-why they are useful. With regards to pysmo, there are two important lessons to
-be learned here:
+The above example illustrates how [`Protocol`][typing.Protocol] classes are
+used, but doesn't explain why they are useful. With regards to pysmo, there are
+two important lessons to be learned here:
 
-1. The type annotations for the `like_a_duck()` function tell us it is written
-   with the baseclass `Ducklike` in mind instead of a particular implementation
-   of a duck class. This decoupling means we can write code using a well
-   defined and consistent interface.
-2. All attributes and methods in the protocol class need to be matched with the
-   "real" classes, but not the other way around. The `Duck` or `Human` classes
-   may well contain methods like fly, run, eat, sleep, etc. However, they can
-   safely be ignored by `like_a_duck()`.
+1. The type annotations for the `#!py like_a_duck()` function tell us it is
+   written with the base class `Ducklike` in mind instead of a particular
+   implementation of a `duck` class. This decoupling means we can write code
+   using a well defined and consistent interface.
+2. All attributes and methods in the [`Protocol`][typing.Protocol] class need
+   to be matched with the "real" classes, but not the other way around. The
+   `Duck` or `Human` classes may well contain methods like `fly`, `run`, `eat`,
+   `sleep`, etc. However, they can safely be ignored by `#!py like_a_duck()`.
 
 In isolation the above two points may not appear that significant, but when we
 put them together the implications are quite substantial. The goal when writing
@@ -245,7 +248,7 @@ discuss in greater detail later on.
 { .annotate }
 
 1. A generic class is a *proper* class, which holds data, has methods and
-   attributes etc (unlike a [protocol][typing.Protocol] class, which only
+   attributes etc (unlike a [`Protocol`][typing.Protocol] class, which only
    contains the structure of a class).
 
 ## Next steps

@@ -52,7 +52,7 @@ you can find the following in the psymo package:
 - [Functions](./functions.md): basic functions used to manipulate data that is
   stored in the classes described above. They are imported from the
   [`pysmo.functions`](../reference/functions.md) namespace.
-- Tools: provide the framework-like functionality described above.
+- [Tools](../reference/tools.md): provide the framework-like functionality described above.
   This is for example grouping of functions belonging to a particular topic,
   or providing more complex workflows (typically building on top of the
   basic functions or other tools). In order to use a particular tool, you must
@@ -65,4 +65,5 @@ you can find the following in the psymo package:
     Python). As for pysmo, the main reason for breaking things up into multiple
     namespaces is to make it easy to add new functionality to pysmo without
     the need to edit existing code. As a user this simply means you may need to
-    use more than one `import` statement at the begining of your scripts.
+    occasionally use more than one `import` statement at the begining of your
+    scripts.

@@ -1,12 +1,16 @@
 # Classes
 
+The types discussed in the [previous chapter](../types) are only useful in
+conjunction with compatible classes. The pysmo package contains classes that
+work with pysmo types (in the [`pysmo`][pysmo] and
+[`pysmo.classes`][pysmo.classes] namespaces). Here we discuss how to write your
+own classes that work with pysmo types.
+
 ## Writing compatible classes
 
-The types discussed in the [previous chapter](../types) are only useful in
-conjunction with compatible classes. A class is is compatible with a particular
-type if all attributes and methods present in the type (defined by the
-respective protocol class) are also present in the class itself. For example, a
-`City` class may look something like this:
+A class is is compatible with a particular type if all attributes and methods
+present in the type (defined by the respective protocol class) are also present
+in the class itself. For example, a `City` class may look something like this:
 
 ```python title="city.py"
 --8<-- "docs/snippets/city.py"
@@ -236,8 +240,8 @@ True
 ```
 
 1. `my_sac.seismogram` is an instance of
-  [`SacSeismogram`][pysmo.classes.sac.SacSeismogram] and is therefore
+  [`SacSeismogram`][pysmo.classes.SacSeismogram] and is therefore
   compatible with the [`Seismogram`][pysmo.Seismogram] type.
 2. `my_sac.station` is an instance of
-  [`SacStation`][pysmo.classes.sac.SacStation] and is therefore compatible with
+  [`SacStation`][pysmo.classes.SacStation] and is therefore compatible with
   the [`Station`][pysmo.Station] type.
