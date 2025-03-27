@@ -10,10 +10,11 @@ Functions:
 from datetime import timedelta
 import numpy as np
 import numpy.typing as npt
+from copy import deepcopy
 from math import ceil
 from scipy.signal import correlate as _correlate
 from scipy.stats import pearsonr as _pearsonr
-from pysmo import Seismogram, MiniSeismogram
+from pysmo import Seismogram
 
 
 def delay(
@@ -139,7 +140,7 @@ def delay(
     return delay, float(covr)
 
 
-def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
+def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
@@ -159,12 +160,12 @@ def envelope(seismogram: Seismogram, Tn: float, alpha: float) -> MiniSeismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
     """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone = deepcopy(seismogram)
     clone.data = _gauss(seismogram, Tn, alpha)[0]
     return clone
 
 
-def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
+def gauss[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
     """
     Returns a gaussian filtered seismogram.
 
@@ -184,7 +185,7 @@ def gauss(seismogram: Seismogram, Tn: float, alpha: float) -> Seismogram:
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)
     """
-    clone = MiniSeismogram.clone(seismogram, skip_data=True)
+    clone = deepcopy(seismogram)
     clone.data = _gauss(seismogram, Tn, alpha)[1]
     return clone
 

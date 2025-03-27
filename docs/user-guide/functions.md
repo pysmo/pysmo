@@ -70,7 +70,7 @@ exactly that is going to be.
 
 !!! tip
 
-    A good editor will display type information without running mypy:
+    A modern editor may display type information without running mypy:
 
     ![reveal type](../images/func_reveal_dark.png#only-dark){ loading=lazy }
     ![reveal type](../images/func_reveal_light.png#only-light){ loading=lazy }
@@ -88,8 +88,7 @@ Mini class, one strategy is to use those as output types:
   [classmethod][classmethod], which creates
   [`MiniSeismogram`][pysmo.MiniSeismogram] instances from other
   [`Seismogram`][pysmo.Seismogram] instances. It is typically faster than deep
-  copying, and also has the option to skip the seismogram data when a clone is
-  instantiated.
+  copying.
 
 ## Type preservation
 

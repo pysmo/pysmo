@@ -1,6 +1,7 @@
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.classes import SAC
 from datetime import timedelta
+from copy import deepcopy
 import pytest
 import pytest_cases
 import numpy as np
@@ -50,31 +51,48 @@ class TestSeismogramFunctions:
         """Normalize data with its absolute maximum value"""
         from pysmo.functions import normalize
 
-        normalized_seis = normalize(seismogram)
+        normalized_seis = normalize(seismogram, clone=True)
         assert np.max(normalized_seis.data) <= 1
+
+        seis2 = deepcopy(seismogram)
+        normalize(seis2)
+        assert all(normalized_seis.data == seis2.data)
 
     def test_detrend(self, seismogram: Seismogram) -> None:
         """Detrend Seismogram object and verify mean is 0."""
         from pysmo.functions import detrend
 
-        detrended_seis = detrend(seismogram)
+        detrended_seis = detrend(seismogram, clone=True)
         assert pytest.approx(np.mean(detrended_seis.data), abs=1e-6) == 0
+
+        seis2 = deepcopy(seismogram)
+        detrend(seis2)
+        assert all(detrended_seis.data == seis2.data)
 
     def test_resample(self, seismogram: Seismogram) -> None:
         """Resample Seismogram object and verify resampled data."""
         from pysmo.functions import resample
 
         new_delta = seismogram.delta * 2
-        resampled_seis = resample(seismogram, new_delta)
+        resampled_seis = resample(seismogram, new_delta, clone=True)
         assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
         assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
+
+        seis2 = deepcopy(seismogram)
+        resample(seis2, new_delta)
+        assert all(resampled_seis.data == seis2.data)
 
     def test_crop(self, seismogram: Seismogram) -> None:
         """Crop Seismogram object and verify cropped data."""
         from pysmo.functions import crop
         from math import floor, ceil
 
-        cropped_seis = crop(seismogram, seismogram.begin_time, seismogram.end_time)
+        cropped_seis = crop(
+            seismogram,
+            begin_time=seismogram.begin_time,
+            end_time=seismogram.end_time,
+            clone=True,
+        )
         assert len(cropped_seis) == len(seismogram)
         assert cropped_seis.begin_time == seismogram.begin_time
         assert cropped_seis.end_time == seismogram.end_time
@@ -98,12 +116,12 @@ class TestSeismogramFunctions:
             ceil((new_end_time - seismogram.begin_time) / seismogram.delta) + 1
         )
         with pytest.raises(ValueError):
-            _ = crop(seismogram, bad_new_begin_time, new_end_time)
+            crop(seismogram, bad_new_begin_time, new_end_time)
         with pytest.raises(ValueError):
-            _ = crop(seismogram, new_begin_time, bad_new_end_time)
+            crop(seismogram, new_begin_time, bad_new_end_time)
         with pytest.raises(ValueError):
-            _ = crop(seismogram, new_end_time, new_begin_time)
-        cropped_seis = crop(seismogram, new_begin_time, new_end_time)
+            crop(seismogram, new_end_time, new_begin_time)
+        cropped_seis = crop(seismogram, new_begin_time, new_end_time, clone=True)
         assert cropped_seis.begin_time.timestamp() == pytest.approx(
             new_begin_time.timestamp(), abs=seismogram.delta.total_seconds()
         )
@@ -111,3 +129,7 @@ class TestSeismogramFunctions:
             new_end_time.timestamp(), abs=seismogram.delta.total_seconds()
         )
         assert all(seismogram.data[new_start_index:new_end_index] == cropped_seis.data)
+
+        seis2 = deepcopy(seismogram)
+        crop(seis2, new_begin_time, new_end_time)
+        assert all(cropped_seis.data == seis2.data)
