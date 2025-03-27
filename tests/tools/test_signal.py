@@ -69,7 +69,7 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     rand_int = int(random.uniform(10, 100))
     seismogram1 = MiniSeismogram.clone(seismogram, skip_data=True)
     seismogram1.data = seismogram.data[1000:10000]
-    seismogram1 = detrend(seismogram1)
+    seismogram1 = detrend(seismogram1, clone=True)
 
     seismogram2 = MiniSeismogram.clone(seismogram1)
     seismogram2.delta = seismogram1.delta * 2
@@ -120,7 +120,7 @@ def test_delay_with_made_up_data() -> None:
     seismogram1 = MiniSeismogram(data=data1)
     seismogram2 = MiniSeismogram(data=data2)
     seismogram3 = MiniSeismogram(data=-data2)
-    seismogram3 = detrend(seismogram3)
+    detrend(seismogram3)
     cc_delay, cc_coeff = delay(seismogram1, seismogram2)
     assert cc_delay.total_seconds() == pytest.approx(-1)
     assert cc_coeff == pytest.approx(1)
