@@ -1,21 +1,17 @@
-from typing import Callable, TypeVar, ParamSpec
+from typing import Any
+from collections.abc import Callable
 from functools import wraps
 
-T = TypeVar("T")
-P = ParamSpec("P")
 
-
-# HACK: Since the args are known this should work without
-# ParamSpec (i.e. using only TypVar).
-def value_not_none(function: Callable[P, T]) -> Callable[P, T]:
+def value_not_none(function: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to prevent the value in properties from being None"""
 
     @wraps(function)
-    def decorator(*args: P.args, **kwargs: P.kwargs) -> T:
-        instance, value = args
+    def decorator(*args: Any, **kwargs: Any) -> Any:
+        instance, value, *_ = args
         if value is None:
             raise TypeError(
-                f"{instance.__class__.__name__}.{function.__name__} may not be of None type."  # noqa: E501
+                f"{instance.__class__.__name__}.{function.__name__} may not be of None type."
             )
         return function(*args, **kwargs)
 
