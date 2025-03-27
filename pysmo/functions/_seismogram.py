@@ -1,8 +1,8 @@
+from copy import deepcopy
 from pysmo import Seismogram
 from datetime import datetime, timedelta
-from copy import deepcopy
 from math import floor, ceil
-from typing import Literal
+from typing import Literal, overload
 import scipy.signal
 import numpy as np
 
@@ -13,6 +13,207 @@ __all__ = [
     "resample",
     "time2index",
 ]
+
+
+@overload
+def crop(
+    seismogram: Seismogram,
+    begin_time: datetime,
+    end_time: datetime,
+    clone: Literal[False] = False,
+) -> None: ...
+
+
+@overload
+def crop[T: Seismogram](
+    seismogram: T, begin_time: datetime, end_time: datetime, clone: Literal[True]
+) -> T: ...
+
+
+def crop[T: Seismogram](
+    seismogram: T, begin_time: datetime, end_time: datetime, clone: bool = False
+) -> None | T:
+    """Shorten a seismogram by providing a start and end time.
+
+    Parameters:
+        seismogram: [`Seismogram`][pysmo.Seismogram] object.
+        begin_time: New start time.
+        end_time: New end time.
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Cropped [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Examples:
+        >>> from pysmo.functions import crop
+        >>> from pysmo.classes import SAC
+        >>> from datetime import timedelta
+        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> new_begin_time = sac_seis.begin_time + timedelta(seconds=10)
+        >>> new_end_time = sac_seis.end_time - timedelta(seconds=10)
+        >>> crop(sac_seis, new_begin_time, new_end_time)
+
+    Note:
+        The returned seismogram may not have the exact new begin and end
+        times that are specified as input, as no resampling is performed.
+        Instead the nearest earlier sample is used as new begin time, and the
+        nearest later sample as new end time.
+    """
+
+    if seismogram.begin_time > begin_time:
+        raise ValueError("new begin_time cannot be before seismogram.begin_time")
+
+    if seismogram.end_time < end_time:
+        raise ValueError("new end_time cannot be after seismogram.end_time")
+
+    if begin_time > end_time:
+        raise ValueError("new begin_time cannot be after end_time")
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    start_index = time2index(seismogram, begin_time, "floor")
+    end_index = time2index(seismogram, end_time, "ceil")
+
+    seismogram.data = seismogram.data[start_index : end_index + 1]
+    seismogram.begin_time = seismogram.begin_time + seismogram.delta * start_index
+
+    if clone is True:
+        return seismogram
+
+    return None
+
+
+@overload
+def detrend(seismogram: Seismogram, clone: Literal[False] = False) -> None: ...
+
+
+@overload
+def detrend[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+
+
+def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
+    """Remove linear and/or constant trends from a seismogram.
+
+    Parameters:
+        seismogram: Seismogram object.
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Detrended [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Examples:
+        >>> import numpy as np
+        >>> import pytest
+        >>> from pysmo.functions detrend
+        >>> from pysmo.classes import SAC
+        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> assert 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        False
+        >>> detrend(sac_seis)
+        >>> assert 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        True
+    """
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    seismogram.data = scipy.signal.detrend(seismogram.data)
+
+    if clone is True:
+        return seismogram
+
+    return None
+
+
+@overload
+def normalize(seismogram: Seismogram, clone: Literal[False] = False) -> None: ...
+
+
+@overload
+def normalize[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+
+
+def normalize[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
+    """Normalize a seismogram with its absolute max value
+
+    Parameters:
+        seismogram: Seismogram object.
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Normalized [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
+
+    Examples:
+        >>> import numpy as np
+        >>> from pysmo.functions import normalize
+        >>> from pysmo.classes import SAC
+        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> normalize(sac_seis)
+        >>> assert np.max(sac_seis.data) <= 1
+        True
+    """
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    norm = np.max(np.abs(seismogram.data))
+    seismogram.data /= norm
+
+    if clone is True:
+        return seismogram
+
+    return None
+
+
+@overload
+def resample(
+    seismogram: Seismogram, delta: timedelta, clone: Literal[False] = False
+) -> None: ...
+
+
+@overload
+def resample[T: Seismogram](
+    seismogram: T, delta: timedelta, clone: Literal[True]
+) -> T: ...
+
+
+def resample[T: Seismogram](
+    seismogram: T, delta: timedelta, clone: bool = False
+) -> None | T:
+    """Resample Seismogram object data using the Fourier method.
+
+    Parameters:
+        seismogram: Seismogram object.
+        delta: New sampling interval.
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Resampled [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Examples:
+        >>> from pysmo.functions import resample
+        >>> from pysmo.classes import SAC
+        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> len(sac_seis)
+        180000
+        >>> original_delta = sac_seis.delta
+        >>> new_delta = original_delta * 2
+        >>> resample(sac_seis, new_delta)
+        >>> len(sac_seis)
+        90000
+    """
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    npts = int(len(seismogram) * seismogram.delta / delta)
+    seismogram.data = scipy.signal.resample(seismogram.data, npts)
+    seismogram.delta = delta
+
+    if clone is True:
+        return seismogram
+
+    return None
 
 
 def time2index(
@@ -37,7 +238,7 @@ def time2index(
         method: Method to use for selecting the index to return.
 
     Returns:
-        Index of the given sample corresponding to the given time.
+        Index of the sample corresponding to the given time.
     """
 
     if not seismogram.begin_time <= time <= seismogram.end_time:
@@ -53,126 +254,3 @@ def time2index(
         return floor((time - seismogram.begin_time) / seismogram.delta)
 
     return round((time - seismogram.begin_time) / seismogram.delta)
-
-
-def crop[T: Seismogram](seismogram: T, begin_time: datetime, end_time: datetime) -> T:
-    """Shorten a seismogram by providing a start and end time.
-
-    Parameters:
-        seismogram: Seismogram object.
-        begin_time: New start time.
-        end_time: New end time.
-
-    Returns:
-        Cropped Seismogram object.
-
-    Examples:
-        >>> from pysmo import crop
-        >>> from pysmo.classes import SAC
-        >>> from datetime import timedelta
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> begin_time = original_seis.begin_time + timedelta(seconds=10)
-        >>> end_time = original_seis.end_time - timedelta(seconds=10)
-        >>> cropped_seis = crop(original_seis, begin_time, end_time)
-
-    Note:
-        The returned seismogram may not have the exact new begin and end
-        times that are specified as input, as no resampling is performed.
-        Instead the nearest earlier sample is used as new begin time, and the
-        nearest later sample as new end time.
-    """
-
-    if seismogram.begin_time > begin_time:
-        raise ValueError("new begin_time cannot be before seismogram.begin_time")
-
-    if seismogram.end_time < end_time:
-        raise ValueError("new end_time cannot be after seismogram.end_time")
-
-    if begin_time > end_time:
-        raise ValueError("new begin_time cannot be after end_time")
-
-    start_index = time2index(seismogram, begin_time, "floor")
-    end_index = time2index(seismogram, end_time, "ceil")
-
-    clone = deepcopy(seismogram)
-    clone.data = seismogram.data[start_index : end_index + 1]
-    clone.begin_time = seismogram.begin_time + clone.delta * start_index
-    return clone
-
-
-def normalize[T: Seismogram](seismogram: T) -> T:
-    """Normalize a seismogram with its absolute max value
-
-    Parameters:
-        seismogram: Seismogram object.
-
-    Returns:
-        Normalized Seismogram object.
-
-    Examples:
-        >>> import numpy as np
-        >>> from pysmo import SAC, normalize
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> normalized_seis = normalize(original_seis)
-        >>> assert np.max(normalized_seis.data) <= 1
-        True
-    """
-
-    clone = deepcopy(seismogram)
-    norm = np.max(np.abs(seismogram.data))
-    clone.data = seismogram.data / norm
-    return clone
-
-
-def detrend[T: Seismogram](seismogram: T) -> T:
-    """Remove linear and/or constant trends from a seismogram.
-
-    Parameters:
-        seismogram: Seismogram object.
-
-    Returns:
-        Detrended Seismogram object.
-
-    Examples:
-        >>> import numpy as np
-        >>> import pytest
-        >>> from pysmo import SAC, detrend
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> assert 0 == pytest.approx(np.mean(original_seis.data), abs=1e-11)
-        False
-        >>> detrended_seis = detrend(original_seis)
-        >>> assert 0 == pytest.approx(np.mean(detrended_seis.data), abs=1e-11)
-        True
-    """
-    clone = deepcopy(seismogram)
-    clone.data = scipy.signal.detrend(seismogram.data)
-    return clone
-
-
-def resample[T: Seismogram](seismogram: T, delta: timedelta) -> T:
-    """Resample Seismogram object data using the Fourier method.
-
-    Parameters:
-        seismogram: Seismogram object.
-        delta: New sampling interval.
-
-    Returns:
-        Resampled Seismogram object.
-
-    Examples:
-        >>> from pysmo import SAC, resample
-        >>> original_seis = SAC.from_file('testfile.sac').seismogram
-        >>> len(original_seis)
-        180000
-        >>> original_delta = original_seis.delta
-        >>> new_delta = original_delta * 2
-        >>> resampled_seis = resample(original_seis, new_delta)
-        >>> len(resampled_seis)
-        90000
-    """
-
-    npts = int(len(seismogram) * seismogram.delta / delta)
-    clone = deepcopy(seismogram)
-    clone.data = scipy.signal.resample(seismogram.data, npts)
-    clone.delta = delta
-    return clone
