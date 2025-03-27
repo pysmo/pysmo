@@ -94,20 +94,23 @@ plugins:
           options:
             allow_inspection: true
             backlinks: tree
-            # docstring_section_style: spacy
+            docstring_section_style: list
             docstring_style: google
             # extensions:
             #   - griffe_fieldz
+            # force_inspection: true
             inherited_members: true
             modernize_annotations: true
-            parameter_headings: true
+            parameter_headings: false
             separate_signature: true
+            # show_if_no_docstring: false
             show_inheritance_diagram: true
+            show_overloads: false
             show_signature_annotations: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             signature_crossrefs: true
-            with_preloaded_modules: true
+            # with_preloaded_modules: true
           import:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
