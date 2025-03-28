@@ -4,8 +4,7 @@ import numpy.testing as npt
 from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
 from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo._io import SacIO
-from pysmo.exc import SacHeaderUndefined
+from pysmo._io import SacIO, SacHeaderUndefined
 from datetime import datetime, timedelta, timezone
 import pytest
 

@@ -27,7 +27,7 @@ header_types:
     undefined: FALSE
     description: Name begins with an "L". Value is either TRUE or FALSE.
     length: 1
-    format: '?'
+    format: "?"
 
   k:
     definition: alphanumeric
@@ -38,7 +38,7 @@ header_types:
 
   a:
     definition: auxilary
-    undefined: ''
+    undefined: ""
     description: Not really in the header. Derived from other header fields.
 
   d:
@@ -560,7 +560,7 @@ header_fields:
       qb1: Quarry/mine blast with designed shot info-ripple fired.
       qb2: Quarry/mine blast with observed shot info-ripple fired.
       qbx: Quarry or mine blast - single shot.
-      qmt: 'Quarry/mining-induced events: tremors and rockbursts.'
+      qmt: "Quarry/mining-induced events: tremors and rockbursts."
       eq: Earthquake.
       eq1: Earthquakes in a swarm or aftershock sequence.
       eq2: Felt earthquake.
@@ -710,7 +710,7 @@ header_fields:
     header_type: k
 
   khole:
-    description: 'Nuclear: hole identifier; Other: location identifier (LOCID).'
+    description: "Nuclear: hole identifier; Other: location identifier (LOCID)."
     start: 464
     header_type: k
 
