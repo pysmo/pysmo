@@ -1,4 +1,4 @@
-from pysmo._lib.defaults import SACIO_DEFAULTS
+from pysmo._io._sacio._defaults import SACIO_DEFAULTS
 from jinja2 import Environment, FileSystemLoader
 import os
 import yaml
@@ -7,7 +7,7 @@ from black import FileMode, format_file_contents
 MYDIR = os.path.dirname(__file__)
 
 # skip these from being rendered automatically and define
-# them in the template file directly
+# them in sacio.py directly
 properties = [
     "depmin",
     "depmax",
@@ -77,9 +77,9 @@ for header, header_dict in headers.items():
         headers[header]["python_type"] = "bool"
 
 
-environment = Environment(loader=FileSystemLoader(os.path.join(MYDIR, "templates/")))
+environment = Environment(loader=FileSystemLoader(MYDIR))
 template = environment.get_template("sacio-template.py.j2")
-outfile = "sacio.py"
+outfile = os.path.join(MYDIR, "_sacio_rendered.py")
 
 # remove 'a' since it doesn't make sense here
 header_types.pop("a")
