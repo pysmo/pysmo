@@ -1,8 +1,7 @@
 from typing import Literal, get_args, overload, Self
-from pysmo._io import SacIO
+from pysmo._io import SacIO, SacHeaderUndefined
 from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo._lib.decorators import value_not_none
-from pysmo.exc import SacHeaderUndefined
 from attrs import define, field
 from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
