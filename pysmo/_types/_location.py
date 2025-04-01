@@ -26,7 +26,7 @@ class Location(Protocol):
     def longitude(self, value: float) -> None: ...
 
 
-@define(kw_only=True)
+@define(kw_only=True, slots=True)
 class MiniLocation:
     """Minimal class for use with the [`Location`][pysmo.Location] type.
 

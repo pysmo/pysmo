@@ -1,4 +1,4 @@
-from pysmo._io._sacio._defaults import SACIO_DEFAULTS
+from pysmo.lib.io._sacio._defaults import SACIO_DEFAULTS
 from jinja2 import Environment, FileSystemLoader
 import os
 import yaml

@@ -1,4 +1,7 @@
-"""Pysmo provides functions that perform common operations on the types of data that
+"""
+Utilities for plotting with pysmo types.
+
+Pysmo provides functions that perform common operations on the types of data that
 match pysmo's types.
 """
 

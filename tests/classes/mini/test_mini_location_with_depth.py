@@ -1,30 +1,30 @@
-from pysmo import Hypocenter, MiniHypocenter
+from pysmo import LocationWithDepth, MiniLocationWithDepth
 import pytest
 
 
-class TestMiniHypocenter:
+class TestMiniLocationWithDepth:
     def test_create_instance(self) -> None:
         """Test creating an instance."""
 
         with pytest.raises(TypeError):
-            minihypocenter = MiniHypocenter()  # type: ignore
+            minihypocenter = MiniLocationWithDepth()  # type: ignore
         latitude, longitude, depth = 1.1, 2.2, 1000
-        minihypocenter = MiniHypocenter(
+        minihypocenter = MiniLocationWithDepth(
             latitude=latitude, longitude=longitude, depth=depth
         )
-        assert isinstance(minihypocenter, MiniHypocenter)
-        assert isinstance(minihypocenter, Hypocenter)
+        assert isinstance(minihypocenter, MiniLocationWithDepth)
+        assert isinstance(minihypocenter, LocationWithDepth)
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
         latitude, longitude, depth = 1.1, 2.2, 1000
         new_latitude, new_longitude, new_depth = -21.1, -22.2, 500.2
 
-        minihypocenter = MiniHypocenter(
+        minihypocenter = MiniLocationWithDepth(
             latitude=latitude, longitude=longitude, depth=depth
         )
 
-        assert isinstance(minihypocenter, Hypocenter)
+        assert isinstance(minihypocenter, LocationWithDepth)
 
         assert minihypocenter.depth == depth
         assert minihypocenter.latitude == latitude

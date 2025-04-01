@@ -1,7 +1,4 @@
-"""
-This module contains extra classes that provide access to data in a way that is
-consistent with pysmo protocols.
-"""
+"""Classes that work with pysmo types."""
 
 from ._sac import *  # noqa: F403
 
