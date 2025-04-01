@@ -47,12 +47,12 @@ you can find the following in the psymo package:
   classes are minimal implementations of pysmo type compatible classes, and are
   thus named with a `Mini` prefix
   (e.g. [`MiniSeismogram`][pysmo.MiniSeismogram]). The `Mini` classes are in
-  the base ([`pysmo`](../reference/base.md)) namespace, while others are in
-  [`pysmo.classes`](../reference/classes.md).
+  the base ([`pysmo`][pysmo]) namespace, while others are in
+  [`pysmo.classes`][pysmo.classes]).
 - [Functions](./functions.md): basic functions used to manipulate data that is
   stored in the classes described above. They are imported from the
-  [`pysmo.functions`](../reference/functions.md) namespace.
-- [Tools](../reference/tools.md): provide the framework-like functionality described above.
+  [`pysmo.functions`][pysmo.functions] namespace.
+- [Tools][pysmo.tools]: provide the framework-like functionality described above.
   This is for example grouping of functions belonging to a particular topic,
   or providing more complex workflows (typically building on top of the
   basic functions or other tools). In order to use a particular tool, you must

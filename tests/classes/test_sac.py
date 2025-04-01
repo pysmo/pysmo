@@ -3,8 +3,8 @@ import numpy as np
 import numpy.testing as npt
 from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
-from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo._io import SacIO, SacHeaderUndefined
+from pysmo.lib.io import SacIO, SacHeaderUndefined
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from datetime import datetime, timedelta, timezone
 import pytest
 
@@ -27,9 +27,8 @@ class TestSAC:
     def test_defaults(self) -> None:
         sac = SAC()
 
-        assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time
-        assert sac.seismogram.end_time == SEISMOGRAM_DEFAULTS.begin_time
-        assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta
+        assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time.value
+        assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta.value
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 
         with pytest.raises(SacHeaderUndefined):

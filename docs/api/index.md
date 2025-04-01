@@ -5,7 +5,4 @@
       show_root_toc_entry: true
       inherited_members: true
       members_order: source
-      summary:
-        classes: true
-        attributes: true
-        functions: true
+      summary: true

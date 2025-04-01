@@ -1,8 +1,8 @@
 # Classes
 
-The types discussed in the [previous chapter](../types) are only useful in
-conjunction with compatible classes. The pysmo package contains classes that
-work with pysmo types (in the [`pysmo`][pysmo] and
+The types discussed in the [previous chapter](/user-guide/types/) are only
+useful in conjunction with compatible classes. The pysmo package contains
+classes that work with pysmo types (in the [`pysmo`][pysmo] and
 [`pysmo.classes`][pysmo.classes] namespaces). Here we discuss how to write your
 own classes that work with pysmo types.
 
@@ -118,25 +118,26 @@ writing these kinds of classes from scratch.
 [SAC](<https://ds.iris.edu/ds/nodes/dmc/software/downloads/sac/>) (Seismic
 Analysis Code) is a commonly used program that uses its own file format. Pysmo
 was initially conceived as a small project to read and write SAC files using
-Python. This was done with the [`SacIO`][pysmo._io.SacIO] class, which is still
-part of the pysmo package. However, it is not compatible with pysmo types, and
-is therefore not intended to be used directly anymore. It now serves as base
-for the [`SAC`][pysmo.classes.SAC] class, which adds a compatibility layer that
-enables using pysmo types. We can therefore use the SAC classes as an example
-of how to adapt existing third party classes to work with pysmo types.
+Python. This was done with the [`SacIO`][pysmo.lib.io.SacIO] class, which is
+still part of the pysmo package. However, it is not compatible with pysmo
+types, and is therefore not intended to be used directly anymore. It now serves
+as base for the [`SAC`][pysmo.classes.SAC] class, which adds a compatibility
+layer that enables using pysmo types. We can therefore use the SAC classes as
+an example of how to adapt existing third party classes to work with pysmo
+types.
 
-### Adding attributes to the `SacIO` class
+### Adding attributes to the [`SacIO`][pysmo.lib.io.SacIO] class
 
-The [`SacIO`][pysmo._io.SacIO] class allows us to create objects from SAC
+The [`SacIO`][pysmo.lib.io.SacIO] class allows us to create objects from SAC
 files, which we can then access in Python:
 
 ```python title="read_sacfile.py"
 --8<-- "docs/snippets/read_sacfile.py"
 ```
 
-After creating `SacIO` objects, SAC data and header fields can be accessed
-using the same names as used in the SAC file format (in lowercase). For
-example for the station location:
+After creating [`SacIO`][pysmo.lib.io.SacIO] objects, SAC data and header
+fields can be accessed using the same names as used in the SAC file format (in
+lowercase). For example for the station location:
 
 <!-- termynal -->
 
@@ -172,12 +173,13 @@ easily by creating a new class which inherits from the original one:
 ```
 
 1. `STLA` and `STLO` are optional header fields in a SAC file. However, the
-  [`Location`][pysmo.Location] type requires the `latitude` and `longitude`
-  attributes to be [`floats`][float] (i.e. they may not be of type
-  [`None`][None]).
+  [`Location`][pysmo.Location] type requires the
+  [`latitude`][pysmo.Location.latitude] and
+  [`longitude`][pysmo.Location.longitude] attributes to be [`floats`][float]
+  (i.e. they may not be of type [`None`][None]).
 
 Objects created from this new class can do everything the
-[`SacIO`][pysmo._io.SacIO] class can do, while also matching the
+[`SacIO`][pysmo.lib.io.SacIO] class can do, while also matching the
 [`Location`][pysmo.Location] type. Changing the mapped attributes will also
 change the original ones:
 
@@ -195,10 +197,10 @@ True
 ```
 
 With just a few lines of code we were able to make the
-[`SacIO`][pysmo._io.SacIO] class (itself over 1000 lines of code) compatible
+[`SacIO`][pysmo.lib.io.SacIO] class (itself over 1000 lines of code) compatible
 with the [`Location`][pysmo.Location] type. That said, creating new attributes
 directly and mapping them to existing ones may not always be possible for large
-classes like [`SacIO`][pysmo._io.SacIO]. For example, the event location is
+classes like [`SacIO`][pysmo.lib.io.SacIO]. For example, the event location is
 also stored in the headers of a SAC file, but we can't map it to the `latitude`
 and `longitude` attributes because they are already used for the station
 location. A more flexible approach is to map attributes into helper classes,
@@ -221,7 +223,7 @@ which themselves are attributes in a new class.
 ### SAC helper classes
 
 Because SAC files have a large number of header fields,
-[`SacIO`][pysmo._io.SacIO] objects have the potential to match several
+[`SacIO`][pysmo.lib.io.SacIO] objects have the potential to match several
 different pysmo types (or the same type multiple times). For the actual
 implementation of the above principle in the [`SAC`][pysmo.classes.SAC] class
 packaged in pysmo, we therefore use helper classes to provide a clear way to
