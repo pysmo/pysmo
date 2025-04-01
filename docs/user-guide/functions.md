@@ -22,6 +22,17 @@ Because the function output is always a [`float`][float], we don't lose track
 of any typing information when the function output is used elsewhere (e.g. in a
 function that needs a [`float`][float] as input).
 
+!!! Warning
+
+    Be careful when changing attributes of the input class inside a function.
+    Sometimes the attributes are objects that contain other objects (e.g. an
+    [`ndarray`][numpy.ndarray] containing [`float`][float] objects). In our
+    example above, the `seismogram` we use as input shares the nested objects
+    in the `data` attribute with the `seismogram` inside the function. Changing
+    `seismgram.data` inside the function will therefore also change it outside
+    too. This behavior is often desired, but you must be aware of when this
+    occurs and when not.
+
 ## Mini classes as output
 
 While it may be perfectly acceptable to use pysmo types as output, we often
@@ -84,11 +95,10 @@ Mini class, one strategy is to use those as output types:
 --8<-- "docs/snippets/double_delta_mini.py"
 ```
 
-1. [`MiniSeismogram`][pysmo.MiniSeismogram] has a `clone`
-  [classmethod][classmethod], which creates
-  [`MiniSeismogram`][pysmo.MiniSeismogram] instances from other
+1. Here we use the [`clone_to_mini`][pysmo.functions.clone_to_mini] function
+  to create a [`MiniSeismogram`][pysmo.MiniSeismogram] instances from other
   [`Seismogram`][pysmo.Seismogram] instances. It is typically faster than deep
-  copying.
+  copying because it only copies the attributes that are actually used.
 
 ## Type preservation
 

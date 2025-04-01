@@ -3,8 +3,8 @@ from pysmo import (
     MiniSeismogram,
     Station,
     MiniStation,
-    Hypocenter,
-    MiniHypocenter,
+    LocationWithDepth,
+    MiniLocationWithDepth,
 )
 from pysmo.classes import SAC
 from typing import Dict
@@ -129,8 +129,8 @@ def sac_event(sac_instance: SAC):  # type: ignore
 
 
 @pytest.fixture()
-def mini_hypocenter(sac_event) -> MiniHypocenter:  # type:ignore
-    return MiniHypocenter(
+def mini_hypocenter(sac_event) -> MiniLocationWithDepth:  # type:ignore
+    return MiniLocationWithDepth(
         latitude=sac_event.latitude,
         longitude=sac_event.longitude,
         depth=sac_event.depth,
@@ -139,6 +139,6 @@ def mini_hypocenter(sac_event) -> MiniHypocenter:  # type:ignore
 
 @pytest.fixture()
 def hypocenters(
-    sac_event: Hypocenter, mini_hypocenter: Hypocenter
-) -> tuple[Hypocenter, ...]:
+    sac_event: LocationWithDepth, mini_hypocenter: LocationWithDepth
+) -> tuple[LocationWithDepth, ...]:
     return sac_event, mini_hypocenter

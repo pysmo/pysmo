@@ -139,13 +139,22 @@ nav:
       - user-guide/classes.md
       - user-guide/functions.md
   - API Reference:
-      - pysmo: reference/base.md
-      - pysmo.functions: reference/functions.md
-      - pysmo.classes: reference/classes.md
-      - pysmo.tools: reference/tools.md
-      - pysmo._io: reference/_io.md
-  - Gallery:
-      - gallery/index.md
+      - pysmo:
+          - api/index.md
+      - pysmo.classes:
+          - api/pysmo/classes/index.md
+      - pysmo.functions:
+          - api/pysmo/functions/index.md
+      - pysmo.tools:
+          - api/pysmo/tools/index.md
+          - azdist: api/pysmo/tools/azdist.md
+          - noise: api/pysmo/tools/noise.md
+          - plotutils: api/pysmo/tools/plotutils.md
+          - signal: api/pysmo/tools/signal.md
+      - pysmo.lib:
+          - api/pysmo/lib/index.md
+  # - Gallery:
+  #     - gallery/index.md
   - Developing pysmo:
       - developing/index.md
       - developing/developing.md

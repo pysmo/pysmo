@@ -8,20 +8,21 @@ Further Reading:
     Peterson, J., 1993. Observations and modelling of background seismic noise.
     Open-file report 93-322, U. S. Geological Survey, Albuquerque, New Mexico.
 
-Classes:
-    NoiseModel: Class to store seismic noise models.
-
-Functions:
-    peterson: Generate a noise model using Peterson's models as base.
-    generate_noise: Generate noise from a noise model.
-
 Examples:
-    >>> from pysmo.tools.noise import generate_noise, peterson
-    >>> from datetime import timedelta
-    >>> NLNM = peterson(noise_level=0)
-    >>> delta = timedelta(seconds=0.05)
-    >>> npts = 5000
-    >>> low_noise_seismogram = generate_noise(NLMN, npts, delta)
+    Given the spectral amplitude in observed seismic noise on Earth is not flat (i.e.
+    white noise), it makes sense to calculate more realistic noise for things like
+    resolution tests with synthetic data.
+
+    In this example, random noise seismograms are generated from three different
+    noise models. These are Peterson's NLNM, NHNM, and an interpolated model that
+    lies between the two.
+
+    ![peterson](/examples/tools/noise/peterson.png)
+
+    ??? quote "Example source code"
+        ```python title="peterson.py"
+        --8<-- "docs/examples/tools/noise/peterson.py"
+        ```
 """
 
 import numpy as np
@@ -30,7 +31,9 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
-from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+
+__all__ = ["NoiseModel", "peterson", "generate_noise"]
 
 
 @dataclass(frozen=True)
@@ -183,8 +186,8 @@ def peterson(noise_level: float) -> NoiseModel:
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    delta: timedelta = SEISMOGRAM_DEFAULTS.delta,
-    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time,
+    delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value,
+    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time.value,
     return_velocity: bool = False,
     seed: int | None = None,
 ) -> MiniSeismogram:

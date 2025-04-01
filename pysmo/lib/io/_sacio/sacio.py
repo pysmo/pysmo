@@ -41,7 +41,7 @@ class SacIO(SacIOBase):
     header names in the SAC file format. Additonal attributes may be set, but
     are not written to a SAC file (because there is no space reserved for them
     there). Class attributes with corresponding header fields in a SAC file
-    (for example the begin time [`b`][pysmo._io.SacIO.b]) are checked for a
+    (for example the begin time [`b`][pysmo.lib.io.SacIO.b]) are checked for a
     valid format before being saved in the `SacIO` instance.
 
     Warning:

@@ -1,4 +1,4 @@
-from pysmo._io import SacIO
+from pysmo.lib.io import SacIO
 
 
 class SacIO2(SacIO):
