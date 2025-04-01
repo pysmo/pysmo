@@ -133,3 +133,11 @@ class TestSeismogramFunctions:
         seis2 = deepcopy(seismogram)
         crop(seis2, new_begin_time, new_end_time)
         assert all(cropped_seis.data == seis2.data)
+
+        if len(seismogram) > 100:
+            seis3 = deepcopy(seismogram)
+            seis3.data = seis3.data[:100]
+            new_begin_time = seis3.begin_time + seis3.delta * 1.5
+            new_end_time = seis3.end_time - seis3.delta * 1.5
+            cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
+            assert all(cropped_seis.data == seis3.data[1:-1])

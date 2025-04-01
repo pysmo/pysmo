@@ -1,10 +1,9 @@
 # Not so Fast
 
 Before starting your journey with pysmo, you should have a basic understanding
-of typing in the Python programming language. More precisely, you should know
+of *typing* in the Python programming language. More precisely, you should know
 what [*type hinting*][typing] is, and how it is used in conjunction with modern
-code editors (or other tools that check your code before it is executed). Here,
-provide a brief introduction to the topic to get you started.
+code editors (or other tools that check your code before it is executed).
 
 !!! tip
     Keep in mind that not only do programming languages themselves evolve,
@@ -12,10 +11,7 @@ provide a brief introduction to the topic to get you started.
     out of pysmo when used together with a modern editor/IDE such as
     [VSCode](https://code.visualstudio.com/),
     [PyCharm](https://www.jetbrains.com/pycharm/),
-    [Neovim](https://neovim.io)(1), etc.
-    { .annotate }
-
-    1. Pysmo was written almost entirely in Neovim.
+    [Neovim](https://neovim.io), etc.
 
 ## Dynamic and Static Typing
 
@@ -25,14 +21,13 @@ code and assign a value to it. This is convenient, but can produce errors at
 runtime if you are not careful. This can be demonstrated with this simple
 function:
 
-```python title="division.py"
-def division(a, b):
-  return a / b
+```py title="division.py"
+--8<-- "docs/snippets/division.py"
 ```
 
 We load load this function into an interactive Python session and call it with
 the arguments `#!py 5` and `#!py 2`. Thus both variables `#!py a=5` and
-`#!py b=2` are numbers and we get the expected result
+`#!py b=2` are numbers and we get the expected result:
 
 ```python
 $ python -i division.py
@@ -44,7 +39,7 @@ $ python -i division.py
 1. :material-lightbulb: In Python, dividing two integers always creates a
   float!
 
-In a second run, they are set to `#!py a="hello"` and `#!py b="world"`. They
+In a second run they are set to `#!py a="hello"` and `#!py b="world"`. They
 are now strings, and the code doesn't make much sense anymore...
 
 ```python
@@ -57,15 +52,15 @@ TypeError: unsupported operand type(s) for /: 'str' and 'str'
 ```
 
 Evidently the function only can be used if the variables `#!py a` and `#!py b`
-are numbers. To be clear, there is nothing wrong syntactically in this example,
-but certain operations are only available to the correct types (which is why a
-[`TypeError`][TypeError] was raised). To keep track of what types of input a
-function accepts, and what kind of output to expect, *annotations* can be added
-to the above function:
+are numbers. To be clear, there is nothing wrong *syntactically* in this
+example, but certain operations are only available to the correct types (which
+is why a [`TypeError`][TypeError] was raised at runtime). In order to detect
+these kinds of issues *before* running a program, Python allows adding type
+annotations to variables. This helps keep track of what types of input a
+function accepts, and what kind of output to expect:
 
-```python title="division_annotated.py"
-def division(a: float, b: float) -> float: # (1)!
-  return a / b
+```py title="division_annotated.py"
+--8<-- "docs/snippets/division_annotated.py"
 ```
 
 1. Besides specifying that `#!py a` and `#!py b` are expected to be floats,
@@ -76,22 +71,25 @@ def division(a: float, b: float) -> float: # (1)!
 These annotations, also known as *type hints*, are not enforced (i.e. Python will
 still happily try running that function with strings as arguments). However,
 besides being a useful form of self-documentation, type hints become very
-powerful in combination with a modern source code editor or third party tools
+powerful in combination with a modern source code editor, or third party tools
 like [mypy](https://mypy.readthedocs.io). Both will scan code and catch type
-errors before it is executed. This means you can effectively choose to write
-statically typed Python code and prevent type errors from occurring at runtime.
+errors in your code before it is executed, making it sort of "quasi statically
+typed" (1).
+{ .annotate }
+
+1. :material-lightbulb: because you can run your code even with type errors!
 
 ## Duck Typing
 
-At this point one may ask why static typing is not enforced everywhere so that
-we can be done with it? Well, sometimes it is more useful to consider how
-something behaves, rather than what it actually is. This is often referred to
-as *duck typing*. The same way that something can be considered a duck if it
-walks and talks like one, any object that has all the right attributes and
-methods expected e.g. by a function, can also be used as input for that
-function. The following example defines two classes for ducks and humans, and a
-function which runs error free when its argument is duck-like (it can quack and
-waddle, rather than strictly being of type `Duck`):
+At this point one may ask why static typing is not enforced everywhere. Well,
+sometimes it is more useful to consider how something behaves, rather than what
+it actually is. This is often referred to as *duck typing*. The same way that
+something can be considered a duck if it walks and talks like one, any object
+that has all the right attributes and methods expected e.g. by a function, can
+also be used as input for that function. The following example defines two
+classes for ducks and humans, and a function which runs error free when its
+argument is duck-like (it can quack and waddle, rather than strictly being of
+type `Duck`):
 
 ```py title="duck.py"
 --8<-- "docs/snippets/duck.py"
@@ -167,6 +165,25 @@ in some instances this is actually desired behavior.
     False
     ```
 
+Note that we haven't annotated `#!py is_a_duck()` with a type signature, making
+it quite fragile. If we were to change `Duck` or `Human` in ways that make them
+incompatible with the function we wouldn't find out until runtime. To fix this,
+we could annotate `#!py is_a_duck()` like this:
+
+```py
+def is_a_duck(thing: Duck | Human) -> None: ...
+```
+
+`#!py is_a_duck()` now accepts only objects of type `Duck` or `Human`. This
+is now much safer to use, but it is also strongly coupled to both `Duck` and
+`Human`. If we were to change either of those classes, we might have to also
+change the function (or even the other class!). If we wanted to use a third
+class with this function some time in the future, we might find ourselves
+similarly forced to edit code all over the place to make things work. Using
+type hints like this to define a function that works with multiple different
+input types quickly reaches its limits. Fortunately, Python has a solution to
+this problem: [`Protocol`][typing.Protocol] classes.
+
 ## Structural subtyping (static duck typing)
 
 The two strategies (duck vs static typing) may appear somewhat orthogonal. In
@@ -195,9 +212,11 @@ class and structural subtyping:
     dance method.
 6. An advanced robot can also walk and talk like a duck. However, it talks in
     bytes instead of strings. This means the `Robot` class is *not* `Ducklike`
-7. Unlike before, we *do* care about the type of the "thing" input variable now
-    (because we are using type hints). It should be of type `Ducklike`, which
-    includes the subclasses of `Ducklike` (`Duck`, and `Human`, but *not* `Robot`).
+7. Unlike before, we only add annotations for one class
+    (the [`Protocol`][typing.Protocol] class) to the function. It is now *not*
+    coupled to any specific classes anymore. All we are saying is that the
+    function works with things that are `Ducklike` (i.e. the subclasses of
+    `Ducklike` - `Duck`, and `Human`, but *not* `Robot`).
 
 Loading this new version into an interactive Python session we get the
 following:

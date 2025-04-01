@@ -1,10 +1,19 @@
+"""Decorators for pysmo."""
+
 from typing import Any
 from collections.abc import Callable
 from functools import wraps
 
 
 def value_not_none(function: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to prevent the value in properties from being None"""
+    """Decorator to ensure the value in Class properties is not None.
+
+    Parameters:
+        function: The function to decorate.
+
+    Returns:
+        Function with value not None check applied.
+    """
 
     @wraps(function)
     def decorator(*args: Any, **kwargs: Any) -> Any:
@@ -19,7 +28,16 @@ def value_not_none(function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def add_doc(docstring: str) -> Callable:
-    """Decorator to add a docstring to a function"""
+    """Decorator to add a docstring to a function via decorator.
+
+    Useful to use e.g. f-strings in the docstring.
+
+    Attributes:
+        docstring: The docstring to add.
+
+    Returns:
+        Function with docstring applied.
+    """
 
     def decorator(function: Callable) -> Callable:
         function.__doc__ = docstring
