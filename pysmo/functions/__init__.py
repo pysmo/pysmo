@@ -32,6 +32,7 @@ Hint:
 """
 
 from ._seismogram import *  # noqa: F403
+from ._utils import *  # noqa: F403
 
 __all__ = []
 __all__ += [s for s in dir() if not s.startswith("_")]

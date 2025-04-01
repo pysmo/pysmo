@@ -1,10 +1,5 @@
 """
 This module provides functions commonly used in signal processing.
-
-Functions:
-    delay: Cross correlates two seismograms to determine signal delay.
-    envelope: Calculates the envelope of a gaussian filtered seismogram.
-    gauss: Returns a gaussian filtered seismogram.
 """
 
 from datetime import timedelta
@@ -15,6 +10,9 @@ from math import ceil
 from scipy.signal import correlate as _correlate
 from scipy.stats import pearsonr as _pearsonr
 from pysmo import Seismogram
+
+
+__all__ = ["delay", "envelope", "gauss"]
 
 
 def delay(
