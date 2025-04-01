@@ -36,10 +36,10 @@ requests = "^2.32.3"
 attrs = "^25.3.0"
 attrs-strict = "^1.0.1"
 scipy-stubs = "^1.15.2.1"
-types-requests = "^2.32.0.20250306"
+types-requests = "^2.32.0.20250328"
 
 [tool.poetry.group.dev.dependencies]
-types-pyyaml = "^6.0.12.20241230"
+types-pyyaml = "^6.0.12.20250326"
 jinja2 = "^3.1.6"
 black = {extras = ["jupyter"], version = "^25.1.0"}
 pyyaml = "^6.0.2"
@@ -48,7 +48,7 @@ pyyaml = "^6.0.2"
 pytest = "^8.3.5"
 pytest-mpl = "^0.17.0"
 pytest-cov = "^6.0.0"
-pytest-mypy = "^0.10.3"
+pytest-mypy = "^1.0.0"
 pytest-depends = "^1.0.1"
 pytest-sugar = "^1.0.0"
 nbmake = "^1.5.5"
@@ -57,9 +57,9 @@ ruff = "^0.11.2"
 
 [tool.poetry.group.docs.dependencies]
 ipython = "^9.0.2"
-mkdocs-material = "^9.6.9"
+mkdocs-material = "^9.6.10"
 markdown-include = "^0.8.1"
-mkdocstrings = {extras = ["python"], version = "^0.29.0"}
+mkdocstrings = {extras = ["python"], version = "^0.29.1"}
 mkdocs-jupyter = "^0.25.1"
 termynal = "^0.13.0"
 jupyterlab = "^4.3.6"
@@ -82,7 +82,7 @@ warn_unused_ignores = false
 
 [tool.coverage.run]
 omit = [
-  "pysmo/_io/_sacio/_render_sacio.py",
+  "pysmo/lib/io/_sacio/_render_sacio.py",
   ]
 
 [tool.coverage.report]
@@ -112,7 +112,7 @@ line-length = 88
 extend-exclude = ["utils/templates"]
 
 [tool.ruff.lint.per-file-ignores]
-"pysmo/_io/_sacio/_sacio_rendered.py" = ["E741"]
+"pysmo/lib/io/_sacio/_sacio_rendered.py" = ["E741"]
 
 # [lint.extend-per-file-ignores]
 # "docs/snippets/*" = ["E402"]

@@ -1,7 +1,7 @@
 from typing import Literal, get_args, overload, Self
-from pysmo._io import SacIO, SacHeaderUndefined
-from pysmo._lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo._lib.decorators import value_not_none
+from pysmo.lib.io import SacIO, SacHeaderUndefined
+from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.decorators import value_not_none
 from attrs import define, field
 from datetime import datetime, timedelta, time, date, timezone
 import numpy as np
@@ -33,14 +33,28 @@ class _SacNested:
         """
         Returns:
             Reference time date in a SAC file.
+
+        Note:
+            If the SAC instance has no reference time this function sets it to
+            `SEISMOGRAM_DEFAULTS.begin_time` - `B`.
         """
-        # The SAC header variable "b" is set to a default value, so
-        # it should never b "None" in a SacIO object. We use that
-        # to define the reference time in case it is missing in
-        # the parent SacIO object.
-        # TODO: maybe it needs setting in the SacIO object too?
+
         if self._parent.kztime is None or self._parent.kzdate is None:
-            return SEISMOGRAM_DEFAULTS.begin_time - timedelta(seconds=self._parent.b)
+            b = timedelta(seconds=self._parent.b)
+            timedelta_for_rounding = timedelta(microseconds=500)
+            ref_time_date = (
+                SEISMOGRAM_DEFAULTS.begin_time.value - b + timedelta_for_rounding
+            )
+
+            self._parent.nzyear = ref_time_date.year
+            self._parent.nzjday = ref_time_date.timetuple().tm_yday
+            self._parent.nzhour = ref_time_date.hour
+            self._parent.nzmin = ref_time_date.minute
+            self._parent.nzsec = ref_time_date.second
+            self._parent.nzmsec = int(ref_time_date.microsecond / 1000)
+
+            return ref_time_date - timedelta_for_rounding
+
         ref_time = time.fromisoformat(self._parent.kztime)
         ref_date = date.fromisoformat(self._parent.kzdate)
         return datetime.combine(date=ref_date, time=ref_time, tzinfo=timezone.utc)
@@ -49,15 +63,19 @@ class _SacNested:
         self, sac_time_header: TSacTimeHeaders
     ) -> datetime | None:
         """Convert SAC times to datetime."""
+
         seconds = getattr(self._parent, sac_time_header)
+
         if seconds is None:
             return None
+
         return self._ref_datetime + timedelta(seconds=seconds)
 
     def _set_sac_from_datetime(
         self, sac_time_header: TSacTimeHeaders, value: datetime
     ) -> None:
         """Set SAC times using datetimes."""
+
         seconds = (value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
 
@@ -120,6 +138,7 @@ class SacSeismogram(_SacNested):
     @property
     def begin_time(self) -> datetime:
         """Seismogram begin time."""
+
         value = self._get_datetime_from_sac("b")
         if value is None:
             raise SacHeaderUndefined(header="b")
@@ -133,6 +152,7 @@ class SacSeismogram(_SacNested):
     @property
     def end_time(self) -> datetime:
         """Seismogram end time."""
+
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + self.delta * (len(self) - 1)
@@ -174,6 +194,7 @@ class SacStation(_SacNested):
     @property
     def network(self) -> str | None:
         """Network name or code."""
+
         return self._parent.knetwk
 
     @network.setter
@@ -183,6 +204,7 @@ class SacStation(_SacNested):
     @property
     def latitude(self) -> float:
         """Station latitude."""
+
         if self._parent.stla is None:
             raise SacHeaderUndefined(header="stla")
         return self._parent.stla
@@ -195,6 +217,7 @@ class SacStation(_SacNested):
     @property
     def longitude(self) -> float:
         """Station longitude."""
+
         if self._parent.stlo is None:
             raise SacHeaderUndefined(header="stlo")
         return self._parent.stlo
@@ -207,6 +230,7 @@ class SacStation(_SacNested):
     @property
     def elevation(self) -> float | None:
         """Station elevation in meters."""
+
         return self._parent.stel
 
     @elevation.setter
@@ -266,6 +290,7 @@ class SacEvent(_SacNested):
     @property
     def depth(self) -> float:
         """Event depth in meters."""
+
         if self._parent.evdp is None:
             raise SacHeaderUndefined(header="evdp")
         return self._parent.evdp * 1000
@@ -278,6 +303,7 @@ class SacEvent(_SacNested):
     @property
     def time(self) -> datetime:
         """Event origin time (UTC)."""
+
         event_time = self._get_datetime_from_sac("o")
         if event_time is None:
             raise SacHeaderUndefined(header="o")
@@ -412,7 +438,7 @@ class SAC(SacIO):
     """Access and modify data stored in SAC files.
 
     The [`SAC`][pysmo.classes.SAC] class inherits all attributes and methods
-    of the [`SacIO`][pysmo._io.SacIO] class, and extends it with attributes
+    of the [`SacIO`][pysmo.lib.io.SacIO] class, and extends it with attributes
     that allow using pysmo types. The extra attributes are themselves instances
     of "helper" classes that cannot be instantiated directly.
 
@@ -435,13 +461,13 @@ class SAC(SacIO):
 
         Presenting the data in the above way is *not* compatible with pysmo
         types. For example, event coordinates are stored in the
-        [`evla`][pysmo._io.SacIO.evla] and [`evlo`][pysmo._io.SacIO.evlo]
+        [`evla`][pysmo.lib.io.SacIO.evla] and [`evlo`][pysmo.lib.io.SacIO.evlo]
         attributes, which do not match the pysmo [`Location`][pysmo.Location]
         type. Renaming or aliasing `evla` to `latitude` and `evlo` to
         `longitude` would solve the problem for the event coordinates, but
         since the SAC format also specifies station coordinates
-        ([`stla`][pysmo._io.SacIO.stla], [`stlo`][pysmo._io.SacIO.stlo]) we
-        still run into compatibility issues.
+        ([`stla`][pysmo.lib.io.SacIO.stla], [`stlo`][pysmo.lib.io.SacIO.stlo])
+        we still run into compatibility issues.
 
         In order to map these incompatible attributes to ones that can be
         used with pysmo types, we use helper classes as a way to access the
@@ -477,10 +503,10 @@ class SAC(SacIO):
 
     Tip:
         The [`SAC`][pysmo.classes.SAC] class directly inherits from the
-        [`SacIO`][pysmo._io.SacIO] class. This gives access to all
+        [`SacIO`][pysmo.lib.io.SacIO] class. This gives access to all
         SAC headers, ability to load from a file, download data, and so on.
         Using [`SAC`][pysmo.classes.SAC] is therefore almost always
-        preferred over using [`SacIO`][pysmo._io.SacIO].
+        preferred over using [`SacIO`][pysmo.lib.io.SacIO].
     """
 
     seismogram: SacSeismogram = field(init=False)

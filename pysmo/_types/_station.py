@@ -1,4 +1,4 @@
-from ._location import Location, MiniLocation
+from ._location import Location
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
 from attrs_strict import type_validator
@@ -20,7 +20,7 @@ class Station(Location, Protocol):
 
     @property
     def network(self) -> str | None:
-        """Network name or identifiere."""
+        """Network name or identifier."""
         ...
 
     @network.setter
@@ -35,13 +35,12 @@ class Station(Location, Protocol):
     def elevation(self, value: float) -> None: ...
 
 
-@define(kw_only=True)
-class MiniStation(MiniLocation):
+@define(kw_only=True, slots=True)
+class MiniStation:
     """Minimal class for use with the Station type.
 
     The `MiniStation` class provides a minimal implementation of class that
-    is compatible with the `Station` type. The class is a subclass of
-    `MiniLocation`, and therefore also matches the `Location` type.
+    is compatible with the `Station` type.
 
     Examples:
         >>> from pysmo import MiniStation, Station, Location
@@ -58,6 +57,16 @@ class MiniStation(MiniLocation):
 
     network: str | None = field(default=None, validator=type_validator())
     """Network name."""
+
+    latitude: float | int = field(
+        validator=[validators.ge(-90), validators.le(90), type_validator()],
+    )
+    """Station latitude from -90 to 90 degrees."""
+
+    longitude: float | int = field(
+        validator=[validators.gt(-180), validators.le(180), type_validator()],
+    )
+    """Station longitude from -180 to 180 degrees."""
 
     elevation: float | int | None = field(
         default=None,

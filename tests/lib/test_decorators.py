@@ -4,7 +4,7 @@ import pytest
 
 
 def test_value_not_none() -> None:
-    from pysmo._lib.decorators import value_not_none
+    from pysmo.lib.decorators import value_not_none
 
     @dataclass
     class A:
@@ -28,7 +28,7 @@ def test_value_not_none() -> None:
 
 
 def test_add_doc() -> None:
-    from pysmo._lib.decorators import add_doc
+    from pysmo.lib.decorators import add_doc
 
     test_string = f"""{123} test"""
 

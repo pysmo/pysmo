@@ -17,8 +17,8 @@ MINISEIS = MiniSeismogram(
 
 
 @pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../baseline/")
-def test_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
-    from pysmo.tools.plotseis import plotseis
+def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
+    from pysmo.tools.plotutils import plotseis
 
     fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
     return fig
@@ -30,7 +30,7 @@ def test_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
 class test_plotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
-        from pysmo.tools.plotseis import time_array
+        from pysmo.tools.plotutils import time_array
         from matplotlib.dates import num2date
 
         times = time_array(seismogram)
@@ -40,7 +40,7 @@ class test_plotseisFunctions:
 
     def test_unix_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
-        from pysmo.tools.plotseis import unix_time_array
+        from pysmo.tools.plotutils import unix_time_array
         from datetime import datetime, timezone
 
         unix_times = unix_time_array(seismogram)
