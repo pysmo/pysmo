@@ -79,6 +79,7 @@ plugins:
       ignore:
         - docs/gen_ref_pages.py
         - docs/snippets/*.py
+        - docs/first-steps/tutorial/*.py
   # - gen-files:
   #     scripts:
   #       - docs/gen_ref_pages.py
@@ -131,7 +132,7 @@ nav:
   - First Steps:
       - first-steps/index.md
       - first-steps/installation.md
-      - first-steps/tutorial.ipynb
+      - first-steps/tutorial/tutorial.ipynb
   - User Guide:
       - user-guide/index.md
       - user-guide/in-the-box.md
