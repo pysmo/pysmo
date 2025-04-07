@@ -1,5 +1,5 @@
 .PHONY: help check-poetry install update lint test-figs test-tutorial tests \
-	mypy docs docs-export live-docs notebook build publish clean shell python \
+	mypy docs docs-export main-export live-docs notebook build publish clean shell python \
 	format format-check
 
 ifeq ($(OS),Windows_NT)
@@ -37,7 +37,7 @@ test-figs: check-poetry ## Generate baseline figures for testing. Only run this 
 	poetry run py.test --mpl-generate-path=tests/baseline
 
 test-tutorial: check-poetry ## Check if the tutorial notebook runs error-free.
-	poetry run py.test --nbmake docs/first-steps/tutorial.ipynb
+	poetry run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb
 
 tests: check-poetry test-tutorial mypy ## Run all tests with pytest.
 	poetry run pytest --mypy --cov=pysmo --cov-report=xml --mpl -v
@@ -50,6 +50,9 @@ docs: check-poetry install ## Build html docs.
 
 docs-export: check-poetry install ## Export installed package information to docs/requirements.txt.
 	poetry export --only=docs -o docs/requirements.txt
+
+main-export: check-poetry install ## Export installed package information to requirements.txt
+	poetry export --only=main -o requirements.txt
 
 live-docs: check-poetry install ## Live build html docs. They are served on http://localhost:8000
 	poetry run mkdocs serve -w README.md -w pysmo -w changelog.md -w contributors.md
