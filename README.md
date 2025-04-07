@@ -25,20 +25,26 @@
 </p>
 
 ---
+The addition of type annotations to Python marked a significant step forward
+in user experience (e.g. intelligent autocompletion in modern editors) and type
+safety (by catching errors before code is executed). With types thus becoming
+more meaningful, it is worth revisiting what a type should *mean* to a
+seismologist.
+
+Traditionally a lot of data are stored together (e.g. in a seismogram file of
+some format containing a time series and its metadata), only for most of that
+data to be ignored during processing. While it makes sense to *store* the data
+together, it is better to split them up into far simpler types when writing
+code for *processing*.
+
 Pysmo offers simple data types for seismologists to write code with. Instead
-of working with one big class containing all kinds of data, psymo uses separate,
-narrowly defined classes that are more meaningful when describing things that
-exist in the real world. The type definitions are not tied to any particular
-file format, and thus free users from needing to adhere to Python data structures
-often dictated by a rigid underlying file format.
+of working with one big class containing all kinds of data, psymo uses
+separate, narrowly defined protocol classes that are not tied to any particular
+file format or existing class.
 
-Together with these data types, pysmo provides a growing library of essential
-functions that benefit from using these types. Programming with pysmo results
-in code that is:
-
-  - using modern Python concepts.
-  - easy to write and understand.
-  - both portable and future proof.
+Code written with pysmo types is easy to understand and maintain. Most
+importantly, it can often be reused in different projects, thus reducing the
+duplication of effort.
 
 Pysmo itself is designed to be modular and easy to expand without interfering
 with the existing code base, making it straightforward to incorporate user
