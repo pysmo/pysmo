@@ -1,5 +1,6 @@
 from attrs_strict import AttributeTypeError, UnionError
 from pysmo.lib.io import SacIO
+from datetime import datetime, timezone, timedelta
 import copy
 import pickle
 import pytest
@@ -12,11 +13,25 @@ def test_create_instance() -> None:
     assert isinstance(sac, SacIO)
 
 
-# TODO add all defaults
+# TODO: add all defaults
 @pytest.mark.depends(on=["test_create_instance"])
 def test_defaults() -> None:
     sac = SacIO()
     assert sac.b == 0
+
+
+@pytest.mark.depends(on=["test_create_instance"])
+def test_ref_datetime() -> None:
+    sac = SacIO()
+    assert sac.kzdate is None
+    assert sac.kztime is None
+    assert sac.ref_datetime is None
+    now = datetime.now(timezone.utc)
+    sac.ref_datetime = now
+    now += timedelta(microseconds=500)
+    assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(
+        timespec="milliseconds"
+    )
 
 
 @pytest.mark.depends(on=["test_create_instance"])
@@ -229,10 +244,6 @@ def test_change_headers(sacfile: str) -> None:
     with pytest.raises(ValueError):
         sac.kuser0 = "too long string"
 
-    # # Are trailing spaces removed?
-    # sac2.kuser0 = 'aaaa   '
-    # assert sac2.kuser0 == 'aaaa'
-
     # Does changing header fields in one instance effect another?
     delta_old = sac.delta
     sac2.delta = 2 * delta_old
@@ -245,6 +256,18 @@ def test_change_headers(sacfile: str) -> None:
     # try changing read only header
     with pytest.raises(AttributeError):
         sac.npts = 123  # type: ignore
+
+    # try changing o, which is also iztype
+    with pytest.raises(RuntimeError):
+        sac.o = 123
+
+    dtime = 10
+    sac.a = 70
+    sac2.a = 70
+    sac2.change_all_times(dtime)
+    assert sac.o == sac2.o - dtime  # type: ignore
+    assert sac.b == sac2.b - dtime
+    assert sac.a == sac2.a - dtime  # type: ignore
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])

@@ -1,5 +1,6 @@
 from ._sacio_rendered import (
     SacIOBase,
+    SAC_TIME_HEADERS,
     HEADER_TYPES,
     SAC_ENUMS_DICT,
     SAC_HEADERS,
@@ -7,9 +8,10 @@ from ._sacio_rendered import (
 )
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
+from attrs import define
 from typing import Any, Self, Literal
+from datetime import datetime, timedelta, timezone
 import struct
-import datetime
 import urllib.parse
 import requests
 import zipfile
@@ -17,21 +19,7 @@ import io
 import numpy as np
 
 
-class SacHeaderUndefined(Exception):
-    """Raised when requesting a value from a SAC header returns None.
-
-    Attributes:
-        message: Custom message to display.
-        header: SAC header name to be used in the default exception message.
-    """
-
-    def __init__(self, message: str | None = None, header: str | None = None) -> None:
-        self.message = f"Value for SAC header {header} is None."
-        if message is not None:
-            self.message = message
-        super().__init__(self.message)
-
-
+@define(kw_only=True)
 class SacIO(SacIOBase):
     """
     Access SAC files in Python.
@@ -52,7 +40,7 @@ class SacIO(SacIOBase):
     Examples:
         Create a new instance from a file and print seismogram data:
 
-        >>> from pysmo._io import SacIO
+        >>> from pysmo.lib.io import SacIO
         >>> my_sac = SacIO.from_file('testfile.sac')
         >>> data = my_sac.data
         >>> data
@@ -129,7 +117,7 @@ class SacIO(SacIOBase):
             return (
                 distance(location_1=station_location, location_2=event_location) / 1000
             )
-        raise SacHeaderUndefined("One or more coordinates are None.")
+        raise TypeError("One or more coordinates are None.")
 
     @property
     def az(self) -> float:
@@ -138,7 +126,7 @@ class SacIO(SacIOBase):
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
             event_location = MiniLocation(latitude=self.evla, longitude=self.evlo)
             return azimuth(location_1=station_location, location_2=event_location)
-        raise SacHeaderUndefined("One or more coordinates are None.")
+        raise TypeError("One or more coordinates are None.")
 
     @property
     def baz(self) -> float:
@@ -147,7 +135,7 @@ class SacIO(SacIOBase):
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
             event_location = MiniLocation(latitude=self.evla, longitude=self.evlo)
             return backazimuth(location_1=station_location, location_2=event_location)
-        raise SacHeaderUndefined("One or more coordinates are None.")
+        raise TypeError("One or more coordinates are None.")
 
     @property
     def gcarc(self) -> float:
@@ -161,7 +149,7 @@ class SacIO(SacIOBase):
                     + np.cos(lat1) * np.cos(lat2) * np.cos(np.abs(lon1 - lon2))
                 )
             )
-        raise SacHeaderUndefined("One or more coordinates are None.")
+        raise TypeError("One or more coordinates are None.")
 
     @property
     def xminimum(self) -> float | None:
@@ -221,25 +209,52 @@ class SacIO(SacIOBase):
         return True
 
     @property
-    def kzdate(self) -> str | None:
-        """ISO 8601 format of GMT reference date."""
-        if self.nzyear is None or self.nzjday is None:
-            return None
-        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday - 1)
-        return _kzdate.isoformat()
-
-    @property
-    def kztime(self) -> str | None:
-        """Alphanumeric form of GMT reference time."""
+    def ref_datetime(self) -> datetime | None:
+        """Return Python datetime object of GMT reference time and date."""
         if (
-            self.nzhour is None
+            self.nzyear is None
+            or self.nzjday is None
+            or self.nzhour is None
             or self.nzmin is None
             or self.nzsec is None
             or self.nzmsec is None
         ):
             return None
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
-        return _kztime.isoformat(timespec="milliseconds")
+        return datetime(
+            year=self.nzyear,
+            month=1,
+            day=1,
+            hour=self.nzhour,
+            minute=self.nzmin,
+            second=self.nzsec,
+            microsecond=self.nzmsec * 1000,
+            tzinfo=timezone.utc,
+        ) + timedelta(days=self.nzjday - 1)
+
+    @ref_datetime.setter
+    def ref_datetime(self, value: datetime) -> None:
+        timedelta_for_rounding = timedelta(microseconds=500)
+        value += timedelta_for_rounding
+        self.nzyear = value.year
+        self.nzjday = value.timetuple().tm_yday
+        self.nzhour = value.hour
+        self.nzmin = value.minute
+        self.nzsec = value.second
+        self.nzmsec = int(value.microsecond / 1000)
+
+    @property
+    def kzdate(self) -> str | None:
+        """ISO 8601 format of GMT reference date."""
+        if self.ref_datetime is None:
+            return None
+        return self.ref_datetime.date().isoformat()
+
+    @property
+    def kztime(self) -> str | None:
+        """Alphanumeric form of GMT reference time."""
+        if self.ref_datetime is None:
+            return None
+        return self.ref_datetime.time().isoformat(timespec="milliseconds")
 
     def read(self, filename: str) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
@@ -269,12 +284,12 @@ class SacIO(SacIOBase):
                 try:
                     if hasattr(self, header):
                         value = getattr(self, header)
-                except SacHeaderUndefined:
+                except TypeError:
                     value = None
 
                 # convert enumerated header to integer if it is not None
                 if header_type == "i" and value is not None:
-                    value = SAC_ENUMS_DICT[header][value].value
+                    value = SAC_ENUMS_DICT[header][value]
 
                 # set None to -12345
                 if value is None:
@@ -305,7 +320,7 @@ class SacIO(SacIOBase):
                     try:
                         if hasattr(self, footer):
                             value = getattr(self, footer)
-                    except SacHeaderUndefined:
+                    except AttributeError:
                         value = None
 
                     # set None to -12345
@@ -374,11 +389,11 @@ class SacIO(SacIOBase):
         kwargs["loc"] = loc
         kwargs["output"] = "sac.zip"
 
-        if isinstance(kwargs["start"], datetime.datetime):
+        if isinstance(kwargs["start"], datetime):
             kwargs["start"] = kwargs["start"].isoformat()
 
         end = kwargs.get("end", None)
-        if end is not None and isinstance(end, datetime.datetime):
+        if end is not None and isinstance(end, datetime):
             kwargs["end"] = end.isoformat()
 
         base = "https://service.iris.edu/irisws/timeseries/1/query"
@@ -507,3 +522,29 @@ class SacIO(SacIOBase):
                 except AttributeError as e:
                     if "object has no setter" in str(e):
                         pass
+
+    def change_all_times(self, dtime: float) -> None:
+        """Change all time headers by the same amount.
+
+        Attributes:
+            dtime: Time offset to apply.
+
+        Warning:
+            This method also changes the value for the current zero time header.
+            Typically it should only be used when changing
+            [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype].
+        """
+        try:
+            self._zero_time_can_be_none_zero = True
+            for time_header in SAC_TIME_HEADERS:
+                try:
+                    setattr(self, time_header, getattr(self, time_header) + dtime)
+                except AttributeError as e:
+                    if "object has no setter" in str(e):
+                        continue
+                except TypeError as e:
+                    if "unsupported operand type(s) for" in str(e):
+                        continue
+
+        finally:
+            self._zero_time_can_be_none_zero = False

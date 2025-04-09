@@ -1,9 +1,11 @@
-from typing import Literal, get_args, overload, Self
-from pysmo.lib.io import SacIO, SacHeaderUndefined
+from typing import overload, Self
+from pysmo.lib.io import SacIO
+from pysmo.lib.io._sacio import SAC_TIME_HEADERS
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.decorators import value_not_none
 from attrs import define, field
-from datetime import datetime, timedelta, time, date, timezone
+from datetime import datetime, timedelta
+import warnings
 import numpy as np
 import numpy.typing as npt
 
@@ -14,11 +16,6 @@ __all__ = [
     "SacStation",
     "SacTimestamps",
 ]
-
-TSacTimeHeaders = Literal[
-    "b", "e", "o", "a", "f", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"
-]
-SAC_TIME_HEADERS: tuple[TSacTimeHeaders, ...] = get_args(TSacTimeHeaders)
 
 
 @define(kw_only=True)
@@ -35,32 +32,21 @@ class _SacNested:
             Reference time date in a SAC file.
 
         Note:
-            If the SAC instance has no reference time this function sets it to
-            `SEISMOGRAM_DEFAULTS.begin_time` - `B`.
+            If the SAC instance has no reference time this function assumes
+            that it is equal to `SEISMOGRAM_DEFAULTS.begin_time`.
         """
 
-        if self._parent.kztime is None or self._parent.kzdate is None:
-            b = timedelta(seconds=self._parent.b)
-            timedelta_for_rounding = timedelta(microseconds=500)
-            ref_time_date = (
-                SEISMOGRAM_DEFAULTS.begin_time.value - b + timedelta_for_rounding
-            )
+        if self._parent.ref_datetime is not None:
+            return self._parent.ref_datetime
 
-            self._parent.nzyear = ref_time_date.year
-            self._parent.nzjday = ref_time_date.timetuple().tm_yday
-            self._parent.nzhour = ref_time_date.hour
-            self._parent.nzmin = ref_time_date.minute
-            self._parent.nzsec = ref_time_date.second
-            self._parent.nzmsec = int(ref_time_date.microsecond / 1000)
-
-            return ref_time_date - timedelta_for_rounding
-
-        ref_time = time.fromisoformat(self._parent.kztime)
-        ref_date = date.fromisoformat(self._parent.kzdate)
-        return datetime.combine(date=ref_date, time=ref_time, tzinfo=timezone.utc)
+        warnings.warn(
+            f"SAC object has no reference time (kzdate/kztime), assuming {SEISMOGRAM_DEFAULTS.begin_time.value.isoformat()}",
+            RuntimeWarning,
+        )
+        return SEISMOGRAM_DEFAULTS.begin_time.value
 
     def _get_datetime_from_sac(
-        self, sac_time_header: TSacTimeHeaders
+        self, sac_time_header: SAC_TIME_HEADERS
     ) -> datetime | None:
         """Convert SAC times to datetime."""
 
@@ -72,7 +58,7 @@ class _SacNested:
         return self._ref_datetime + timedelta(seconds=seconds)
 
     def _set_sac_from_datetime(
-        self, sac_time_header: TSacTimeHeaders, value: datetime
+        self, sac_time_header: SAC_TIME_HEADERS, value: datetime
     ) -> None:
         """Set SAC times using datetimes."""
 
@@ -139,15 +125,15 @@ class SacSeismogram(_SacNested):
     def begin_time(self) -> datetime:
         """Seismogram begin time."""
 
-        value = self._get_datetime_from_sac("b")
+        value = self._get_datetime_from_sac(SAC_TIME_HEADERS.b)
         if value is None:
-            raise SacHeaderUndefined(header="b")
+            raise TypeError("SAC file has no begin time 'b'.")
         return value
 
     @begin_time.setter
     @value_not_none
     def begin_time(self, value: datetime) -> None:
-        self._set_sac_from_datetime("b", value)
+        self._set_sac_from_datetime(SAC_TIME_HEADERS.b, value)
 
     @property
     def end_time(self) -> datetime:
@@ -183,7 +169,7 @@ class SacStation(_SacNested):
         """Station name or code."""
 
         if self._parent.kstnm is None:
-            raise SacHeaderUndefined(header="kstnm")
+            raise TypeError("SAC object station name 'kstnm' is None.")
         return self._parent.kstnm
 
     @name.setter
@@ -206,7 +192,7 @@ class SacStation(_SacNested):
         """Station latitude."""
 
         if self._parent.stla is None:
-            raise SacHeaderUndefined(header="stla")
+            raise TypeError("SAC object station latitude 'stla' is None.")
         return self._parent.stla
 
     @latitude.setter
@@ -219,7 +205,7 @@ class SacStation(_SacNested):
         """Station longitude."""
 
         if self._parent.stlo is None:
-            raise SacHeaderUndefined(header="stlo")
+            raise TypeError("SAC object station longitude 'stlo' is None.")
         return self._parent.stlo
 
     @longitude.setter
@@ -266,7 +252,7 @@ class SacEvent(_SacNested):
         """Event Latitude."""
 
         if self._parent.evla is None:
-            raise SacHeaderUndefined(header="evla")
+            raise TypeError("SAC object event latitude 'evla' is None.")
         return self._parent.evla
 
     @latitude.setter
@@ -279,7 +265,7 @@ class SacEvent(_SacNested):
         """Event Longitude."""
 
         if self._parent.evlo is None:
-            raise SacHeaderUndefined(header="evlo")
+            raise TypeError("SAC object event longitude 'evlo' is None.")
         return self._parent.evlo
 
     @longitude.setter
@@ -292,7 +278,7 @@ class SacEvent(_SacNested):
         """Event depth in meters."""
 
         if self._parent.evdp is None:
-            raise SacHeaderUndefined(header="evdp")
+            raise TypeError("Sac object event depth 'evdp' is None.")
         return self._parent.evdp * 1000
 
     @depth.setter
@@ -302,25 +288,34 @@ class SacEvent(_SacNested):
 
     @property
     def time(self) -> datetime:
-        """Event origin time (UTC)."""
+        """Event origin time (UTC).
 
-        event_time = self._get_datetime_from_sac("o")
+        Important:
+            This property uses the [`SacIO.o`][pysmo.lib.io.SacIO.o] time
+            header. If [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is set to
+            `"o"`, then this is also the "Reference time equivalance" and
+            [`SacIO.o`][pysmo.lib.io.SacIO.o] cannot be changed (it is always
+            0). Changing the [`time`][pysmo.classes.SacEvent.time] directly
+            is not possible if this is is the case.
+        """
+
+        event_time = self._get_datetime_from_sac(SAC_TIME_HEADERS.o)
         if event_time is None:
-            raise SacHeaderUndefined(header="o")
+            raise TypeError("SAC object event time 'o' is None.")
         return event_time
 
     @time.setter
     @value_not_none
     def time(self, value: datetime) -> None:
-        self._set_sac_from_datetime("o", value)
+        self._set_sac_from_datetime(SAC_TIME_HEADERS.o, value)
 
 
 class SacTimeConverter:
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
-    def __set_name__(self, _: _SacNested, name: TSacTimeHeaders) -> None:
-        self._name: TSacTimeHeaders = name
+    def __set_name__(self, _: _SacNested, name: SAC_TIME_HEADERS) -> None:
+        self._name = name
 
     @overload
     def __get__(self, instance: None, owner: None) -> Self: ...
@@ -440,7 +435,7 @@ class SAC(SacIO):
     The [`SAC`][pysmo.classes.SAC] class inherits all attributes and methods
     of the [`SacIO`][pysmo.lib.io.SacIO] class, and extends it with attributes
     that allow using pysmo types. The extra attributes are themselves instances
-    of "helper" classes that cannot be instantiated directly.
+    of "helper" classes that shouldn't be instantiated directly.
 
     Examples:
         SAC instances are typically created by reading a SAC file. Users
