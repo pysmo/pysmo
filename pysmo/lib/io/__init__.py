@@ -6,9 +6,8 @@ means all functionality in this modules is available elsewhere,
 and these classes should *not* be used directly by users.
 """
 
-from ._sacio.sacio import SacIO, SacHeaderUndefined
+from ._sacio import SacIO
 
-SacHeaderUndefined = SacHeaderUndefined
 
 __all__ = [
     "SacIO",
