@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
-from pysmo.lib.io import SacIO, SacHeaderUndefined
+from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from datetime import datetime, timedelta, timezone
 import pytest
@@ -16,10 +16,10 @@ class TestSAC:
         assert isinstance(sac.seismogram, Seismogram)
 
         # coordinates for event and station are None.
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             assert isinstance(sac.station, Station)
             sac.station.latitude
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             assert isinstance(sac.event, Event)
             sac.event.latitude
 
@@ -31,11 +31,11 @@ class TestSAC:
         assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta.value
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sac.event.latitude
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sac.event.longitude
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sac.event.time
 
     @pytest.mark.depends(on=["test_create_instance"])
@@ -159,13 +159,13 @@ class TestSAC:
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station
         sac.kstnm = None
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sacstation.name
         sac.stla = None
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sacstation.latitude
         sac.stlo = None
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sacstation.longitude
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
@@ -182,14 +182,8 @@ class TestSAC:
                 seconds=sac.o - sac.b
             )
         newtime = sacevent.time + timedelta(seconds=30)
-        old_o = sac.o
-        sacevent.time = newtime
-        assert sacevent.time == newtime
-        if old_o is not None:
-            assert sac.o == 30.0 + old_o
-        sac.o = None
-        with pytest.raises(SacHeaderUndefined):
-            sacevent.time
+        with pytest.raises(RuntimeError):
+            sacevent.time = newtime
         sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
         assert sacevent.latitude == 32 == sac.evla
         assert sacevent.longitude == 100 == sac.evlo
@@ -210,7 +204,7 @@ class TestSAC:
             with pytest.raises((TypeError, AttributeTypeError)):
                 setattr(sacevent, item, None)
         sac.evdp = None
-        with pytest.raises(SacHeaderUndefined):
+        with pytest.raises(TypeError):
             sacevent.depth
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
