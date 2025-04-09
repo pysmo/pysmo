@@ -44,7 +44,7 @@ def matching_pysmo_types(obj: object) -> tuple[_AnyProto, ...]:
         [`MiniLocationWithDepth`][pysmo.MiniLocationWithDepth] or the class
         itself:
 
-        >>> from pysmo._lib.typing import matching_pysmo_types
+        >>> from pysmo.lib.typing import matching_pysmo_types
         >>> from pysmo import MiniLocationWithDepth
         >>>
         >>> mini = MiniLocationWithDepth(latitude=12, longitude=34, depth=56)
