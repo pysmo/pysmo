@@ -126,19 +126,36 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
 
 
 @overload
-def normalize(seismogram: Seismogram, clone: Literal[False] = False) -> None: ...
+def normalize(
+    seismogram: Seismogram,
+    clone: Literal[False] = False,
+    t1: datetime | None = None,
+    t2: datetime | None = None,
+) -> None: ...
 
 
 @overload
-def normalize[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+def normalize[T: Seismogram](
+    seismogram: T,
+    clone: Literal[True],
+    t1: datetime | None = None,
+    t2: datetime | None = None,
+) -> T: ...
 
 
-def normalize[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
-    """Normalize a seismogram with its absolute max value
+def normalize[T: Seismogram](
+    seismogram: T,
+    clone: bool = False,
+    t1: datetime | None = None,
+    t2: datetime | None = None,
+) -> None | T:
+    """Normalize a seismogram with its absolute max value.
 
     Parameters:
         seismogram: Seismogram object.
         clone: Operate on a clone of the input seismogram.
+        t1: Optionally restrict searching of maximum to time after this time.
+        t2: Optionally restrict searching of maximum to time before this time.
 
     Returns:
         Normalized [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
@@ -156,8 +173,15 @@ def normalize[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
     if clone is True:
         seismogram = deepcopy(seismogram)
 
-    norm = np.max(np.abs(seismogram.data))
-    seismogram.data /= norm
+    start_index = None
+    if t1 is not None:
+        start_index = time2index(seismogram, t1, "floor")
+
+    end_index = None
+    if t2 is not None:
+        end_index = time2index(seismogram, t2, "ceil")
+
+    seismogram.data /= np.max(np.abs(seismogram.data[start_index:end_index]))
 
     if clone is True:
         return seismogram
