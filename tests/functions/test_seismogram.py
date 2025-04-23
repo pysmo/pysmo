@@ -58,6 +58,16 @@ class TestSeismogramFunctions:
         normalize(seis2)
         assert all(normalized_seis.data == seis2.data)
 
+        normalized_seis.data[:10] += 3
+        normalized_seis.data[-10:] += 3
+        normalized_seis2 = normalize(
+            normalized_seis,
+            clone=True,
+            t1=normalized_seis.begin_time + 10 * normalized_seis.delta,
+            t2=normalized_seis.end_time - 10 * normalized_seis.delta,
+        )
+        assert all(normalized_seis.data == normalized_seis2.data)
+
     def test_detrend(self, seismogram: Seismogram) -> None:
         """Detrend Seismogram object and verify mean is 0."""
         from pysmo.functions import detrend
