@@ -23,8 +23,6 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
 
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.9"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.14"
@@ -37,6 +35,7 @@ attrs = "^25.3.0"
 attrs-strict = "^1.0.1"
 scipy-stubs = "^1.15.2.1"
 types-requests = "^2.32.0.20250328"
+cattrs = "^25.1.1"
 
 [tool.poetry.group.dev.dependencies]
 types-pyyaml = "^6.0.12.20250326"
@@ -54,6 +53,7 @@ pytest-sugar = "^1.0.0"
 nbmake = "^1.5.5"
 pytest-cases = "^3.8.6"
 ruff = "^0.11.2"
+sybil = {extras = ["pytest"], version = "^9.1.0"}
 
 [tool.poetry.group.docs.dependencies]
 ipython = "^9.0.2"
@@ -64,17 +64,27 @@ mkdocs-jupyter = "^0.25.1"
 termynal = "^0.13.0"
 jupyterlab = "^4.3.6"
 griffe-fieldz = "^0.2.1"
+mkdocs-bibtex = "^4.2.5"
 
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
+    "pysmo",
+    "docs"
 ]
+addopts = "-p no:doctest"
 
 [tool.mypy]
 namespace_packages = true
 disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+exclude = [
+  'division\.py$',
+  'division_annotated\.py$',
+  'signup\.py$',
+  'duck\.py$',
+]
 
 [[tool.mypy.overrides]]
 module = "tests.*"

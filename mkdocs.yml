@@ -46,9 +46,16 @@ theme:
         icon: material/brightness-4
         name: Switch to system preference
 
+extra_javascript:
+  - javascripts/katex.js
+  - https://unpkg.com/katex@0/dist/katex.min.js
+  - https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
+
 extra_css:
   - css/material.css
+  - css/mermaid.css
   - css/mkdocstrings.css
+  - https://unpkg.com/katex@0/dist/katex.min.css
 
 extra:
   version:
@@ -64,17 +71,25 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.highlight
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
 
 plugins:
   - search
   - autorefs
+  - bibtex:
+      bib_file: !ENV BIB_FILE
   - mkdocs-jupyter:
       ignore:
         - docs/gen_ref_pages.py
@@ -112,6 +127,7 @@ plugins:
             show_symbol_type_toc: true
             signature_crossrefs: true
             # with_preloaded_modules: true
+            trim_doctest_flags: true
           import:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
@@ -125,6 +141,7 @@ plugins:
             - https://www.mkdocs.org/objects.inv
             - https://pyproj4.github.io/pyproj/stable/objects.inv
             - https://attrs.org/en/stable/objects.inv
+            - https://attrs-strict.readthedocs.io/en/stable/objects.inv
 
 nav:
   - Home:
@@ -149,9 +166,11 @@ nav:
       - pysmo.tools:
           - api/pysmo/tools/index.md
           - azdist: api/pysmo/tools/azdist.md
+          - iccs: api/pysmo/tools/iccs.md
           - noise: api/pysmo/tools/noise.md
           - plotutils: api/pysmo/tools/plotutils.md
           - signal: api/pysmo/tools/signal.md
+          - utils: api/pysmo/tools/utils.md
       - pysmo.lib:
           - api/pysmo/lib/index.md
   # - Gallery:

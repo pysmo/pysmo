@@ -79,12 +79,14 @@ class SacSeismogram(_SacNested):
         Checking if a SacSeismogram matches the pysmo
         [`Seismogram`][pysmo.Seismogram] type:
 
+        ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("testfile.sac")
+        >>> my_sac = SAC.from_file("example.sac")
         >>> isinstance(my_sac.seismogram, Seismogram)
         True
         >>>
+        ```
 
         Timing operations in a SAC file use a reference time, and all times
         (begin time, event origin time, picks, etc.) are relative to this
@@ -92,11 +94,13 @@ class SacSeismogram(_SacNested):
         below shows the `begin_time` is the absolute time (in UTC) of the first
         data point:
 
-        >>> from pysmo import SAC
-        >>> my_sac = SAC.from_file("testfile.sac")
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> my_sac = SAC.from_file("example.sac")
         >>> my_sac.seismogram.begin_time
         datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
         >>>
+        ```
     """
 
     def __len__(self) -> int:
@@ -157,11 +161,14 @@ class SacStation(_SacNested):
         Checking if a SacStation matches the pysmo
         [`Station`][pysmo.Station] type:
 
-        >>> from pysmo import SAC, Station
-        >>> my_sac = SAC.from_file("testfile.sac")
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> from pysmo import Station
+        >>> my_sac = SAC.from_file("example.sac")
         >>> isinstance(my_sac.station, Station)
         True
         >>>
+        ```
     """
 
     @property
@@ -237,11 +244,14 @@ class SacEvent(_SacNested):
         Checking if a SacEvent matches the pysmo
         [`Event`][pysmo.Event] type:
 
-        >>> from pysmo import SAC, Event
-        >>> my_sac = SAC.from_file("testfile.sac")
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> from pysmo import Event
+        >>> my_sac = SAC.from_file("example.sac")
         >>> isinstance(my_sac.event, Event)
         True
         >>>
+        ```
 
     Note:
         Not all SAC files contain event information.
@@ -347,14 +357,14 @@ class SacTimestamps(_SacNested):
 
     Examples:
         Relative seismogram begin time as a float vs absolute begin time
-        as a [datetime][datetime] object.
+        as a [`datetime`][datetime] object.
 
         ```python
-        >>> from pysmo import SAC
-        >>> my_sac = SAC.from_file("testfile.sac")
+        >>> from pysmo.classes import SAC
+        >>> my_sac = SAC.from_file("example.sac")
         >>> # SAC header "B" as stored in a SAC file
         >>> my_sac.b
-        -63.34
+        -63.34000015258789
         >>> # the output above is the number of seconds relative
         >>> # to the reference time and date:
         >>> my_sac.kzdate , my_sac.kztime
@@ -363,6 +373,7 @@ class SacTimestamps(_SacNested):
         >>> # yields a corresponding datetime object with the absolute time:
         >>> my_sac.timestamps.b
         datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
+        >>>
         ```
 
         Changing timestamp values:
@@ -370,15 +381,16 @@ class SacTimestamps(_SacNested):
         ```python
         >>> from datetime import timedelta
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("testfile.sac")
+        >>> my_sac = SAC.from_file("example.sac")
         >>> # Original value of the "B" SAC header:
         >>> my_sac.b
-        -63.34
+        -63.34000015258789
         >>> # Add 30 seconds to the absolute time:
         >>> my_sac.timestamps.b += timedelta(seconds=30)
         >>> # The relative time also changes by the same amount:
         >>> my_sac.b
         -33.34
+        >>>
         ```
     """
 
@@ -444,13 +456,13 @@ class SAC(SacIO):
 
         ```python
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file('testfile.sac')
+        >>> my_sac = SAC.from_file('example.sac')
         >>> my_sac.delta
         0.019999999552965164
         >>> my_sac.data
-        array([2302., 2313., 2345., ..., 2836., 2772., 2723.])
+        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
         >>> my_sac.evla
-        23.14
+        -31.465999603271484
         >>>
         ```
 
@@ -470,7 +482,7 @@ class SAC(SacIO):
         types:
 
         ```python
-        >>> # Import the Seismogram type to check if the nested class is compatible.
+        >>> # Import the Seismogram type to check if the nested class is compatible:
         >>> from pysmo import Seismogram
         >>>
         >>> # First verify that a SAC instance is not a pysmo Seismogram:
@@ -488,11 +500,14 @@ class SAC(SacIO):
         types), their attributes typically may *not* be [`None`][None]:
 
         ```python
+        >>> # No error: a SAC file doesn't have to contain event information:
         >>> my_sac.evla = None
-        >>> # No error: a SAC file doesn't have to contain event information.
+        >>>
+        >>> # Error: the my_sac.event object may not have attributes set to `None`:
         >>> my_sac.event.latitude = None
+        Traceback (most recent call last):
+        ...
         TypeError: SacEvent.latitude may not be of None type.
-        >>> # Error: the my_sac.event object may not have attributes set to `None`.
         >>>
         ```
 

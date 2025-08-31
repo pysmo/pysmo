@@ -1,10 +1,13 @@
 """Functions for 'Mini' classes."""
 
-from pysmo.lib.typing import _AnyProto, _AnyMini
-from attrs import fields
+from __future__ import annotations
+from attrs import fields, NOTHING
+from cattrs import unstructure
 from copy import copy
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
+if TYPE_CHECKING:
+    from pysmo.lib.typing import _AnyProto, _AnyMini
 
 __all__ = [
     "copy_from_mini",
@@ -12,7 +15,9 @@ __all__ = [
 ]
 
 
-def copy_from_mini(source: _AnyMini, target: _AnyProto) -> None:
+def copy_from_mini(
+    source: _AnyMini, target: _AnyProto, update: dict | None = None
+) -> None:
     """Copy attributes from a Mini instance to matching other one.
 
     This function [copies][copy.copy] all attributes in the `source` Mini class
@@ -21,26 +26,38 @@ def copy_from_mini(source: _AnyMini, target: _AnyProto) -> None:
     Parameters:
         source: The Mini instance to copy attributes from.
         target: Compatible target instance.
+        update: Update or add attributes in the target instance.
 
     Raises:
         AttributeError: If the `target` instance does not contain all
-            attributes in the `source` instance.
+            attributes in the `source` instance (unless they are
+            provided with the `update` keyword argument).
 
-    See Also:
+    Tip: See Also
         [`clone_to_mini`][pysmo.functions.clone_to_mini]: Create a new
         instance of a Mini class from a matching other one.
     """
 
-    if all(map(lambda x: hasattr(target, x.name), fields(type(source)))):
-        for attr in fields(type(source)):
-            setattr(target, attr.name, copy(getattr(source, attr.name)))
+    update = update or dict()
+
+    attributes = unstructure(source).keys() | set()
+    attributes.update(update.keys())
+
+    if all(map(lambda x: hasattr(target, x), attributes)):
+        for attribute in attributes:
+            if attribute in update:
+                setattr(target, attribute, update[attribute])
+            else:
+                setattr(target, attribute, copy(getattr(source, attribute)))
     else:
         raise AttributeError(
             f"Unable to copy to target: {type(target)} not compatible with {type(source)}."
         )
 
 
-def clone_to_mini[TMini: _AnyMini](mini_cls: type[TMini], source: _AnyProto) -> TMini:
+def clone_to_mini[TMini: _AnyMini](
+    mini_cls: type[TMini], source: _AnyProto, update: dict | None = None
+) -> TMini:
     """Create a new instance of a Mini class from a matching other one.
 
     This function is creates a clone of an exising class by
@@ -48,36 +65,66 @@ def clone_to_mini[TMini: _AnyMini](mini_cls: type[TMini], source: _AnyProto) -> 
     to the target. Attributes only present in the source object are ignored,
     potentially resulting in a smaller and more performant object.
 
+    If the source instance is missing an attribute for which a default is
+    defined in the target class, then that default value for that attribute is
+    used.
+
     Parameters:
         mini_cls: The type of Mini class to create.
         source: The instance to clone (must contain all attributes present
             in `mini_cls`).
+        update: Update or add attributes in the returned `mini_cls` instance.
 
     Returns:
         A new Mini instance type mini_cls.
 
     Raises:
-        AttributeError: If the source instance does not contain all attributes
-            in mini_cls.
+        AttributeError: If the `source` instance does not contain all
+            attributes in `mini_cls` (unless they are provided with the
+            `update` keyword argument).
 
     Examples:
         Create a [`MiniSeismogram`][pysmo.MiniSeismogram] from a
-        [`SacSeismogram`][pysmo.classes.SacSeismogram] instance.
+        [`SacSeismogram`][pysmo.classes.SacSeismogram] instance with
+        a new `begin_time`.
 
-        >>> from pysmo.funtions import clone_to_mini
+        ```python
+        >>> from pysmo.functions import clone_to_mini
         >>> from pysmo import MiniSeismogram
         >>> from pysmo.classes import SAC
-        >>> sac_seismogram = SAC.from_file("testfile.sac").seismogram
-        >>> mini_seismogram = clone_to_mini(MiniSeismogram, sac_seismogram)
+        >>> from datetime import datetime, timezone
+        >>> now = datetime.now(timezone.utc)
+        >>> sac_seismogram = SAC.from_file("example.sac").seismogram
+        >>> mini_seismogram = clone_to_mini(MiniSeismogram, sac_seismogram, update={"begin_time": now})
+        >>> all(sac_seismogram.data == mini_seismogram.data)
+        True
+        >>> mini_seismogram.begin_time == now
+        True
+        >>>
+        ```
 
-    See Also:
+    Tip: See Also
         [`copy_from_mini`][pysmo.functions.copy_from_mini]: Copy attributes
         from a Mini instance to matching other one.
     """
 
-    if all(map(lambda x: hasattr(source, x.name), fields(mini_cls))):
+    update = update or dict()
+
+    if all(
+        map(
+            lambda x: hasattr(source, x.name)
+            or x.name in update
+            or x.default is not NOTHING,
+            fields(mini_cls),
+        )
+    ):
         clone_dict = {
-            attr.name: copy(getattr(source, attr.name)) for attr in fields(mini_cls)
+            attr.name: (
+                update[attr.name]
+                if attr.name in update
+                else copy(getattr(source, attr.name, attr.default))
+            )
+            for attr in fields(mini_cls)
         }
         # TODO: why do we need cast here for mypy?
         return cast(TMini, mini_cls(**clone_dict))

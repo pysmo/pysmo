@@ -13,12 +13,20 @@ from pysmo import (
     MiniSeismogram,
     MiniStation,
 )
+from pysmo.tools.iccs import ICCSSeismogram, MiniICCSSeismogram
 
-_AnyProto: TypeAlias = Event | Location | LocationWithDepth | Seismogram | Station
+_AnyProto: TypeAlias = (
+    Event | Location | LocationWithDepth | Seismogram | Station | ICCSSeismogram
+)
 "Type alias for any pysmo Protocol class."
 
 _AnyMini: TypeAlias = (
-    MiniEvent | MiniLocation | MiniLocationWithDepth | MiniSeismogram | MiniStation
+    MiniEvent
+    | MiniLocation
+    | MiniLocationWithDepth
+    | MiniSeismogram
+    | MiniStation
+    | MiniICCSSeismogram
 )
 "Type alias for any pysmo Mini class."
 
@@ -44,6 +52,7 @@ def matching_pysmo_types(obj: object) -> tuple[_AnyProto, ...]:
         [`MiniLocationWithDepth`][pysmo.MiniLocationWithDepth] or the class
         itself:
 
+        ```python
         >>> from pysmo.lib.typing import matching_pysmo_types
         >>> from pysmo import MiniLocationWithDepth
         >>>
@@ -53,6 +62,8 @@ def matching_pysmo_types(obj: object) -> tuple[_AnyProto, ...]:
         >>>
         >>> matching_pysmo_types(MiniLocationWithDepth)
         (<class 'pysmo._types._location.Location'>, <class 'pysmo._types._location_with_depth.LocationWithDepth'>)
+        >>>
+        ```
     """
 
     return tuple(proto for proto in get_args(_AnyProto) if isinstance(obj, proto))

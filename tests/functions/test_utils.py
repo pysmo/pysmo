@@ -1,5 +1,6 @@
 from pysmo import MiniSeismogram, MiniStation
 from pysmo.classes import SAC
+from datetime import datetime, timezone
 import numpy.testing as npt
 import pytest
 
@@ -16,9 +17,12 @@ class TestUtilsFunctions:
         assert mini_clone.delta == mini_seismogram.delta
         npt.assert_equal(mini_clone.data, mini_seismogram.data)
 
-        # clone sac
-        mini_clone = clone_to_mini(MiniSeismogram, sac_instance.seismogram)
-        assert mini_clone.begin_time == sac_instance.seismogram.begin_time
+        # clone sac with updated begin_time
+        now = datetime.now(timezone.utc)
+        mini_clone = clone_to_mini(
+            MiniSeismogram, sac_instance.seismogram, update={"begin_time": now}
+        )
+        assert mini_clone.begin_time == now
         assert mini_clone.delta == sac_instance.seismogram.delta
         npt.assert_equal(mini_clone.data, sac_instance.seismogram.data)
 
@@ -35,6 +39,9 @@ class TestUtilsFunctions:
         assert mini_station.latitude != sac_instance.station.latitude
         copy_from_mini(mini_station, sac_instance.station)
         assert mini_station.latitude == sac_instance.station.latitude
+
+        copy_from_mini(mini_station, sac_instance.station, update={"latitude": 0})
+        assert sac_instance.station.latitude == 0
 
         with pytest.raises(AttributeError):
             copy_from_mini(mini_station, sac_instance.seismogram)  # type: ignore
