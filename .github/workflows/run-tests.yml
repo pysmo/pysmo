@@ -19,8 +19,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Install dependencies
+        env:
+          UV_SYSTEM_PYTHON: 1
         run: |
-          pip install tox tox-gh-actions
+          uv pip install tox tox-gh-actions
       - name: Test with tox
         env:
           COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
