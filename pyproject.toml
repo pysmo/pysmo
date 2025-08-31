@@ -57,14 +57,14 @@ sybil = {extras = ["pytest"], version = "^9.1.0"}
 
 [tool.poetry.group.docs.dependencies]
 ipython = "^9.0.2"
-mkdocs-material = "^9.6.10"
+mkdocs-material = "^9.6.18"
 markdown-include = "^0.8.1"
 mkdocstrings = {extras = ["python"], version = "^0.29.1"}
 mkdocs-jupyter = "^0.25.1"
 termynal = "^0.13.0"
 jupyterlab = "^4.3.6"
 griffe-fieldz = "^0.2.1"
-mkdocs-bibtex = "^4.2.5"
+mkdocs-bibtex = "^4.4.0"
 
 [tool.pytest.ini_options]
 testpaths = [
