@@ -18,6 +18,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
+          uv venv
           uv pip install tox tox-gh-actions
       - name: Test with tox
         env:
@@ -25,7 +26,6 @@ jobs:
           CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
         run: |
           mkdir coverage
-          uv venv
           uv run tox
       - name: Store coverage results as artifacts
         uses: actions/upload-artifact@v4
