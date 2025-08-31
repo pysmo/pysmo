@@ -20,15 +20,14 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Install dependencies
         run: |
-          uv venv --no-managed-python --python ${{ matrix.python-version }}
-          uv pip install tox tox-gh-actions
+          pip install tox tox-gh-actions
       - name: Test with tox
         env:
           COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
           CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
         run: |
           mkdir coverage
-          uv run tox
+          tox
       - name: Store coverage results as artifacts
         uses: actions/upload-artifact@v4
         with:
