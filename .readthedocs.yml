@@ -11,10 +11,9 @@ build:
     python: "3.12"
   jobs:
     pre_create_environment:
-      - curl -sSL https://install.python-poetry.org | python3 -
+      - curl -LsSf https://astral.sh/uv/install.sh | sh
     pre_install:
-      - /home/docs/.local/bin/poetry self add poetry-plugin-export
-      - /home/docs/.local/bin/poetry export --only=docs -o docs-requirements.txt
+      - /home/docs/.local/bin/uv export --only-group docs --format requirements.txt -o docs-requirements.txt
 
 mkdocs:
   configuration: mkdocs.yml
