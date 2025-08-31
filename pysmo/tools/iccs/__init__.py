@@ -44,8 +44,7 @@ Examples:
     >>> from pysmo.functions import clone_to_mini
     >>> from pysmo.tools.iccs import MiniICCSSeismogram
     >>>
-    >>> (sacfiles := sorted(glob("iccs-example/*.bhz")))
-    ['iccs-example/ci_chf.bhz', 'iccs-example/ci_dan.bhz', ...]
+    >>> sacfiles = sorted(glob("iccs-example/*.bhz"))
     >>>
     >>> iccs_seismograms = []
     >>> for index, sacfile in enumerate(sacfiles):
