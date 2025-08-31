@@ -1,3 +1,8 @@
+<!-- invisible-code-block: python 
+```python
+>>> from pysmo.classes import SacSeismogram
+```
+-->
 # Functions
 
 At this point you have probably seen quite a few examples of functions that
@@ -52,6 +57,8 @@ knowing what exactly was used as input:
 
 The highlighted lines in the code above produce the following output when the
 script is executed:
+
+<!-- skip: next -->
 
 <!-- termynal -->
 

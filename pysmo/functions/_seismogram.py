@@ -2,15 +2,18 @@ from copy import deepcopy
 from pysmo import Seismogram
 from datetime import datetime, timedelta
 from math import floor, ceil
-from typing import Literal, overload
+from typing import Any, Literal, overload
+from functools import singledispatch
 import scipy.signal
 import numpy as np
+import numpy.typing as npt
 
 __all__ = [
     "crop",
     "detrend",
     "normalize",
     "resample",
+    "taper",
     "time2index",
 ]
 
@@ -20,7 +23,7 @@ def crop(
     seismogram: Seismogram,
     begin_time: datetime,
     end_time: datetime,
-    clone: Literal[False] = False,
+    clone: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -45,13 +48,16 @@ def crop[T: Seismogram](
         Cropped [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
     Examples:
+        ```python
         >>> from pysmo.functions import crop
         >>> from pysmo.classes import SAC
         >>> from datetime import timedelta
-        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> sac_seis = SAC.from_file('example.sac').seismogram
         >>> new_begin_time = sac_seis.begin_time + timedelta(seconds=10)
         >>> new_end_time = sac_seis.end_time - timedelta(seconds=10)
         >>> crop(sac_seis, new_begin_time, new_end_time)
+        >>>
+        ```
 
     Note:
         The returned seismogram may not have the exact new begin and end
@@ -85,7 +91,7 @@ def crop[T: Seismogram](
 
 
 @overload
-def detrend(seismogram: Seismogram, clone: Literal[False] = False) -> None: ...
+def detrend(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
 
 
 @overload
@@ -103,16 +109,19 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
         Detrended [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
     Examples:
+        ```python
         >>> import numpy as np
         >>> import pytest
-        >>> from pysmo.functions detrend
+        >>> from pysmo.functions import detrend
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
-        >>> assert 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
-        False
+        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        np.False_
         >>> detrend(sac_seis)
-        >>> assert 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
-        True
+        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        np.True_
+        >>>
+        ```
     """
     if clone is True:
         seismogram = deepcopy(seismogram)
@@ -128,46 +137,59 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
 @overload
 def normalize(
     seismogram: Seismogram,
-    clone: Literal[False] = False,
-    t1: datetime | None = None,
-    t2: datetime | None = None,
+    t1: datetime | None = ...,
+    t2: datetime | None = ...,
+    clone: Literal[False] = ...,
 ) -> None: ...
 
 
 @overload
 def normalize[T: Seismogram](
     seismogram: T,
+    t1: datetime | None = ...,
+    t2: datetime | None = ...,
+    *,
     clone: Literal[True],
-    t1: datetime | None = None,
-    t2: datetime | None = None,
+) -> T: ...
+
+
+@overload
+def normalize[T: Seismogram](
+    seismogram: T,
+    t1: datetime | None,
+    t2: datetime | None,
+    clone: Literal[True],
 ) -> T: ...
 
 
 def normalize[T: Seismogram](
     seismogram: T,
-    clone: bool = False,
     t1: datetime | None = None,
     t2: datetime | None = None,
+    clone: bool = False,
 ) -> None | T:
     """Normalize a seismogram with its absolute max value.
 
     Parameters:
         seismogram: Seismogram object.
-        clone: Operate on a clone of the input seismogram.
         t1: Optionally restrict searching of maximum to time after this time.
         t2: Optionally restrict searching of maximum to time before this time.
+        clone: Operate on a clone of the input seismogram.
 
     Returns:
         Normalized [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
 
     Examples:
+        ```python
         >>> import numpy as np
         >>> from pysmo.functions import normalize
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> sac_seis = SAC.from_file('example.sac').seismogram
         >>> normalize(sac_seis)
-        >>> assert np.max(sac_seis.data) <= 1
-        True
+        >>> -1 <= np.max(sac_seis.data) <= 1
+        np.True_
+        >>>
+        ```
     """
 
     if clone is True:
@@ -191,7 +213,7 @@ def normalize[T: Seismogram](
 
 @overload
 def resample(
-    seismogram: Seismogram, delta: timedelta, clone: Literal[False] = False
+    seismogram: Seismogram, delta: timedelta, clone: Literal[False] = ...
 ) -> None: ...
 
 
@@ -215,9 +237,10 @@ def resample[T: Seismogram](
         Resampled [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
     Examples:
+        ```python
         >>> from pysmo.functions import resample
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('testfile.sac').seismogram
+        >>> sac_seis = SAC.from_file('example.sac').seismogram
         >>> len(sac_seis)
         180000
         >>> original_delta = sac_seis.delta
@@ -225,8 +248,9 @@ def resample[T: Seismogram](
         >>> resample(sac_seis, new_delta)
         >>> len(sac_seis)
         90000
+        >>>
+        ```
     """
-
     if clone is True:
         seismogram = deepcopy(seismogram)
 
@@ -240,10 +264,142 @@ def resample[T: Seismogram](
     return None
 
 
+@overload
+def taper(
+    seismogram: Seismogram,
+    taper_width: timedelta | float,
+    taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"] = ...,
+    beta: float = ...,
+    clone: Literal[False] = ...,
+) -> None: ...
+
+
+@overload
+def taper[T: Seismogram](
+    seismogram: T,
+    taper_width: timedelta | float,
+    taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"] = ...,
+    beta: float = ...,
+    *,
+    clone: Literal[True],
+) -> T: ...
+
+
+@overload
+def taper[T: Seismogram](
+    seismogram: T,
+    taper_width: timedelta | float,
+    taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"],
+    beta: float,
+    clone: Literal[True],
+) -> T: ...
+
+
+def taper[T: Seismogram](
+    seismogram: T,
+    taper_width: timedelta | float,
+    taper_method: Literal[
+        "bartlett", "blackman", "hamming", "hanning", "kaiser"
+    ] = "hanning",
+    beta: float = 14.0,
+    clone: bool = False,
+) -> None | T:
+    """Apply a symetric taper to the ends of a Seismogram.
+
+    The [`taper()`][pysmo.functions.taper] function applies a taper to the data
+    at both ends of a [`Seismogram`][pysmo.Seismogram] object. The width of
+    this taper can be provided as either positive
+    [`timedelta`][datetime.timedelta] or as a fraction of the total seismogram
+    length. In both cases the width of the taper should not exceed half the
+    length of the seismogram.
+
+    Different methods for calculating the shape of the taper may be specified.
+    They are all derived from the corresponding `numpy` window functions:
+
+    - [`numpy.bartlett`][numpy.bartlett]
+    - [`numpy.blackman`][numpy.blackman]
+    - [`numpy.hamming`][numpy.hamming]
+    - [`numpy.hanning`][numpy.hanning]
+    - [`numpy.kaiser`][numpy.kaiser]
+
+    Parameters:
+        seismogram: Seismogram object.
+        taper_width: With of the taper to use.
+        taper_method: Taper method to use.
+        beta: beta value for the Kaiser window function (ignored for other methods).
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Tapered [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Examples:
+        ```python
+        >>> from pysmo.functions import taper, detrend
+        >>> from pysmo.classes import SAC
+        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> detrend(sac_seis)
+        >>> sac_seis.data
+        array([ 95.59652208, 106.59521819, 138.59391429, ..., 394.90004126,
+               330.89873737, 281.89743348], shape=(180000,))
+        >>> taper(sac_seis, 0.1)
+        >>> sac_seis.data
+        array([0.00000000e+00, 8.11814104e-07, 4.22204657e-06, ...,
+               1.20300114e-05, 2.52007798e-06, 0.00000000e+00], shape=(180000,))
+        >>>
+        ```
+    """
+
+    def calc_window_data(window_length: int) -> npt.NDArray:
+        if taper_method == "bartlett":
+            return np.bartlett(window_length)
+        elif taper_method == "blackman":
+            return np.blackman(window_length)
+        elif taper_method == "hamming":
+            return np.hamming(window_length)
+        elif taper_method == "hanning":
+            return np.hanning(window_length)
+        elif taper_method == "kaiser":
+            return np.kaiser(window_length, beta)
+
+    @singledispatch
+    def calc_samples(taper_width: Any) -> int:
+        raise TypeError(f"Unsupported type for 'taper_width': {type(taper_width)}")
+
+    @calc_samples.register(float)
+    def _(taper_width: float) -> int:
+        return floor(len(seismogram) * taper_width)
+
+    @calc_samples.register(timedelta)
+    def _(taper_width: timedelta) -> int:
+        return floor(taper_width / seismogram.delta) + 1
+
+    nsamples = calc_samples(taper_width)
+
+    if nsamples * 2 > len(seismogram):
+        raise ValueError(
+            "'taper_width' is too large. Taper width may not exceed half the length of the seismogram."
+        )
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    if nsamples > 0:
+        taper_data = np.ones(len(seismogram))
+        window = calc_window_data(nsamples * 2)
+        taper_data[:nsamples] = window[:nsamples]
+        taper_data[-nsamples:] = window[-nsamples:]
+        seismogram.data *= taper_data
+
+    if clone is True:
+        return seismogram
+
+    return None
+
+
 def time2index(
     seismogram: Seismogram,
     time: datetime,
-    method: Literal["round", "ceil", "floor"] = "round",
+    method: Literal["ceil", "floor", "round"] = "round",
 ) -> int:
     """Retuns data index corresponding to a given time.
 
@@ -268,8 +424,8 @@ def time2index(
     if not seismogram.begin_time <= time <= seismogram.end_time:
         raise ValueError("time must be between begin_time and end_time")
 
-    if method not in ["round", "ceil", "floor"]:
-        raise ValueError("method must be 'round', 'ceil' or 'floor'")
+    if method not in ["ceil", "floor", "round"]:
+        raise ValueError("method must be 'ceil', 'floor' or 'round'")
 
     if method == "ceil":
         return ceil((time - seismogram.begin_time) / seismogram.delta)
@@ -277,4 +433,5 @@ def time2index(
     if method == "floor":
         return floor((time - seismogram.begin_time) / seismogram.delta)
 
-    return round((time - seismogram.begin_time) / seismogram.delta)
+    if method == "round":
+        return round((time - seismogram.begin_time) / seismogram.delta)

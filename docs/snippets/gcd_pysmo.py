@@ -24,7 +24,7 @@ def f_pysmo(location_1: Location, location_2: Location) -> float:
     return distance
 
 
-my_seismogram = SAC.from_file("testfile.sac")
+my_seismogram = SAC.from_file("example.sac")
 my_event = my_seismogram.event  # (2)!
 my_station = my_seismogram.station
 gcd = f_pysmo(my_event, my_station)

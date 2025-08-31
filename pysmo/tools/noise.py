@@ -4,10 +4,6 @@ Generate realistic synthetic noise.
 This module provides support for calculating random synthetic noise that
 matches the naturally observed amplitude spectrum.
 
-Further Reading:
-    Peterson, J., 1993. Observations and modelling of background seismic noise.
-    Open-file report 93-322, U. S. Geological Survey, Albuquerque, New Mexico.
-
 Examples:
     Given the spectral amplitude in observed seismic noise on Earth is not flat (i.e.
     white noise), it makes sense to calculate more realistic noise for things like
@@ -152,8 +148,12 @@ NHNM = NoiseModel(
 
 
 def peterson(noise_level: float) -> NoiseModel:
-    """Generate a noise model by interpolating between Peterson's
+    """Generate a noise model by interpolating between Peterson's[^1]
     New Low Noise Model (NLNM) and New High Noice Model (NHNM).
+
+    [^1]: Peterson, Jon R. Observations and Modeling of Seismic Background
+        Noise. Report, 93–322, 1993, https://doi.org/10.3133/ofr93322. USGS
+        Publications Warehouse.
 
     Parameters:
         noise_level: Determines the noise level of the generated noise model.

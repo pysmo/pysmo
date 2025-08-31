@@ -40,40 +40,51 @@ class SacIO(SacIOBase):
     Examples:
         Create a new instance from a file and print seismogram data:
 
+        ```python
         >>> from pysmo.lib.io import SacIO
-        >>> my_sac = SacIO.from_file('testfile.sac')
+        >>> my_sac = SacIO.from_file('example.sac')
         >>> data = my_sac.data
         >>> data
-        array([-1616.0, -1609.0, -1568.0, -1606.0, -1615.0, -1565.0, ...
+        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
+        >>>
+        ```
 
         Read the sampling rate:
 
+        ```python
         >>> delta = my_sac.delta
         >>> delta
         0.019999999552965164
+        >>>
+        ```
 
         Change the sampling rate:
 
+        ```python
         >>> newdelta = 0.05
         >>> my_sac.delta = newdelta
         >>> my_sac.delta
         0.05
+        >>>
+        ```
 
         Create a new instance from IRIS services:
 
-        >>> from pysmo._io import SacIO
-        >>> my_sac = SacIO.from_iris(
-        >>>             net="C1",
-        >>>             sta="VA01",
-        >>>             cha="BHZ",
-        >>>             loc="--",
-        >>>             start="2021-03-22T13:00:00",
-        >>>             duration=1 * 60 * 60,
-        >>>             scale="AUTO",
-        >>>             demean="true",
-        >>>             force_single_result=True)
+        ```python
+        >>> from pysmo.lib.io import SacIO
+        >>> my_sac = SacIO.from_iris(net="C1",
+        ... sta="VA01",
+        ... cha="BHZ",
+        ... loc="--",
+        ... start="2021-03-22T13:00:00",
+        ... duration=1 * 60 * 60,
+        ... scale="AUTO",
+        ... demean="true",
+        ... force_single_result=True)
         >>> my_sac.npts
         144001
+        >>>
+        ```
 
     For each SAC(file) header field there is a corresponding attribute in this
     class. There are a lot of header fields in a SAC file, which are all called

@@ -67,7 +67,7 @@ class for storage, but use pysmo types for processing instead.
 
 For our example we assume the data we want to process is stored in a
 [sac](https://ds.iris.edu/files/sac-manual/manual/file_format.html) file called
-`testfile.sac`. Such files can be read in pysmo using the
+`example.sac`. Such files can be read in pysmo using the
 [`SAC`][pysmo.classes.SAC] class. The following code shows what the traditional
 way might look like:
 
@@ -102,6 +102,7 @@ The same example code, but using pysmo types instead would look like this:
 --8<-- "docs/snippets/gcd_pysmo.py"
 ```
 
+<!-- skip: next -->
 1. One of the pysmo types is [`Location`][pysmo.Location], which is a simple
   protocol class with two attributes `latitude` and `longitude`. We use this
   class for the type hints in our function.
@@ -115,7 +116,7 @@ The same example code, but using pysmo types instead would look like this:
   instances) of the desired pysmo types:
 
     ```python
-    >>> isinstance(sac.event, Location)
+    >>> isinstance(my_seismogram.event, Location)
     True
     ```
 
@@ -286,3 +287,38 @@ definition:
     type of seismogram object, but any two objects containing locations), while 
     simultaniously being very specific about type of input requried by the
     functions.
+
+### Specialised Types
+
+The basic types included in pysmo are not exclusively derived from whatever it
+is they represent in the physical world. Because they define the interface used
+for interoperability between different parts of code, they are also influenced
+by the requirements of the code itself (arguably this is what protocols are
+really all about).
+
+This is worth remembering when dealing with algorithms with very specific data
+requirements. One of the principles of pysmo is that e.g. a function should be
+asking for the exact type of data it needs, rather than having to deal with
+whatever the structure of the data provided is. For example, if we need a
+special type of [`Seismogram`][pysmo.Seismogram] that also needs a plethora of
+extra attributes for processing, we should not have to pass those attributes as
+arguments to a function. Instead, we should create a new type that contains
+those attributes.
+
+This is why some of the components in the pysmo package
+(e.g. [`pysmo.tools.iccs`][pysmo.tools.iccs]) use their own types
+([`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram]) rather than the basic
+pysmo types. Crucially, these types inherit from the basic pysmo types, and
+therefore can still be used the same way as e.g. a basic
+[`Seismogram`][pysmo.Seismogram].
+
+!!! tip
+
+    These specialised types all have a corresponding
+    [mini class](/user-guide/classes#pysmo-mini-classes).
+    Thus, if you are working with a class that matches e.g. the
+    [`Seismogram`][pysmo.Seismogram] type, but not the
+    [`ICCCSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type, you can create a
+    [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] object using
+    the [`clone_to_mini()`][pysmo.functions.clone_to_mini] function by adding
+    the missing attributes via the `update` argument.

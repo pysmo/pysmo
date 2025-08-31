@@ -19,6 +19,15 @@ in the class itself. For example, a `City` class may look something like this:
 As the `City` class has `latitude` and `longitude` attributes, an instance of it
 is also an instance of the [`Location`][pysmo.Location] type:
 
+<!-- invisible-code-block: python 
+```python
+>>> from docs.snippets.city import City
+>>> from pysmo import Location
+```
+-->
+
+<!-- skip: next -->
+
 <!-- termynal -->
 
 ```bash
@@ -233,7 +242,7 @@ This is best illustrated with a simple example:
 ```python
 >>> from pysmo import Seismogram, Station
 >>> from pysmo.classes import SAC
->>> my_sac = SAC.from_file("testfile.sac")
+>>> my_sac = SAC.from_file("example.sac")
 >>> isinstance(my_sac.seismogram, Seismogram) # (1)!
 True
 >>> isinstance(my_sac.station, Station) # (2)!
