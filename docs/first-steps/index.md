@@ -29,6 +29,14 @@ We load load this function into an interactive Python session and call it with
 the arguments `#!py 5` and `#!py 2`. Thus both variables `#!py a=5` and
 `#!py b=2` are numbers and we get the expected result:
 
+<!-- invisible-code-block: python 
+```python
+>>> from docs.snippets.division import division
+```
+-->
+
+<!-- skip: next -->
+
 ```python
 $ python -i division.py
 >>> division(5, 2)
@@ -108,6 +116,14 @@ type `Duck`):
 We then use this class in an interactive session, where the `is_a_duck` function
 tells us that `donald` (correctly) and `joe` (incorrectly) are both ducks:
 
+<!-- invisible-code-block: python 
+```python
+>>> from docs.snippets.duck import Duck, Human
+```
+-->
+
+<!-- skip: next -->
+
 ```python
 $ python -i duck.py
 >>> donald = Duck()  # (1)!
@@ -144,6 +160,7 @@ in some instances this is actually desired behavior.
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
     TypeError: object of type 'int' has no len()
+    >>>
     ```
 
     1.  :material-check: The [`#!py len()`][len] function works with a string,
@@ -163,6 +180,7 @@ in some instances this is actually desired behavior.
     True
     >>> hasattr(my_int,'__len__')
     False
+    >>>
     ```
 
 Note that we haven't annotated `#!py is_a_duck()` with a type signature, making
@@ -220,6 +238,14 @@ class and structural subtyping:
 
 Loading this new version into an interactive Python session we get the
 following:
+
+<!-- invisible-code-block: python 
+```python
+>>> from docs.snippets.duck_protocol import Duck, Human, Robot
+```
+-->
+
+<!-- skip: next -->
 
 ```python
 $ python -i duck_protocol.py

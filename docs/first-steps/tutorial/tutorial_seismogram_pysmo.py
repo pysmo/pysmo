@@ -13,7 +13,7 @@ class TutorialStation:
         return self.parent.station_latitude
 
     @latitude.setter
-    def latitude(self, value: float):
+    def latitude(self, value: float) -> None:
         self.parent.station_latitude = value
 
     @property
@@ -23,7 +23,7 @@ class TutorialStation:
         return self.parent.station_longitude
 
     @longitude.setter
-    def longitude(self, value: float):
+    def longitude(self, value: float) -> None:
         self.parent.station_longitude = value
 
 
@@ -38,7 +38,7 @@ class TutorialEvent:
         return self.parent.event_latitude
 
     @latitude.setter
-    def latitude(self, value: float):
+    def latitude(self, value: float) -> None:
         self.parent.event_latitude = value
 
     @property
@@ -48,7 +48,7 @@ class TutorialEvent:
         return self.parent.event_longitude
 
     @longitude.setter
-    def longitude(self, value: float):
+    def longitude(self, value: float) -> None:
         self.parent.event_longitude = value
 
 

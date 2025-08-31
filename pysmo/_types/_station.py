@@ -1,7 +1,6 @@
 from ._location import Location
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
-from attrs_strict import type_validator
 
 __all__ = ["Station", "MiniStation"]
 
@@ -43,35 +42,31 @@ class MiniStation:
     is compatible with the `Station` type.
 
     Examples:
+        ```python
         >>> from pysmo import MiniStation, Station, Location
-        >>> my_station = MiniStation(latitude=-21.680301, longitude=-46.732601,
-                                     name="CACB", network="BL")
+        >>> my_station = MiniStation(latitude=-21.680301, longitude=-46.732601, name="CACB", network="BL")
         >>> isinstance(my_station, Station)
         True
         >>> isinstance(my_station, Location)
         True
+        >>>
+        ```
     """
 
-    name: str = field(validator=type_validator())
+    name: str
     """Station name."""
 
-    network: str | None = field(default=None, validator=type_validator())
+    network: str | None = None
     """Network name."""
 
-    latitude: float | int = field(
-        validator=[validators.ge(-90), validators.le(90), type_validator()],
-    )
+    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
     """Station latitude from -90 to 90 degrees."""
 
-    longitude: float | int = field(
-        validator=[validators.gt(-180), validators.le(180), type_validator()],
-    )
+    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
     """Station longitude from -180 to 180 degrees."""
 
-    elevation: float | int | None = field(
+    elevation: float | None = field(
         default=None,
-        validator=validators.optional(
-            [validators.gt(-180), validators.le(180), type_validator()]
-        ),
+        validator=validators.optional([validators.gt(-180), validators.le(180)]),
     )
     """Station elevation."""

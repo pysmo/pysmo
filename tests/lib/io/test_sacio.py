@@ -29,7 +29,7 @@ def test_ref_datetime() -> None:
     now = datetime.now(timezone.utc)
     sac.ref_datetime = now
     now += timedelta(microseconds=500)
-    assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(
+    assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(  # type: ignore
         timespec="milliseconds"
     )
 

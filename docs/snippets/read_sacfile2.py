@@ -23,4 +23,4 @@ class SacIO2(SacIO):
         self.stlo = value
 
 
-my_sac2 = SacIO2.from_file("testfile.sac")
+my_sac2 = SacIO2.from_file("example.sac")

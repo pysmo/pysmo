@@ -1,6 +1,5 @@
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
-from attrs_strict import type_validator
 
 __all__ = ["Location", "MiniLocation"]
 
@@ -34,18 +33,17 @@ class MiniLocation:
     is compatible with the [`Location`][pysmo.Location] type.
 
     Examples:
+        ```python
         >>> from pysmo import MiniLocation, Location
         >>> my_location = MiniLocation(latitude=41.8781, longitude=-87.6298)
         >>> isinstance(my_location, Location)
         True
+        >>>
+        ```
     """
 
-    latitude: float | int = field(
-        validator=[validators.ge(-90), validators.le(90), type_validator()],
-    )
+    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
     """Latitude from -90 to 90 degrees."""
 
-    longitude: float | int = field(
-        validator=[validators.gt(-180), validators.le(180), type_validator()],
-    )
+    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
     """Longitude from -180 to 180 degrees."""

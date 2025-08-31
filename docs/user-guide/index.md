@@ -99,6 +99,8 @@ actually do things (i.e. you cannot create an instance of the `EmailSender`
 class). Instead you use a generic class that matches what `EmailSender`
 prescribes to actually perform the desired `send_email` action:
 
+<!-- skip: next -->
+
 ```python
 from emailprovider import EmailProvider #(1)!
 from emailprovider2 import EmailProvider2 #(2)!

@@ -31,9 +31,10 @@ def time_array(seismogram: Seismogram) -> npt.NDArray:
         of each point in the seismogram data.
 
     Examples:
-        >>> from pysmo.tools.plotseis import time_array
+        ```python
+        >>> from pysmo.tools.plotutils import time_array
         >>> from pysmo.classes import SAC
-        >>> my_seis = SAC.from_file('testfile.sac').seismogram
+        >>> my_seis = SAC.from_file('example.sac').seismogram
         >>> seis_data = my_seis.data
         >>> seis_times = time_array(my_seis)
         >>> for t, v in zip(seis_times, seis_data):
@@ -44,6 +45,8 @@ def time_array(seismogram: Seismogram) -> npt.NDArray:
         12843.307664351854 2345.0
         12843.307664583335 2377.0
         ...
+        >>>
+        ```
     """
     start = mdates.date2num(seismogram.begin_time)
     end = mdates.date2num(seismogram.end_time)
@@ -61,9 +64,10 @@ def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
         of each point in the seismogram data.
 
     Examples:
+        ```python
         >>> from pysmo.classes import SAC
-        >>> from pysmo.tools.plotseis import unix_time_array
-        >>> my_seis = SAC.from_file('testfile.sac').seismogram
+        >>> from pysmo.tools.plotutils import unix_time_array
+        >>> my_seis = SAC.from_file('example.sac').seismogram
         >>> seis_data = my_seis.data
         >>> seis_times = unix_time_array(my_seis)
         >>> for t, v in zip(seis_times, seis_data):
@@ -74,6 +78,8 @@ def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
         1109661782.2 2345.0
         1109661782.22 2377.0
         ...
+        >>>
+        ```
     """
     start = seismogram.begin_time.timestamp()
     end = seismogram.end_time.timestamp()
@@ -98,9 +104,13 @@ def plotseis(
         kwargs: Optionally add kwargs to pass to the plot command
 
     Examples:
-        >>> from pysmo import SAC, plotseis
-        >>> seis = SAC.from_file('testfile.sac').seismogram
-        >>> plotseis(seis)
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.plotutils import plotseis
+        >>> seis = SAC.from_file('example.sac').seismogram
+        >>> fig = plotseis(seis)
+        >>>
+        ```
     """
     fig = plt.figure()
     for seis in seismograms:

@@ -27,6 +27,7 @@
               python312
               python313Full
               python313Packages.tox
+              python313Packages.tkinter
             ];
 
             shellHook = ''
@@ -42,7 +43,7 @@
               poetry env use -- 3.13
               poetry install
 
-              # Tox might fail on the first run if the bins aren't already there...
+              # Tox might oail on the first run if the bins aren't already there...
               autoPatchelf .tox/lint/bin/
               source $VENV/bin/activate
             '';

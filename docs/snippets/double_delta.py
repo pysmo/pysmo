@@ -19,7 +19,7 @@ def double_delta(seismogram: Seismogram) -> Seismogram:
     return clone
 
 
-my_seis_in = SAC.from_file("testfile.sac").seismogram
+my_seis_in = SAC.from_file("example.sac").seismogram
 my_seis_out = double_delta(my_seis_in)
 
 reveal_type(my_seis_in)
