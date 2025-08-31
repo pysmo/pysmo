@@ -35,4 +35,6 @@ jobs:
           pip install poetry
           poetry install --only=docs
       - name: Deploy pages with mkdocs
+        env:
+          BIB_FILE: ${{ secrets.BIB_FILE }}
         run: poetry run mkdocs gh-deploy --force
