@@ -28,3 +28,4 @@ bar.py
 junit.xml
 .sync-conflict-*
 site/
+.envrc

@@ -2,13 +2,14 @@ from pysmo import Seismogram, MiniSeismogram
 from pysmo.classes import SAC
 from datetime import timedelta
 from copy import deepcopy
+from numpy.testing import assert_array_equal
 import pytest
 import pytest_cases
 import numpy as np
 from tests.conftest import TESTDATA
 
 
-SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
+SACSEIS = SAC.from_file(str(TESTDATA["orgfile"])).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
     delta=SACSEIS.delta,
@@ -151,3 +152,37 @@ class TestSeismogramFunctions:
             new_end_time = seis3.end_time - seis3.delta * 1.5
             cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
             assert all(cropped_seis.data == seis3.data[1:-1])
+
+    @pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../baseline/")
+    def test_taper(self, seismogram: Seismogram):  # type: ignore
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from pysmo.tools.plotutils import time_array
+        from pysmo.functions import taper
+        from typing import get_args, Literal
+
+        seismogram.data = np.ones(len(seismogram))
+
+        with pytest.raises(TypeError):
+            _ = taper(seismogram, "abc", clone=True)  # type: ignore
+        with pytest.raises(ValueError):
+            _ = taper(seismogram, 0.7, clone=True)
+        fig = plt.figure()
+        time = time_array(seismogram)
+        plt.plot(time, seismogram.data, scalex=True, scaley=True)
+        plt.plot(time, seismogram.data, scalex=True, scaley=True)
+        for method in get_args(
+            Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"]
+        ):
+            seis_taper = taper(seismogram, 0.2, method, clone=True)
+            plt.plot(time, seis_taper.data, scalex=True, scaley=True)
+        plt.xlabel("Time")
+        plt.gcf().autofmt_xdate()
+        fmt = mdates.DateFormatter("%H:%M:%S")
+        plt.gca().xaxis.set_major_formatter(fmt)
+        seis_taper_timedelta = taper(
+            seismogram, (seismogram.end_time - seismogram.begin_time) * 0.1, clone=True
+        )
+        taper(seismogram, 0.1)
+        assert_array_equal(seismogram.data, seis_taper_timedelta.data)
+        return fig

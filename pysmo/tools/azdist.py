@@ -1,8 +1,4 @@
-"""Common distance and azimuth calculations.
-
-Info:
-        For more information see: <https://pyproj4.github.io/pyproj/stable>
-"""
+"""Common distance and azimuth calculations using [`pyproj.Geod`][pyproj.Geod]."""
 
 from pysmo import Location
 from pyproj import Geod
@@ -59,15 +55,20 @@ def azimuth(
         Azimuth in degrees from location 1 to location 2.
 
     Examples:
+        ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import azimuth
-        >>> sacobj = SAC.from_file('testfile.sac')
+        >>> sacobj = SAC.from_file('example.sac')
         >>> # the SAC class provides both event and station
-        >>> azimuth(sacobj.event, sacobj.station)
-        181.9199258637492
+        >>> azi = azimuth(sacobj.event, sacobj.station)
+        >>> round(azi, 5)
+        181.91993
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
-        181.92001941872516
+        >>> azi = azimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> round(azi, 5)
+        181.92002
+        >>>
+        ```
     """
     return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[0]
 
@@ -86,15 +87,18 @@ def backazimuth(
         Backzimuth in degrees from point 2 to point 1
 
     Examples:
+        ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import backazimuth
-        >>> sacobj = SAC.from_file('testfile.sac')
+        >>> sacobj = SAC.from_file('example.sac')
         >>> # the SAC class provides both event and station
         >>> backazimuth(sacobj.event, sacobj.station)
         2.4677533885335947
         >>> # Use Clarke 1966 instead of default
         >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
         2.467847115319614
+        >>>
+        ```
     """
     return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[1]
 
@@ -113,14 +117,19 @@ def distance(
         Great Circle Distance in metres.
 
     Examples:
+        ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import distance
-        >>> sacobj = SAC.from_file('testfile.sac')
+        >>> sacobj = SAC.from_file('example.sac')
         >>> # the SAC class provides both event and station
-        >>> distance(sacobj.event, sacobj.station)
-        1889154.9940066522
+        >>> dist = distance(sacobj.event, sacobj.station)
+        >>> round(dist)
+        1889155
         >>> # Use Clarke 1966 instead of default
-        >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
-        1889121.778136402
+        >>> dist = distance(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> round(dist)
+        1889122
+        >>>
+        ```
     """
     return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[2]

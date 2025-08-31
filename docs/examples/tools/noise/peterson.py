@@ -1,21 +1,27 @@
+"""
+Example script for pysmo.tools.noise
+"""
+
 #!/usr/bin/env python
 
-# Example script for pysmo.tools.noise
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
 from scipy import signal
 from pysmo.tools.noise import generate_noise, peterson
 from datetime import timedelta
 
-npts = 200000
+npts: int = 200000  # multiple of 4
 delta = timedelta(seconds=0.1)
 sampling_frequency = 1 / delta.total_seconds()
-nperseg = npts / 4
-nfft = npts / 2
+nperseg = int(npts / 4)
+nfft = int(npts / 2)
 time_in_seconds = np.linspace(0, npts * delta.total_seconds(), npts)
 
 
-def calc_power(data, sampling_frequency):
+def calc_power(
+    data: npt.NDArray, sampling_frequency: float, nperseg: int, nfft: int
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Calculuate power and drop first element (f=0Hz) to avoid dividing by 0"""
     freqs, psd = signal.welch(
         data, sampling_frequency, nperseg=nperseg, nfft=nfft, scaling="density"
@@ -34,9 +40,15 @@ mid_noise_seismogram = generate_noise(npts=npts, model=mid_noise_model, delta=de
 high_noise_seismogram = generate_noise(npts=npts, model=high_noise_model, delta=delta)
 
 # Calculuate power spectral density
-f_low, Pxx_dens_low = calc_power(low_noise_seismogram.data, sampling_frequency)
-f_mid, Pxx_dens_mid = calc_power(mid_noise_seismogram.data, sampling_frequency)
-f_high, Pxx_dens_high = calc_power(high_noise_seismogram.data, sampling_frequency)
+f_low, Pxx_dens_low = calc_power(
+    low_noise_seismogram.data, sampling_frequency, nperseg, nfft
+)
+f_mid, Pxx_dens_mid = calc_power(
+    mid_noise_seismogram.data, sampling_frequency, nperseg, nfft
+)
+f_high, Pxx_dens_high = calc_power(
+    high_noise_seismogram.data, sampling_frequency, nperseg, nfft
+)
 
 fig = plt.figure(figsize=(20, 10))
 # Plot random high and low noise

@@ -8,7 +8,7 @@ from tests.conftest import TESTDATA
 matplotlib.use("Agg")
 
 
-SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
+SACSEIS = SAC.from_file(str(TESTDATA["orgfile"])).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
     delta=SACSEIS.delta,
@@ -27,7 +27,7 @@ def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignor
 @pytest_cases.parametrize(
     "seismogram", (SACSEIS, MINISEIS), ids=("SacSeismogram", "MiniSeismogram")
 )
-class test_plotseisFunctions:
+class TestPlotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
         from pysmo.tools.plotutils import time_array

@@ -10,10 +10,10 @@ should operate on the input directly, or first create a clone of it (using
 [`deepcopy`][copy.deepcopy]) and return the clone after using it for the
 the function. For example:
 
-```py
->>> from pysmo.function import resample
+```python
+>>> from pysmo.functions import resample
 >>> from pysmo.classes import SAC
->>> sac_seis = SAC.from_file('testfile.sac').seismogram
+>>> sac_seis = SAC.from_file('example.sac').seismogram
 >>> new_delta = sac_seis.delta * 2
 >>>
 >>> # create a clone and modify data in clone instead of sac_seis:
@@ -25,6 +25,7 @@ the function. For example:
 >>> # because the deepcopy operation can be computationaly expensive,
 >>> # you should NOT use the following pattern:
 >>> sac_seis = resample(sac_seis, new_delta, clone=True)
+>>>
 ```
 
 Hint:
