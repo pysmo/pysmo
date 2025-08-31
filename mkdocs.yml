@@ -89,7 +89,7 @@ plugins:
   - search
   - autorefs
   - bibtex:
-      bib_file: !ENV BIB_FILE
+      bib_file: docs/refs.bib
   - mkdocs-jupyter:
       ignore:
         - docs/gen_ref_pages.py
