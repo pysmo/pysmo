@@ -52,11 +52,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           python-version-file: ".python-version"
-      - name: Install dependencies
-        env:
-          UV_SYSTEM_PYTHON: 1
-        run: uv pip install coverage[toml]
-      - name: Get coverage results
+      - name: Download coverage results
         uses: actions/download-artifact@v4
         with:
           path: coverage
@@ -64,8 +60,8 @@ jobs:
           merge-multiple: true
       - name: combine reports
         run: |
-          coverage combine coverage
-          coverage xml
+          uvx "coverage[toml]" combine coverage
+          uvx "coverage[toml]" xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
