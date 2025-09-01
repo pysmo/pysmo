@@ -11,16 +11,64 @@ fitting delay times between an arbitrary number of seismograms. In each
 iteration, individual seismograms are cross-correlated with the stack of all
 input seismograms to improve the previous (or initial) phase arrival picks.
 
+The results of ICCS are are similar to those of the the MCCC[^2] method, while
+also requiring fewer cross-correlations to be computed (each individual
+seismogram is only cross-correlated with the stack, whereas in MCCC all
+seismograms are cross-correlated with each other). ICCS is therefore
+particularly useful to perepare data for a successful MCCC run (e.g. if the
+initial picks are calculated rather than hand picked).
+
 The [`iccs`][pysmo.tools.iccs] module requires seismograms containing extra
 attributes specific to the ICCS method. Hence it provides a protocol class
 ([`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram]) and corresponding Mini
 class ([`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram]) for that
-purpose.
+purpose. In addition to the common attributes of a
+[`Seismogram`][pysmo.Seismogram] in pysmo, the following parameters are
+required:
 
-Note that the results of ICCS are not as accurate as those of the better
-known MCCC[^2] method. However, as MCCC requires carefully chosen input
-picks and time windows, ICCS can be used to prepare data for a successful
-MCCC run.
+| Attribute                                          | Description |
+| -------------------------------------------------- | ----------- |
+| [`t0`][pysmo.tools.iccs.ICCSSeismogram.t0]         | Initial pick (typically \
+    computed). Serves as input only when `t1` is not set. |
+| [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1]         | Improved pick. \
+    Serves as both input (if not [`None`][None]) and output (always) when \
+    [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm. |
+| [`select`][pysmo.tools.iccs.ICCSSeismogram.select] | Determines if a  \
+    seismogram should be used for the stack. Can be automatically set when \
+    `autoselect`is [`True`][True] during a run. |
+| [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip]     | Determines if the \
+    seismogram data should be flipped (i.e. multiplied with -1) before using \
+    it in the stack and cross-correlation. Can be automatically set when \
+    `autoflip`is [`True`][True] during a run. |
+
+The diagram below shows execution flow, and how the above parameters are used
+when the ICCS algorithm is executed (see [here][pysmo.tools.iccs.ICCS.__call__]
+for parameters and default values)':
+
+```mermaid
+flowchart TD
+Start(["ICCSSeismograms with initial parameters."])
+Stack0["Generate windowed seismograms and create stack from them."]
+C["Cross-correlate windowed seismograms with stack to obtain updated picks and normalised correlation coefficients."]
+FlipQ{"Is **autoflip**
+True?"}
+Flip["Toggle **flip** attribute of seismograms with negative correlation coefficients."]
+QualQ{"Is **autoselect**
+True?"}
+Qual1["Set **select** attribute of seismograms to False for poor quality seismograms."]
+Stack1["Recompute windowed seismograms and stack with updated parameters."]
+H{"Convergence
+criteria met?"}
+I{"Maximum
+iterations
+reached?"}
+End(["ICCSSeismograms with updated **t1**, **flip**, and **select** parameters."])
+Start --> Stack0 --> C --> FlipQ -->|No| QualQ -->|No| Stack1 --> H -->|No| I -->|No| C
+FlipQ -->|Yes| Flip --> QualQ
+QualQ -->|Yes| Qual1 -->  Stack1
+H -->|Yes| End
+I -->|Yes| End
+```
 
 [^1]: Lou, X., et al. “AIMBAT: A Python/Matplotlib Tool for Measuring
     Teleseismic Arrival Times.” Seismological Research Letters, vol. 84,
@@ -30,116 +78,17 @@ MCCC run.
     Least Squares.” Bulletin of the Seismological Society of America,
     vol. 80, no. 1, Feb. 1990, pp. 150–69,
     https://doi.org/10.1785/BSSA0800010150.
-
-Examples:
-    We begin with a set of SAC files of the same event, recorded at different
-    stations. All files have a preliminary phase arrival estimate saved in the
-    `T0` SAC header, so we can use these files to create instances of the
-    [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] class for use
-    with the [`ICCS`][pysmo.tools.iccs.ICCS] class:
-
-    ```python
-    >>> from glob import glob
-    >>> from pysmo.classes import SAC
-    >>> from pysmo.functions import clone_to_mini
-    >>> from pysmo.tools.iccs import MiniICCSSeismogram
-    >>>
-    >>> sacfiles = sorted(glob("iccs-example/*.bhz"))
-    >>>
-    >>> iccs_seismograms = []
-    >>> for index, sacfile in enumerate(sacfiles):
-    ...     sac = SAC.from_file(sacfile)
-    ...     update = {"t0": sac.timestamps.t0}
-    ...     iccs_seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)
-    ...     iccs_seismograms.append(iccs_seismogram)
-    ...
-    >>>
-    ```
-
-    To better illustrate the different modes of running the ICCS algorithm, we
-    modify the data and picks in the seismograms to make them **worse** than
-    they actually are:
-
-    ```python
-    >>> from datetime import timedelta
-    >>> from copy import deepcopy
-    >>> import numpy as np
-    >>>
-    >>> # change the sign of the data in the first seismogram
-    >>> iccs_seismograms[0].data *= -1
-    >>>
-    >>> # move the initial pick 2 seconds earlier in second seismogram
-    >>> iccs_seismograms[1].t0 += timedelta(seconds=-2)
-    >>>
-    >>> # move the initial pick 2 seconds later in third seismogram
-    >>> iccs_seismograms[2].t0 += timedelta(seconds=2)
-    >>>
-    >>> # create a seismogram with completely random data
-    >>> iccs_random: MiniICCSSeismogram = deepcopy(iccs_seismograms[-1])
-    >>> iccs_random.data = np.random.rand(len(iccs_random))
-    >>> iccs_seismograms.append(iccs_random)
-    >>>
-    ```
-
-    We can now create an instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class
-    and plot the initial stack together with the input seismograms:
-
-    ```python
-    >>> from pysmo.tools.iccs import ICCS, plotstack
-    >>> iccs = ICCS(iccs_seismograms)
-    >>> _ = plotstack(iccs)
-    >>>
-    ```
-
-    ![initial stack](/examples/tools/iccs/stack_initial.png#only-light){ loading=lazy }
-    ![initial stack](/examples/tools/iccs/stack_initial_dark.png#only-dark){ loading=lazy }
-
-    The phase emergance is not visible in the stack, and the (absolute)
-    correlation coefficents of the the seismograms are not very high. This
-    shows the initial picks are not very good and/or that the data are of low
-    quality. To run the ICCS algorithm, we simply call (execute) the ICCS
-    instance:
-
-    ```python
-    >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
-    >>>                            # a list of the convergence value after each
-    >>>                            # iteration.
-    >>> _ = plotstack(iccs)
-    >>>
-    ```
-    ![initial stack](/examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
-    ![initial stack](/examples/tools/iccs/stack_first_run_dark.png#only-dark){ loading=lazy }
-
-    Despite of the random noise seismogram, the phase arrival is now visible in
-    the stack. Seismograms with low correlation coefficients can automatically
-    be deselected from the calculations by running ICCS again with
-    `autoselect=True`:
-
-
-    ```python
-    >>> _ = iccs(autoselect=True)
-    >>> _ = plotstack(iccs)
-    >>>
-    ```
-
-    ![initial stack](/examples/tools/iccs/stack_autoselect.png#only-light){ loading=lazy }
-    ![initial stack](/examples/tools/iccs/stack_autoselect_dark.png#only-dark){ loading=lazy }
-
-    Seisimograms that fit better with their polarity reversed can be flipped
-    automatically by setting `autoflip=True`:
-
-    ```python
-    >>> _ = iccs(autoflip=True)
-    >>> _ = plotstack(iccs)
-    >>>
-    ```
-
-    ![initial stack](/examples/tools/iccs/stack_autoflip.png#only-light){ loading=lazy }
-    ![initial stack](/examples/tools/iccs/stack_autoflip_dark.png#only-dark){ loading=lazy }
 """
 
-from ._functions import plotstack
 from ._iccs import ICCS
 from ._types import MiniICCSSeismogram, ICCSSeismogram
+from ._functions import plotstack, stack_pick, update_pick
 
-__all__ = ["plotstack", "ICCS", "ICCSSeismogram", "MiniICCSSeismogram"]
+__all__ = [
+    "ICCS",
+    "ICCSSeismogram",
+    "MiniICCSSeismogram",
+    "plotstack",
+    "stack_pick",
+    "update_pick",
+]
