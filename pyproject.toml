@@ -1,20 +1,11 @@
-[tool.poetry]
+[project]
 name = "pysmo"
 version = "1.0.0-dev1"
 description = "Python module for seismologists."
+authors = [{ name = "Simon M. Lloyd", email = "simon@slloyd.net" }]
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
-authors = ["Simon M. Lloyd <simon@slloyd.net>"]
 license = "GPL-3.0-or-later"
-documentation = "https://docs.pysmo.org"
-packages = [
-   {include = "pysmo"},
-]
-exclude = [
-    "tests",
-    "docs",
-    "utils",
-    "site",
-]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
@@ -22,49 +13,81 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
+dependencies = [
+    "scipy>=1.15.2,<2",
+    "numpy>=2.2.4,<3",
+    "matplotlib>=3.10.1,<4",
+    "pyproj>=3.7.1,<4",
+    "requests>=2.32.3,<3",
+    "attrs>=25.3.0,<26",
+    "attrs-strict>=1.0.1,<2",
+    "scipy-stubs>=1.15.2.1,<2",
+    "types-requests>=2.32.0.20250328,<3",
+    "cattrs>=25.1.1,<26",
+]
 
+[project.urls]
+Documentation = "https://docs.pysmo.org"
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.14"
-scipy = "^1.15.2"
-numpy = "^2.2.4"
-matplotlib = "^3.10.1"
-pyproj = "^3.7.1"
-requests = "^2.32.3"
-attrs = "^25.3.0"
-attrs-strict = "^1.0.1"
-scipy-stubs = "^1.15.2.1"
-types-requests = "^2.32.0.20250328"
-cattrs = "^25.1.1"
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20250326,<7",
+    "jinja2>=3.1.6,<4",
+    "black[jupyter]>=25.1.0,<26",
+    "pyyaml>=6.0.2,<7",
+]
+test = [
+    "pytest>=8.3.5,<9",
+    "pytest-mpl>=0.17.0,<0.18",
+    "pytest-cov>=6.0.0,<7",
+    "pytest-mypy>=1.0.0,<2",
+    "pytest-depends>=1.0.1,<2",
+    "pytest-sugar>=1.0.0,<2",
+    "nbmake>=1.5.5,<2",
+    "pytest-cases>=3.8.6,<4",
+    "ruff>=0.11.2,<0.12",
+    "sybil[pytest]>=9.1.0,<10",
+]
+docs = [
+    "ipython>=9.0.2,<10",
+    "mkdocs-material>=9.6.18,<10",
+    "markdown-include>=0.8.1,<0.9",
+    "mkdocstrings[python]>=0.29.1,<0.30",
+    "mkdocs-jupyter>=0.25.1,<0.26",
+    "termynal>=0.13.0,<0.14",
+    "jupyterlab>=4.3.6,<5",
+    "griffe-fieldz>=0.2.1,<0.3",
+    "mkdocs-bibtex>=4.4.0,<5",
+]
 
-[tool.poetry.group.dev.dependencies]
-types-pyyaml = "^6.0.12.20250326"
-jinja2 = "^3.1.6"
-black = {extras = ["jupyter"], version = "^25.1.0"}
-pyyaml = "^6.0.2"
+[tool.uv]
+default-groups = [
+    "dev",
+    "test",
+    "docs",
+]
 
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.5"
-pytest-mpl = "^0.17.0"
-pytest-cov = "^6.0.0"
-pytest-mypy = "^1.0.0"
-pytest-depends = "^1.0.1"
-pytest-sugar = "^1.0.0"
-nbmake = "^1.5.5"
-pytest-cases = "^3.8.6"
-ruff = "^0.11.2"
-sybil = {extras = ["pytest"], version = "^9.1.0"}
+[tool.hatch.build.targets.sdist]
+include = ["pysmo"]
+exclude = [
+    "tests",
+    "docs",
+    "utils",
+    "site",
+]
 
-[tool.poetry.group.docs.dependencies]
-ipython = "^9.0.2"
-mkdocs-material = "^9.6.18"
-markdown-include = "^0.8.1"
-mkdocstrings = {extras = ["python"], version = "^0.29.1"}
-mkdocs-jupyter = "^0.25.1"
-termynal = "^0.13.0"
-jupyterlab = "^4.3.6"
-griffe-fieldz = "^0.2.1"
-mkdocs-bibtex = "^4.4.0"
+[tool.hatch.build.targets.wheel]
+include = ["pysmo"]
+exclude = [
+    "tests",
+    "docs",
+    "utils",
+    "site",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -124,10 +147,3 @@ extend-exclude = ["utils/templates"]
 [tool.ruff.lint.per-file-ignores]
 "pysmo/lib/io/_sacio/_sacio_rendered.py" = ["E741"]
 "docs/first-steps/tutorial/tutorial.ipynb" = ["F811"]
-
-# [lint.extend-per-file-ignores]
-# "docs/snippets/*" = ["E402"]
-
-[build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
