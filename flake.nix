@@ -22,8 +22,8 @@
           default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
               gnumake
-              autoPatchelfHook
-              poetry
+              uv
+              ruff
               python312
               python313Full
               python313Packages.tox
@@ -36,16 +36,7 @@
                   stdenv.cc.cc.lib
                   zlib
                 ]}:$LD_LIBRARY_PATH
-              VENV=.venv
-              export POETRY_ACTIVE="true"
-              export POETRY_VIRTUALENVS_IN_PROJECT="true"
-              export POETRY_VIRTUALENVS_PATH=$VENV
-              poetry env use -- 3.13
-              poetry install
-
-              # Tox might oail on the first run if the bins aren't already there...
-              autoPatchelf .tox/lint/bin/
-              source $VENV/bin/activate
+              uv sync
             '';
           };
         };
