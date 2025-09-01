@@ -70,11 +70,13 @@ items are:
 
 ### Setting up Windows
 
-To set up the development environment on Windows a few additional steps may be needed:
+To set up the development environment on Windows a few additional steps may be
+needed:
 
 * Install [Chocolatey](https://chocolatey.org/install#individual), a package manager
-  for Windows which greatly simplifies installing additional dependencies correctly.
-* Once Chocolatey is installed, run the following commands (run as administrator)
+  for Windows which greatly simplifies installing additional dependencies
+  correctly.
+* Once Chocolatey is installed, run the following commands (as administrator)
   using either PowerShell or the Command Prompt to install the dependencies:
 
   ```powershell
@@ -82,30 +84,16 @@ To set up the development environment on Windows a few additional steps may be n
   PS > choco install awk
   ```
 
-### Python
-
-Pysmo is written in Python, and therefore requires Python to be installed on your
-system. A safe bet is a recent version of the
-[Anaconda Distribution](https://www.anaconda.com/download). If you prefer another
-option, or your system already has a recent version of Python installed, that is likely
-fine too (we'll just assume you know what you are doing).
-
-!!! tip
-    If you are running Windows and have Chocolatey installed, you can use the
-    `choco` command to install and update Python.
-
-### Poetry
+### uv
 
 In order to develop pysmo in a consistent and isolated environment we use
-[Poetry](https://python-poetry.org). Poetry creates a Python virtual environment and
+[uv](https://docs.astral.sh/uv/). Uv creates a Python virtual environment and
 manages the Python packages that are installed in that environment. This allows
-developing and testing while also having the stable version of pysmo installed at the
-same time. Please consult the [Poetry documentation](https://python-poetry.org/docs) for
-installation and basic usage instructions.
+developing and testing while also having the stable version of pysmo installed
+at the same time.
 
 !!! note
-    For convenience we wrap the most used poetry commands in a `Makefile`, so
-    interaction with Poetry is rarely required.
+    uv can also be used to install Python itself.
 
 ## Makefile
 
@@ -115,31 +103,23 @@ without arguments (or with `help`) will list available commands:
 ```bash
 $ make help
 
-This makefile executes mostly poetry commands. To view all poetry commands availabile run
-'poetry help'.
+This makefile executes mostly uv commands. To view all uv commands available
+run 'uv help'.
 
 AVAILABLE COMMANDS
   build                Build distribution.
-  check-poetry         Check if Poetry is installed.
+  check-uv             Check if uv is installed.
   clean                Remove existing builds.
+  docs                 Build html docs.
 ...
 ```
 
 To get you started run
 
 ```bash
-make install
+make sync
 ```
 
-in a shell. This will first create a Python virtual environment for development of
-pysmo (unless the environment already already exists), then install pysmo and its
-dependencies.
-
-To activate this virtual environment run
-
-```bash
-make shell
-```
-
-Inside this virtual Python environment all dependencies for pysmo have been installed
-and you can start developing.
+in a shell. This will first create a Python virtual environment for development
+of pysmo (unless the environment already already exists), then install pysmo
+and its dependencies.
