@@ -23,7 +23,7 @@ jobs:
           CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
         run: |
           mkdir coverage
-          uv sync --no-group docs
+          uv sync --locked --all-extras --no-group docs
           uv run black . --check --diff --color
           uv run ruff check
           uv run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb

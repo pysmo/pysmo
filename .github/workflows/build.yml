@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Set up environment with uv
         run: |
-          uv sync --locked  --no-group docs
+          uv sync --locked --all-extras  --no-group docs
       - name: Build sdist and wheel
         run: |
           uv build

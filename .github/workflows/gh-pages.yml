@@ -32,7 +32,7 @@ jobs:
             mkdocs-material-
       - name: Install docs dependencies
         run: |
-          uv sync --only-group docs
+          uv sync --locked --only-group docs
       - name: Deploy pages with mkdocs
         run: |
           uv run mkdocs gh-deploy --force
