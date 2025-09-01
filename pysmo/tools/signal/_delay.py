@@ -17,10 +17,10 @@ def delay(
     Cross correlates two seismograms to determine signal delay.
 
     This function is a wrapper around the
-    [`#!py scipy.signal.correlate()`][scipy.signal.correlate] function.
-    The default behavior is to call the correlate function with
-    `#!py mode="full"` using the full length data of the input seismograms.
-    This is the most robust option, but also the slowest.
+    [`scipy.signal.correlate`][scipy.signal.correlate] function. The default
+    behavior is to call the correlate function with `#!py mode="full"` using
+    the full length data of the input seismograms. This is the most robust
+    option, but also the slowest.
 
     If an approximate delay is known (e.g. because a particular phase is being
     targeted using a computed arrival time), the search space can be limited
@@ -61,10 +61,10 @@ def delay(
         delay: Time delay of the second seismogram with respect to the first.
         ccnorm: Normalised cross correlation value of the overlapping
             seismograms *after* shifting (uses
-            [`scipy.stats.pearsonr()`][scipy.stats.pearsonr] for the
-            calculation). This value ranges from -1 to 1, with 1 indicating a
-            perfect correlation, 0 indicating no correlation, and -1 indicating
-            a perfect anti-correlation.
+            [`scipy.stats.mstats.pearsonr`][scipy.stats.mstats.pearsonr] for
+            the calculation). This value ranges from -1 to 1, with 1 indicating
+            a perfect correlation, 0 indicating no correlation, and -1
+            indicating a perfect anti-correlation.
 
     Examples:
         To illustration the use of the `delay()` function, we read a seismogram
