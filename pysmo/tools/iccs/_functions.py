@@ -8,7 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
-from matplotlib.widgets import Cursor, Button
+from matplotlib.widgets import Cursor, Button, SpanSelector
 
 if TYPE_CHECKING:
     from ._iccs import ICCS
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from typing import Any
     from matplotlib.backend_bases import Event, MouseEvent
 
-__all__ = ["plotstack", "stack_pick", "update_pick"]
+__all__ = ["plotstack", "stack_pick", "stack_tw_pick", "update_pick"]
 
 CMAP = mpl.colormaps["cool"]
 NORM = PowerNorm(vmin=0, vmax=1, gamma=2)
@@ -179,6 +179,12 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
         ax, useblit=True, color="r", linewidth=2, horizOn=False
     )
 
+    def onclick(event: MouseEvent) -> Any:
+        if event.inaxes is ax:
+            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+
     class SaveOrCancel:
         def save(self, _: Event) -> None:
             pickdelta = timedelta(seconds=pick_line.get_xdata(orig=True)[0])  # type: ignore
@@ -196,13 +202,99 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
     b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
     b_abort.on_clicked(callback.cancel)
 
-    def onclick(event: MouseEvent) -> Any:
-        if event.inaxes is ax:
-            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-
     _ = fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
+
+    plt.show()
+    return fig
+
+
+def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
+    """Pick new time window limits in the stack.
+
+    This function launches an interactive figure to pick new values for
+    [`window_pre`][pysmo.tools.iccs.ICCS.window_pre] and
+    [`window_post`][pysmo.tools.iccs.ICCS.window_post].
+
+    Parameters:
+        iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
+        padded: If True, the plot is padded on both sides of the
+            time window by the amount defined in
+            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+
+    Returns:
+        Figure of the stack with the picker.
+
+    Info:
+        The new time window may not be chosen such that the pick lies
+        outside the the window. The picker will therefore automatically correct
+        itself for invalid window choices.
+
+    Examples:
+        ```python
+        >>> from pysmo.tools.iccs import ICCS, stack_tw_pick
+        >>> iccs = ICCS(iccs_seismograms)
+        >>> _ = iccs(autoselect=True, autoflip=True)
+        >>>
+        >>> stack_tw_pick(iccs)
+        <Figure size...
+        >>>
+        ```
+
+        ![Stack Pick Figure](/examples/tools/iccs/stack_tw_pick.png#only-light){ loading=lazy }
+        ![Stack Pick Figure](/examples/tools/iccs/stack_tw_pick_dark.png#only-dark){ loading=lazy }
+    """
+
+    fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
+
+    fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.96)
+
+    def onselect(xmin: float, xmax: float) -> None:
+        # phase arrival pick must be inside time window
+        if xmin >= 0:
+            xmin = -iccs.stack.delta.total_seconds()
+        if xmax <= 0:
+            xmax = iccs.stack.delta.total_seconds()
+
+        # time window should not excced the plot
+        xlim_min, xlim_max = ax.get_xlim()
+        if xmin < xlim_min:
+            xmin = xlim_min
+        if xmax > xlim_max:
+            xmax = xlim_max
+
+        span.extents = (xmin, xmax)
+
+    span = SpanSelector(
+        ax,
+        onselect,
+        "horizontal",
+        useblit=True,
+        props=dict(alpha=0.5, facecolor="tab:blue"),
+        interactive=True,
+        drag_from_anywhere=True,
+    )
+
+    span.extents = (
+        iccs.window_pre.total_seconds(),
+        iccs.window_post.total_seconds(),
+    )
+
+    class SaveOrCancel:
+        def save(self, _: Event) -> None:
+            iccs.window_pre = timedelta(seconds=span.extents[0])
+            iccs.window_post = timedelta(seconds=span.extents[1])
+            plt.close()
+
+        def cancel(self, _: Event) -> None:
+            plt.close()
+
+    callback = SaveOrCancel()
+    ax_save = fig.add_axes((0.7, 0.05, 0.1, 0.075))
+    ax_cancel = fig.add_axes((0.81, 0.05, 0.1, 0.075))
+    b_save = Button(ax_save, "Save", color="darkgreen", hovercolor="green")
+    b_save.on_clicked(callback.save)
+    b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
+    b_abort.on_clicked(callback.cancel)
 
     plt.show()
     return fig
