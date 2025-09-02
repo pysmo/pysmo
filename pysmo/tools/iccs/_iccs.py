@@ -35,7 +35,7 @@ def _prepare_seismograms(
     prep_for_plotting: bool = False,
     plot_padding: None | timedelta = None,
 ) -> list[MiniSeismogram]:
-    return_seismograms = []
+    return_seismograms: list[MiniSeismogram] = []
     for seismogram in seismograms:
         pick = seismogram.t1 or seismogram.t0
         window_start = pick + window_pre
@@ -50,14 +50,19 @@ def _prepare_seismograms(
                 window_end + plot_padding,
             )
             detrend(return_seismogram)
+            normalize(return_seismogram, window_start, window_end)
         else:
             crop(return_seismogram, window_start, window_end)
             detrend(return_seismogram)
             taper(return_seismogram, taper_width)
-        normalize(return_seismogram, window_start, window_end)
+            normalize(return_seismogram)
         if seismogram.flip is True:
             return_seismogram.data *= -1
         return_seismograms.append(return_seismogram)
+    if len(lengths := set(len(s) for s in return_seismograms)) == 1:
+        return return_seismograms
+    for s in return_seismograms:
+        s.data = s.data[: min(lengths)]
     return return_seismograms
 
 
