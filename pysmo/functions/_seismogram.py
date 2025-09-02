@@ -67,19 +67,19 @@ def crop[T: Seismogram](
     """
 
     if seismogram.begin_time > begin_time:
-        raise ValueError("new begin_time cannot be before seismogram.begin_time")
+        raise ValueError("New begin_time cannot be before seismogram.begin_time")
 
     if seismogram.end_time < end_time:
-        raise ValueError("new end_time cannot be after seismogram.end_time")
+        raise ValueError("New end_time cannot be after seismogram.end_time")
 
     if begin_time > end_time:
-        raise ValueError("new begin_time cannot be after end_time")
+        raise ValueError("New begin_time cannot be after end_time")
 
     if clone is True:
         seismogram = deepcopy(seismogram)
 
-    start_index = time2index(seismogram, begin_time, "floor")
-    end_index = time2index(seismogram, end_time, "ceil")
+    start_index = time2index(seismogram, begin_time)
+    end_index = time2index(seismogram, end_time)
 
     seismogram.data = seismogram.data[start_index : end_index + 1]
     seismogram.begin_time = seismogram.begin_time + seismogram.delta * start_index
@@ -197,11 +197,11 @@ def normalize[T: Seismogram](
 
     start_index = None
     if t1 is not None:
-        start_index = time2index(seismogram, t1, "floor")
+        start_index = time2index(seismogram, t1)
 
     end_index = None
     if t2 is not None:
-        end_index = time2index(seismogram, t2, "ceil")
+        end_index = time2index(seismogram, t2)
 
     seismogram.data /= np.max(np.abs(seismogram.data[start_index:end_index]))
 
