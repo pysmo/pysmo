@@ -69,7 +69,8 @@ markdown_extensions:
   - toc:
       permalink: "#"
   - pymdownx.details
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      default_lang: python
   - pymdownx.inlinehilite
   - pymdownx.superfences:
       custom_fences:

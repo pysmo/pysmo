@@ -1,10 +1,6 @@
 from pysmo.tools.iccs import ICCS, stack_pick, plotstack
 from make_iccs_data import example_data
-import matplotlib
 import matplotlib.pyplot as plt
-
-
-matplotlib.use("TkAgg")
 
 
 def make_plots(dark: bool = False, savefig: bool = False) -> None:
