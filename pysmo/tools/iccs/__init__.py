@@ -82,7 +82,7 @@ I -->|Yes| End
 
 from ._iccs import ICCS
 from ._types import MiniICCSSeismogram, ICCSSeismogram
-from ._functions import plotstack, stack_pick, update_pick
+from ._functions import plotstack, stack_pick, stack_tw_pick, update_pick
 
 __all__ = [
     "ICCS",
@@ -90,5 +90,6 @@ __all__ = [
     "MiniICCSSeismogram",
     "plotstack",
     "stack_pick",
+    "stack_tw_pick",
     "update_pick",
 ]
