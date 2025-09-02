@@ -6,10 +6,10 @@ from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
 from shutil import copyfile, copytree
 from typing import Any, Generator
 from pathlib import Path
-from pysmo.tools.iccs import MiniICCSSeismogram
+from glob import glob
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
-from glob import glob
+from pysmo.tools.iccs import MiniICCSSeismogram
 from datetime import timedelta
 import pytest
 import os
