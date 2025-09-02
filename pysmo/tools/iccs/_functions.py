@@ -24,34 +24,49 @@ NORM = PowerNorm(vmin=0, vmax=1, gamma=2)
 
 
 def _plot_common_stack(
-    iccs: ICCS, figsize: tuple[float, float] = (10, 5), constrained: bool = True
+    iccs: ICCS,
+    padded: bool = True,
+    figsize: tuple[float, float] = (10, 5),
+    constrained: bool = True,
 ) -> tuple[Figure, Axes]:
-    time = np.linspace(
-        iccs.window_pre.total_seconds(),
-        iccs.window_post.total_seconds(),
-        len(iccs.stack),
-    )
+    """Returns a basic stack plot for use in other plots."""
+
     layout = None
     if constrained:
         layout = "constrained"
     fig, ax = plt.subplots(figsize=figsize, layout=layout)
 
-    for prepared_seismogram, seismogram, ccnorm in zip(
-        iccs.seismograms_prepared, iccs.seismograms, iccs.seismograms_ccnorm
+    seismograms_prepared = iccs.seismograms_prepared
+    stack = iccs.stack
+    xmin, xmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
+
+    if padded:
+        ax.axvspan(xmin, xmax, color="lightgreen", alpha=0.2, label="Time Window")
+        seismograms_prepared = iccs.seismograms_for_plotting
+        stack = iccs.stack_for_plotting
+        xmin, xmax = (
+            (iccs.window_pre - iccs.plot_padding).total_seconds(),
+            (iccs.window_post + iccs.plot_padding).total_seconds(),
+        )
+
+    time = np.linspace(xmin, xmax, len(stack))
+
+    for seismogram_prepared, seismogram, ccnorm in zip(
+        seismograms_prepared, iccs.seismograms, iccs.seismograms_ccnorm
     ):
         if seismogram.select:
             color = CMAP(NORM(abs(ccnorm)))
-            ax.plot(time, prepared_seismogram.data, linewidth=0.4, color=color)
+            ax.plot(time, seismogram_prepared.data, linewidth=0.4, color=color)
     ax.plot(
         time,
-        iccs.stack.data,
+        stack.data,
         color=ax.spines["bottom"].get_edgecolor(),
         linewidth=2,
         label="Stack",
     )
     plt.ylabel("Normalised amplitude")
     plt.xlabel("Time relative to pick [s]")
-    plt.xlim(iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+    plt.xlim(xmin, xmax)
     plt.ylim(auto=None)
     ax.legend(loc="upper left")
     fig.colorbar(
@@ -60,23 +75,58 @@ def _plot_common_stack(
     return fig, ax
 
 
-def plotstack(iccs: ICCS) -> Figure:
+def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
     """Plot the ICCS stack.
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
+        padded: If True, the plot is padded on both sides of the
+            time window by the amount defined in
+            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
 
     Returns:
         Figure of the stack with the seismograms.
+
+    Examples:
+        The default plotting mode is to pad the stack beyond the time window
+        used for the cross-correlations (highlighted in light green). This is
+        useful particularly useful for narrow time windows. Note that because
+        of the padding, the displayed stack isn't exactly what is used for the
+        cross-correlations.
+
+        ```python
+        >>> from pysmo.tools.iccs import ICCS, plotstack
+        >>> iccs = ICCS(iccs_seismograms)
+        >>> _ = iccs(autoselect=True, autoflip=True)
+        >>>
+        >>> plotstack(iccs)
+        <Figure size...
+        >>>
+        ```
+
+        ![plotstack padded](/examples/tools/iccs/plotstack_padded.png#only-light){ loading=lazy }
+        ![plotstack padded](/examples/tools/iccs/plotstack_padded_dark.png#only-dark){ loading=lazy }
+
+        To view the stack exactly as it is used in the cross-correlations, set
+        the `padded` argument to `False`:
+
+        ```python
+        >>> plotstack(iccs, padded=False)
+        <Figure size...
+        >>>
+        ```
+
+        ![plotstack](/examples/tools/iccs/plotstack.png#only-light){ loading=lazy }
+        ![plotstack](/examples/tools/iccs/plotstack_dark.png#only-dark){ loading=lazy }
     """
 
-    fig, _ = _plot_common_stack(iccs)
+    fig, _ = _plot_common_stack(iccs, padded)
     plt.show()
     return fig
 
 
 def update_pick(iccs: ICCS, pickdelta: timedelta) -> None:
-    """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms.
+    """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
@@ -88,23 +138,38 @@ def update_pick(iccs: ICCS, pickdelta: timedelta) -> None:
     iccs._clear_caches()  # seismograms and stack need to be refreshed
 
 
-def stack_pick(iccs: ICCS) -> Figure:
+def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
     """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in the stack and apply it to all seismograms.
 
     This function launches an interactive figure to manually pick a new phase
     arrival in the stack, and then apply it to all seismograms.
 
-    ![Stack Pick Figure](/examples/tools/iccs/stack_pick.png#only-light){ loading=lazy }
-    ![Stack Pick Figure](/examples/tools/iccs/stack_pick_dark.png#only-dark){ loading=lazy }
-
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
+        padded: If True, the plot is padded on both sides of the
+            time window by the amount defined in
+            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+
 
     Returns:
         Figure of the stack with the picker.
+
+    Examples:
+        ```python
+        >>> from pysmo.tools.iccs import ICCS, stack_pick
+        >>> iccs = ICCS(iccs_seismograms)
+        >>> _ = iccs(autoselect=True, autoflip=True)
+        >>>
+        >>> stack_pick(iccs)
+        <Figure size...
+        >>>
+        ```
+
+        ![Stack Pick Figure](/examples/tools/iccs/stack_pick.png#only-light){ loading=lazy }
+        ![Stack Pick Figure](/examples/tools/iccs/stack_pick_dark.png#only-dark){ loading=lazy }
     """
 
-    fig, ax = _plot_common_stack(iccs, figsize=(10, 6), constrained=False)
+    fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
 
     fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.96)
 
