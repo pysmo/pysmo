@@ -138,12 +138,12 @@ class ICCS:
         >>>
         >>> sacfiles = sorted(glob("iccs-example/*.bhz"))
         >>>
-        >>> iccs_seismograms = []
+        >>> seismograms = []
         >>> for index, sacfile in enumerate(sacfiles):
         ...     sac = SAC.from_file(sacfile)
         ...     update = {"t0": sac.timestamps.t0}
         ...     iccs_seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)
-        ...     iccs_seismograms.append(iccs_seismogram)
+        ...     seismograms.append(iccs_seismogram)
         ...
         >>>
         ```
@@ -158,18 +158,18 @@ class ICCS:
         >>> import numpy as np
         >>>
         >>> # change the sign of the data in the first seismogram
-        >>> iccs_seismograms[0].data *= -1
+        >>> seismograms[0].data *= -1
         >>>
         >>> # move the initial pick 2 seconds earlier in second seismogram
-        >>> iccs_seismograms[1].t0 += timedelta(seconds=-2)
+        >>> seismograms[1].t0 += timedelta(seconds=-2)
         >>>
         >>> # move the initial pick 2 seconds later in third seismogram
-        >>> iccs_seismograms[2].t0 += timedelta(seconds=2)
+        >>> seismograms[2].t0 += timedelta(seconds=2)
         >>>
         >>> # create a seismogram with completely random data
-        >>> iccs_random: MiniICCSSeismogram = deepcopy(iccs_seismograms[-1])
+        >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
         >>> iccs_random.data = np.random.rand(len(iccs_random))
-        >>> iccs_seismograms.append(iccs_random)
+        >>> seismograms.append(iccs_random)
         >>>
         ```
 
@@ -178,8 +178,9 @@ class ICCS:
 
         ```python
         >>> from pysmo.tools.iccs import ICCS, plotstack
-        >>> iccs = ICCS(iccs_seismograms)
-        >>> _ = plotstack(iccs, padded=False)
+        >>> iccs = ICCS(seismograms)
+        >>> plotstack(iccs, padded=False)
+        <Figure size...
         >>>
         ```
 
@@ -210,7 +211,8 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoselect=True)
-        >>> _ = plotstack(iccs, padded=False)
+        >>> plotstack(iccs, padded=False)
+        <Figure size...
         >>>
         ```
 
@@ -222,7 +224,8 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoflip=True)
-        >>> _ = plotstack(iccs, padded=False)
+        >>> plotstack(iccs, padded=False)
+        <Figure size...
         >>>
         ```
 
