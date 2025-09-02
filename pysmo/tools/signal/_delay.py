@@ -143,8 +143,8 @@ def delay(
         >>> calculated_delay == signal_delay
         False
         >>> # The normalised cross correlation value is also not very high
-        >>> round(ccnorm, 5)
-        0.42672
+        >>> ccnorm
+        0.4267205
         >>>
         >>> calculated_delay, ccnorm = delay(seis1, seis2, abs_max=True)
         >>> # with `abs_max=True`, the signal delay is again retrieved:

@@ -179,7 +179,7 @@ class ICCS:
         ```python
         >>> from pysmo.tools.iccs import ICCS, plotstack
         >>> iccs = ICCS(iccs_seismograms)
-        >>> _ = plotstack(iccs)
+        >>> _ = plotstack(iccs, padded=False)
         >>>
         ```
 
@@ -196,7 +196,7 @@ class ICCS:
         >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
         >>>                            # a list of the convergence value after each
         >>>                            # iteration.
-        >>> _ = plotstack(iccs)
+        >>> _ = plotstack(iccs, padded=False)
         >>>
         ```
         ![initial stack](/examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
@@ -210,19 +210,19 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoselect=True)
-        >>> _ = plotstack(iccs)
+        >>> _ = plotstack(iccs, padded=False)
         >>>
         ```
 
         ![initial stack](/examples/tools/iccs/stack_autoselect.png#only-light){ loading=lazy }
         ![initial stack](/examples/tools/iccs/stack_autoselect_dark.png#only-dark){ loading=lazy }
 
-        Seisimograms that fit better with their polarity reversed can be flipped
+        Seismograms that fit better with their polarity reversed can be flipped
         automatically by setting `autoflip=True`:
 
         ```python
         >>> _ = iccs(autoflip=True)
-        >>> _ = plotstack(iccs)
+        >>> _ = plotstack(iccs, padded=False)
         >>>
         ```
 
@@ -255,7 +255,7 @@ class ICCS:
     """End of the time window relative to the pick."""
 
     plot_padding: timedelta = field(
-        default=timedelta(seconds=20),
+        default=timedelta(seconds=10),
         validator=[validators.gt(timedelta(seconds=0)), _clear_cache_on_update],
     )
     """Padding to apply before and after the time window.
@@ -273,43 +273,43 @@ class ICCS:
 
     # Prepared seismograms and stack are cached to prevent unnecessary
     # processing. Setting the caches to None will force a new calculation.
-    _seismograms_prepared_cache: list[MiniSeismogram] | None = field(init=False)
-    _seismograms_padded_cache: list[MiniSeismogram] | None = field(init=False)
-    _seismograms_ccnorm_cache: list[float] | None = field(init=False)
-    _stack_cache: MiniSeismogram | None = field(init=False)
-    _stack_padded_cache: MiniSeismogram | None = field(init=False)
+    _seismograms_prepared: list[MiniSeismogram] | None = field(init=False)
+    _seismograms_for_plotting: list[MiniSeismogram] | None = field(init=False)
+    _seismograms_ccnorm: list[float] | None = field(init=False)
+    _stack: MiniSeismogram | None = field(init=False)
+    _stack_for_plotting: MiniSeismogram | None = field(init=False)
 
     def __attrs_post_init__(self) -> None:
         self._clear_caches()
 
     def _clear_caches(self) -> None:
         """Clear all cached attributes."""
-        self._seismograms_prepared_cache = None
-        self._seismograms_padded_cache = None
-        self._seismograms_ccnorm_cache = None
-        self._stack_cache = None
-        self._stack_padded_cache = None
+        self._seismograms_prepared = None
+        self._seismograms_for_plotting = None
+        self._seismograms_ccnorm = None
+        self._stack = None
+        self._stack_for_plotting = None
 
     @property
     def seismograms_prepared(self) -> list[MiniSeismogram]:
         """Returns the windowed, detrended, normalised, tapered, and optionally flipped seismograms."""
 
-        if self._seismograms_prepared_cache is None:
-            self._seismograms_prepared_cache = _prepare_seismograms(
+        if self._seismograms_prepared is None:
+            self._seismograms_prepared = _prepare_seismograms(
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
                 self.taper_width,
             )
 
-        return self._seismograms_prepared_cache
+        return self._seismograms_prepared
 
     @property
     def seismograms_for_plotting(self) -> list[MiniSeismogram]:
         """Returns the windowed, detrended, normalised, tapered, and optionally flipped seismograms."""
 
-        if self._seismograms_prepared_cache is None:
-            self._seismograms_prepared_cache = _prepare_seismograms(
+        if self._seismograms_for_plotting is None:
+            self._seismograms_for_plotting = _prepare_seismograms(
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
@@ -318,18 +318,18 @@ class ICCS:
                 self.plot_padding,
             )
 
-        return self._seismograms_prepared_cache
+        return self._seismograms_for_plotting
 
     @property
     def seismograms_ccnorm(self) -> list[float]:
         """Returns a list of the normalised cross-correlation coefficients."""
 
-        if self._seismograms_ccnorm_cache is None:
-            self._seismograms_ccnorm_cache = _calc_ccnorms(
+        if self._seismograms_ccnorm is None:
+            self._seismograms_ccnorm = _calc_ccnorms(
                 self.seismograms_prepared, self.stack
             )
 
-        return self._seismograms_ccnorm_cache
+        return self._seismograms_ccnorm
 
     @property
     def stack(self) -> MiniSeismogram:
@@ -344,11 +344,26 @@ class ICCS:
         Returns:
             Stacked input seismograms.
         """
-        if self._stack_cache is not None:
-            return self._stack_cache
+        if self._stack is not None:
+            return self._stack
 
-        self._stack_cache = _create_stack(self.seismograms_prepared, self.seismograms)
-        return self._stack_cache
+        self._stack = _create_stack(self.seismograms_prepared, self.seismograms)
+        return self._stack
+
+    @property
+    def stack_for_plotting(self) -> MiniSeismogram:
+        """Returns the stacked [`prepared_seismograms`][pysmo.tools.iccs.ICCS.prepared_seismograms].
+
+        Returns:
+            Stacked input seismograms.
+        """
+        if self._stack_for_plotting is not None:
+            return self._stack_for_plotting
+
+        self._stack_for_plotting = _create_stack(
+            self.seismograms_for_plotting, self.seismograms
+        )
+        return self._stack_for_plotting
 
     def __call__(
         self,

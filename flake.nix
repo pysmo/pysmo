@@ -25,9 +25,9 @@
               uv
               ruff
               python312
-              python313Full
               python313Packages.tox
               python313Packages.tkinter
+              python313Full
             ];
 
             shellHook = ''
@@ -35,8 +35,11 @@
                 lib.makeLibraryPath [
                   stdenv.cc.cc.lib
                   zlib
+                  xorg.libX11
                 ]}:$LD_LIBRARY_PATH
-              uv sync
+              [ ! -d .venv ] && uv venv --system-site-packages --no-managed-python
+              uv sync --locked --all-extras
+              export MPLBACKEND="TKAgg"
             '';
           };
         };
