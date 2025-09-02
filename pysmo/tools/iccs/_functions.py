@@ -283,6 +283,7 @@ def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
         def save(self, _: Event) -> None:
             iccs.window_pre = timedelta(seconds=span.extents[0])
             iccs.window_post = timedelta(seconds=span.extents[1])
+            iccs._clear_caches()  # seismograms and stack need to be refreshed
             plt.close()
 
         def cancel(self, _: Event) -> None:
