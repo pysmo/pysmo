@@ -96,7 +96,6 @@ class TestSeismogramFunctions:
     def test_crop(self, seismogram: Seismogram) -> None:
         """Crop Seismogram object and verify cropped data."""
         from pysmo.functions import crop
-        from math import floor, ceil
 
         cropped_seis = crop(
             seismogram,
@@ -120,11 +119,11 @@ class TestSeismogramFunctions:
         bad_new_end_time = (
             seismogram.end_time + (seismogram.end_time - seismogram.begin_time) / 4
         )
-        new_start_index = floor(
+        new_start_index = round(
             (new_begin_time - seismogram.begin_time) / seismogram.delta
         )
         new_end_index = (
-            ceil((new_end_time - seismogram.begin_time) / seismogram.delta) + 1
+            round((new_end_time - seismogram.begin_time) / seismogram.delta) + 1
         )
         with pytest.raises(ValueError):
             crop(seismogram, bad_new_begin_time, new_end_time)
@@ -148,8 +147,8 @@ class TestSeismogramFunctions:
         if len(seismogram) > 100:
             seis3 = deepcopy(seismogram)
             seis3.data = seis3.data[:100]
-            new_begin_time = seis3.begin_time + seis3.delta * 1.5
-            new_end_time = seis3.end_time - seis3.delta * 1.5
+            new_begin_time = seis3.begin_time + seis3.delta
+            new_end_time = seis3.end_time - seis3.delta
             cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
             assert all(cropped_seis.data == seis3.data[1:-1])
 
