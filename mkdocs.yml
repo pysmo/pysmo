@@ -128,8 +128,9 @@ plugins:
             show_symbol_type_toc: true
             signature_crossrefs: true
             # with_preloaded_modules: true
-            trim_doctest_flags: true
-          import:
+            extra:
+              trim_doctest_flags: true
+          inventories:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
             - https://numpy.org/doc/stable/objects.inv
@@ -174,11 +175,14 @@ nav:
           - utils: api/pysmo/tools/utils.md
       - pysmo.lib:
           - api/pysmo/lib/index.md
-  # - Gallery:
-  #     - gallery/index.md
   - Developing pysmo:
       - developing/index.md
       - developing/developing.md
       - developing/contributing.md
   - contributors.md
   - changelog.md
+
+exclude_docs: |
+  conftest.py
+  examples/tools/noise/*.py
+  examples/tools/iccs/*.py

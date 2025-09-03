@@ -81,8 +81,8 @@ just one place, but if we have multiple functions that make use of this module,
 they will all need to be refactored too. This would potentially be a lot of
 work, which can be avoided by writing the contract outside of the function(s).
 This contract would only need to be written once. If you remember the
-[first-steps](/first-steps) section, you'll likely guess that this way of
-defining the contract is by using [`Protocol`][typing.Protocol] classes:
+[first-steps](../first-steps/index.md) section, you'll likely guess that this
+way of defining the contract is by using [`Protocol`][typing.Protocol] classes:
 
 ```python title="signup2.py"
 --8<-- "docs/snippets/signup2.py"

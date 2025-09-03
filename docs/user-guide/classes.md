@@ -1,8 +1,8 @@
 # Classes
 
-The types discussed in the [previous chapter](/user-guide/types/) are only
-useful in conjunction with compatible classes. The pysmo package contains
-classes that work with pysmo types (in the [`pysmo`][pysmo] and
+The types discussed in the [previous chapter](types.md) are only useful in
+conjunction with compatible classes. The pysmo package contains classes that
+work with pysmo types (in the [`pysmo`][pysmo] and
 [`pysmo.classes`][pysmo.classes] namespaces). Here we discuss how to write your
 own classes that work with pysmo types.
 
@@ -104,7 +104,7 @@ another one for pysmo.
 ### Extending an existing class
 
 In order to make use of these existing classes, we must ensure compatibility
-with the pysmo [types](../types). While some types may work out of the box
+with the pysmo [types](types.md). While some types may work out of the box
 with an existing class, it is usually necessary to modify the class to work
 with pysmo types. Crucially, this requires only a fraction of work compared to
 writing these kinds of classes from scratch.
