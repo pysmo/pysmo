@@ -1,6 +1,6 @@
 # Types
 
-In the previous section we briefly [mention](../introduction#type-tip) that
+In the previous section we briefly [mention](index.md#type-tip) that
 every time we define a class in Python, we also define a type. As these types
 may be structures containing other types (e.g. an array containing floats) they
 can be arbitrarily complex. We can therefore conveniently group any data into
@@ -315,7 +315,7 @@ therefore can still be used the same way as e.g. a basic
 !!! tip
 
     These specialised types all have a corresponding
-    [mini class](/user-guide/classes#pysmo-mini-classes).
+    [mini class](classes.md#pysmo-mini-classes).
     Thus, if you are working with a class that matches e.g. the
     [`Seismogram`][pysmo.Seismogram] type, but not the
     [`ICCCSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type, you can create a
