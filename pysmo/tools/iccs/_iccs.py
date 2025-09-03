@@ -116,6 +116,7 @@ def _calc_convergence(
             / norm(current_stack.data, 2)
             / len(current_stack)
         )
+    raise ValueError(f"Unknown convergence method: {method}.")
 
 
 @define
@@ -189,8 +190,8 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](/examples/tools/iccs/stack_initial.png#only-light){ loading=lazy }
-        ![initial stack](/examples/tools/iccs/stack_initial_dark.png#only-dark){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_initial.png#only-light){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_initial_dark.png#only-dark){ loading=lazy }
 
         The phase emergance is not visible in the stack, and the (absolute)
         correlation coefficents of the the seismograms are not very high. This
@@ -205,8 +206,8 @@ class ICCS:
         >>> _ = plotstack(iccs, padded=False)
         >>>
         ```
-        ![initial stack](/examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
-        ![initial stack](/examples/tools/iccs/stack_first_run_dark.png#only-dark){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_first_run_dark.png#only-dark){ loading=lazy }
 
         Despite of the random noise seismogram, the phase arrival is now visible in
         the stack. Seismograms with low correlation coefficients can automatically
@@ -221,8 +222,8 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](/examples/tools/iccs/stack_autoselect.png#only-light){ loading=lazy }
-        ![initial stack](/examples/tools/iccs/stack_autoselect_dark.png#only-dark){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_autoselect.png#only-light){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_autoselect_dark.png#only-dark){ loading=lazy }
 
         Seismograms that fit better with their polarity reversed can be flipped
         automatically by setting `autoflip=True`:
@@ -234,8 +235,8 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](/examples/tools/iccs/stack_autoflip.png#only-light){ loading=lazy }
-        ![initial stack](/examples/tools/iccs/stack_autoflip_dark.png#only-dark){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_autoflip.png#only-light){ loading=lazy }
+        ![initial stack](../../../examples/tools/iccs/stack_autoflip_dark.png#only-dark){ loading=lazy }
     """
 
     seismograms: Sequence[ICCSSeismogram] = field(
@@ -341,7 +342,7 @@ class ICCS:
 
     @property
     def stack(self) -> MiniSeismogram:
-        """Returns the stacked [`prepared_seismograms`][pysmo.tools.iccs.ICCS.prepared_seismograms].
+        """Returns the stacked seismograms ([`seismograms_prepared`][pysmo.tools.iccs.ICCS.seismograms_prepared]).
 
         The stack is calculated as the average of all seismograms with the
         attribute [`select`][pysmo.tools.iccs.ICCSSeismogram.select] set to
@@ -360,7 +361,7 @@ class ICCS:
 
     @property
     def stack_for_plotting(self) -> MiniSeismogram:
-        """Returns the stacked [`prepared_seismograms`][pysmo.tools.iccs.ICCS.prepared_seismograms].
+        """Returns the stacked seismograms ([`seismograms_for_plotting`][pysmo.tools.iccs.ICCS.seismograms_for_plotting]).
 
         Returns:
             Stacked input seismograms.

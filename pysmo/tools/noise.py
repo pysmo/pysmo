@@ -13,7 +13,7 @@ Examples:
     noise models. These are Peterson's NLNM, NHNM, and an interpolated model that
     lies between the two.
 
-    ![peterson](/examples/tools/noise/peterson.png)
+    ![peterson](../../../examples/tools/noise/peterson.png)
 
     ??? quote "Example source code"
         ```python title="peterson.py"
