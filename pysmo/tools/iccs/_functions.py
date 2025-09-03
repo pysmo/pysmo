@@ -104,8 +104,8 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
         >>>
         ```
 
-        ![plotstack padded](/examples/tools/iccs/plotstack_padded.png#only-light){ loading=lazy }
-        ![plotstack padded](/examples/tools/iccs/plotstack_padded_dark.png#only-dark){ loading=lazy }
+        ![plotstack padded](../../../examples/tools/iccs/plotstack_padded.png#only-light){ loading=lazy }
+        ![plotstack padded](../../../examples/tools/iccs/plotstack_padded_dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `padded` argument to `False`:
@@ -116,8 +116,8 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
         >>>
         ```
 
-        ![plotstack](/examples/tools/iccs/plotstack.png#only-light){ loading=lazy }
-        ![plotstack](/examples/tools/iccs/plotstack_dark.png#only-dark){ loading=lazy }
+        ![plotstack](../../../examples/tools/iccs/plotstack.png#only-light){ loading=lazy }
+        ![plotstack](../../../examples/tools/iccs/plotstack_dark.png#only-dark){ loading=lazy }
     """
 
     fig, _ = _plot_common_stack(iccs, padded)
@@ -165,8 +165,8 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
         >>>
         ```
 
-        ![Stack Pick Figure](/examples/tools/iccs/stack_pick.png#only-light){ loading=lazy }
-        ![Stack Pick Figure](/examples/tools/iccs/stack_pick_dark.png#only-dark){ loading=lazy }
+        ![Stack Pick Figure](../../../examples/tools/iccs/stack_pick.png#only-light){ loading=lazy }
+        ![Stack Pick Figure](../../../examples/tools/iccs/stack_pick_dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
@@ -240,8 +240,8 @@ def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
         >>>
         ```
 
-        ![Stack Pick Figure](/examples/tools/iccs/stack_tw_pick.png#only-light){ loading=lazy }
-        ![Stack Pick Figure](/examples/tools/iccs/stack_tw_pick_dark.png#only-dark){ loading=lazy }
+        ![Stack Pick Figure](../../../examples/tools/iccs/stack_tw_pick.png#only-light){ loading=lazy }
+        ![Stack Pick Figure](../../../examples/tools/iccs/stack_tw_pick_dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
