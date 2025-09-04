@@ -9,31 +9,31 @@ def make_plots(dark: bool = False, savefig: bool = False) -> None:
 
     iccs_seismograms = example_data()
     iccs = ICCS(iccs_seismograms)
-    fig = plotstack(iccs, False)
+    fig, _ = plotstack(iccs, False, return_fig=True)
     fname = "docs/examples/tools/iccs/stack_initial.png"
     if dark is True:
         fname = fname.replace(".png", "_dark.png")
     if savefig:
         fig.savefig(fname, transparent=True)
 
-    iccs()
-    fig = plotstack(iccs, False)
+    _ = iccs()
+    fig, _ = plotstack(iccs, False, return_fig=True)
     fname = "docs/examples/tools/iccs/stack_first_run.png"
     if dark is True:
         fname = fname.replace(".png", "_dark.png")
     if savefig:
         fig.savefig(fname, transparent=True)
 
-    iccs(autoselect=True)
-    fig = plotstack(iccs, False)
+    _ = iccs(autoselect=True)
+    fig, _ = plotstack(iccs, False, return_fig=True)
     fname = "docs/examples/tools/iccs/stack_autoselect.png"
     if dark is True:
         fname = fname.replace(".png", "_dark.png")
     if savefig:
         fig.savefig(fname, transparent=True)
 
-    iccs(autoflip=True)
-    fig = plotstack(iccs, False)
+    _ = iccs(autoflip=True)
+    fig, _ = plotstack(iccs, False, return_fig=True)
     fname = "docs/examples/tools/iccs/stack_autoflip.png"
     if dark is True:
         fname = fname.replace(".png", "_dark.png")
