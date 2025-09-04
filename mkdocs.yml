@@ -62,6 +62,7 @@ extra:
     provider: mike
 
 markdown_extensions:
+  - abbr
   - admonition
   - attr_list
   - footnotes

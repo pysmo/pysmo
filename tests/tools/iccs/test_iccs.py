@@ -12,9 +12,9 @@ BASELINE_DIR = "../../baseline/"
 
 
 class TestICCS:
-    TAPER = 0.0
-    AUTOFLIP = False
-    AUTOSELECT = False
+    TAPER: float = 0.0
+    AUTOFLIP: bool = False
+    AUTOSELECT: bool = False
 
     @pytest.fixture(autouse=True, scope="function")
     def _iccs(self, iccs_seismograms: list[ICCSSeismogram]) -> None:
@@ -66,7 +66,8 @@ class TestICCSNoTaper(TestICCS):
         style="default",
     )
     def test_iccs_stack_initial(self) -> Figure:
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
 
     @pytest.mark.mpl_image_compare(
         filename="test_iccs_stack_after.png",
@@ -76,11 +77,12 @@ class TestICCSNoTaper(TestICCS):
     )
     def test_iccs_call(self) -> Figure:
         self.iccs(autoflip=self.AUTOFLIP, autoselect=self.AUTOSELECT)
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
 
 
 class TestICCSTaper(TestICCS):
-    TAPER = 0.1
+    TAPER: float = 0.1
 
     @pytest.mark.mpl_image_compare(
         filename="test_iccs_stack_initial_taper.png",
@@ -89,7 +91,8 @@ class TestICCSTaper(TestICCS):
         style="default",
     )
     def test_iccs_stack_initial(self) -> Figure:
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
 
     @pytest.mark.mpl_image_compare(
         filename="test_iccs_stack_after_taper.png",
@@ -99,11 +102,12 @@ class TestICCSTaper(TestICCS):
     )
     def test_iccs_call(self) -> Figure:
         self.iccs(autoflip=self.AUTOFLIP, autoselect=self.AUTOSELECT)
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
 
 
 class TestICCSAbsMax(TestICCS):
-    AUTOFLIP = True
+    AUTOFLIP: bool = True
 
     @pytest.mark.mpl_image_compare(
         filename="test_iccs_stack_initial_absmax.png",
@@ -112,7 +116,8 @@ class TestICCSAbsMax(TestICCS):
         style="default",
     )
     def test_iccs_stack_initial(self) -> Figure:
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
 
     @pytest.mark.mpl_image_compare(
         filename="test_iccs_stack_after_absmax.png",
@@ -122,4 +127,5 @@ class TestICCSAbsMax(TestICCS):
     )
     def test_iccs_call(self) -> Figure:
         self.iccs(autoflip=self.AUTOFLIP, autoselect=self.AUTOSELECT)
-        return plotstack(self.iccs)
+        fig, _ = plotstack(self.iccs, return_fig=True)
+        return fig
