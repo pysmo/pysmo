@@ -76,6 +76,10 @@ class TestMiniSeismogram:
         with pytest.raises(TypeError):
             miniseis.begin_time = new_time_no_tz
 
+        miniseis.data = np.array([])
+        assert len(miniseis) == 0
+        assert miniseis.begin_time == miniseis.end_time
+
     @pytest.mark.depends(name="test_change_attributes")
     def test_as_seismogram(self) -> None:
         """check if it works in a functionfor Seismogram types."""

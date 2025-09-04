@@ -1,7 +1,7 @@
 """Functions for the ICCS class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 from datetime import timedelta
 import numpy as np
 import matplotlib as mpl
@@ -75,7 +75,21 @@ def _plot_common_stack(
     return fig, ax
 
 
-def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
+@overload
+def plotstack(
+    iccs: ICCS, padded: bool = True, return_fig: Literal[False] = False
+) -> None: ...
+
+
+@overload
+def plotstack(
+    iccs: ICCS, padded: bool = True, *, return_fig: Literal[True]
+) -> tuple[Figure, Axes]: ...
+
+
+def plotstack(
+    iccs: ICCS, padded: bool = True, return_fig: bool = False
+) -> tuple[Figure, Axes] | None:
     """Plot the ICCS stack.
 
     Parameters:
@@ -83,9 +97,12 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
         padded: If True, the plot is padded on both sides of the
             time window by the amount defined in
             [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
+            [`Axes`][matplotlib.axes.Axes] objects are returned instead of
+            shown.
 
     Returns:
-        Figure of the stack with the seismograms.
+        Figure of the stack with the seismograms if `return_fig` is `True`.
 
     Examples:
         The default plotting mode is to pad the stack beyond the time window
@@ -100,7 +117,6 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
         >>> plotstack(iccs)
-        <Figure size...
         >>>
         ```
 
@@ -112,7 +128,6 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
 
         ```python
         >>> plotstack(iccs, padded=False)
-        <Figure size...
         >>>
         ```
 
@@ -120,9 +135,11 @@ def plotstack(iccs: ICCS, padded: bool = True) -> Figure:
         ![plotstack](../../../examples/tools/iccs/plotstack_dark.png#only-dark){ loading=lazy }
     """
 
-    fig, _ = _plot_common_stack(iccs, padded)
+    fig, ax = _plot_common_stack(iccs, padded)
+    if return_fig:
+        return fig, ax
     plt.show()
-    return fig
+    return None
 
 
 def update_pick(iccs: ICCS, pickdelta: timedelta) -> None:
@@ -138,7 +155,21 @@ def update_pick(iccs: ICCS, pickdelta: timedelta) -> None:
     iccs._clear_caches()  # seismograms and stack need to be refreshed
 
 
-def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
+@overload
+def stack_pick(
+    iccs: ICCS, padded: bool = True, return_fig: Literal[False] = False
+) -> None: ...
+
+
+@overload
+def stack_pick(
+    iccs: ICCS, padded: bool = True, *, return_fig: Literal[True]
+) -> tuple[Figure, Axes]: ...
+
+
+def stack_pick(
+    iccs: ICCS, padded: bool = True, return_fig: bool = False
+) -> tuple[Figure, Axes] | None:
     """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in the stack and apply it to all seismograms.
 
     This function launches an interactive figure to manually pick a new phase
@@ -149,10 +180,12 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
         padded: If True, the plot is padded on both sides of the
             time window by the amount defined in
             [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
-
+        return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
+            [`Axes`][matplotlib.axes.Axes] objects are returned instead of
+            shown.
 
     Returns:
-        Figure of the stack with the picker.
+        Figure of the stack with the picker if `return_fig` is `True`.
 
     Examples:
         ```python
@@ -161,7 +194,6 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
         >>> stack_pick(iccs)
-        <Figure size...
         >>>
         ```
 
@@ -204,11 +236,27 @@ def stack_pick(iccs: ICCS, padded: bool = True) -> Figure:
 
     _ = fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
 
+    if return_fig:
+        return fig, ax
     plt.show()
-    return fig
+    return None
 
 
-def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
+@overload
+def stack_tw_pick(
+    iccs: ICCS, padded: bool = True, return_fig: Literal[False] = False
+) -> None: ...
+
+
+@overload
+def stack_tw_pick(
+    iccs: ICCS, padded: bool = True, *, return_fig: Literal[True]
+) -> tuple[Figure, Axes]: ...
+
+
+def stack_tw_pick(
+    iccs: ICCS, padded: bool = True, return_fig: bool = False
+) -> tuple[Figure, Axes] | None:
     """Pick new time window limits in the stack.
 
     This function launches an interactive figure to pick new values for
@@ -220,9 +268,12 @@ def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
         padded: If True, the plot is padded on both sides of the
             time window by the amount defined in
             [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
+            [`Axes`][matplotlib.axes.Axes] objects are returned instead of
+            shown.
 
     Returns:
-        Figure of the stack with the picker.
+        Figure of the stack with the picker if `return_fig` is `True`.
 
     Info:
         The new time window may not be chosen such that the pick lies
@@ -236,7 +287,6 @@ def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
         >>> stack_tw_pick(iccs)
-        <Figure size...
         >>>
         ```
 
@@ -296,5 +346,7 @@ def stack_tw_pick(iccs: ICCS, padded: bool = True) -> Figure:
     b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
     b_abort.on_clicked(callback.cancel)
 
+    if return_fig:
+        return fig, ax
     plt.show()
-    return fig
+    return None
