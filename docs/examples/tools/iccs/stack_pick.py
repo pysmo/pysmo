@@ -8,13 +8,15 @@ def make_plots(dark: bool = False, savefig: bool = False) -> None:
         plt.style.use("dark_background")
     iccs_seismograms = example_data()
     iccs = ICCS(iccs_seismograms)
-    iccs(autoselect=True, autoflip=True)
+    _ = iccs(autoselect=True, autoflip=True)
     fname = "docs/examples/tools/iccs/stack_pick.png"
-    fig = stack_pick(iccs)
+    fig, _ = stack_pick(iccs, return_fig=True)
     if dark:
         fname = fname.replace(".png", "_dark.png")
     if savefig:
         fig.savefig(fname, transparent=True)
+    else:
+        fig.show()
     plotstack(iccs)
 
 

@@ -186,7 +186,6 @@ class ICCS:
         >>> from pysmo.tools.iccs import ICCS, plotstack
         >>> iccs = ICCS(seismograms)
         >>> plotstack(iccs, padded=False)
-        <Figure size...
         >>>
         ```
 
@@ -203,7 +202,7 @@ class ICCS:
         >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
         >>>                            # a list of the convergence value after each
         >>>                            # iteration.
-        >>> _ = plotstack(iccs, padded=False)
+        >>> plotstack(iccs, padded=False)
         >>>
         ```
         ![initial stack](../../../examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
@@ -218,7 +217,6 @@ class ICCS:
         ```python
         >>> _ = iccs(autoselect=True)
         >>> plotstack(iccs, padded=False)
-        <Figure size...
         >>>
         ```
 
@@ -231,7 +229,6 @@ class ICCS:
         ```python
         >>> _ = iccs(autoflip=True)
         >>> plotstack(iccs, padded=False)
-        <Figure size...
         >>>
         ```
 
