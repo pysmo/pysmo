@@ -1,4 +1,4 @@
-# Not so Fast
+# Not so fast
 
 Before starting your journey with pysmo, you should have a basic understanding
 of *typing* in the Python programming language. More precisely, you should know
@@ -13,7 +13,7 @@ code editors (or other tools that check your code before it is executed).
     [PyCharm](https://www.jetbrains.com/pycharm/),
     [Neovim](https://neovim.io), etc.
 
-## Dynamic and Static Typing
+## Dynamic and static typing
 
 Python is a *dynamically* typed language. This means that the type
 ([`float`][float], [`str`][str], etc.) of a variable isn't set until you run
@@ -87,7 +87,7 @@ typed" (1).
 
 1. :material-lightbulb: because you can run your code even with type errors!
 
-## Duck Typing
+## Duck typing
 
 At this point one may ask why static typing is not enforced everywhere. Well,
 sometimes it is more useful to consider how something behaves, rather than what
