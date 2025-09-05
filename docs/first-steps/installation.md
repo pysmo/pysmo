@@ -23,7 +23,7 @@ installed using the [`pip`](https://pip.pypa.io/en/stable/) module:
     ```bash
     $ python3 -m pip install pysmo --pre
     ```
-=== "Development Versiosn"
+=== "Development Version"
 
     ```bash
     $ python3 -m pip install git+https://github.com/pysmo/pysmo
