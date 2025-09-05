@@ -22,6 +22,7 @@ def example_data() -> list[MiniICCSSeismogram]:
     iccs_seismograms[1].t0 += timedelta(seconds=-2)
     iccs_seismograms[2].t0 += timedelta(seconds=2)
 
+    np.random.seed(0)
     iccs_random = deepcopy(iccs_seismograms[-1])
     iccs_random.data = np.random.rand(len(iccs_random))
     iccs_seismograms.append(iccs_random)

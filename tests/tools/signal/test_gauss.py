@@ -48,7 +48,7 @@ def test_gauss(seismogram: Seismogram) -> None:
 
 
 @pytest.mark.depends(on=["test_envelope", "test_gauss"])
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../../baseline/")
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_plot_gauss_env(seismogram: Seismogram = SACSEIS) -> matplotlib.figure.Figure:
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
