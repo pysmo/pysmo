@@ -1,4 +1,4 @@
-.PHONY: help check-uv sync update lint test-figs test-tutorial tests \
+.PHONY: help check-uv sync upgrade lint test-figs test-tutorial tests \
 	mypy docs live-docs notebook build publish clean python \
 	format format-check
 
@@ -26,15 +26,15 @@ endif
 sync: check-uv ## Install this project and its dependencies in a virtual environment.
 	uv sync
 
-update: check-uv ## Update dependencies to their latest versions.
-	uv update
+upgrade: check-uv ## Upgrade dependencies to their latest versions.
+	uv sync --upgrade
 
 lint: check-uv ## Check formatting with black and lint code with ruff.
 	uv run black . --check --diff --color
 	uv run ruff check .
 
-test-figs: check-uv ## Generate baseline figures for testing. Only run this if you know what you are doing!
-	uv run py.test --mpl-generate-path=tests/baseline
+test-figs: check-uv ## Generate baseline figures for testing (then manually move them to the test directories).
+	uv run py.test --mpl-generate-path=baseline
 
 test-tutorial: check-uv ## Check if the tutorial notebook runs error-free.
 	uv run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb
