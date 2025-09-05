@@ -61,7 +61,7 @@ present.
        print(f"The coordinates of {city.name} are: {city.latitude}, {city.longitude}")
     ```
 
-## Pysmo Mini Classes
+## Pysmo Mini classes
 
 The `City` example above illustrates how easy it is to write a class that is
 compatible with functions that expect pysmo types as input. However, this is
@@ -122,7 +122,7 @@ writing these kinds of classes from scratch.
   </figcaption>
 </figure>
 
-## The SAC Classes
+## The SAC classes
 
 [SAC](<https://ds.iris.edu/ds/nodes/dmc/software/downloads/sac/>) (Seismic
 Analysis Code) is a commonly used program that uses its own file format. Pysmo
@@ -151,7 +151,7 @@ lowercase). For example for the station location:
 <!-- termynal -->
 
 ```bash
-$ # Start an interactive python shell after executing read_sacfile.py:
+# Start an interactive python shell after executing read_sacfile.py:
 $ python -i read_sacfile.py
 >>> print(f"Station latitude: {my_sac.stla:.2f}")
 Station latitude: -48.47

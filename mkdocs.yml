@@ -21,7 +21,7 @@ theme:
     - navigation.indexes
     - navigation.instant
     - navigation.instant.prefetch
-    - navigation.instant.preview
+    # - navigation.instant.preview
     - navigation.instant.progress
     # - navigation.sections
     # - navigation.tabs
@@ -154,17 +154,17 @@ plugins:
 nav:
   - Home:
       - pysmo: index.md
-  - First Steps:
+  - First steps:
       - first-steps/index.md
       - first-steps/installation.md
       - first-steps/tutorial/tutorial.ipynb
-  - User Guide:
+  - User guide:
       - user-guide/index.md
       - user-guide/in-the-box.md
       - user-guide/types.md
       - user-guide/classes.md
       - user-guide/functions.md
-  - API Reference:
+  - API reference:
       - pysmo:
           - api/index.md
       - pysmo.classes:

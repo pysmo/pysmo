@@ -23,7 +23,7 @@ Similarly, the API reference in the
 [docs](https://github.com/pysmo/pysmo/tree/HEAD/docs) folder may need editing
 to include the documentation of your code.
 
-## Formatting and Style
+## Formatting and style
 
 ### Code
 
