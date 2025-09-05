@@ -1,5 +1,13 @@
 # Introduction
 
+## How to use this documentation
+
+This section of the documentation is intended to give you a good overview of
+the principal concepts behind pysmo. It describes what pysmo is, why you may
+want to use it, and how to use it. If you are looking for specifics on a
+particular component of pysmo, please refer to the relevant section in the
+[API reference](../api/index.md).
+
 ## Rationale
 
 Anyone who has taken a course on programming (in any language) will most likely
@@ -32,7 +40,7 @@ exclusively on how they are processed. The two main reasons for this are:
   a seismogram, but rather want to add as much useful metadata as possible,
   combine different data sources into one large object, etc.
 
-## A Software Contract
+## A software contract
 
 When we write software, we often need to pass information around between
 different parts of our code. To do this, the different parts need to be in
@@ -221,7 +229,7 @@ same code for a seismogram that is highly specific in its implementation.
     (which we verify in the last line). Simply put then, every time we define a
     class in Python, we also define a type.
 
-## Use Cases
+## Use cases
 
 There is actually no specific use case for psymo; the main purpose of pysmo is
 to serve as a library when writing *new* code, which means when and how to use
