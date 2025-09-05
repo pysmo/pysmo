@@ -11,7 +11,8 @@ from typing import Any, Literal
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
-from copy import deepcopy
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor, Future
 import numpy as np
 import numpy.typing as npt
 
@@ -25,98 +26,6 @@ def _clear_cache_on_update(instance: "ICCS", attribute: Attribute, value: Any) -
     """Validator that causes cached attributes to be cleared."""
     if getattr(instance, attribute.name) != value:
         instance._clear_caches()
-
-
-def _prepare_seismograms(
-    seismograms: Sequence[ICCSSeismogram],
-    window_pre: timedelta,
-    window_post: timedelta,
-    taper_width: timedelta | float,
-    prep_for_plotting: bool = False,
-    plot_padding: None | timedelta = None,
-) -> list[MiniSeismogram]:
-    return_seismograms: list[MiniSeismogram] = []
-    for seismogram in seismograms:
-        pick = seismogram.t1 or seismogram.t0
-        window_start = pick + window_pre
-        window_end = pick + window_post
-        return_seismogram = clone_to_mini(MiniSeismogram, seismogram)
-        if prep_for_plotting:
-            if plot_padding is None:
-                raise ValueError("plot_padding must be specified")
-            crop(
-                return_seismogram,
-                window_start - plot_padding,
-                window_end + plot_padding,
-            )
-            detrend(return_seismogram)
-            normalize(return_seismogram, window_start, window_end)
-        else:
-            crop(return_seismogram, window_start, window_end)
-            detrend(return_seismogram)
-            taper(return_seismogram, taper_width)
-            normalize(return_seismogram)
-        if seismogram.flip is True:
-            return_seismogram.data *= -1
-        return_seismograms.append(return_seismogram)
-    if len(lengths := set(len(s) for s in return_seismograms)) == 1:
-        return return_seismograms
-    for s in return_seismograms:
-        s.data = s.data[: min(lengths)]
-    return return_seismograms
-
-
-def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> list[float]:
-    ccnorms = [
-        float(pearsonr(seismogram.data, stack.data)[0]) for seismogram in seismograms
-    ]
-    return ccnorms
-
-
-def _create_stack(
-    prepared_seismograms: Sequence[Seismogram], seismograms: Sequence[ICCSSeismogram]
-) -> MiniSeismogram:
-    begin_time = average_datetimes(
-        [p.begin_time for p, s in zip(prepared_seismograms, seismograms) if s.select]
-    )
-    delta = prepared_seismograms[0].delta
-    data = np.mean(
-        np.array(
-            [p.data for p, s in zip(prepared_seismograms, seismograms) if s.select]
-        ),
-        axis=0,
-    )
-    return MiniSeismogram(begin_time=begin_time, delta=delta, data=data)
-
-
-def _calc_convergence(
-    current_stack: Seismogram,
-    prev_stack: Seismogram,
-    method: CONVERGENCE_METHOD,
-) -> float:
-    """Calcuate criterion of convergence.
-
-    This function calculates a criterion of convergence based on the current and
-    previous stack using one of the following methods:
-
-    - Convergence by correlation coefficient.
-    - Convergence by change of stack
-
-    Parameters:
-        current_stack: Current stack.
-        prev_stack: Stack from last iteration.
-        method: Method of convergence criterion calculation.
-    """
-    if method == "corrcoef":
-        covr, _ = pearsonr(current_stack.data, prev_stack.data)
-        return 1 - float(covr)
-    elif method == "change":
-        return float(
-            norm(current_stack.data - prev_stack.data, 1)
-            / norm(current_stack.data, 2)
-            / len(current_stack)
-        )
-    raise ValueError(f"Unknown convergence method: {method}.")
 
 
 @define
@@ -174,6 +83,7 @@ class ICCS:
         >>>
         >>> # create a seismogram with completely random data
         >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
+        >>> np.random.seed(42)  # set this for consistent results during testing
         >>> iccs_random.data = np.random.rand(len(iccs_random))
         >>> seismograms.append(iccs_random)
         >>>
@@ -234,10 +144,15 @@ class ICCS:
 
         ![initial stack](../../../examples/tools/iccs/stack_autoflip.png#only-light){ loading=lazy }
         ![initial stack](../../../examples/tools/iccs/stack_autoflip_dark.png#only-dark){ loading=lazy }
+
+        To further improve results, you can interactively update the picks and
+        the time window using [`stack_pick`][pysmo.tools.iccs.stack_pick] and
+        [`stack_tw_pick`][pysmo.tools.iccs.stack_tw_pick], respectively, and
+        then run the ICCS algorithm again.
     """
 
     seismograms: Sequence[ICCSSeismogram] = field(
-        factory=lambda: list(), validator=_clear_cache_on_update
+        factory=lambda: list[ICCSSeismogram](), validator=_clear_cache_on_update
     )
     """Input seismograms.
 
@@ -312,7 +227,7 @@ class ICCS:
 
     @property
     def seismograms_for_plotting(self) -> list[MiniSeismogram]:
-        """Returns the windowed, detrended, normalised, tapered, and optionally flipped seismograms."""
+        """Returns the windowed, detrended, normalised, and optionally flipped seismograms."""
 
         if self._seismograms_for_plotting is None:
             self._seismograms_for_plotting = _prepare_seismograms(
@@ -375,22 +290,29 @@ class ICCS:
         self,
         autoflip: bool = False,
         autoselect: bool = False,
-        convergence_limit: float = 10e-5,
+        convergence_limit: float = 10e-6,
         convergence_method: CONVERGENCE_METHOD = "corrcoef",
         max_iter: int = 10,
         max_shift: timedelta | None = None,
         min_ccnorm: float = 0.5,
+        parallel: bool = False,
     ) -> npt.NDArray:
         """Run the iccs algorithm.
 
         Parameters:
             autoflip: Automatically toggle [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip] attribute of seismograms.
             autoselect: Automatically set `select` attribute to `False` for poor quality seismograms.
+            convergence_limit: Convergence limit at which the algorithm stops.
+            convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
             max_shift: Maximum shift in seconds (see [`delay()`][pysmo.tools.signal.delay]).
             min_ccnorm: Minimum normalised cross-correlation coefficient.
                 When `autoselect` is `True`, seismograms with correlation
                 coefficients below this value are set to `select=False`.
+            parallel: Whether to use parallel processing. Setting this to `True`
+                will perform the cross-correlation calculations in parallel
+                using [`ProcessPoolExecutor`][concurrent.futures.ProcessPoolExecutor].
+                In most cases this will *not* be faster.
 
         Returns:
             convergence: Array of convergence criterion values.
@@ -398,27 +320,43 @@ class ICCS:
         convergence_list = []
 
         for _ in range(max_iter):
-            prev_stack = deepcopy(self.stack)
-            for prepared_seismogram, seismogram in zip(
-                self.seismograms_prepared, self.seismograms
-            ):
-                _delay, _ccnorm = delay(
-                    self.stack,
-                    prepared_seismogram,
-                    max_shift=max_shift,
-                    abs_max=autoflip,
-                )
+            prev_stack = clone_to_mini(MiniSeismogram, self.stack)
 
-                if autoflip and _ccnorm < 0:
-                    seismogram.flip = not seismogram.flip
-                    _ccnorm = abs(_ccnorm)
+            if parallel:
+                with ProcessPoolExecutor() as executor:
+                    for prepared_seismogram, seismogram in zip(
+                        self.seismograms_prepared, self.seismograms
+                    ):
+                        future = executor.submit(
+                            delay,
+                            self.stack,
+                            prepared_seismogram,
+                            max_shift=max_shift,
+                            abs_max=autoflip,
+                        )
+                        future.add_done_callback(
+                            partial(
+                                _update_seismogram_fn,
+                                seismogram,
+                                autoflip,
+                                autoselect,
+                                min_ccnorm,
+                            )
+                        )
+            else:
+                for prepared_seismogram, seismogram in zip(
+                    self.seismograms_prepared, self.seismograms
+                ):
+                    _delay, _ccnorm = delay(
+                        self.stack,
+                        prepared_seismogram,
+                        max_shift=max_shift,
+                        abs_max=autoflip,
+                    )
 
-                if autoselect:
-                    if _ccnorm < min_ccnorm:
-                        seismogram.select = False
-                    # TODO: Should we also set to True?
-
-                seismogram.t1 = (seismogram.t1 or seismogram.t0) + _delay
+                    _update_seismogram(
+                        _delay, _ccnorm, seismogram, autoflip, autoselect, min_ccnorm
+                    )
 
             self._clear_caches()
 
@@ -428,3 +366,128 @@ class ICCS:
                 break
 
         return np.array(convergence_list)
+
+
+def _prepare_seismograms(
+    seismograms: Sequence[ICCSSeismogram],
+    window_pre: timedelta,
+    window_post: timedelta,
+    taper_width: timedelta | float,
+    prep_for_plotting: bool = False,
+    plot_padding: None | timedelta = None,
+) -> list[MiniSeismogram]:
+    return_seismograms: list[MiniSeismogram] = []
+    for seismogram in seismograms:
+        pick = seismogram.t1 or seismogram.t0
+        window_start = pick + window_pre
+        window_end = pick + window_post
+        return_seismogram = clone_to_mini(MiniSeismogram, seismogram)
+        if prep_for_plotting:
+            if plot_padding is None:
+                raise ValueError("plot_padding must be specified")
+            crop(
+                return_seismogram,
+                window_start - plot_padding,
+                window_end + plot_padding,
+            )
+            detrend(return_seismogram)
+            normalize(return_seismogram, window_start, window_end)
+        else:
+            crop(return_seismogram, window_start, window_end)
+            detrend(return_seismogram)
+            taper(return_seismogram, taper_width)
+            normalize(return_seismogram)
+        if seismogram.flip is True:
+            return_seismogram.data *= -1
+        return_seismograms.append(return_seismogram)
+    if len(lengths := set(len(s) for s in return_seismograms)) == 1:
+        return return_seismograms
+    for s in return_seismograms:
+        s.data = s.data[: min(lengths)]
+    return return_seismograms
+
+
+def _update_seismogram(
+    delay: timedelta,
+    ccnorm: float,
+    seismogram: ICCSSeismogram,
+    autoflip: bool,
+    autoselect: bool,
+    min_ccnorm_for_autoselect: float,
+) -> None:
+    if autoflip and ccnorm < 0:
+        seismogram.flip = not seismogram.flip
+        ccnorm = abs(ccnorm)
+
+    if autoselect:
+        if ccnorm < min_ccnorm_for_autoselect:
+            seismogram.select = False
+        # TODO: Should we also set to True?
+
+    seismogram.t1 = (seismogram.t1 or seismogram.t0) + delay
+
+
+def _update_seismogram_fn(
+    seismogram: ICCSSeismogram,
+    autoflip: bool,
+    autoselect: bool,
+    min_ccnorm_for_autoselect: float,
+    fn: Future[tuple[timedelta, float]],
+) -> None:
+    delay, ccnorm = fn.result()
+    _update_seismogram(
+        delay, ccnorm, seismogram, autoflip, autoselect, min_ccnorm_for_autoselect
+    )
+
+
+def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> list[float]:
+    ccnorms = [
+        float(pearsonr(seismogram.data, stack.data)[0]) for seismogram in seismograms
+    ]
+    return ccnorms
+
+
+def _create_stack(
+    prepared_seismograms: Sequence[Seismogram], seismograms: Sequence[ICCSSeismogram]
+) -> MiniSeismogram:
+    begin_time = average_datetimes(
+        [p.begin_time for p, s in zip(prepared_seismograms, seismograms) if s.select]
+    )
+    delta = prepared_seismograms[0].delta
+    data = np.mean(
+        np.array(
+            [p.data for p, s in zip(prepared_seismograms, seismograms) if s.select]
+        ),
+        axis=0,
+    )
+    return MiniSeismogram(begin_time=begin_time, delta=delta, data=data)
+
+
+def _calc_convergence(
+    current_stack: Seismogram,
+    prev_stack: Seismogram,
+    method: CONVERGENCE_METHOD,
+) -> float:
+    """Calcuate criterion of convergence.
+
+    This function calculates a criterion of convergence based on the current and
+    previous stack using one of the following methods:
+
+    - Convergence by correlation coefficient.
+    - Convergence by change of stack
+
+    Parameters:
+        current_stack: Current stack.
+        prev_stack: Stack from last iteration.
+        method: Method of convergence criterion calculation.
+    """
+    if method == "corrcoef":
+        covr, _ = pearsonr(current_stack.data, prev_stack.data)
+        return 1 - float(covr)
+    elif method == "change":
+        return float(
+            norm(current_stack.data - prev_stack.data, 1)
+            / norm(current_stack.data, 2)
+            / len(current_stack)
+        )
+    raise ValueError(f"Unknown convergence method: {method}.")
