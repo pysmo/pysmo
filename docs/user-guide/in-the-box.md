@@ -1,6 +1,6 @@
 # What is in the Box?
 
-## Library vs. Framework
+## Library vs. framework
 
 Before getting into what is included in the pysmo package, we briefly want to
 discuss what we mean by "library" and "framework" within the context of pysmo

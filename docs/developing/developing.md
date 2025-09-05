@@ -50,7 +50,7 @@ it as an additional remote:
 git remote add upstream https://github.com/pysmo/pysmo.git
 ```
 
-## Project Layout
+## Project layout
 
 Inside the pysmo folder you will find a relatively simple layout. The four most important
 items are:
