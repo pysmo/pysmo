@@ -32,13 +32,13 @@ the following points:
 This chapter aims to explain the above points in greater detail, and to
 hopefully convince you that doing things this way is indeed a good idea!
 
-## Protocol Classes
+## Protocol classes
 
 [`Protocol`][typing.Protocol] classes were introduced in Python 3.8, and are
 discussed in detail in [PEP 544](https://peps.python.org/pep-0544/). In this
 section, we explain why and how they are used in pysmo.
 
-### Why Protocol Classes?
+### Why Protocol classes?
 
 In natural sciences we often process data that exist in one form or another in
 the physical world. We are of the opinion that Python types used for these data
@@ -200,7 +200,7 @@ up the coding process by offering autocomplete for the attributes:
 ![Editor Autocomplete](../images/editor_autocomplete_dark.png#only-dark)
 ![Editor Autocomplete](../images/editor_autocomplete_light.png#only-light)
 
-### Error Checking
+### Error checking
 
 Should we for some reason make coding errors such as trying to access a
 none-existing attribute, the editor will give us a warning:
@@ -288,7 +288,7 @@ definition:
     simultaniously being very specific about type of input requried by the
     functions.
 
-### Specialised Types
+### Specialised types
 
 The basic types included in pysmo are not exclusively derived from whatever it
 is they represent in the physical world. Because they define the interface used
