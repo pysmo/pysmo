@@ -16,7 +16,7 @@ MINISEIS = MiniSeismogram(
 )
 
 
-@pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../baseline/")
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
     from pysmo.tools.plotutils import plotseis
 

@@ -152,7 +152,7 @@ class TestSeismogramFunctions:
             cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
             assert all(cropped_seis.data == seis3.data[1:-1])
 
-    @pytest.mark.mpl_image_compare(remove_text=True, baseline_dir="../baseline/")
+    @pytest.mark.mpl_image_compare(remove_text=True)
     def test_taper(self, seismogram: Seismogram):  # type: ignore
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
