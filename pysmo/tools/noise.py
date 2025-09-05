@@ -5,15 +5,16 @@ This module provides support for calculating random synthetic noise that
 matches the naturally observed amplitude spectrum.
 
 Examples:
-    Given the spectral amplitude in observed seismic noise on Earth is not flat (i.e.
-    white noise), it makes sense to calculate more realistic noise for things like
-    resolution tests with synthetic data.
+    Given the spectral amplitude in observed seismic noise on Earth is not flat
+    (i.e. *not* consisting of white noise), it makes sense to calculate more
+    realistic noise for things like resolution tests with synthetic data.
 
     In this example, random noise seismograms are generated from three different
-    noise models. These are Peterson's NLNM, NHNM, and an interpolated model that
-    lies between the two.
+    noise models. These are Peterson's NHNM (red), NLNM (blue), and an
+    interpolated model that lies between the two (green).
 
-    ![peterson](../../../examples/tools/noise/peterson.png)
+    ![peterson example](../../../examples/tools/noise/peterson.png#only-light){ loading=lazy }
+    ![peterson example](../../../examples/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
 
     ??? quote "Example source code"
         ```python title="peterson.py"
