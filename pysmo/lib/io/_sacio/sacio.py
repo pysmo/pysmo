@@ -11,12 +11,14 @@ from pysmo.tools.azdist import azimuth, backazimuth, distance
 from attrs import define
 from typing import Any, Self, Literal
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
+from zipfile import ZipFile
 import struct
-import urllib.parse
-import requests
-import zipfile
-import io
+import httpx
 import numpy as np
+
+IRIS_BASE_URL = "https://service.iris.edu/irisws/timeseries/1/query"
+IRIS_TIMOUT_SECONDS = 10
 
 
 @define(kw_only=True)
@@ -407,13 +409,16 @@ class SacIO(SacIOBase):
         if end is not None and isinstance(end, datetime):
             kwargs["end"] = end.isoformat()
 
-        base = "https://service.iris.edu/irisws/timeseries/1/query"
-        params = urllib.parse.urlencode(kwargs, doseq=False)
-        url = f"{base}?{params}"
-        response = requests.get(url)
-        if not response:
-            raise ValueError(response.content.decode("utf-8"))
-        zip = zipfile.ZipFile(io.BytesIO(response.content))
+        response = httpx.get(
+            IRIS_BASE_URL,
+            params=kwargs,
+            follow_redirects=False,
+            timeout=IRIS_TIMOUT_SECONDS,
+        )
+        response.raise_for_status()
+
+        zip = ZipFile(BytesIO(response.content))
+
         result = {}
         for name in zip.namelist():
             buffer = zip.read(name)

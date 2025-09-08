@@ -18,12 +18,11 @@ dependencies = [
     "numpy>=2.2.4,<3",
     "matplotlib>=3.10.1,<4",
     "pyproj>=3.7.1,<4",
-    "requests>=2.32.3,<3",
     "attrs>=25.3.0,<26",
     "attrs-strict>=1.0.1,<2",
     "scipy-stubs>=1.15.2.1,<2",
-    "types-requests>=2.32.0.20250328,<3",
     "cattrs>=25.1.1,<26",
+    "httpx>=0.28.1",
 ]
 
 [project.urls]
@@ -58,6 +57,7 @@ docs = [
     "jupyterlab>=4.3.6,<5",
     "griffe-fieldz>=0.2.1,<0.3",
     "mkdocs-bibtex>=4.4.0,<5",
+    "mike>=2.1.3",
 ]
 
 [tool.uv]
