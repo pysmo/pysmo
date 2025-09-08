@@ -52,7 +52,7 @@ def crop[T: Seismogram](
         >>> from pysmo.functions import crop
         >>> from pysmo.classes import SAC
         >>> from datetime import timedelta
-        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> new_begin_time = sac_seis.begin_time + timedelta(seconds=10)
         >>> new_end_time = sac_seis.end_time - timedelta(seconds=10)
         >>> crop(sac_seis, new_begin_time, new_end_time)
@@ -114,7 +114,7 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
         >>> import pytest
         >>> from pysmo.functions import detrend
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
         np.False_
         >>> detrend(sac_seis)
@@ -184,7 +184,7 @@ def normalize[T: Seismogram](
         >>> import numpy as np
         >>> from pysmo.functions import normalize
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> normalize(sac_seis)
         >>> -1 <= np.max(sac_seis.data) <= 1
         np.True_
@@ -240,7 +240,7 @@ def resample[T: Seismogram](
         ```python
         >>> from pysmo.functions import resample
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> len(sac_seis)
         180000
         >>> original_delta = sac_seis.delta
@@ -336,7 +336,7 @@ def taper[T: Seismogram](
         ```python
         >>> from pysmo.functions import taper, detrend
         >>> from pysmo.classes import SAC
-        >>> sac_seis = SAC.from_file('example.sac').seismogram
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> detrend(sac_seis)
         >>> sac_seis.data
         array([ 95.59652208, 106.59521819, 138.59391429, ..., 394.90004126,

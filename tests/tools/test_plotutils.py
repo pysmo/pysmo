@@ -8,7 +8,7 @@ from tests.conftest import TESTDATA
 matplotlib.use("Agg")
 
 
-SACSEIS = SAC.from_file(str(TESTDATA["orgfile"])).seismogram
+SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
     delta=SACSEIS.delta,

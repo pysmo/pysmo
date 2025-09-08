@@ -8,84 +8,69 @@ from pysmo import (
     MiniLocationWithDepth,
 )
 from pysmo.classes import SAC
-from typing import TYPE_CHECKING
-from glob import glob
+from pathlib import Path
 import pytest
-import os
 import shutil
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 TESTDATA = dict(
-    orgfile=os.path.join(os.path.dirname(__file__), "assets/testfile.sac"),
-    orgfile_special_IB=os.path.join(
-        os.path.dirname(__file__), "assets/testfile_iztype_is_IB.sac"
-    ),
-    bad_no_b=os.path.join(os.path.dirname(__file__), "assets/no_b.sac"),
-    funcgen6=os.path.join(os.path.dirname(__file__), "assets/funcgen6.sac"),
-    funcgen7=os.path.join(os.path.dirname(__file__), "assets/funcgen7.sac"),
-    iccs_files=sorted(
-        glob(os.path.join(os.path.dirname(__file__), "assets/iccs/*.bhz"))
-    ),
+    orgfile=Path(__file__).parent / "assets/testfile.sac",
+    sacfile_IB=Path(__file__).parent / "assets/testfile_iztype_is_IB.sac",
+    sacfile_no_b=Path(__file__).parent / "assets/no_b.sac",
+    sacfile_v6=Path(__file__).parent / "assets/funcgen6.sac",
+    sacfile_v7=Path(__file__).parent / "assets/funcgen7.sac",
+    # iccs_files=(sorted((Path(__file__).parent / "assets/iccs/").glob("*.bhz"))),
 )
 
 
 @pytest.fixture()
-def assets() -> dict[str, str | Sequence[str]]:
-    return dict(
-        sacfile=TESTDATA["orgfile"],
-        sacfile_IB=TESTDATA["orgfile_special_IB"],
-        sacfile_no_b=TESTDATA["bad_no_b"],
-        sacfile_v6=TESTDATA["funcgen6"],
-        sacfile_v7=TESTDATA["funcgen7"],
-    )
+def assets() -> dict[str, Path]:
+    return TESTDATA
 
 
 @pytest.fixture()
-def empty_file(tmpdir_factory: pytest.TempdirFactory) -> str:
+def empty_file(tmpdir_factory: pytest.TempdirFactory) -> Path:
     tmpdir = tmpdir_factory.mktemp("empty_files")
-    return os.path.join(tmpdir, "empty_file")
+    return Path(tmpdir) / "empty_file"
 
 
 @pytest.fixture()
-def sacfile(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> str:
-    orgfile = assets["sacfile"]
+def sacfile(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, Path]) -> Path:
+    orgfile = assets["orgfile"]
     tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = os.path.join(tmpdir, "testfile.sac")
+    testfile = Path(tmpdir) / "testfile.sac"
     shutil.copyfile(orgfile, testfile)
     return testfile
 
 
 @pytest.fixture()
-def sac_instance(sacfile: str) -> SAC:
+def sac_instance(sacfile: Path) -> SAC:
     return SAC.from_file(sacfile)
 
 
 @pytest.fixture()
-def sacfile_no_b(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> str:
+def sacfile_no_b(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
     orgfile = assets["sacfile_no_b"]
     tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = os.path.join(tmpdir, "testfile.sac")
+    testfile = Path(tmpdir) / "testfile.sac"
     shutil.copyfile(orgfile, testfile)
     return testfile
 
 
 @pytest.fixture()
-def sacfile_v6(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> str:
+def sacfile_v6(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
     orgfile = assets["sacfile_v6"]
     tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = os.path.join(tmpdir, "testfile.sac")
+    testfile = Path(tmpdir) / "testfile.sac"
     shutil.copyfile(orgfile, testfile)
     return testfile
 
 
 @pytest.fixture()
-def sacfile_v7(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> str:
+def sacfile_v7(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
     orgfile = assets["sacfile_v7"]
     tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = os.path.join(tmpdir, "testfile.sac")
+    testfile = Path(tmpdir) / "testfile.sac"
     shutil.copyfile(orgfile, testfile)
     return testfile
 

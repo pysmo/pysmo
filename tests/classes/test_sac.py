@@ -6,6 +6,7 @@ from pysmo.classes import SAC
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 import pytest
 
 
@@ -39,7 +40,7 @@ class TestSAC:
             sac.event.time
 
     @pytest.mark.depends(on=["test_create_instance"])
-    def test_create_instance_from_file(self, sacfile: str) -> None:
+    def test_create_instance_from_file(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         assert isinstance(sac, SAC)
         assert isinstance(sac.seismogram, Seismogram)
@@ -47,7 +48,7 @@ class TestSAC:
         assert isinstance(sac.event, Event)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_sac_seismogram(self, sacfile: str) -> None:
+    def test_sac_seismogram(self, sacfile: Path) -> None:
         sacseis = SAC.from_file(sacfile).seismogram
         sacio = SacIO.from_file(sacfile)
         assert isinstance(sacseis, Seismogram)
@@ -115,7 +116,7 @@ class TestSAC:
                 setattr(sacseis, item, None)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_sac_as_station(self, sacfile: str) -> None:
+    def test_sac_as_station(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacstation = sac.station
         sacio = SacIO.from_file(sacfile)
@@ -169,7 +170,7 @@ class TestSAC:
             sacstation.longitude
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_sac_as_event(self, sacfile: str) -> None:
+    def test_sac_as_event(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacevent = sac.event
         sacio = SacIO.from_file(sacfile)
@@ -208,7 +209,7 @@ class TestSAC:
             sacevent.depth
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_sac_timestamps(self, sacfile: str) -> None:
+    def test_sac_timestamps(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacio = SacIO.from_file(sacfile)
         assert sac.timestamps.e is not None
