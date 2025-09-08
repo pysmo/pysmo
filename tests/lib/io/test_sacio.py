@@ -440,8 +440,8 @@ def test_iris_service_params_error() -> None:
             force_single_result=True,
         )
         assert False
-    except ValueError as error:
-        assert str(error).startswith("Error 404: Not Found")
+    except Exception as error:
+        assert str(error).startswith("Client error '404 '")
 
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
