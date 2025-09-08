@@ -1,17 +1,21 @@
 from collections.abc import Generator
-from tests.conftest import TESTDATA
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from datetime import timedelta
 from pysmo.tools.iccs import MiniICCSSeismogram, ICCS
 from typing import Any
+from pathlib import Path
 import pytest
 
 
 @pytest.fixture()
 def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
     seismograms: list[MiniICCSSeismogram] = []
-    for sacfile in TESTDATA["iccs_files"]:
+    iccs_files = sorted(
+        (Path(__file__).parent.parent.parent / "assets/iccs/").glob("*.bhz")
+    )
+
+    for sacfile in iccs_files:
         sac = SAC.from_file(sacfile)
         update = {"t0": sac.timestamps.t0}
         seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)

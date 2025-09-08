@@ -6,7 +6,6 @@ from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
 from shutil import copyfile, copytree
 from typing import Any, Generator
 from pathlib import Path
-from glob import glob
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
@@ -18,14 +17,10 @@ import os
 @pytest.fixture()
 def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
     cwd = os.getcwd()
-    asset_testfile = str(
-        os.path.join(os.path.dirname(__file__), "../tests/assets/testfile.sac"),
-    )
-    asset_iccsdir = str(
-        os.path.join(os.path.dirname(__file__), "../tests/assets/iccs/")
-    )
-    test_testfile = str(tmp_path) + "/example.sac"
-    test_iccsdir = str(tmp_path) + "/iccs-example/"
+    asset_testfile = Path(__file__).parent.parent / "tests/assets/testfile.sac"
+    asset_iccsdir = Path(__file__).parent.parent / "tests/assets/iccs/"
+    test_testfile = Path(tmp_path) / "example.sac"
+    test_iccsdir = Path(tmp_path) / "iccs-example/"
     copyfile(asset_testfile, test_testfile)
     copytree(asset_iccsdir, test_iccsdir)
     try:
@@ -37,10 +32,8 @@ def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
 
 @pytest.fixture()
 def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
-    asset_iccsdir = str(
-        os.path.join(os.path.dirname(__file__), "../tests/assets/iccs/")
-    )
-    sacfiles = sorted(glob(asset_iccsdir + "*.bhz"))
+    asset_iccsdir = Path(__file__).parent.parent / "tests/assets/iccs/"
+    sacfiles = sorted(asset_iccsdir.glob("*.bhz"))
 
     iccs_seismograms = []
     for sacfile in sacfiles:

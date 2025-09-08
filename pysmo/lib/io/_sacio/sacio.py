@@ -13,6 +13,8 @@ from typing import Any, Self, Literal
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from zipfile import ZipFile
+from os import PathLike
+from pathlib import Path
 import struct
 import httpx
 import numpy as np
@@ -44,8 +46,8 @@ class SacIO(SacIOBase):
 
         ```python
         >>> from pysmo.lib.io import SacIO
-        >>> my_sac = SacIO.from_file('example.sac')
-        >>> data = my_sac.data
+        >>> sac = SacIO.from_file("example.sac")
+        >>> data = sac.data
         >>> data
         array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
         >>>
@@ -54,7 +56,7 @@ class SacIO(SacIOBase):
         Read the sampling rate:
 
         ```python
-        >>> delta = my_sac.delta
+        >>> delta = sac.delta
         >>> delta
         0.019999999552965164
         >>>
@@ -64,8 +66,8 @@ class SacIO(SacIOBase):
 
         ```python
         >>> newdelta = 0.05
-        >>> my_sac.delta = newdelta
-        >>> my_sac.delta
+        >>> sac.delta = newdelta
+        >>> sac.delta
         0.05
         >>>
         ```
@@ -74,7 +76,7 @@ class SacIO(SacIOBase):
 
         ```python
         >>> from pysmo.lib.io import SacIO
-        >>> my_sac = SacIO.from_iris(net="C1",
+        >>> sac = SacIO.from_iris(net="C1",
         ... sta="VA01",
         ... cha="BHZ",
         ... loc="--",
@@ -83,7 +85,7 @@ class SacIO(SacIOBase):
         ... scale="AUTO",
         ... demean="true",
         ... force_single_result=True)
-        >>> my_sac.npts
+        >>> sac.npts
         144001
         >>>
         ```
@@ -269,17 +271,18 @@ class SacIO(SacIOBase):
             return None
         return self.ref_datetime.time().isoformat(timespec="milliseconds")
 
-    def read(self, filename: str) -> None:
+    def read(self, filename: str | PathLike) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
 
         Parameters:
             filename: Name of the sac file to read.
         """
 
-        with open(filename, "rb") as file_handle:
-            self.read_buffer(file_handle.read())
+        filename = Path(filename).resolve()
 
-    def write(self, filename: str) -> None:
+        self.read_buffer(filename.read_bytes())
+
+    def write(self, filename: str | PathLike) -> None:
         """Writes data and header values to a SAC file.
 
         Parameters:
@@ -345,7 +348,7 @@ class SacIO(SacIOBase):
                     file_handle.write(struct.pack("d", value))
 
     @classmethod
-    def from_file(cls, filename: str) -> Self:
+    def from_file(cls, filename: str | PathLike) -> Self:
         """Create a new SAC instance from a SAC file.
 
         Parameters:

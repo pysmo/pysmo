@@ -71,10 +71,10 @@ class MiniICCSSeismogram:
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
-        >>> my_sac = SAC.from_file('example.sac')
-        >>> my_sacseis = my_sac.seismogram
-        >>> update = {"t0": my_sac.timestamps.t0}
-        >>> my_miniiccsseis = clone_to_mini(MiniICCSSeismogram, my_sacseis, update=update)
+        >>> sac = SAC.from_file("example.sac")
+        >>> sac_seis = sac.seismogram
+        >>> update = {"t0": sac.timestamps.t0}
+        >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
         >>>
         ```
     """
