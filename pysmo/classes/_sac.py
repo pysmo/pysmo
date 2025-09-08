@@ -82,8 +82,8 @@ class SacSeismogram(_SacNested):
         ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("example.sac")
-        >>> isinstance(my_sac.seismogram, Seismogram)
+        >>> sac = SAC.from_file("example.sac")
+        >>> isinstance(sac.seismogram, Seismogram)
         True
         >>>
         ```
@@ -95,9 +95,7 @@ class SacSeismogram(_SacNested):
         data point:
 
         ```python
-        >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("example.sac")
-        >>> my_sac.seismogram.begin_time
+        >>> sac.seismogram.begin_time
         datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
         >>>
         ```
@@ -164,8 +162,8 @@ class SacStation(_SacNested):
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo import Station
-        >>> my_sac = SAC.from_file("example.sac")
-        >>> isinstance(my_sac.station, Station)
+        >>> sac = SAC.from_file("example.sac")
+        >>> isinstance(sac.station, Station)
         True
         >>>
         ```
@@ -247,8 +245,8 @@ class SacEvent(_SacNested):
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo import Event
-        >>> my_sac = SAC.from_file("example.sac")
-        >>> isinstance(my_sac.event, Event)
+        >>> sac = SAC.from_file("example.sac")
+        >>> isinstance(sac.event, Event)
         True
         >>>
         ```
@@ -361,17 +359,17 @@ class SacTimestamps(_SacNested):
 
         ```python
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("example.sac")
+        >>> sac = SAC.from_file("example.sac")
         >>> # SAC header "B" as stored in a SAC file
-        >>> my_sac.b
+        >>> sac.b
         -63.34000015258789
         >>> # the output above is the number of seconds relative
         >>> # to the reference time and date:
-        >>> my_sac.kzdate , my_sac.kztime
+        >>> sac.kzdate , sac.kztime
         ('2005-03-01', '07:24:05.500')
         >>> # Accessing the same SAC header via a `SacTimestamps` object
         >>> # yields a corresponding datetime object with the absolute time:
-        >>> my_sac.timestamps.b
+        >>> sac.timestamps.b
         datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
         >>>
         ```
@@ -380,15 +378,14 @@ class SacTimestamps(_SacNested):
 
         ```python
         >>> from datetime import timedelta
-        >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file("example.sac")
+        >>> sac = SAC.from_file("example.sac")
         >>> # Original value of the "B" SAC header:
-        >>> my_sac.b
+        >>> sac.b
         -63.34000015258789
         >>> # Add 30 seconds to the absolute time:
-        >>> my_sac.timestamps.b += timedelta(seconds=30)
+        >>> sac.timestamps.b += timedelta(seconds=30)
         >>> # The relative time also changes by the same amount:
-        >>> my_sac.b
+        >>> sac.b
         -33.34
         >>>
         ```
@@ -456,12 +453,12 @@ class SAC(SacIO):
 
         ```python
         >>> from pysmo.classes import SAC
-        >>> my_sac = SAC.from_file('example.sac')
-        >>> my_sac.delta
+        >>> sac = SAC.from_file("example.sac")
+        >>> sac.delta
         0.019999999552965164
-        >>> my_sac.data
+        >>> sac.data
         array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
-        >>> my_sac.evla
+        >>> sac.evla
         -31.465999603271484
         >>>
         ```
@@ -486,10 +483,10 @@ class SAC(SacIO):
         >>> from pysmo import Seismogram
         >>>
         >>> # First verify that a SAC instance is not a pysmo Seismogram:
-        >>> isinstance(my_sac, Seismogram)
+        >>> isinstance(sac, Seismogram)
         False
-        >>> # The my_sac.seismogram object is, however:
-        >>> isinstance(my_sac.seismogram, Seismogram)
+        >>> # The sac.seismogram object is, however:
+        >>> isinstance(sac.seismogram, Seismogram)
         True
         >>>
         ```
@@ -501,10 +498,10 @@ class SAC(SacIO):
 
         ```python
         >>> # No error: a SAC file doesn't have to contain event information:
-        >>> my_sac.evla = None
+        >>> sac.evla = None
         >>>
-        >>> # Error: the my_sac.event object may not have attributes set to `None`:
-        >>> my_sac.event.latitude = None
+        >>> # Error: the sac.event object may not have attributes set to `None`:
+        >>> sac.event.latitude = None
         Traceback (most recent call last):
         ...
         TypeError: SacEvent.latitude may not be of None type.
