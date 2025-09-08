@@ -9,7 +9,7 @@ import numpy as np
 from tests.conftest import TESTDATA
 
 
-SACSEIS = SAC.from_file(str(TESTDATA["orgfile"])).seismogram
+SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,
     delta=SACSEIS.delta,

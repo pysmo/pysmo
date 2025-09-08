@@ -32,12 +32,12 @@ class MiniEvent:
         >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location
         >>> from datetime import datetime, timezone
         >>> now = datetime.now(timezone.utc)
-        >>> my_event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
-        >>> isinstance(my_event, Event)
+        >>> event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
+        >>> isinstance(event, Event)
         True
-        >>> isinstance(my_event, Location)
+        >>> isinstance(event, Location)
         True
-        >>> isinstance(my_event, LocationWithDepth)
+        >>> isinstance(event, LocationWithDepth)
         True
         >>>
         ```

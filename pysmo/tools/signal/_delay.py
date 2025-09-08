@@ -82,7 +82,7 @@ def delay(
         >>> import numpy as np
         >>>
         >>> # Create a Seismogram from a SAC file and detrend it:
-        >>> seis1 = SAC.from_file('example.sac').seismogram
+        >>> seis1 = SAC.from_file("example.sac").seismogram
         >>> detrend(seis1)
         >>>
         >>> # Create a second seismogram from the first with

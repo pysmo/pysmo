@@ -1,6 +1,7 @@
 from attrs_strict import AttributeTypeError, UnionError
 from pysmo.lib.io import SacIO
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 import copy
 import pickle
 import pytest
@@ -35,7 +36,7 @@ def test_ref_datetime() -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance"])
-def test_create_instance_from_file(sacfile: str, sacfile_no_b: str) -> None:
+def test_create_instance_from_file(sacfile: Path, sacfile_no_b: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert isinstance(sac, SacIO)
     # reading invalid SAC file with undefined mandatory field should fail
@@ -44,7 +45,7 @@ def test_create_instance_from_file(sacfile: str, sacfile_no_b: str) -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance"])
-def test_write_to_file(empty_file: str) -> None:
+def test_write_to_file(empty_file: Path) -> None:
     # create an "empty" instance
     sac = SacIO()
     sac.write(empty_file)
@@ -61,7 +62,7 @@ def test_write_to_file(empty_file: str) -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_read_headers(sacfile: str) -> None:
+def test_read_headers(sacfile: Path) -> None:
     """Read all SacIO headers from a test file."""
     sac = SacIO.from_file(sacfile)
     assert sac.npts == 180000
@@ -165,7 +166,7 @@ def test_read_headers(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_v6_v7(sacfile_v6: str, sacfile_v7: str) -> None:
+def test_v6_v7(sacfile_v6: Path, sacfile_v7: Path) -> None:
     """Read all SacIO headers from a test file."""
     sac6 = SacIO.from_file(sacfile_v6)
     sac7 = SacIO.from_file(sacfile_v7)
@@ -176,13 +177,13 @@ def test_v6_v7(sacfile_v6: str, sacfile_v7: str) -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_sacfile_IB(sacfile_IB: str) -> None:
+def test_sacfile_IB(sacfile_IB: Path) -> None:
     sac = SacIO.from_file(sacfile_IB)
     assert sac.iztype == "b"
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_read_data(sacfile: str) -> None:
+def test_read_data(sacfile: Path) -> None:
     """Test reading data."""
     sac = SacIO.from_file(sacfile)
     assert all(
@@ -203,7 +204,7 @@ def test_read_data(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers"])
-def test_change_headers(sacfile: str) -> None:
+def test_change_headers(sacfile: Path) -> None:
     """Test changing header values."""
 
     sac = SacIO.from_file(sacfile)
@@ -271,7 +272,7 @@ def test_change_headers(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])
-def test_change_data(sacfile: str) -> None:
+def test_change_data(sacfile: Path) -> None:
     """Test changing data."""
     sac = SacIO.from_file(sacfile)
     newdata = np.array([132, 232, 3465, 111])
@@ -283,7 +284,7 @@ def test_change_data(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])
-def test_pickling(sacfile: str, empty_file: str) -> None:
+def test_pickling(sacfile: Path, empty_file: Path) -> None:
     sac = SacIO.from_file(sacfile)
     picklefile = empty_file
     with open(picklefile, "wb") as output_file:
@@ -295,7 +296,7 @@ def test_pickling(sacfile: str, empty_file: str) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data", "test_change_headers"])
-def test_deepcopy(sacfile: str) -> None:
+def test_deepcopy(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     sac2 = copy.deepcopy(sac)
     assert all(sac.data == sac2.data)
@@ -306,7 +307,7 @@ def test_deepcopy(sacfile: str) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])
-def test_file_and_buffer(sacfile: str) -> None:
+def test_file_and_buffer(sacfile: Path) -> None:
     from_file = SacIO.from_file(sacfile)
     with open(sacfile, "rb") as f:
         from_buffer = SacIO.from_buffer(f.read())

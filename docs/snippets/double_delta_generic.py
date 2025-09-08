@@ -1,5 +1,6 @@
 from pysmo import Seismogram
 from pysmo.classes import SAC
+from pathlib import Path
 from copy import deepcopy
 from typing import reveal_type
 
@@ -19,7 +20,8 @@ def double_delta_generic[T: Seismogram](seismogram: T) -> T:  # (1)!
     return clone
 
 
-my_seis_in = SAC.from_file("example.sac").seismogram
+sacfile = Path("example.sac")
+my_seis_in = SAC.from_file(sacfile).seismogram
 my_seis_out = double_delta_generic(my_seis_in)
 
 reveal_type(my_seis_in)

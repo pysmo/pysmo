@@ -28,10 +28,10 @@ class MiniLocationWithDepth:
     Examples:
         ```python
         >>> from pysmo import MiniLocationWithDepth, LocationWithDepth, Location
-        >>> my_hypo = MiniLocationWithDepth(latitude=-24.68, longitude=-26.73, depth=15234.0)
-        >>> isinstance(my_hypo, LocationWithDepth)
+        >>> hypo = MiniLocationWithDepth(latitude=-24.68, longitude=-26.73, depth=15234.0)
+        >>> isinstance(hypo, LocationWithDepth)
         True
-        >>> isinstance(my_hypo, Location)
+        >>> isinstance(hypo, Location)
         True
         >>>
         ```

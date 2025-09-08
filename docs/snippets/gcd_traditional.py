@@ -32,6 +32,6 @@ def f_traditional(seismogram: SAC) -> float:
     return distance
 
 
-my_seismogram = SAC.from_file("example.sac")
-gcd = f_traditional(my_seismogram)
+sac = SAC.from_file("example.sac")
+gcd = f_traditional(sac)
 print(f"The great circle distance is {gcd} metres.")

@@ -46,12 +46,12 @@ class ICCS:
         with the [`ICCS`][pysmo.tools.iccs.ICCS] class:
 
         ```python
-        >>> from glob import glob
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
+        >>> from pathlib import Path
         >>>
-        >>> sacfiles = sorted(glob("iccs-example/*.bhz"))
+        >>> sacfiles = sorted(Path("iccs-example/").glob("*.bhz"))
         >>>
         >>> seismograms = []
         >>> for index, sacfile in enumerate(sacfiles):

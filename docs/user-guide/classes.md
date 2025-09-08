@@ -153,9 +153,9 @@ lowercase). For example for the station location:
 ```bash
 # Start an interactive python shell after executing read_sacfile.py:
 $ python -i read_sacfile.py
->>> print(f"Station latitude: {my_sac.stla:.2f}")
+>>> print(f"Station latitude: {sac.stla:.2f}")
 Station latitude: -48.47
->>> print(f"Station longitude: {my_sac.stlo:.2f}")
+>>> print(f"Station longitude: {sac.stlo:.2f}")
 Station longitude: -72.56
 >>>
 ```
@@ -168,7 +168,7 @@ These attributes have the correct format, but not the right name for the pysmo
 ```bash
 $ python -i read_sacfile.py
 >>> from pysmo import Location
->>> isinstance(my_sac, Location)
+>>> isinstance(sac, Location)
 False
 >>>
 ```
@@ -197,10 +197,10 @@ change the original ones:
 ```bash
 $ python -i read_sacfile2.py
 >>> from pysmo import Location
->>> isinstance(my_sac2, Location)
+>>> isinstance(sac2, Location)
 True
->>> my_sac2.latitude = -12.3
->>> my_sac2.stla
+>>> sac2.latitude = -12.3
+>>> sac2.stla
 -12.3
 >>>
 ```
@@ -242,17 +242,17 @@ This is best illustrated with a simple example:
 ```python
 >>> from pysmo import Seismogram, Station
 >>> from pysmo.classes import SAC
->>> my_sac = SAC.from_file("example.sac")
->>> isinstance(my_sac.seismogram, Seismogram) # (1)!
+>>> sac = SAC.from_file("example.sac")
+>>> isinstance(sac.seismogram, Seismogram) # (1)!
 True
->>> isinstance(my_sac.station, Station) # (2)!
+>>> isinstance(sac.station, Station) # (2)!
 True
 >>>
 ```
 
-1. `my_sac.seismogram` is an instance of
+1. `sac.seismogram` is an instance of
   [`SacSeismogram`][pysmo.classes.SacSeismogram] and is therefore
   compatible with the [`Seismogram`][pysmo.Seismogram] type.
-2. `my_sac.station` is an instance of
+2. `sac.station` is an instance of
   [`SacStation`][pysmo.classes.SacStation] and is therefore compatible with
   the [`Station`][pysmo.Station] type.
