@@ -44,10 +44,10 @@ class MiniStation:
     Examples:
         ```python
         >>> from pysmo import MiniStation, Station, Location
-        >>> my_station = MiniStation(latitude=-21.680301, longitude=-46.732601, name="CACB", network="BL")
-        >>> isinstance(my_station, Station)
+        >>> station = MiniStation(latitude=-21.680301, longitude=-46.732601, name="CACB", network="BL")
+        >>> isinstance(station, Station)
         True
-        >>> isinstance(my_station, Location)
+        >>> isinstance(station, Location)
         True
         >>>
         ```

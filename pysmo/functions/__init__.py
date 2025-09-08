@@ -13,7 +13,7 @@ the function. For example:
 ```python
 >>> from pysmo.functions import resample
 >>> from pysmo.classes import SAC
->>> sac_seis = SAC.from_file('example.sac').seismogram
+>>> sac_seis = SAC.from_file("example.sac").seismogram
 >>> new_delta = sac_seis.delta * 2
 >>>
 >>> # create a clone and modify data in clone instead of sac_seis:
