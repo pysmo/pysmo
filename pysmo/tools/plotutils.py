@@ -34,9 +34,9 @@ def time_array(seismogram: Seismogram) -> npt.NDArray:
         ```python
         >>> from pysmo.tools.plotutils import time_array
         >>> from pysmo.classes import SAC
-        >>> my_seis = SAC.from_file('example.sac').seismogram
-        >>> seis_data = my_seis.data
-        >>> seis_times = time_array(my_seis)
+        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> seis_data = seis.data
+        >>> seis_times = time_array(seis)
         >>> for t, v in zip(seis_times, seis_data):
         ...     print(t,v)
         ...
@@ -67,9 +67,9 @@ def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.plotutils import unix_time_array
-        >>> my_seis = SAC.from_file('example.sac').seismogram
-        >>> seis_data = my_seis.data
-        >>> seis_times = unix_time_array(my_seis)
+        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> seis_data = seis.data
+        >>> seis_times = unix_time_array(seis)
         >>> for t, v in zip(seis_times, seis_data):
         ...     print(t,v)
         ...
@@ -107,7 +107,7 @@ def plotseis(
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.plotutils import plotseis
-        >>> seis = SAC.from_file('example.sac').seismogram
+        >>> seis = SAC.from_file("example.sac").seismogram
         >>> fig = plotseis(seis)
         >>>
         ```

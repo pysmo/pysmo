@@ -58,12 +58,12 @@ def azimuth(
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import azimuth
-        >>> sacobj = SAC.from_file('example.sac')
+        >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
-        >>> azimuth(sacobj.event, sacobj.station)
+        >>> azimuth(sac.event, sac.station)
         181.91993
         >>> # Use Clarke 1966 instead of default
-        >>> azimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> azimuth(sac.event, sac.station, ellps='clrk66')
         181.92002
         >>>
         ```
@@ -88,12 +88,12 @@ def backazimuth(
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import backazimuth
-        >>> sacobj = SAC.from_file('example.sac')
+        >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
-        >>> backazimuth(sacobj.event, sacobj.station)
+        >>> backazimuth(sac.event, sac.station)
         2.467753
         >>> # Use Clarke 1966 instead of default
-        >>> backazimuth(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> backazimuth(sac.event, sac.station, ellps='clrk66')
         2.467847
         >>>
         ```
@@ -118,12 +118,12 @@ def distance(
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.azdist import distance
-        >>> sacobj = SAC.from_file('example.sac')
+        >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
-        >>> distance(sacobj.event, sacobj.station)
+        >>> distance(sac.event, sac.station)
         1889154.994
         >>> # Use Clarke 1966 instead of default
-        >>> distance(sacobj.event, sacobj.station, ellps='clrk66')
+        >>> distance(sac.event, sac.station, ellps='clrk66')
         1889121.778
         >>>
         ```

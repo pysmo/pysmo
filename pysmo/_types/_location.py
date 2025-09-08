@@ -35,8 +35,8 @@ class MiniLocation:
     Examples:
         ```python
         >>> from pysmo import MiniLocation, Location
-        >>> my_location = MiniLocation(latitude=41.8781, longitude=-87.6298)
-        >>> isinstance(my_location, Location)
+        >>> location = MiniLocation(latitude=41.8781, longitude=-87.6298)
+        >>> isinstance(location, Location)
         True
         >>>
         ```

@@ -116,7 +116,7 @@ The same example code, but using pysmo types instead would look like this:
   instances) of the desired pysmo types:
 
     ```python
-    >>> isinstance(my_seismogram.event, Location)
+    >>> isinstance(seismogram.event, Location)
     True
     ```
 

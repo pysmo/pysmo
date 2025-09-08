@@ -20,7 +20,7 @@ def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import envelope
-        >>> seis = SAC.from_file('example.sac').seismogram
+        >>> seis = SAC.from_file("example.sac").seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> envelope_seis = envelope(seis, Tn, alpha)
@@ -48,7 +48,7 @@ def gauss[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import gauss
-        >>> seis = SAC.from_file('example.sac').seismogram
+        >>> seis = SAC.from_file("example.sac").seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
         >>> gauss_seis = gauss(seis, Tn, alpha)

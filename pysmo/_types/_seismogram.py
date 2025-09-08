@@ -20,12 +20,13 @@ class Seismogram(Protocol):
         ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import SAC  # SAC is a class that "speaks" Seismogram
+        >>>
         >>> def example_function(seis_in: Seismogram) -> str:
         ...     return seis_in.begin_time.isoformat()
         ...
-        >>> my_sac = SAC.from_file('example.sac')
-        >>> my_seismogram = my_sac.seismogram
-        >>> example_function(my_seismogram)
+        >>> sac = SAC.from_file("example.sac")
+        >>> seismogram = sac.seismogram
+        >>> example_function(seismogram)
         '2005-03-01T07:23:02.160000+00:00'
         >>>
         ```
@@ -83,8 +84,8 @@ class MiniSeismogram:
         >>> import numpy as np
         >>> now = datetime.now(timezone.utc)
         >>> delta = timedelta(seconds=0.1)
-        >>> my_seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
-        >>> isinstance(my_seismogram, Seismogram)
+        >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
+        >>> isinstance(seismogram, Seismogram)
         True
         >>>
         ```

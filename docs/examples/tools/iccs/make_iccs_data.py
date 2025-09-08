@@ -3,12 +3,12 @@ from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
 from datetime import timedelta
 from copy import deepcopy
-from glob import glob
+from pathlib import Path
 import numpy as np
 
 
 def example_data() -> list[MiniICCSSeismogram]:
-    sacfiles = sorted(glob("tests/assets/iccs/*.bhz"))
+    sacfiles = Path("tests/assets/iccs/").glob("*.bhz")
     iccs_seismograms = []
     for sacfile in sacfiles:
         sac = SAC.from_file(sacfile)
