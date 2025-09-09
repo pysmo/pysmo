@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from pysmo.classes import SAC
-from pysmo.functions import clone_to_mini
+from pysmo.functions import clone_to_mini, resample
 from datetime import timedelta
 from pysmo.tools.iccs import MiniICCSSeismogram, ICCS
 from typing import Any
@@ -24,6 +24,7 @@ def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
     seismograms[0].data *= -1
     seismograms[1].t0 += timedelta(seconds=-2)
     seismograms[2].t0 += timedelta(seconds=2)
+    resample(seismograms[3], seismograms[3].delta * 2)
     yield seismograms
 
 
