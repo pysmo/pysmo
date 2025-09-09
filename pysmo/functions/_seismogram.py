@@ -12,6 +12,7 @@ __all__ = [
     "crop",
     "detrend",
     "normalize",
+    "pad",
     "resample",
     "taper",
     "time2index",
@@ -208,6 +209,94 @@ def normalize[T: Seismogram](
 
 
 @overload
+def pad[T: Seismogram](
+    seismogram: T, begin_time: datetime, end_time: datetime, clone: Literal[True]
+) -> T: ...
+
+
+@overload
+def pad(
+    seismogram: Seismogram,
+    begin_time: datetime,
+    end_time: datetime,
+    clone: Literal[False] = False,
+) -> None: ...
+
+
+def pad[T: Seismogram](
+    seismogram: T, begin_time: datetime, end_time: datetime, clone: bool = False
+) -> None | T:
+    """Pad a seismogram with zeros to new begin and end times.
+
+    This function calculates the indices corresponding to the provided new
+    begin and end times using [`time2index`][pysmo.functions.time2index], then
+    pads the [`data`][pysmo.Seismogram.data] array using
+    [`numpy.pad`][numpy.pad] and updates the
+    [`begin_time`][pysmo.Seismogram.begin_time]. Note that the actual begin and
+    end times are set by indexing, so they may be slightly different than the
+    provided input begin and end times.
+
+    Parameters:
+        seismogram: [`Seismogram`][pysmo.Seismogram] object.
+        begin_time: New begin time.
+        end_time: New end time.
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Padded [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Raises:
+        ValueError: If new begin time is after new end time.
+
+    Examples:
+        ```python
+        >>> from pysmo.functions import pad
+        >>> from pysmo.classes import SAC
+        >>> from datetime import timedelta
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
+        >>> original_length = len(sac_seis)
+        >>> sac_seis.data
+        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
+        >>> new_begin_time = sac_seis.begin_time - timedelta(seconds=10)
+        >>> new_end_time = sac_seis.end_time + timedelta(seconds=10)
+        >>> pad(sac_seis, new_begin_time, new_end_time)
+        >>> len(sac_seis) == original_length + 20 * (1 / sac_seis.delta.total_seconds())
+        True
+        >>> sac_seis.data
+        array([0., 0., 0., ..., 0., 0., 0.], shape=(181000,))
+        >>>
+        ```
+    """
+
+    if begin_time > end_time:
+        raise ValueError("New begin_time cannot be after new end_time")
+
+    start_index = time2index(
+        seismogram, begin_time, method="floor", allow_out_of_bounds=True
+    )
+    end_index = time2index(
+        seismogram, end_time, method="ceil", allow_out_of_bounds=True
+    )
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
+    pad_before = max(0, -start_index)
+    pad_after = max(0, end_index - (len(seismogram) - 1))
+
+    if pad_before > 0 or pad_after > 0:
+        seismogram.data = np.pad(
+            seismogram.data, (pad_before, pad_after), mode="constant", constant_values=0
+        )
+        seismogram.begin_time += seismogram.delta * min(0, start_index)
+
+    if clone is True:
+        return seismogram
+
+    return None
+
+
+@overload
 def resample(
     seismogram: Seismogram, delta: timedelta, clone: Literal[False] = ...
 ) -> None: ...
@@ -224,9 +313,9 @@ def resample[T: Seismogram](
 ) -> None | T:
     """Resample Seismogram data using the Fourier method.
 
-    This function uses the scipy [`resample`][scipy.signal.resample] function
-    to resample the data to a new sampling interval. If the new sampling
-    interval is identical to the current one, no action is taken.
+    This function uses [`scipy.resample`][scipy.signal.resample] to resample
+    the data to a new sampling interval. If the new sampling interval is
+    identical to the current one, no action is taken.
 
     Parameters:
         seismogram: Seismogram object.
@@ -271,6 +360,8 @@ def taper(
     taper_width: timedelta | float,
     taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"] = ...,
     beta: float = ...,
+    left: bool = ...,
+    right: bool = ...,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -281,6 +372,8 @@ def taper[T: Seismogram](
     taper_width: timedelta | float,
     taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"] = ...,
     beta: float = ...,
+    left: bool = ...,
+    right: bool = ...,
     *,
     clone: Literal[True],
 ) -> T: ...
@@ -292,6 +385,8 @@ def taper[T: Seismogram](
     taper_width: timedelta | float,
     taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"],
     beta: float,
+    left: bool,
+    right: bool,
     clone: Literal[True],
 ) -> T: ...
 
@@ -303,16 +398,18 @@ def taper[T: Seismogram](
         "bartlett", "blackman", "hamming", "hanning", "kaiser"
     ] = "hanning",
     beta: float = 14.0,
+    left: bool = True,
+    right: bool = True,
     clone: bool = False,
 ) -> None | T:
     """Apply a symetric taper to the ends of a Seismogram.
 
     The [`taper()`][pysmo.functions.taper] function applies a taper to the data
-    at both ends of a [`Seismogram`][pysmo.Seismogram] object. The width of
-    this taper can be provided as either positive
+    at one or both ends of a [`Seismogram`][pysmo.Seismogram] object. The width
+    of this taper can be provided as either positive
     [`timedelta`][datetime.timedelta] or as a fraction of the total seismogram
-    length. In both cases the width of the taper should not exceed half the
-    length of the seismogram.
+    length. In both cases the total width of the taper (i.e. left and right
+    side combined) should not exceed the length of the seismogram.
 
     Different methods for calculating the shape of the taper may be specified.
     They are all derived from the corresponding `numpy` window functions:
@@ -328,6 +425,8 @@ def taper[T: Seismogram](
         taper_width: With of the taper to use.
         taper_method: Taper method to use.
         beta: beta value for the Kaiser window function (ignored for other methods).
+        left: Apply taper to the left side of the seismogram.
+        right: Apply taper to the right side of the seismogram.
         clone: Operate on a clone of the input seismogram.
 
     Returns:
@@ -374,21 +473,26 @@ def taper[T: Seismogram](
     def _(taper_width: timedelta) -> int:
         return floor(taper_width / seismogram.delta) + 1
 
-    nsamples = calc_samples(taper_width)
-
-    if nsamples * 2 > len(seismogram):
-        raise ValueError(
-            "'taper_width' is too large. Taper width may not exceed half the length of the seismogram."
-        )
-
     if clone is True:
         seismogram = deepcopy(seismogram)
+
+    if left is False and right is False:
+        return seismogram if clone is True else None
+
+    nsamples = calc_samples(taper_width)
+
+    if nsamples * (left + right) > len(seismogram):
+        raise ValueError(
+            "'taper_width' is too large. Total taper width may exceed the length of the seismogram."
+        )
 
     if nsamples > 0:
         taper_data = np.ones(len(seismogram))
         window = calc_window_data(nsamples * 2)
-        taper_data[:nsamples] = window[:nsamples]
-        taper_data[-nsamples:] = window[-nsamples:]
+        if left is True:
+            taper_data[:nsamples] = window[:nsamples]
+        if right is True:
+            taper_data[-nsamples:] = window[-nsamples:]
         seismogram.data *= taper_data
 
     if clone is True:
@@ -401,6 +505,7 @@ def time2index(
     seismogram: Seismogram,
     time: datetime,
     method: Literal["ceil", "floor", "round"] = "round",
+    allow_out_of_bounds: bool = False,
 ) -> int:
     """Retuns data index corresponding to a given time.
 
@@ -417,12 +522,15 @@ def time2index(
         seismogram: Seismogram object.
         time: Time to convert to index.
         method: Method to use for selecting the index to return.
+        allow_out_of_bounds: If True, allow returning an index that is outside
+            has no corresponding data point in the seismogram.
 
     Returns:
         Index of the sample corresponding to the given time.
 
     Raises:
-        ValueError: If the calculated index is out of bounds.
+        ValueError: If the calculated index is out of bounds and
+            `allow_out_of_bounds` is not set to True.
     """
 
     if method == "ceil":
@@ -439,7 +547,7 @@ def time2index(
             "Invalid method provided. Valid options are 'ceil', 'floor', and 'round'."
         )
 
-    if 0 <= index < len(seismogram):
+    if 0 <= index < len(seismogram) or allow_out_of_bounds is True:
         return index
 
     raise ValueError(f"Invalid time provided, calculated {index=} is out of bounds.")
