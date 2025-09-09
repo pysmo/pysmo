@@ -36,16 +36,24 @@ def crop[T: Seismogram](
 def crop[T: Seismogram](
     seismogram: T, begin_time: datetime, end_time: datetime, clone: bool = False
 ) -> None | T:
-    """Shorten a seismogram by providing a start and end time.
+    """Shorten a seismogram by providing new begin and end times.
+
+    This function calculates the indices corresponding to the provided new
+    begin and end times using [`time2index`][pysmo.functions.time2index], then
+    slices the seismogram `data` array accordingly and updates the
+    `begin_time`.
 
     Parameters:
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
-        begin_time: New start time.
+        begin_time: New begin time.
         end_time: New end time.
         clone: Operate on a clone of the input seismogram.
 
     Returns:
         Cropped [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Raises:
+        ValueError: If new begin time is after new end time.
 
     Examples:
         ```python
@@ -58,31 +66,19 @@ def crop[T: Seismogram](
         >>> crop(sac_seis, new_begin_time, new_end_time)
         >>>
         ```
-
-    Note:
-        The returned seismogram may not have the exact new begin and end
-        times that are specified as input, as no resampling is performed.
-        Instead the nearest earlier sample is used as new begin time, and the
-        nearest later sample as new end time.
     """
 
-    if seismogram.begin_time > begin_time:
-        raise ValueError("New begin_time cannot be before seismogram.begin_time")
-
-    if seismogram.end_time < end_time:
-        raise ValueError("New end_time cannot be after seismogram.end_time")
-
     if begin_time > end_time:
-        raise ValueError("New begin_time cannot be after end_time")
-
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+        raise ValueError("New begin_time cannot be after new end_time")
 
     start_index = time2index(seismogram, begin_time)
     end_index = time2index(seismogram, end_time)
 
+    if clone is True:
+        seismogram = deepcopy(seismogram)
+
     seismogram.data = seismogram.data[start_index : end_index + 1]
-    seismogram.begin_time = seismogram.begin_time + seismogram.delta * start_index
+    seismogram.begin_time += seismogram.delta * start_index
 
     if clone is True:
         return seismogram
@@ -195,11 +191,11 @@ def normalize[T: Seismogram](
     if clone is True:
         seismogram = deepcopy(seismogram)
 
-    start_index = None
+    start_index, end_index = None, None
+
     if t1 is not None:
         start_index = time2index(seismogram, t1)
 
-    end_index = None
     if t2 is not None:
         end_index = time2index(seismogram, t2)
 
@@ -419,19 +415,26 @@ def time2index(
 
     Returns:
         Index of the sample corresponding to the given time.
+
+    Raises:
+        ValueError: If the calculated index is out of bounds.
     """
 
-    if not seismogram.begin_time <= time <= seismogram.end_time:
-        raise ValueError("time must be between begin_time and end_time")
-
-    if method not in ["ceil", "floor", "round"]:
-        raise ValueError("method must be 'ceil', 'floor' or 'round'")
-
     if method == "ceil":
-        return ceil((time - seismogram.begin_time) / seismogram.delta)
+        index = ceil((time - seismogram.begin_time) / seismogram.delta)
 
-    if method == "floor":
-        return floor((time - seismogram.begin_time) / seismogram.delta)
+    elif method == "floor":
+        index = floor((time - seismogram.begin_time) / seismogram.delta)
 
-    if method == "round":
-        return round((time - seismogram.begin_time) / seismogram.delta)
+    elif method == "round":
+        index = round((time - seismogram.begin_time) / seismogram.delta)
+
+    else:
+        raise ValueError(
+            "Invalid method provided. Valid options are 'ceil', 'floor', and 'round'."
+        )
+
+    if 0 <= index < len(seismogram):
+        return index
+
+    raise ValueError(f"Invalid time provided, calculated {index=} is out of bounds.")
