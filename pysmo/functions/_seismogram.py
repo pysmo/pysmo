@@ -222,7 +222,11 @@ def resample[T: Seismogram](
 def resample[T: Seismogram](
     seismogram: T, delta: timedelta, clone: bool = False
 ) -> None | T:
-    """Resample Seismogram object data using the Fourier method.
+    """Resample Seismogram data using the Fourier method.
+
+    This function uses the scipy [`resample`][scipy.signal.resample] function
+    to resample the data to a new sampling interval. If the new sampling
+    interval is identical to the current one, no action is taken.
 
     Parameters:
         seismogram: Seismogram object.
@@ -250,9 +254,10 @@ def resample[T: Seismogram](
     if clone is True:
         seismogram = deepcopy(seismogram)
 
-    npts = int(len(seismogram) * seismogram.delta / delta)
-    seismogram.data = scipy.signal.resample(seismogram.data, npts)
-    seismogram.delta = delta
+    if delta != seismogram.delta:
+        npts = int(len(seismogram) * seismogram.delta / delta)
+        seismogram.data = scipy.signal.resample(seismogram.data, npts)
+        seismogram.delta = delta
 
     if clone is True:
         return seismogram
