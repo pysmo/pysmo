@@ -2,7 +2,7 @@
 
 from ._types import ICCSSeismogram
 from pysmo import Seismogram, MiniSeismogram
-from pysmo.functions import crop, taper, detrend, normalize, clone_to_mini
+from pysmo.functions import crop, taper, detrend, normalize, clone_to_mini, resample
 from pysmo.tools.signal import delay
 from pysmo.tools.utils import average_datetimes
 from datetime import timedelta
@@ -54,7 +54,7 @@ class ICCS:
         >>> sacfiles = sorted(Path("iccs-example/").glob("*.bhz"))
         >>>
         >>> seismograms = []
-        >>> for index, sacfile in enumerate(sacfiles):
+        >>> for sacfile in sacfiles:
         ...     sac = SAC.from_file(sacfile)
         ...     update = {"t0": sac.timestamps.t0}
         ...     iccs_seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)
@@ -377,31 +377,40 @@ def _prepare_seismograms(
     plot_padding: None | timedelta = None,
 ) -> list[MiniSeismogram]:
     return_seismograms: list[MiniSeismogram] = []
+
+    min_delta = min((s.delta for s in seismograms))
+
     for seismogram in seismograms:
         pick = seismogram.t1 or seismogram.t0
         window_start = pick + window_pre
         window_end = pick + window_post
-        return_seismogram = clone_to_mini(MiniSeismogram, seismogram)
+        prepared_seismogram = clone_to_mini(MiniSeismogram, seismogram)
+        resample(prepared_seismogram, min_delta)
+
         if prep_for_plotting:
             if plot_padding is None:
                 raise ValueError("plot_padding must be specified")
             crop(
-                return_seismogram,
+                prepared_seismogram,
                 window_start - plot_padding,
                 window_end + plot_padding,
             )
-            detrend(return_seismogram)
-            normalize(return_seismogram, window_start, window_end)
+            detrend(prepared_seismogram)
+            normalize(prepared_seismogram, window_start, window_end)
         else:
-            crop(return_seismogram, window_start, window_end)
-            detrend(return_seismogram)
-            taper(return_seismogram, taper_width)
-            normalize(return_seismogram)
+            crop(prepared_seismogram, window_start, window_end)
+            detrend(prepared_seismogram)
+            taper(prepared_seismogram, taper_width)
+            normalize(prepared_seismogram)
         if seismogram.flip is True:
-            return_seismogram.data *= -1
-        return_seismograms.append(return_seismogram)
+            prepared_seismogram.data *= -1
+        return_seismograms.append(prepared_seismogram)
+
+    # If all seismograms must have the same length, return them now.
     if len(lengths := set(len(s) for s in return_seismograms)) == 1:
         return return_seismograms
+
+    # Shorten seismograms if necessary and return.
     for s in return_seismograms:
         s.data = s.data[: min(lengths)]
     return return_seismograms
@@ -415,6 +424,7 @@ def _update_seismogram(
     autoselect: bool,
     min_ccnorm_for_autoselect: float,
 ) -> None:
+    """Update ICCSSeismogram attributes based on cross-correlation results."""
     if autoflip and ccnorm < 0:
         seismogram.flip = not seismogram.flip
         ccnorm = abs(ccnorm)
@@ -434,6 +444,7 @@ def _update_seismogram_fn(
     min_ccnorm_for_autoselect: float,
     fn: Future[tuple[timedelta, float]],
 ) -> None:
+    """Update ICCSSeismogram attributes based on multi-threaded cross-correlation results."""
     delay, ccnorm = fn.result()
     _update_seismogram(
         delay, ccnorm, seismogram, autoflip, autoselect, min_ccnorm_for_autoselect

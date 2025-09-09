@@ -84,6 +84,9 @@ class TestSeismogramFunctions:
         """Resample Seismogram object and verify resampled data."""
         from pysmo.functions import resample
 
+        resampled_seis = resample(seismogram, seismogram.delta, clone=True)
+        np.testing.assert_array_equal(resampled_seis.data, seismogram.data)
+
         new_delta = seismogram.delta * 2
         resampled_seis = resample(seismogram, new_delta, clone=True)
         assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
