@@ -68,7 +68,10 @@ def test_pad(seismogram: Seismogram) -> None:
     from pysmo.functions import pad
 
     padded_seis = pad(
-        seismogram, seismogram.begin_time, seismogram.end_time, clone=True
+        seismogram,
+        seismogram.begin_time,
+        seismogram.end_time,
+        clone=True,
     )
     assert all(padded_seis.data == seismogram.data)
     new_begin_time = seismogram.begin_time - seismogram.delta * 3.5

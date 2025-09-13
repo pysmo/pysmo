@@ -1,6 +1,7 @@
 from __future__ import annotations
-from pysmo.tools.iccs import ICCS, update_pick
+from pysmo.tools.iccs import ICCS, update_all_picks
 from datetime import timedelta
+import pytest
 
 
 def test_update_pick(iccs_instance: ICCS) -> None:
@@ -9,7 +10,20 @@ def test_update_pick(iccs_instance: ICCS) -> None:
     _ = iccs()
     org_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
     pickdelta = timedelta(seconds=1.23)
-    update_pick(iccs, pickdelta)
+    update_all_picks(iccs, pickdelta)
     new_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
     for org, new in zip(org_picks, new_picks):
         assert new - org == pickdelta
+
+
+def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
+    """Test if error is raised whith a bad pick."""
+
+    from pysmo.tools.iccs._iccs import _calc_valid_pick_range
+
+    iccs = iccs_instance
+    min_t1, max_t1 = _calc_valid_pick_range(iccs)
+    with pytest.raises(ValueError):
+        update_all_picks(iccs, max_t1 + timedelta(seconds=1))
+    with pytest.raises(ValueError):
+        update_all_picks(iccs, min_t1 - timedelta(seconds=1))

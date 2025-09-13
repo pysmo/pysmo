@@ -1,12 +1,16 @@
+from __future__ import annotations
 from copy import deepcopy
-from pysmo import Seismogram
 from datetime import datetime, timedelta
 from math import floor, ceil
-from typing import Any, Literal, overload
+from typing import Any, Literal, overload, TYPE_CHECKING
 from functools import singledispatch
 import scipy.signal
 import numpy as np
-import numpy.typing as npt
+
+if TYPE_CHECKING:
+    from numpy.lib._arraypad_impl import _ModeKind, _ModeFunc
+    from pysmo import Seismogram
+    import numpy.typing as npt
 
 __all__ = [
     "crop",
@@ -210,7 +214,13 @@ def normalize[T: Seismogram](
 
 @overload
 def pad[T: Seismogram](
-    seismogram: T, begin_time: datetime, end_time: datetime, clone: Literal[True]
+    seismogram: T,
+    begin_time: datetime,
+    end_time: datetime,
+    mode: _ModeKind | _ModeFunc = "constant",
+    *,
+    clone: Literal[True],
+    **kwargs: Any,
 ) -> T: ...
 
 
@@ -219,14 +229,21 @@ def pad(
     seismogram: Seismogram,
     begin_time: datetime,
     end_time: datetime,
+    mode: _ModeKind | _ModeFunc = "constant",
     clone: Literal[False] = False,
+    **kwargs: Any,
 ) -> None: ...
 
 
 def pad[T: Seismogram](
-    seismogram: T, begin_time: datetime, end_time: datetime, clone: bool = False
+    seismogram: T,
+    begin_time: datetime,
+    end_time: datetime,
+    mode: _ModeKind | _ModeFunc = "constant",
+    clone: bool = False,
+    **kwargs: Any,
 ) -> None | T:
-    """Pad a seismogram with zeros to new begin and end times.
+    """Pad seismogram data.
 
     This function calculates the indices corresponding to the provided new
     begin and end times using [`time2index`][pysmo.functions.time2index], then
@@ -240,7 +257,9 @@ def pad[T: Seismogram](
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
         begin_time: New begin time.
         end_time: New end time.
+        mode: Pad mode to use (see [`numpy.pad`][numpy.pad] for all modes).
         clone: Operate on a clone of the input seismogram.
+        kwargs: Keyword arguments to pass to [`numpy.pad`][numpy.pad].
 
     Returns:
         Padded [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
@@ -286,7 +305,10 @@ def pad[T: Seismogram](
 
     if pad_before > 0 or pad_after > 0:
         seismogram.data = np.pad(
-            seismogram.data, (pad_before, pad_after), mode="constant", constant_values=0
+            seismogram.data,
+            pad_width=(pad_before, pad_after),
+            mode=mode,
+            **kwargs,
         )
         seismogram.begin_time += seismogram.delta * min(0, start_index)
 
