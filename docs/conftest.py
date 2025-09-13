@@ -1,5 +1,6 @@
 from sybil import Sybil
 from sybil.parsers.markdown import PythonCodeBlockParser, SkipParser
+
 from pysmo.conftest import copy_testfiles  # noqa: F401
 
 

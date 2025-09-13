@@ -17,10 +17,32 @@ if TYPE_CHECKING:
     from typing import Any
     from matplotlib.backend_bases import Event, MouseEvent
 
-__all__ = ["plotstack", "stack_pick", "stack_tw_pick", "update_pick"]
+__all__ = ["plotstack", "stack_pick", "stack_timewindow", "update_all_picks"]
 
 CMAP = mpl.colormaps["cool"]
 NORM = PowerNorm(vmin=0, vmax=1, gamma=2)
+
+
+def update_all_picks(iccs: ICCS, pickdelta: timedelta) -> None:
+    """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
+
+    Parameters:
+        iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
+        pickdelta: delta applied to all picks.
+
+    Raises:
+        ValueError: If the new t1 is outside the valid range.
+    """
+
+    if not iccs.validate_pick(pickdelta):
+        raise ValueError(
+            "New t1 is outside the valid range. Consider reducing the time window."
+        )
+
+    for seismogram in iccs.seismograms:
+        current_pick = seismogram.t1 or seismogram.t0
+        seismogram.t1 = current_pick + pickdelta
+    iccs._clear_caches()  # seismograms and stack need to be refreshed
 
 
 def _plot_common_stack(
@@ -120,8 +142,24 @@ def plotstack(
         >>>
         ```
 
-        ![plotstack padded](../../../examples/tools/iccs/plotstack_padded.png#only-light){ loading=lazy }
-        ![plotstack padded](../../../examples/tools/iccs/plotstack_padded_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     plt.close()
+        ...     import matplotlib.pyplot as plt
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_plotstack_padded-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_plotstack_padded.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Plotting the stack with padding](../../../examples/figures/iccs_plotstack_padded.png#only-light){ loading=lazy }
+        ![Plotting the stack with padding](../../../examples/figures/iccs_plotstack_padded-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `padded` argument to `False`:
@@ -131,8 +169,24 @@ def plotstack(
         >>>
         ```
 
-        ![plotstack](../../../examples/tools/iccs/plotstack.png#only-light){ loading=lazy }
-        ![plotstack](../../../examples/tools/iccs/plotstack_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_plotstack-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_plotstack.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Plotting the stack with padding](../../../examples/figures/iccs_plotstack.png#only-light){ loading=lazy }
+        ![Plotting the stack with padding](../../../examples/figures/iccs_plotstack-dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded)
@@ -140,19 +194,6 @@ def plotstack(
         return fig, ax
     plt.show()
     return None
-
-
-def update_pick(iccs: ICCS, pickdelta: timedelta) -> None:
-    """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
-
-    Parameters:
-        iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        pickdelta: delta applied to all picks.
-    """
-    for seismogram in iccs.seismograms:
-        current_pick = seismogram.t1 or seismogram.t0
-        seismogram.t1 = current_pick + pickdelta
-    iccs._clear_caches()  # seismograms and stack need to be refreshed
 
 
 @overload
@@ -197,8 +238,24 @@ def stack_pick(
         >>>
         ```
 
-        ![Stack Pick Figure](../../../examples/tools/iccs/stack_pick.png#only-light){ loading=lazy }
-        ![Stack Pick Figure](../../../examples/tools/iccs/stack_pick_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = stack_pick(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_pick-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = stack_pick(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_pick.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Picking a new T1 in stack](../../../examples/figures/iccs_stack_pick.png#only-light){ loading=lazy }
+        ![Picking a new T1 in stack](../../../examples/figures/iccs_stack_pick-dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
@@ -208,20 +265,31 @@ def stack_pick(
     pick_line = ax.axvline(0, color="g", linewidth=2)
 
     cursor = Cursor(  # noqa: F841
-        ax, useblit=True, color="r", linewidth=2, horizOn=False
+        ax, useblit=True, color="g", linewidth=2, horizOn=False, linestyle="--"
     )
 
     def onclick(event: MouseEvent) -> Any:
-        if event.inaxes is ax:
+        if (
+            event.inaxes is ax
+            and event.xdata is not None
+            and iccs.validate_pick(timedelta(seconds=event.xdata))
+        ):
             pick_line.set_xdata(np.array((event.xdata, event.xdata)))
             fig.canvas.draw()
             fig.canvas.flush_events()
+
+    def on_mouse_move(event: MouseEvent) -> Any:
+        if event.inaxes == ax and event.xdata is not None:
+            if iccs.validate_pick(timedelta(seconds=event.xdata)):
+                cursor.linev.set_color("g")
+            else:
+                cursor.linev.set_color("r")
 
     class SaveOrCancel:
         def save(self, _: Event) -> None:
             pickdelta = timedelta(seconds=pick_line.get_xdata(orig=True)[0])  # type: ignore
             plt.close()
-            update_pick(iccs, pickdelta)
+            update_all_picks(iccs, pickdelta)
 
         def cancel(self, _: Event) -> None:
             plt.close()
@@ -236,6 +304,8 @@ def stack_pick(
 
     _ = fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
 
+    _ = fig.canvas.mpl_connect("motion_notify_event", on_mouse_move)  # type: ignore
+
     if return_fig:
         return fig, ax
     plt.show()
@@ -243,18 +313,18 @@ def stack_pick(
 
 
 @overload
-def stack_tw_pick(
+def stack_timewindow(
     iccs: ICCS, padded: bool = True, return_fig: Literal[False] = False
 ) -> None: ...
 
 
 @overload
-def stack_tw_pick(
+def stack_timewindow(
     iccs: ICCS, padded: bool = True, *, return_fig: Literal[True]
 ) -> tuple[Figure, Axes]: ...
 
 
-def stack_tw_pick(
+def stack_timewindow(
     iccs: ICCS, padded: bool = True, return_fig: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Pick new time window limits in the stack.
@@ -282,37 +352,47 @@ def stack_tw_pick(
 
     Examples:
         ```python
-        >>> from pysmo.tools.iccs import ICCS, stack_tw_pick
+        >>> from pysmo.tools.iccs import ICCS, stack_timewindow
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> stack_tw_pick(iccs)
+        >>> stack_timewindow(iccs)
         >>>
         ```
 
-        ![Stack Pick Figure](../../../examples/tools/iccs/stack_tw_pick.png#only-light){ loading=lazy }
-        ![Stack Pick Figure](../../../examples/tools/iccs/stack_tw_pick_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = stack_timewindow(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_tw_pick-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = stack_timewindow(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_tw_pick.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Picking a new time window in stack](../../../examples/figures/iccs_stack_tw_pick.png#only-light){ loading=lazy }
+        ![Picking a new time window in stack](../../../examples/figures/iccs_stack_tw_pick-dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded, figsize=(10, 6), constrained=False)
 
     fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.96)
 
+    # 'old_extents' is used to revert to the last valid extents
+    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+
     def onselect(xmin: float, xmax: float) -> None:
-        # phase arrival pick must be inside time window
-        if xmin >= 0:
-            xmin = -iccs.stack.delta.total_seconds()
-        if xmax <= 0:
-            xmax = iccs.stack.delta.total_seconds()
-
-        # time window should not excced the plot
-        xlim_min, xlim_max = ax.get_xlim()
-        if xmin < xlim_min:
-            xmin = xlim_min
-        if xmax > xlim_max:
-            xmax = xlim_max
-
-        span.extents = (xmin, xmax)
+        nonlocal old_extents
+        if iccs.validate_time_window(timedelta(seconds=xmin), timedelta(seconds=xmax)):
+            old_extents = xmin, xmax
+            return
+        span.extents = old_extents
 
     span = SpanSelector(
         ax,
@@ -324,10 +404,8 @@ def stack_tw_pick(
         drag_from_anywhere=True,
     )
 
-    span.extents = (
-        iccs.window_pre.total_seconds(),
-        iccs.window_post.total_seconds(),
-    )
+    # Set the initial extents to the existing time window
+    span.extents = old_extents
 
     class SaveOrCancel:
         def save(self, _: Event) -> None:

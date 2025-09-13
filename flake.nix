@@ -25,9 +25,9 @@
               uv
               ruff
               python312
+              python313
               python313Packages.tox
               python313Packages.tkinter
-              python313Full
             ];
 
             shellHook = ''
@@ -40,6 +40,7 @@
               [ ! -d .venv ] && uv venv --system-site-packages --no-managed-python
               uv sync --locked --all-extras
               export MPLBACKEND="TKAgg"
+              export PYSMO_SAVE_FIGS=true
             '';
           };
         };
