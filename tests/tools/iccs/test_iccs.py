@@ -1,5 +1,4 @@
 from __future__ import annotations
-from pysmo import MiniSeismogram
 from pysmo.tools.iccs import ICCS, ICCSSeismogram, plotstack
 from typing import TYPE_CHECKING
 from datetime import timedelta
@@ -68,30 +67,63 @@ class TestICCSPaddedFig(TestICCSBase):
 
 
 class TestICCSParameters(TestICCSBase):
-    """Test changing parameters."""
-
-    def test_cached_data(self) -> None:
-        self.iccs._clear_caches()
-        assert self.iccs._seismograms_prepared is None
-        assert self.iccs._seismograms_for_plotting is None
-        assert self.iccs._seismograms_ccnorm is None
-        assert self.iccs._stack is None
-        assert self.iccs._stack_for_plotting is None
-
-        assert isinstance(self.iccs.stack, MiniSeismogram)
-        assert isinstance(self.iccs._stack, MiniSeismogram)
-        assert isinstance(self.iccs.seismograms_prepared[0], MiniSeismogram)
-
-        assert isinstance(self.iccs.stack_for_plotting, MiniSeismogram)
-        assert isinstance(self.iccs._stack_for_plotting, MiniSeismogram)
-        assert isinstance(self.iccs.seismograms_for_plotting[0], MiniSeismogram)
-
-        assert isinstance(self.iccs.seismograms_ccnorm[0], float)
-        assert isinstance(self.iccs._seismograms_ccnorm[0], float)
+    """Test changing parameters and methods (other than __call__)."""
 
     def test_change_timewindow(self) -> None:
         assert self.iccs.window_pre.total_seconds() == -10
         with pytest.raises(ValueError):
-            self.iccs.window_pre += timedelta(seconds=11)
+            self.iccs.window_pre = timedelta(seconds=1)
         self.iccs.window_pre += timedelta(seconds=2.34)
         assert self.iccs.window_pre.total_seconds() == -7.66
+
+    def test_invalid_window_pre(self) -> None:
+        max_window_pre = max(
+            s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms if s.select
+        )
+        with pytest.raises(ValueError):
+            self.iccs.window_pre -= timedelta(seconds=1) + max_window_pre
+
+    def test_invalid_window_post(self) -> None:
+        min_window_post = min(
+            (s.t1 or s.t0) - s.end_time for s in self.iccs.seismograms if s.select
+        )
+        with pytest.raises(ValueError):
+            self.iccs.window_post += timedelta(seconds=1) + min_window_post
+
+    def test_validate_pick(self) -> None:
+        from pysmo.tools.iccs._iccs import _calc_valid_pick_range
+
+        min_pick, max_pick = _calc_valid_pick_range(self.iccs)
+
+        assert self.iccs.validate_pick(min_pick) is True
+        assert self.iccs.validate_pick(max_pick) is True
+        assert self.iccs.validate_pick(min_pick - timedelta(seconds=0.01)) is False
+        assert self.iccs.validate_pick(max_pick + timedelta(seconds=0.01)) is False
+
+    def test_validate_time_window(self) -> None:
+        from pysmo.tools.iccs._iccs import _calc_valid_time_window_range
+
+        min_window_pre, max_window_post = _calc_valid_time_window_range(self.iccs)
+
+        assert self.iccs.validate_time_window(min_window_pre, max_window_post) is True
+        assert self.iccs.validate_time_window(max_window_post, min_window_pre) is False
+        assert (
+            self.iccs.validate_time_window(-self.iccs.stack.delta / 2, max_window_post)
+            is False
+        )
+        assert (
+            self.iccs.validate_time_window(min_window_pre, self.iccs.stack.delta / 2)
+            is False
+        )
+        assert (
+            self.iccs.validate_time_window(
+                min_window_pre - timedelta(seconds=0.01), max_window_post
+            )
+            is False
+        )
+        assert (
+            self.iccs.validate_time_window(
+                min_window_pre, max_window_post + timedelta(seconds=0.01)
+            )
+            is False
+        )
