@@ -24,7 +24,7 @@ else
 endif
 
 sync: check-uv ## Install this project and its dependencies in a virtual environment.
-	uv sync
+	uv sync --locked --all-extras
 
 upgrade: check-uv ## Upgrade dependencies to their latest versions.
 	uv sync --upgrade

@@ -2,7 +2,15 @@
 
 from ._types import ICCSSeismogram
 from pysmo import Seismogram, MiniSeismogram
-from pysmo.functions import crop, taper, detrend, normalize, clone_to_mini, resample
+from pysmo.functions import (
+    crop,
+    taper,
+    detrend,
+    normalize,
+    clone_to_mini,
+    resample,
+    pad,
+)
 from pysmo.tools.signal import delay
 from pysmo.tools.utils import average_datetimes
 from datetime import timedelta
@@ -13,6 +21,7 @@ from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, Future
+import warnings
 import numpy as np
 import numpy.typing as npt
 
@@ -28,7 +37,27 @@ def _clear_cache_on_update(instance: "ICCS", attribute: Attribute, value: Any) -
         instance._clear_caches()
 
 
-@define
+def _validate_window_pre(
+    instance: "ICCS", attribute: Attribute, value: timedelta
+) -> None:
+    """Ensure window_pre is with the seismogram limits for all selected seismograms."""
+    if not all(
+        s.begin_time - value <= (s.t1 or s.t0) for s in instance.seismograms if s.select
+    ):
+        raise ValueError("window_pre is too low for one or more seismograms.")
+
+
+def _validate_window_post(
+    instance: "ICCS", attribute: Attribute, value: timedelta
+) -> None:
+    """Ensure window_post is with the seismogram limits for all selected seismograms."""
+    if not all(
+        (s.t1 or s.t0) + value <= s.end_time for s in instance.seismograms if s.select
+    ):
+        raise ValueError("window_post is too high for one or more seismograms.")
+
+
+@define(slots=True)
 class ICCS:
     """Class to store a list of [`ICCSSeismograms`][pysmo.tools.iccs.ICCSSeismogram] and run the ICCS algorithm.
 
@@ -99,8 +128,24 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](../../../examples/tools/iccs/stack_initial.png#only-light){ loading=lazy }
-        ![initial stack](../../../examples/tools/iccs/stack_initial_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_initial-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_initial.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Initial stack](../../../examples/figures/iccs_stack_initial.png#only-light){ loading=lazy }
+        ![Initial stack](../../../examples/figures/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
         The phase emergance is not visible in the stack, and the (absolute)
         correlation coefficents of the the seismograms are not very high. This
@@ -115,8 +160,25 @@ class ICCS:
         >>> plotstack(iccs, padded=False)
         >>>
         ```
-        ![initial stack](../../../examples/tools/iccs/stack_first_run.png#only-light){ loading=lazy }
-        ![initial stack](../../../examples/tools/iccs/stack_first_run_dark.png#only-dark){ loading=lazy }
+
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_first_run.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Stack after first run](../../../examples/figures/iccs_stack_first_run.png#only-light){ loading=lazy }
+        ![Stack after first run](../../../examples/figures/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
 
         Despite of the random noise seismogram, the phase arrival is now visible in
         the stack. Seismograms with low correlation coefficients can automatically
@@ -130,8 +192,25 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](../../../examples/tools/iccs/stack_autoselect.png#only-light){ loading=lazy }
-        ![initial stack](../../../examples/tools/iccs/stack_autoselect_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_autoselect-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_autoselect.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Stack after run with autoselect](../../../examples/figures/iccs_stack_autoselect.png#only-light){ loading=lazy }
+        ![Stack after run with autoselect](../../../examples/figures/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
+
 
         Seismograms that fit better with their polarity reversed can be flipped
         automatically by setting `autoflip=True`:
@@ -142,8 +221,25 @@ class ICCS:
         >>>
         ```
 
-        ![initial stack](../../../examples/tools/iccs/stack_autoflip.png#only-light){ loading=lazy }
-        ![initial stack](../../../examples/tools/iccs/stack_autoflip_dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_autoflip-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_stack_autoflip.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Stack after run with autoflip](../../../examples/figures/iccs_stack_autoflip.png#only-light){ loading=lazy }
+        ![Stack after run with autoflip](../../../examples/figures/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
+
 
         To further improve results, you can interactively update the picks and
         the time window using [`stack_pick`][pysmo.tools.iccs.stack_pick] and
@@ -165,13 +261,21 @@ class ICCS:
 
     window_pre: timedelta = field(
         default=timedelta(seconds=-10),
-        validator=[validators.lt(timedelta(seconds=0)), _clear_cache_on_update],
+        validator=[
+            validators.lt(timedelta(seconds=0)),
+            _validate_window_pre,
+            _clear_cache_on_update,
+        ],
     )
     """Begining of the time window relative to the pick."""
 
     window_post: timedelta = field(
         default=timedelta(seconds=10),
-        validator=[validators.gt(timedelta(seconds=0)), _clear_cache_on_update],
+        validator=[
+            validators.gt(timedelta(seconds=0)),
+            _validate_window_post,
+            _clear_cache_on_update,
+        ],
     )
     """End of the time window relative to the pick."""
 
@@ -192,13 +296,16 @@ class ICCS:
     for details.
     """
 
-    # Prepared seismograms and stack are cached to prevent unnecessary
-    # processing. Setting the caches to None will force a new calculation.
+    # The following attributes are cached to prevent unnecessary processing.
+    # Setting the caches to None will force a new calculation when they are
+    # requested.
     _seismograms_prepared: list[MiniSeismogram] | None = field(init=False)
     _seismograms_for_plotting: list[MiniSeismogram] | None = field(init=False)
     _seismograms_ccnorm: list[float] | None = field(init=False)
     _stack: MiniSeismogram | None = field(init=False)
     _stack_for_plotting: MiniSeismogram | None = field(init=False)
+    _valid_pick_range: tuple[timedelta, timedelta] | None = field(init=False)
+    _valid_time_window_range: tuple[timedelta, timedelta] | None = field(init=False)
 
     def __attrs_post_init__(self) -> None:
         self._clear_caches()
@@ -210,6 +317,8 @@ class ICCS:
         self._seismograms_ccnorm = None
         self._stack = None
         self._stack_for_plotting = None
+        self._valid_pick_range = None
+        self._valid_time_window_range = None
 
     @property
     def seismograms_prepared(self) -> list[MiniSeismogram]:
@@ -286,6 +395,59 @@ class ICCS:
         )
         return self._stack_for_plotting
 
+    def validate_pick(self, pick: timedelta) -> bool:
+        """Check if a new pick is valid.
+
+        This checks if a new manual pick is valid for all selected seismograms.
+
+        Parameters:
+            pick: New pick to validate.
+
+        Returns:
+            Whether the new pick is valid.
+        """
+
+        # first calculate valid pick range if not done yet
+        if self._valid_pick_range is None:
+            self._valid_pick_range = _calc_valid_pick_range(self)
+
+        if self._valid_pick_range[0] <= pick <= self._valid_pick_range[1]:
+            return True
+        return False
+
+    def validate_time_window(
+        self, window_pre: timedelta, window_post: timedelta
+    ) -> bool:
+        """Check if a new time window (relative to pick) is valid.
+
+        Parameters:
+            window_pre: New window start time to validate.
+            window_post: New window end time to validate.
+
+        Returns:
+            Whether the new time window is valid.
+        """
+
+        if window_pre >= window_post:
+            return False
+
+        if window_pre > -self.stack.delta:
+            return False
+
+        if window_post < self.stack.delta:
+            return False
+
+        # Calculate valid time window range if not done yet
+        if self._valid_time_window_range is None:
+            self._valid_time_window_range = _calc_valid_time_window_range(self)
+
+        if (
+            self._valid_time_window_range[0] <= window_pre
+            and window_post <= self._valid_time_window_range[1]
+        ):
+            return True
+        return False
+
     def __call__(
         self,
         autoflip: bool = False,
@@ -341,6 +503,7 @@ class ICCS:
                                 autoflip,
                                 autoselect,
                                 min_ccnorm,
+                                (self.window_pre, self.window_post),
                             )
                         )
             else:
@@ -355,7 +518,13 @@ class ICCS:
                     )
 
                     _update_seismogram(
-                        _delay, _ccnorm, seismogram, autoflip, autoselect, min_ccnorm
+                        _delay,
+                        _ccnorm,
+                        seismogram,
+                        autoflip,
+                        autoselect,
+                        min_ccnorm,
+                        (self.window_pre, self.window_post),
                     )
 
             self._clear_caches()
@@ -389,12 +558,26 @@ def _prepare_seismograms(
 
         if prep_for_plotting:
             if plot_padding is None:
-                raise ValueError("plot_padding must be specified")
-            crop(
-                prepared_seismogram,
-                window_start - plot_padding,
-                window_end + plot_padding,
-            )
+                raise ValueError(
+                    "if prep_for_plotting is True, plot_padding must also be specified."
+                )
+
+            plot_window_start = window_start - plot_padding
+            plot_window_end = window_end + plot_padding
+
+            if (
+                plot_window_start < seismogram.begin_time
+                or plot_window_end > seismogram.end_time
+            ):
+                pad(
+                    prepared_seismogram,
+                    plot_window_start,
+                    plot_window_end,
+                    mode="linear_ramp",
+                    end_values=(0, 0),
+                )
+
+            crop(prepared_seismogram, plot_window_start, plot_window_end)
             detrend(prepared_seismogram)
             normalize(prepared_seismogram, window_start, window_end)
         else:
@@ -423,8 +606,10 @@ def _update_seismogram(
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: float,
+    current_window: tuple[timedelta, timedelta],
 ) -> None:
     """Update ICCSSeismogram attributes based on cross-correlation results."""
+
     if autoflip and ccnorm < 0:
         seismogram.flip = not seismogram.flip
         ccnorm = abs(ccnorm)
@@ -434,7 +619,17 @@ def _update_seismogram(
             seismogram.select = False
         # TODO: Should we also set to True?
 
-    seismogram.t1 = (seismogram.t1 or seismogram.t0) + delay
+    updated_t1 = (seismogram.t1 or seismogram.t0) + delay
+    limit_pre = seismogram.begin_time - current_window[0]
+    limit_post = seismogram.end_time - current_window[1]
+
+    if not limit_pre <= updated_t1 <= limit_post:
+        warnings.warn(
+            f"refusing to update t1 for {seismogram=}. Would move out of limits - consider reducing window size."
+        )
+        return
+
+    seismogram.t1 = updated_t1
 
 
 def _update_seismogram_fn(
@@ -442,12 +637,19 @@ def _update_seismogram_fn(
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: float,
+    current_window: tuple[timedelta, timedelta],
     fn: Future[tuple[timedelta, float]],
 ) -> None:
     """Update ICCSSeismogram attributes based on multi-threaded cross-correlation results."""
     delay, ccnorm = fn.result()
     _update_seismogram(
-        delay, ccnorm, seismogram, autoflip, autoselect, min_ccnorm_for_autoselect
+        delay,
+        ccnorm,
+        seismogram,
+        autoflip,
+        autoselect,
+        min_ccnorm_for_autoselect,
+        current_window,
     )
 
 
@@ -502,3 +704,33 @@ def _calc_convergence(
             / len(current_stack)
         )
     raise ValueError(f"Unknown convergence method: {method}.")
+
+
+def _calc_valid_pick_range(iccs: ICCS) -> tuple[timedelta, timedelta]:
+    """Calculate the valid range for updating pick."""
+
+    min_pick = max(
+        s.begin_time - (s.t1 or s.t0) - iccs.window_pre
+        for s in iccs.seismograms
+        if s.select
+    )
+    max_pick = min(
+        s.end_time - (s.t1 or s.t0) - iccs.window_post
+        for s in iccs.seismograms
+        if s.select
+    )
+
+    return min_pick, max_pick
+
+
+def _calc_valid_time_window_range(iccs: ICCS) -> tuple[timedelta, timedelta]:
+    """Calculate the valid range for updating time window."""
+
+    min_window_pre = max(
+        s.begin_time - (s.t1 or s.t0) for s in iccs.seismograms if s.select
+    )
+    max_window_post = min(
+        s.end_time - (s.t1 or s.t0) for s in iccs.seismograms if s.select
+    )
+
+    return min_window_pre, max_window_post

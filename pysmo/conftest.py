@@ -10,8 +10,30 @@ from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
 from datetime import timedelta
+from getpass import getuser
 import pytest
 import os
+import matplotlib
+import tempfile
+import platform
+
+
+@pytest.fixture()
+def savedir() -> Path | None:
+    if os.getenv("PYSMO_SAVE_FIGS", "false").lower() == "true":
+        path = (
+            Path("/tmp" if platform.system() == "Darwin" else tempfile.gettempdir())
+            / f"pysmo_test_figs_of_{getuser()}"
+        )
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    return None
+
+
+@pytest.fixture()
+def mpl_backend(monkeypatch) -> None:  # type: ignore
+    monkeypatch.setenv("MPLBACKEND", "Agg")
+    matplotlib.use("Agg")
 
 
 @pytest.fixture()
@@ -56,5 +78,5 @@ pytest_collect_file = Sybil(
         PythonCodeBlockParser(future_imports=["print_function"]),
     ],
     pattern="*.py",
-    fixtures=["copy_testfiles", "iccs_seismograms"],
+    fixtures=["copy_testfiles", "iccs_seismograms", "savedir", "mpl_backend"],
 ).pytest()
