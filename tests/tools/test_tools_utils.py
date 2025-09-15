@@ -1,6 +1,18 @@
-import pytest
 from numpy import mean
 from numpy.random import uniform
+import random as rd
+import pytest
+
+
+@pytest.fixture()
+def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
+    import uuid
+
+    rand = rd.Random()
+    rand.seed(42)
+    monkeypatch.setattr(
+        uuid, "uuid4", lambda: uuid.UUID(int=rand.getrandbits(128), version=4)
+    )
 
 
 def test_average_datetimes() -> None:
@@ -21,3 +33,23 @@ def test_average_datetimes() -> None:
     assert average_datetimes(random_times).timestamp() == pytest.approx(
         (now + timedelta(seconds=float(mean(random_seconds)))).timestamp()
     )
+
+
+def test_uuid_shortener(mock_uuid4, snapshot) -> None:  # type: ignore
+    from pysmo.tools.utils import uuid_shortener
+    import uuid
+
+    uuids = [uuid.uuid4() for _ in range(1000)]
+
+    view = sorted(uuid_shortener(uuids).items())
+    assert view == snapshot
+
+    # simulate collision (which in our case means shortening is not possible)
+    uuids.append(uuids[0])
+    assert all(len(k) == 36 for k in uuid_shortener(uuids).keys())
+
+    with pytest.raises(ValueError):
+        uuid_shortener([])
+
+    with pytest.raises(ValueError):
+        uuid_shortener(uuids, min_length=0)
