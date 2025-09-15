@@ -11,6 +11,7 @@ from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
 from datetime import timedelta
 from getpass import getuser
+import random as rd
 import pytest
 import os
 import matplotlib
@@ -31,7 +32,18 @@ def savedir() -> Path | None:
 
 
 @pytest.fixture()
-def mpl_backend(monkeypatch) -> None:  # type: ignore
+def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
+    import uuid
+
+    rand = rd.Random()
+    rand.seed(42)
+    monkeypatch.setattr(
+        uuid, "uuid4", lambda: uuid.UUID(int=rand.getrandbits(128), version=4)
+    )
+
+
+@pytest.fixture()
+def mpl_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MPLBACKEND", "Agg")
     matplotlib.use("Agg")
 
@@ -78,5 +90,12 @@ pytest_collect_file = Sybil(
         PythonCodeBlockParser(future_imports=["print_function"]),
     ],
     pattern="*.py",
-    fixtures=["copy_testfiles", "iccs_seismograms", "savedir", "mpl_backend"],
+    fixtures=[
+        "copy_testfiles",
+        "iccs_seismograms",
+        "savedir",
+        "mpl_backend",
+        "mock_uuid4",
+        "_syrupy_apply_ide_patches",
+    ],
 ).pytest()
