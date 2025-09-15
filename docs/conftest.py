@@ -16,5 +16,5 @@ pytest_collect_file = Sybil(
         SkipParser(),
     ],
     pattern="*.md",
-    fixtures=["copy_testfiles"],
+    fixtures=["copy_testfiles", "_syrupy_apply_ide_patches"],
 ).pytest()
