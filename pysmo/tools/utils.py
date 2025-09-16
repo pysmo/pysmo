@@ -55,18 +55,18 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
         >>>
         ```
     """
+    UUID_LENGTH = 36
+
     if len(uuids) == 0:
         raise ValueError("Cannot shorten empty sequence of UUIDs.")
 
-    if not (1 <= min_length <= 36):
-        raise ValueError("min_length must be between 1 and 36.")
+    if not (1 <= min_length <= UUID_LENGTH):
+        raise ValueError(f"min_length must be between 1 and {UUID_LENGTH}.")
 
-    str_uuids = list(map(str, uuids))
-
-    for length in range(min_length, 37):  # UUIDs are 36 characters long
-        shortened = [u[:length] for u in str_uuids]
+    for length in range(min_length, UUID_LENGTH + 1):
+        shortened = [u[:length] for u in map(str, uuids)]
         if len(set(shortened)) == len(uuids):
-            return {u[:length]: uuid for u, uuid in zip(str_uuids, uuids)}
+            return {u: uuid for u, uuid in zip(shortened, uuids)}
 
     # Fallback to full UUIDs if necessary (like that's going to happen...)
     return {str(u): u for u in uuids}

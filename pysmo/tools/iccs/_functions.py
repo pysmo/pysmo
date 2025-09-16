@@ -17,7 +17,13 @@ if TYPE_CHECKING:
     from typing import Any
     from matplotlib.backend_bases import Event, MouseEvent
 
-__all__ = ["plotstack", "stack_pick", "stack_timewindow", "update_all_picks"]
+__all__ = [
+    "plotstack",
+    "stack_pick",
+    "stack_timewindow",
+    "update_all_picks",
+    "select_min_ccnorm",
+]
 
 CMAP = mpl.colormaps["cool"]
 NORM = PowerNorm(vmin=0, vmax=1, gamma=2)
@@ -423,6 +429,177 @@ def stack_timewindow(
     b_save.on_clicked(callback.save)
     b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
     b_abort.on_clicked(callback.cancel)
+
+    if return_fig:
+        return fig, ax
+    plt.show()
+    return None
+
+
+@overload
+def select_min_ccnorm(
+    iccs: ICCS, padded: bool = True, return_fig: Literal[False] = False
+) -> None: ...
+
+
+@overload
+def select_min_ccnorm(
+    iccs: ICCS, padded: bool = True, *, return_fig: Literal[True]
+) -> tuple[Figure, Axes]: ...
+
+
+def select_min_ccnorm(
+    iccs: ICCS, padded: bool = True, return_fig: bool = False
+) -> tuple[Figure, Axes] | None:
+    """Interactively pick a new [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm].
+
+    This function launches an interactive figure to manually pick a new
+    [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm] which is used when
+    [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm with
+    `autoselect` set to `True`.
+
+    Parameters:
+        iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
+        padded: If True, the plot is padded on both sides of the
+            time window by the amount defined in
+            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
+            [`Axes`][matplotlib.axes.Axes] objects are returned instead of
+            shown.
+
+    Returns:
+        Figure with the selector if `return_fig` is `True`.
+
+    Examples:
+        ```python
+        >>> from pysmo.tools.iccs import ICCS, select_min_ccnorm
+        >>> iccs = ICCS(iccs_seismograms)
+        >>> _ = iccs()
+        >>> select_min_ccnorm(iccs)
+        >>>
+        ```
+
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close()
+        ...     plt.style.use("dark_background")
+        ...     fig, _ = select_min_ccnorm(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_select_min_ccnorm-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig, _ = select_min_ccnorm(iccs, return_fig=True)
+        ...     fig.savefig(savedir / "iccs_select_min_ccnorm.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        ![Picking a new time window in stack](../../../examples/figures/iccs_select_min_ccnorm.png#only-light){ loading=lazy }
+        ![Picking a new time window in stack](../../../examples/figures/iccs_select_min_ccnorm-dark.png#only-dark){ loading=lazy }
+    """
+
+    plot_padding = iccs.plot_padding if padded else timedelta(0)
+
+    xmin, xmax = (
+        (iccs.window_pre - plot_padding).total_seconds(),
+        (iccs.window_post + plot_padding).total_seconds(),
+    )
+
+    selected_seismogram_matrix = np.array(
+        [
+            p.data
+            for _, p, s in sorted(
+                zip(
+                    iccs.seismograms_ccnorm,
+                    (
+                        iccs.seismograms_for_plotting
+                        if padded
+                        else iccs.seismograms_prepared
+                    ),
+                    iccs.seismograms,
+                ),
+                reverse=True,
+            )
+            if s.select
+        ]
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.96)
+
+    ax.set_ylim((0, len(selected_seismogram_matrix)))
+    ax.set_yticks([])
+    plt.xlabel("Time relative to pick [s]")
+
+    plt.imshow(
+        selected_seismogram_matrix,
+        extent=(xmin, xmax, 0, len(selected_seismogram_matrix)),
+        vmin=-1,
+        vmax=1,
+        cmap="RdBu",
+        aspect="auto",
+        interpolation="none",
+    )
+
+    pick_line = ax.axhline(0, color="g", linewidth=2, visible=False)
+    pick_line_cursor = ax.axhline(0, color="g", linewidth=2, linestyle="--")
+
+    cursor = Cursor(  # noqa: F841
+        ax,
+        useblit=True,
+        color="g",
+        linewidth=2,
+        vertOn=False,
+        horizOn=False,
+        linestyle="--",
+    )
+
+    def snap_pickline(ydata: float) -> int:
+        if ydata < 1:
+            return 1
+        if ydata > len(selected_seismogram_matrix) - 1:
+            return len(selected_seismogram_matrix) - 1
+        return round(ydata)
+
+    def onclick(event: MouseEvent) -> Any:
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_pickline(event.ydata)
+            pick_line.set_ydata((ydata, ydata))
+            pick_line.set_visible(True)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+
+    def on_mouse_move(event: MouseEvent) -> Any:
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_pickline(event.ydata)
+            pick_line_cursor.set_ydata((ydata, ydata))
+            fig.canvas.draw_idle()
+
+    class SaveOrCancel:
+        def save(self, _: Event) -> None:
+            current_ccnorms = sorted(
+                i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select
+            )
+            index = int(pick_line.get_ydata(orig=True)[0])  # type: ignore
+
+            iccs.min_ccnorm = np.mean(current_ccnorms[index - 1 : index + 1])
+            iccs._clear_caches()
+            plt.close()
+
+        def cancel(self, _: Event) -> None:
+            plt.close()
+
+    callback = SaveOrCancel()
+    ax_save = fig.add_axes((0.7, 0.05, 0.1, 0.075))
+    ax_cancel = fig.add_axes((0.81, 0.05, 0.1, 0.075))
+    b_save = Button(ax_save, "Save", color="darkgreen", hovercolor="green")
+    b_save.on_clicked(callback.save)
+    b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
+    b_abort.on_clicked(callback.cancel)
+
+    _ = fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
+    _ = fig.canvas.mpl_connect("motion_notify_event", on_mouse_move)  # type: ignore
 
     if return_fig:
         return fig, ax
