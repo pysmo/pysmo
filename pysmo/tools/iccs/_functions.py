@@ -519,6 +519,7 @@ def select_min_ccnorm(
                     ),
                     iccs.seismograms,
                 ),
+                key=lambda t: np.max(t[0]),
                 reverse=True,
             )
             if s.select
