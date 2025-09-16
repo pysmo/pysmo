@@ -296,6 +296,17 @@ class ICCS:
     for details.
     """
 
+    min_ccnorm: np.floating | float = 0.5
+    """Minimum normalised cross-correlation coefficient for seismograms.
+
+    When the ICCS algorithm is [executed][pysmo.tools.iccs.ICCS.__call__],
+    the cross-correlation coefficient for each seismogram is calculated after
+    each iteration. If `autoselect` is set to `True`, the
+    [`select`][pysmo.tools.iccs.ICCSSeismogram.select] attribute of seismograms
+    with with correlation coefficients below this value is set to `False`, and
+    they are no longer used for the [`stack`][pysmo.tools.iccs.ICCS.stack].
+    """
+
     # The following attributes are cached to prevent unnecessary processing.
     # Setting the caches to None will force a new calculation when they are
     # requested.
@@ -456,7 +467,6 @@ class ICCS:
         convergence_method: CONVERGENCE_METHOD = "corrcoef",
         max_iter: int = 10,
         max_shift: timedelta | None = None,
-        min_ccnorm: float = 0.5,
         parallel: bool = False,
     ) -> npt.NDArray:
         """Run the iccs algorithm.
@@ -468,9 +478,6 @@ class ICCS:
             convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
             max_shift: Maximum shift in seconds (see [`delay()`][pysmo.tools.signal.delay]).
-            min_ccnorm: Minimum normalised cross-correlation coefficient.
-                When `autoselect` is `True`, seismograms with correlation
-                coefficients below this value are set to `select=False`.
             parallel: Whether to use parallel processing. Setting this to `True`
                 will perform the cross-correlation calculations in parallel
                 using [`ProcessPoolExecutor`][concurrent.futures.ProcessPoolExecutor].
@@ -502,7 +509,7 @@ class ICCS:
                                 seismogram,
                                 autoflip,
                                 autoselect,
-                                min_ccnorm,
+                                self.min_ccnorm,
                                 (self.window_pre, self.window_post),
                             )
                         )
@@ -523,7 +530,7 @@ class ICCS:
                         seismogram,
                         autoflip,
                         autoselect,
-                        min_ccnorm,
+                        self.min_ccnorm,
                         (self.window_pre, self.window_post),
                     )
 
@@ -605,7 +612,7 @@ def _update_seismogram(
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
-    min_ccnorm_for_autoselect: float,
+    min_ccnorm_for_autoselect: np.floating | float,
     current_window: tuple[timedelta, timedelta],
 ) -> None:
     """Update ICCSSeismogram attributes based on cross-correlation results."""
@@ -636,7 +643,7 @@ def _update_seismogram_fn(
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
-    min_ccnorm_for_autoselect: float,
+    min_ccnorm_for_autoselect: np.floating | float,
     current_window: tuple[timedelta, timedelta],
     fn: Future[tuple[timedelta, float]],
 ) -> None:
