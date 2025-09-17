@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pysmo.tools.iccs import ICCS, ICCSSeismogram, plotstack
+from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
 from typing import TYPE_CHECKING
 from datetime import timedelta
 import pytest
@@ -28,7 +28,7 @@ class TestICCSBase:
         style="default",
     )
     def test_iccs_stack_initial(self) -> Figure:
-        fig, _ = plotstack(self.iccs, padded=self.PADDED_FIG, return_fig=True)
+        fig, _ = plot_stack(self.iccs, padded=self.PADDED_FIG, return_fig=True)
         return fig
 
     @pytest.mark.mpl_image_compare(
@@ -42,7 +42,7 @@ class TestICCSBase:
             parallel=self.PARALLEL,
             convergence_method=self.METHOD,
         )
-        fig, _ = plotstack(self.iccs, padded=False, return_fig=True)
+        fig, _ = plot_stack(self.iccs, padded=False, return_fig=True)
         return fig
 
 
