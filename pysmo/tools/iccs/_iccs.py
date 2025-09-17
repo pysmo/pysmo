@@ -122,23 +122,23 @@ class ICCS:
         and plot the initial stack together with the input seismograms:
 
         ```python
-        >>> from pysmo.tools.iccs import ICCS, plotstack
+        >>> from pysmo.tools.iccs import ICCS, plot_stack
         >>> iccs = ICCS(seismograms)
-        >>> plotstack(iccs, padded=False)
+        >>> plot_stack(iccs, padded=False)
         >>>
         ```
 
         <!-- invisible-code-block: python
         ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close()
         >>> if savedir:
-        ...     import matplotlib.pyplot as plt
-        ...     plt.close()
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_initial-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_initial.png", transparent=True)
         >>>
         ```
@@ -157,21 +157,21 @@ class ICCS:
         >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
         >>>                            # a list of the convergence value after each
         >>>                            # iteration.
-        >>> plotstack(iccs, padded=False)
+        >>> plot_stack(iccs, padded=False)
         >>>
         ```
 
         <!-- invisible-code-block: python
         ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close()
         >>> if savedir:
-        ...     import matplotlib.pyplot as plt
-        ...     plt.close()
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_first_run.png", transparent=True)
         >>>
         ```
@@ -188,21 +188,21 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoselect=True)
-        >>> plotstack(iccs, padded=False)
+        >>> plot_stack(iccs, padded=False)
         >>>
         ```
 
         <!-- invisible-code-block: python
         ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close()
         >>> if savedir:
-        ...     import matplotlib.pyplot as plt
-        ...     plt.close()
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoselect-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoselect.png", transparent=True)
         >>>
         ```
@@ -217,21 +217,21 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoflip=True)
-        >>> plotstack(iccs, padded=False)
+        >>> plot_stack(iccs, padded=False)
         >>>
         ```
 
         <!-- invisible-code-block: python
         ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close()
         >>> if savedir:
-        ...     import matplotlib.pyplot as plt
-        ...     plt.close()
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoflip-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plotstack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoflip.png", transparent=True)
         >>>
         ```
@@ -624,7 +624,8 @@ def _update_seismogram(
     if autoselect:
         if ccnorm < min_ccnorm_for_autoselect:
             seismogram.select = False
-        # TODO: Should we also set to True?
+        else:
+            seismogram.select = True
 
     updated_t1 = (seismogram.t1 or seismogram.t0) + delay
     limit_pre = seismogram.begin_time - current_window[0]
@@ -632,7 +633,7 @@ def _update_seismogram(
 
     if not limit_pre <= updated_t1 <= limit_post:
         warnings.warn(
-            f"refusing to update t1 for {seismogram=}. Would move out of limits - consider reducing window size."
+            f"Refusing to update t1 for {seismogram=}. Would move out of limits - consider reducing window size."
         )
         return
 
