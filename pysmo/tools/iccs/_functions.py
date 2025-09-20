@@ -1,7 +1,7 @@
 """Functions for the ICCS class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, overload
 from datetime import timedelta
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ._iccs import ICCS
     from matplotlib.figure import Figure
     from matplotlib.axes import Axes
-    from typing import Any
+    from typing import Any, Literal
     from matplotlib.backend_bases import Event, MouseEvent
 
 __all__ = [
@@ -28,7 +28,6 @@ __all__ = [
 
 IMG_CMAP = mpl.colormaps["RdBu"]
 CMAP = mpl.colormaps["cool"]
-NORM = PowerNorm(vmin=0, vmax=1, gamma=2)
 
 
 def update_all_picks(iccs: ICCS, pickdelta: timedelta) -> None:
@@ -97,13 +96,19 @@ def _plot_common_stack(
         )
 
     time = np.linspace(xmin, xmax, len(stack))
+    ccnorms = [
+        abs(c)
+        for c, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms)
+        if _.select or all
+    ]
+    seismograms_to_plot = [
+        s for s, _ in zip(seismograms_prepared, iccs.seismograms) if _.select or all
+    ]
+    norm = PowerNorm(vmin=min(ccnorms), vmax=max(ccnorms), gamma=2)
 
-    for seismogram_prepared, seismogram, ccnorm in zip(
-        seismograms_prepared, iccs.seismograms, iccs.seismograms_ccnorm
-    ):
-        if seismogram.select or all:
-            color = CMAP(NORM(abs(ccnorm)))
-            ax.plot(time, seismogram_prepared.data, linewidth=0.4, color=color)
+    for seismogram_to_plot, ccnorm in zip(seismograms_to_plot, ccnorms):
+        color = CMAP(norm(ccnorm))
+        ax.plot(time, seismogram_to_plot.data, linewidth=0.4, color=color)
     ax.plot(
         time,
         stack.data,
@@ -117,7 +122,7 @@ def _plot_common_stack(
     plt.ylim(auto=None)
     ax.legend(loc="upper left")
     fig.colorbar(
-        ScalarMappable(norm=NORM, cmap=CMAP), ax=ax, label="|Correlation coefficient|"
+        ScalarMappable(norm=norm, cmap=CMAP), ax=ax, label="|Correlation coefficient|"
     )
     return fig, ax
 
@@ -773,7 +778,7 @@ def update_min_ccnorm(
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
 
     current_ccnorms = sorted(
-        i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select
+        i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select or all
     )
     start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
     pick_line = ax.axhline(start_index, color="g", linewidth=2)
@@ -782,11 +787,8 @@ def update_min_ccnorm(
     cursor = Cursor(  # noqa: F841
         ax,
         useblit=True,
-        # color="g",
-        # linewidth=2,
         vertOn=False,
         horizOn=False,
-        # linestyle="--",
     )
 
     def snap_pickline(ydata: float) -> int:
