@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 if TYPE_CHECKING:
     from ._iccs import ICCS
     from matplotlib.figure import Figure
+    from matplotlib.lines import Line2D
     from matplotlib.axes import Axes
     from typing import Any, Literal
     from matplotlib.backend_bases import Event, MouseEvent
@@ -771,89 +772,97 @@ def update_min_ccnorm(
         ![Picking a new time window in stack](../../../examples/figures/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
 
+    # If the lowest index is chosen in the gui, set the new min_ccnorm to
+    # the lowest value of all seismograms multiplied by a multiplier
+    _INDEX_ZERO_MULTIPLIER = 0.9
+
+    current_ccnorms = sorted(
+        i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select or all
+    )
+
     fig, ax, selected_seismogram_matrix = _plot_common_image(
         iccs, padded, all, figsize=(10, 6), constrained=False
     )
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
 
-    current_ccnorms = sorted(
-        i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select or all
-    )
     start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
+    max_index = len(selected_seismogram_matrix) - 1
+
     pick_line = ax.axhline(start_index, color="g", linewidth=2)
     pick_line_cursor = ax.axhline(start_index, color="g", linewidth=2, linestyle="--")
 
-    cursor = Cursor(  # noqa: F841
-        ax,
-        useblit=True,
-        vertOn=False,
-        horizOn=False,
-    )
+    def snap_ydata(ydata: float) -> int:
+        return max(0, round(min(ydata, max_index)))
 
-    def snap_pickline(ydata: float) -> int:
-        if ydata < 1:
-            return 1
-        if ydata > len(selected_seismogram_matrix) - 1:
-            return len(selected_seismogram_matrix) - 1
-        return round(ydata)
+    def calc_ccnorm(pick_line: Line2D) -> float | np.floating:
+        # NOTE: the pick_line ydata should already be a round number, but
+        # mypy complains without it.
+        index = round(pick_line.get_ydata()[0], 0)  # type: ignore
+        if index == 0:
+            return _INDEX_ZERO_MULTIPLIER * current_ccnorms[0]
+        return np.mean(current_ccnorms[index - 1 : index + 1])
 
     def onclick(event: MouseEvent) -> Any:
         if event.inaxes is ax and event.ydata is not None:
-            ydata = snap_pickline(event.ydata)
+            ydata = snap_ydata(event.ydata)
             pick_line.set_ydata((ydata, ydata))
             pick_line.set_visible(True)
             fig.canvas.draw()
             fig.canvas.flush_events()
-            index = int(pick_line.get_ydata(orig=True)[0])  # type: ignore
-            new_ccnorm = np.mean(current_ccnorms[index - 1 : index + 1])
-            ax.set_title(f"Click save to set min_ccnorm to {new_ccnorm:.4f}")
+            ax.set_title(
+                f"Click save to set min_ccnorm to {calc_ccnorm(pick_line):.4f}"
+            )
             fig.canvas.draw_idle()
 
     def on_mouse_move(event: MouseEvent) -> Any:
         if event.inaxes is ax and event.ydata is not None:
-            pick_line_cursor.set_visible(True)
-            ydata = snap_pickline(event.ydata)
+            ydata = snap_ydata(event.ydata)
             pick_line_cursor.set_ydata((ydata, ydata))
+            pick_line_cursor.set_visible(True)
             fig.canvas.draw_idle()
         else:
             pick_line_cursor.set_visible(False)
             fig.canvas.draw_idle()
 
-    class IndexTracker:
+    class ScrollIndexTracker:
         def __init__(self, ax: Axes) -> None:
-            self.index = ax.get_ylim()[1]
-            self.max_index = ax.get_ylim()[1]
+            self.scroll_index = ax.get_ylim()[1]
+            self.max_scroll_index = ax.get_ylim()[1]
             self.ax = ax
             self.update()
 
         def on_scroll(self, event: MouseEvent) -> None:
             if event.inaxes is ax:
                 increment = (
-                    np.ceil(self.index / 10)
+                    np.ceil(self.scroll_index / 10)
                     if event.button == "up"
-                    else -np.ceil(self.index / 10)
+                    else -np.ceil(self.scroll_index / 10)
                 )
-                self.index = max(1, min(self.max_index, self.index + increment))
+                self.scroll_index = max(
+                    1, min(self.max_scroll_index, self.scroll_index + increment)
+                )
                 self.update()
 
         def update(self) -> None:
-            self.ax.set_ylim(0, self.index)
+            self.ax.set_ylim(0, self.scroll_index)
             fig.canvas.draw_idle()
 
     class SaveOrCancel:
-        nonlocal current_ccnorms
-
         def save(self, _: Event) -> None:
-            index = int(pick_line.get_ydata(orig=True)[0])  # type: ignore
-
-            if index:
-                iccs.min_ccnorm = np.mean(current_ccnorms[index - 1 : index + 1])
-                iccs._clear_caches()
+            iccs.min_ccnorm = calc_ccnorm(pick_line)
+            iccs._clear_caches()
             plt.close()
 
         def cancel(self, _: Event) -> None:
             plt.close()
+
+    _ = Cursor(
+        ax,
+        useblit=True,
+        vertOn=False,
+        horizOn=False,
+    )
 
     callback = SaveOrCancel()
     ax_save = fig.add_axes((0.7, 0.05, 0.1, 0.075))
@@ -862,7 +871,7 @@ def update_min_ccnorm(
     b_save.on_clicked(callback.save)
     b_abort = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
     b_abort.on_clicked(callback.cancel)
-    tracker = IndexTracker(ax)
+    tracker = ScrollIndexTracker(ax)
 
     _ = fig.canvas.mpl_connect("scroll_event", tracker.on_scroll)  # type: ignore
     _ = fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
