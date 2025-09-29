@@ -4,7 +4,6 @@ from typing import Protocol, runtime_checkable
 from attrs import define, field
 from datetime import datetime, timedelta
 import numpy as np
-import numpy.typing as npt
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 
@@ -41,12 +40,12 @@ class Seismogram(Protocol):
         ...
 
     @property
-    def data(self) -> npt.NDArray:
+    def data(self) -> np.ndarray:
         """Seismogram data."""
         ...
 
     @data.setter
-    def data(self, value: npt.NDArray) -> None: ...
+    def data(self, value: np.ndarray) -> None: ...
 
     @property
     def begin_time(self) -> datetime:
@@ -99,7 +98,7 @@ class MiniSeismogram:
     delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value
     """Seismogram sampling interval."""
 
-    data: npt.NDArray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""
 
     def __len__(self) -> int:

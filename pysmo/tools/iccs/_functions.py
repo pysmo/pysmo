@@ -1,22 +1,18 @@
 """Functions for the ICCS class."""
 
-from __future__ import annotations
-from typing import TYPE_CHECKING, overload
+from ._iccs import ICCS
+from ._defaults import ICCS_DEFAULTS
+from typing import overload, Any, Literal
 from datetime import timedelta
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
 from matplotlib.widgets import Cursor, Button, SpanSelector
+from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.axes import Axes
+from matplotlib.backend_bases import Event, MouseEvent
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-if TYPE_CHECKING:
-    from ._iccs import ICCS
-    from matplotlib.figure import Figure
-    from matplotlib.lines import Line2D
-    from matplotlib.axes import Axes
-    from typing import Any, Literal
-    from matplotlib.backend_bases import Event, MouseEvent
 
 __all__ = [
     "plot_stack",
@@ -26,9 +22,6 @@ __all__ = [
     "update_timewindow",
     "update_min_ccnorm",
 ]
-
-IMG_CMAP = mpl.colormaps["RdBu"]
-CMAP = mpl.colormaps["cool"]
 
 
 def update_all_picks(iccs: ICCS, pickdelta: timedelta) -> None:
@@ -51,6 +44,24 @@ def update_all_picks(iccs: ICCS, pickdelta: timedelta) -> None:
         current_pick = seismogram.t1 or seismogram.t0
         seismogram.t1 = current_pick + pickdelta
     iccs._clear_caches()  # seismograms and stack need to be refreshed
+
+
+def _make_mask(iccs: ICCS, all: bool) -> list[bool]:
+    """Return a list of booleans for selecting the data to use in the plots.
+
+    Parameters:
+        iccs: Instance of the ICCS class.
+        all: If `True`, create mask for all seismograms instead of selected
+            ones only (effectively returns a list of True for all seismograms).
+
+    Returns:
+        List of booleans for selecting the data to use in the plots.
+    """
+
+    if all:
+        return [True] * len(iccs.seismograms)
+
+    return [s.select for s in iccs.seismograms]
 
 
 def _plot_common_stack(
@@ -81,35 +92,31 @@ def _plot_common_stack(
         layout = "constrained"
     fig, ax = plt.subplots(figsize=figsize, layout=layout)
 
-    seismograms_prepared = iccs.seismograms_prepared
-    stack = iccs.stack
+    seismograms = iccs.padded_seismograms if padded else iccs.cc_seismograms
+    stack = iccs.padded_stack if padded else iccs.stack
+
     xmin, xmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
     if padded:
         ax.axvspan(xmin, xmax, color="lightgreen", alpha=0.2, label="Time Window")
         ax.axvline(xmin, color="lightgreen", linewidth=0.5, alpha=0.7)
         ax.axvline(xmax, color="lightgreen", linewidth=0.5, alpha=0.7)
-        seismograms_prepared = iccs.seismograms_for_plotting
-        stack = iccs.stack_for_plotting
         xmin, xmax = (
             (iccs.window_pre - iccs.plot_padding).total_seconds(),
             (iccs.window_post + iccs.plot_padding).total_seconds(),
         )
 
     time = np.linspace(xmin, xmax, len(stack))
-    ccnorms = [
-        abs(c)
-        for c, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms)
-        if _.select or all
-    ]
-    seismograms_to_plot = [
-        s for s, _ in zip(seismograms_prepared, iccs.seismograms) if _.select or all
-    ]
-    norm = PowerNorm(vmin=min(ccnorms), vmax=max(ccnorms), gamma=2)
 
-    for seismogram_to_plot, ccnorm in zip(seismograms_to_plot, ccnorms):
-        color = CMAP(norm(ccnorm))
-        ax.plot(time, seismogram_to_plot.data, linewidth=0.4, color=color)
+    mask = _make_mask(iccs, all)
+    ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
+    seismogram_data = [s.data for s, _ in zip(seismograms, mask) if _]
+
+    norm = PowerNorm(vmin=np.min(ccnorms), vmax=np.max(ccnorms), gamma=2)
+    colors = ICCS_DEFAULTS.STACK_CMAP(norm(ccnorms))
+
+    for data, color in zip(seismogram_data, colors):
+        ax.plot(time, data, linewidth=0.4, color=color)
     ax.plot(
         time,
         stack.data,
@@ -123,7 +130,9 @@ def _plot_common_stack(
     plt.ylim(auto=None)
     ax.legend(loc="upper left")
     fig.colorbar(
-        ScalarMappable(norm=norm, cmap=CMAP), ax=ax, label="|Correlation coefficient|"
+        ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.STACK_CMAP),
+        ax=ax,
+        label="|Correlation coefficient|",
     )
     return fig, ax
 
@@ -151,54 +160,37 @@ def _plot_common_image(
         Basic image plot for use in other plots.
     """
 
-    seismogram_matrix = np.array(
-        [
-            p.data
-            for _, p, s in sorted(
-                zip(
-                    iccs.seismograms_ccnorm,
-                    (
-                        iccs.seismograms_for_plotting
-                        if padded
-                        else iccs.seismograms_prepared
-                    ),
-                    iccs.seismograms,
-                ),
-                key=lambda t: np.max(t[0]),
-                reverse=True,
-            )
-            if s.select or all
-        ]
-    )
+    # Assemble matrix
+    seismograms = iccs.padded_seismograms if padded else iccs.cc_seismograms
+    mask = _make_mask(iccs, all)
+    ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
+    seismogram_matrix = np.array([s.data for s, m in zip(seismograms, mask) if m])
 
-    layout = None
-    if constrained:
-        layout = "constrained"
-
-    fig, ax = plt.subplots(figsize=figsize, layout=layout)
+    # Sort and reverse the rows
+    seismogram_matrix = seismogram_matrix[np.argsort(ccnorms)[::-1]]
 
     xmin, xmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
     if padded:
-        # ax.axvspan(xmin, xmax, color="lightgreen", alpha=0.2, label="Time Window")
-        # ax.axvline(xmin, color="lightgreen", linewidth=0.5, alpha=0.7)
-        # ax.axvline(xmax, color="lightgreen", linewidth=0.5, alpha=0.7)
         xmin, xmax = (
             (iccs.window_pre - iccs.plot_padding).total_seconds(),
             (iccs.window_post + iccs.plot_padding).total_seconds(),
         )
 
+    fig, ax = plt.subplots(
+        figsize=figsize, layout="constrained" if constrained else None
+    )
+
     ax.set_ylim((0, len(seismogram_matrix)))
     ax.set_yticks([])
     plt.xlabel("Time relative to pick [s]")
     plt.ylabel("Seismograms sorted by correlation coefficient")
-
     plt.imshow(
         seismogram_matrix,
         extent=(xmin, xmax, 0, len(seismogram_matrix)),
         vmin=-1,
         vmax=1,
-        cmap=IMG_CMAP,
+        cmap=ICCS_DEFAULTS.IMG_CMAP,
         aspect="auto",
         interpolation="none",
     )
@@ -259,7 +251,7 @@ def plot_stack(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, return_fig=True)
@@ -286,7 +278,7 @@ def plot_stack(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
@@ -361,7 +353,7 @@ def plot_seismograms(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_seismograms(iccs, return_fig=True)
@@ -388,7 +380,7 @@ def plot_seismograms(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_seismograms(iccs, padded=False, return_fig=True)
@@ -475,7 +467,7 @@ def update_pick(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = update_pick(iccs, return_fig=True)
@@ -624,7 +616,7 @@ def update_timewindow(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = update_timewindow(iccs, return_fig=True)
@@ -755,7 +747,7 @@ def update_min_ccnorm(
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = update_min_ccnorm(iccs, return_fig=True)
@@ -764,6 +756,7 @@ def update_min_ccnorm(
         ...     plt.style.use("default")
         ...     fig, _ = update_min_ccnorm(iccs, return_fig=True)
         ...     fig.savefig(savedir / "iccs_update_min_ccnorm.png", transparent=True)
+        ...     plt.close()
         >>>
         ```
         -->
@@ -777,7 +770,7 @@ def update_min_ccnorm(
     _INDEX_ZERO_MULTIPLIER = 0.9
 
     current_ccnorms = sorted(
-        i for i, _ in zip(iccs.seismograms_ccnorm, iccs.seismograms) if _.select or all
+        i for i, _ in zip(iccs.ccnorms, iccs.seismograms) if _.select or all
     )
 
     fig, ax, selected_seismogram_matrix = _plot_common_image(

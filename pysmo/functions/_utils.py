@@ -1,6 +1,5 @@
 """Functions for 'Mini' classes."""
 
-from __future__ import annotations
 from attrs import fields, NOTHING
 from cattrs import unstructure
 from copy import copy
@@ -16,7 +15,7 @@ __all__ = [
 
 
 def copy_from_mini(
-    source: _AnyMini, target: _AnyProto, update: dict | None = None
+    source: "_AnyMini", target: "_AnyProto", update: dict | None = None
 ) -> None:
     """Copy attributes from a Mini instance to matching other one.
 
@@ -56,7 +55,7 @@ def copy_from_mini(
 
 
 def clone_to_mini[TMini: _AnyMini](
-    mini_cls: type[TMini], source: _AnyProto, update: dict | None = None
+    mini_cls: type[TMini], source: "_AnyProto", update: dict | None = None
 ) -> TMini:
     """Create a new instance of a Mini class from a matching other one.
 
