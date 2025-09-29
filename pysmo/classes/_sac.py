@@ -182,14 +182,44 @@ class SacStation(_SacNested):
         setattr(self._parent, "kstnm", value)
 
     @property
-    def network(self) -> str | None:
+    def network(self) -> str:
         """Network name or code."""
+
+        if self._parent.knetwk is None:
+            raise TypeError("SAC object network name 'knetwk' is None.")
 
         return self._parent.knetwk
 
     @network.setter
+    @value_not_none
     def network(self, value: str) -> None:
         setattr(self._parent, "knetwk", value)
+
+    @property
+    def location(self) -> str:
+        """Location code."""
+
+        if self._parent.khole is None:
+            raise TypeError("SAC object location code 'khole' is None.")
+        return self._parent.khole
+
+    @location.setter
+    @value_not_none
+    def location(self, value: str) -> None:
+        setattr(self._parent, "khole", value)
+
+    @property
+    def channel(self) -> str:
+        """Channel code."""
+
+        if self._parent.kcmpnm is None:
+            raise TypeError("SAC object channel code 'kcmpnm' is None.")
+        return self._parent.kcmpnm
+
+    @channel.setter
+    @value_not_none
+    def channel(self, value: str) -> None:
+        setattr(self._parent, "kcmpnm", value)
 
     @property
     def latitude(self) -> float:
