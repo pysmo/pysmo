@@ -445,8 +445,9 @@ def update_pick(
             [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        use_seismogram_image: Use the seismogram image instead of the stack
-            (see [`view_stack`][pysmo.tools.iccs.view_stack]).
+        use_seismogram_image: Use the
+            [seismogram image][pysmo.tools.iccs.plot_seismograms]
+            instead of the [stack][pysmo.tools.iccs.plot_stack]).
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -589,8 +590,9 @@ def update_timewindow(
             [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        use_seismogram_image: Use the seismogram image instead of the stack
-            (see [`view_stack`][pysmo.tools.iccs.view_stack]).
+        use_seismogram_image: Use the
+            [seismogram image][pysmo.tools.iccs.plot_seismograms]
+            instead of the [stack][pysmo.tools.iccs.plot_stack]).
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
