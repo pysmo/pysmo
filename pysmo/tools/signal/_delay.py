@@ -1,9 +1,9 @@
 from pysmo import Seismogram
 from datetime import timedelta
-from math import ceil
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 import numpy as np
+import math
 
 
 def delay(
@@ -144,7 +144,7 @@ def delay(
         False
         >>> # The normalised cross correlation value is also not very high
         >>> ccnorm
-        0.4267205
+        np.float64(0.4267205)
         >>>
         >>> calculated_delay, ccnorm = delay(seis1, seis2, abs_max=True)
         >>> # with `abs_max=True`, the signal delay is again retrieved:
@@ -156,25 +156,27 @@ def delay(
         >>>
         ```
     """
+
     if seismogram1.delta != seismogram2.delta:
         raise ValueError("Input seismograms must have the same sampling rate.")
 
-    in1, in2 = seismogram1.data, seismogram2.data
+    if max_shift is not None and len(seismogram1) != len(seismogram2):
+        raise ValueError(
+            "Input seismograms must be of equal length when using `max_shift`."
+        )
+
+    data1, data2 = seismogram1.data, seismogram2.data
     delta = seismogram1.delta
-    mode = "full"
 
     if max_shift is not None:
-        if len(in1) != len(in2):
-            raise ValueError(
-                "Input seismograms must be of equal length when using `max_shift`."
-            )
-        mode = "valid"
-        max_lag_in_samples = ceil(max_shift / delta)
+        max_lag_in_samples = math.ceil(max_shift / delta)
         zeros_to_add = np.zeros(max_lag_in_samples)
-        in1 = np.append(zeros_to_add, in1)
-        in1 = np.append(in1, zeros_to_add)
+        data1 = np.append(zeros_to_add, data1)
+        data1 = np.append(data1, zeros_to_add)
+        corr = _correlate(data1, data2, mode="valid")
+    else:
+        corr = _correlate(data1, data2, mode="full")
 
-    corr = _correlate(in1, in2, mode=mode)  # type: ignore
     corr_index = np.argmax(corr)
 
     if abs_max and np.max(corr) < -1 * np.min(corr):
@@ -183,23 +185,23 @@ def delay(
     if max_shift is not None:
         shift = -int(corr_index - max_lag_in_samples)
     else:
-        shift = int(len(in2) - 1 - corr_index)
+        shift = int(np.size(data2) - 1 - corr_index)
 
     delay = shift * delta
 
     # find overlapping parts of seismograms after allignment
     if shift < 0:
-        in1 = in1[-shift:]
+        data1 = data1[-shift:]
     else:
-        in2 = in2[shift:]
-    if len(in1) > len(in2):
-        in1 = in1[: len(in2)]
+        data2 = data2[shift:]
+    if np.size(data1) > np.size(data2):
+        data1 = data1[: np.size(data2)]
     else:
-        in2 = in2[: len(in1)]
+        data2 = data2[: np.size(data1)]
 
-    covr, _ = _pearsonr(in1, in2)
+    covr, _ = _pearsonr(data1, data2)
 
     if total_delay:
         delay += seismogram1.begin_time - seismogram2.begin_time
 
-    return delay, float(covr)
+    return delay, covr

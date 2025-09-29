@@ -96,6 +96,9 @@ testpaths = [
     "pysmo",
     "docs"
 ]
+filterwarnings = [
+  "ignore::UserWarning"
+]
 mpl-generate-summary = "html"
 mpl-use-full-test-name = true
 addopts = "-p no:doctest"

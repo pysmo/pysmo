@@ -7,7 +7,6 @@ from attrs import define, field, validators, converters, Attribute
 from attrs_strict import type_validator
 from enum import IntEnum, StrEnum, auto
 import numpy as np
-import numpy.typing as npt
 
 
 class IFTYPE(IntEnum):
@@ -1299,9 +1298,9 @@ class SacIOBase:
     )
     """Generic name of recording instrument."""
 
-    data: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
+    data: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
     """Seismogram data."""
-    x: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
-    y: npt.NDArray = field(factory=lambda: np.array([]), validator=type_validator())
+    x: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
+    y: np.ndarray = field(factory=lambda: np.array([]), validator=type_validator())
     _zero_time_can_be_none_zero: bool = field(default=False, validator=type_validator())
     """Allow time header to be changed even if it is the current zero-time"""
