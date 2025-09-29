@@ -7,7 +7,6 @@ from attrs import define, field
 from datetime import datetime, timedelta
 import warnings
 import numpy as np
-import numpy.typing as npt
 
 __all__ = [
     "SAC",
@@ -105,13 +104,13 @@ class SacSeismogram(_SacNested):
         return np.size(self.data)
 
     @property
-    def data(self) -> npt.NDArray:
+    def data(self) -> np.ndarray:
         """Seismogram data."""
 
         return self._parent.data
 
     @data.setter
-    def data(self, value: npt.NDArray) -> None:
+    def data(self, value: np.ndarray) -> None:
         self._parent.data = value
 
     @property

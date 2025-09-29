@@ -1,13 +1,8 @@
-from __future__ import annotations
+from pysmo.tools.iccs._iccs import CONVERGENCE_METHOD
 from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
-from typing import TYPE_CHECKING
 from datetime import timedelta
 import pytest
-
-from pysmo.tools.iccs._iccs import CONVERGENCE_METHOD
-
-if TYPE_CHECKING:
-    from matplotlib.figure import Figure
+from matplotlib.figure import Figure
 
 
 class TestICCSBase:
@@ -23,18 +18,12 @@ class TestICCSBase:
         self.iccs = ICCS(iccs_seismograms)
         self.iccs.taper_width = self.TAPER
 
-    @pytest.mark.mpl_image_compare(
-        remove_text=True,
-        style="default",
-    )
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_iccs_stack_initial(self) -> Figure:
         fig, _ = plot_stack(self.iccs, padded=self.PADDED_FIG, return_fig=True)
         return fig
 
-    @pytest.mark.mpl_image_compare(
-        remove_text=True,
-        style="default",
-    )
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_iccs_call(self) -> Figure:
         self.iccs(
             autoflip=self.AUTOFLIP,
