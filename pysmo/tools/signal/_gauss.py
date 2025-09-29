@@ -1,7 +1,6 @@
-import numpy as np
-import numpy.typing as npt
-from copy import deepcopy
 from pysmo import Seismogram
+from copy import deepcopy
+import numpy as np
 
 
 def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
@@ -62,7 +61,7 @@ def gauss[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
 
 def _gauss(
     seismogram: Seismogram, Tn: float, alpha: float
-) -> tuple[npt.NDArray, npt.NDArray]:
+) -> tuple[np.ndarray, np.ndarray]:
     Wn = 1 / float(Tn)
     Nyq = 0.5 / seismogram.delta.total_seconds()
     npts = len(seismogram)

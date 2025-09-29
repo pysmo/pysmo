@@ -5,7 +5,6 @@ from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
 from datetime import datetime, timedelta
 import numpy as np
-import numpy.typing as npt
 
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
 
@@ -87,7 +86,7 @@ class MiniICCSSeismogram:
     delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value
     """Seismogram sampling interval."""
 
-    data: npt.NDArray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""
 
     t0: datetime = field(validator=datetime_is_utc)

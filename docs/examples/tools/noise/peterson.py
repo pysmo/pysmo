@@ -5,7 +5,6 @@ Example script for pysmo.tools.noise
 #!/usr/bin/env python
 
 import numpy as np
-import numpy.typing as npt
 import matplotlib.pyplot as plt
 from scipy import signal
 from pysmo.tools.noise import generate_noise, peterson
@@ -13,8 +12,8 @@ from datetime import timedelta
 
 
 def calc_power(
-    data: npt.NDArray, sampling_frequency: float, nperseg: int, nfft: int
-) -> tuple[npt.NDArray, npt.NDArray]:
+    data: np.ndarray, sampling_frequency: float, nperseg: int, nfft: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculuate power and drop first element (f=0Hz) to avoid dividing by 0"""
     freqs, psd = signal.welch(
         data, sampling_frequency, nperseg=nperseg, nfft=nfft, scaling="density"

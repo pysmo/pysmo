@@ -40,10 +40,10 @@ test-tutorial: check-uv ## Check if the tutorial notebook runs error-free.
 	uv run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb
 
 tests: check-uv test-tutorial mypy ## Run all tests with pytest.
-	uv run pytest --mypy --cov=pysmo --cov-report=xml --mpl -v
+	uv run pytest --cov=pysmo --cov-report=xml --mpl
 
 mypy: check-uv ## Run typing tests with pytest.
-	uv run pytest --mypy -m mypy -v pysmo
+	uv run pytest --mypy -m mypy pysmo tests docs
 
 docs: check-uv sync ## Build html docs.
 	uv run mkdocs build

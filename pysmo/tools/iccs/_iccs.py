@@ -1,6 +1,7 @@
 """The ICCS class and functions used within the class."""
 
 from ._types import ICCSSeismogram
+from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.functions import (
     crop,
@@ -23,7 +24,6 @@ from functools import partial
 from concurrent.futures import ProcessPoolExecutor, Future
 import warnings
 import numpy as np
-import numpy.typing as npt
 
 
 __all__ = ["ICCS"]
@@ -131,7 +131,7 @@ class ICCS:
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
@@ -164,7 +164,7 @@ class ICCS:
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
@@ -195,7 +195,7 @@ class ICCS:
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
@@ -224,7 +224,7 @@ class ICCS:
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close()
+        >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
@@ -260,7 +260,7 @@ class ICCS:
     """
 
     window_pre: timedelta = field(
-        default=timedelta(seconds=-10),
+        default=ICCS_DEFAULTS.WINDOW_PRE,
         validator=[
             validators.lt(timedelta(seconds=0)),
             _validate_window_pre,
@@ -270,7 +270,7 @@ class ICCS:
     """Begining of the time window relative to the pick."""
 
     window_post: timedelta = field(
-        default=timedelta(seconds=10),
+        default=ICCS_DEFAULTS.WINDOW_POST,
         validator=[
             validators.gt(timedelta(seconds=0)),
             _validate_window_post,
@@ -280,7 +280,7 @@ class ICCS:
     """End of the time window relative to the pick."""
 
     plot_padding: timedelta = field(
-        default=timedelta(seconds=10),
+        default=ICCS_DEFAULTS.PLOT_PADDING,
         validator=[validators.gt(timedelta(seconds=0)), _clear_cache_on_update],
     )
     """Padding to apply before and after the time window.
@@ -288,7 +288,7 @@ class ICCS:
     This padding is *not* used for the cross-correlation."""
 
     taper_width: timedelta | float = field(
-        default=0.0, validator=_clear_cache_on_update
+        default=ICCS_DEFAULTS.TAPER_WIDTH, validator=_clear_cache_on_update
     )
     """Taper width.
 
@@ -296,7 +296,7 @@ class ICCS:
     for details.
     """
 
-    min_ccnorm: np.floating | float = 0.5
+    min_ccnorm: np.floating | float = ICCS_DEFAULTS.MIN_CCNORM
     """Minimum normalised cross-correlation coefficient for seismograms.
 
     When the ICCS algorithm is [executed][pysmo.tools.iccs.ICCS.__call__],
@@ -310,11 +310,11 @@ class ICCS:
     # The following attributes are cached to prevent unnecessary processing.
     # Setting the caches to None will force a new calculation when they are
     # requested.
-    _seismograms_prepared: list[MiniSeismogram] | None = field(init=False)
-    _seismograms_for_plotting: list[MiniSeismogram] | None = field(init=False)
-    _seismograms_ccnorm: list[float] | None = field(init=False)
-    _stack: MiniSeismogram | None = field(init=False)
-    _stack_for_plotting: MiniSeismogram | None = field(init=False)
+    _cc_seismograms: list[MiniSeismogram] | None = field(init=False)
+    _padded_seismograms: list[MiniSeismogram] | None = field(init=False)
+    _ccnorms: np.ndarray | None = field(init=False)
+    _cc_stack: MiniSeismogram | None = field(init=False)
+    _padded_stack: MiniSeismogram | None = field(init=False)
     _valid_pick_range: tuple[timedelta, timedelta] | None = field(init=False)
     _valid_time_window_range: tuple[timedelta, timedelta] | None = field(init=False)
 
@@ -323,34 +323,34 @@ class ICCS:
 
     def _clear_caches(self) -> None:
         """Clear all cached attributes."""
-        self._seismograms_prepared = None
-        self._seismograms_for_plotting = None
-        self._seismograms_ccnorm = None
-        self._stack = None
-        self._stack_for_plotting = None
+        self._cc_seismograms = None
+        self._padded_seismograms = None
+        self._ccnorms = None
+        self._cc_stack = None
+        self._padded_stack = None
         self._valid_pick_range = None
         self._valid_time_window_range = None
 
     @property
-    def seismograms_prepared(self) -> list[MiniSeismogram]:
-        """Returns the windowed, detrended, normalised, tapered, and optionally flipped seismograms."""
+    def cc_seismograms(self) -> list[MiniSeismogram]:
+        """Returns the seismograms as used for the cross-correlation."""
 
-        if self._seismograms_prepared is None:
-            self._seismograms_prepared = _prepare_seismograms(
+        if self._cc_seismograms is None:
+            self._cc_seismograms = _prepare_seismograms(
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
                 self.taper_width,
             )
 
-        return self._seismograms_prepared
+        return self._cc_seismograms
 
     @property
-    def seismograms_for_plotting(self) -> list[MiniSeismogram]:
-        """Returns the windowed, detrended, normalised, and optionally flipped seismograms."""
+    def padded_seismograms(self) -> list[MiniSeismogram]:
+        """Returns the seismograms with extra padding for plotting."""
 
-        if self._seismograms_for_plotting is None:
-            self._seismograms_for_plotting = _prepare_seismograms(
+        if self._padded_seismograms is None:
+            self._padded_seismograms = _prepare_seismograms(
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
@@ -359,18 +359,16 @@ class ICCS:
                 self.plot_padding,
             )
 
-        return self._seismograms_for_plotting
+        return self._padded_seismograms
 
     @property
-    def seismograms_ccnorm(self) -> list[float]:
-        """Returns a list of the normalised cross-correlation coefficients."""
+    def ccnorms(self) -> np.ndarray:
+        """Returns an array of the normalised cross-correlation coefficients."""
 
-        if self._seismograms_ccnorm is None:
-            self._seismograms_ccnorm = _calc_ccnorms(
-                self.seismograms_prepared, self.stack
-            )
+        if self._ccnorms is None:
+            self._ccnorms = _calc_ccnorms(self.cc_seismograms, self.stack)
 
-        return self._seismograms_ccnorm
+        return self._ccnorms
 
     @property
     def stack(self) -> MiniSeismogram:
@@ -385,26 +383,24 @@ class ICCS:
         Returns:
             Stacked input seismograms.
         """
-        if self._stack is not None:
-            return self._stack
+        if self._cc_stack is not None:
+            return self._cc_stack
 
-        self._stack = _create_stack(self.seismograms_prepared, self.seismograms)
-        return self._stack
+        self._cc_stack = _create_stack(self.cc_seismograms, self.seismograms)
+        return self._cc_stack
 
     @property
-    def stack_for_plotting(self) -> MiniSeismogram:
+    def padded_stack(self) -> MiniSeismogram:
         """Returns the stacked seismograms ([`seismograms_for_plotting`][pysmo.tools.iccs.ICCS.seismograms_for_plotting]).
 
         Returns:
             Stacked input seismograms.
         """
-        if self._stack_for_plotting is not None:
-            return self._stack_for_plotting
+        if self._padded_stack is not None:
+            return self._padded_stack
 
-        self._stack_for_plotting = _create_stack(
-            self.seismograms_for_plotting, self.seismograms
-        )
-        return self._stack_for_plotting
+        self._padded_stack = _create_stack(self.padded_seismograms, self.seismograms)
+        return self._padded_stack
 
     def validate_pick(self, pick: timedelta) -> bool:
         """Check if a new pick is valid.
@@ -463,12 +459,12 @@ class ICCS:
         self,
         autoflip: bool = False,
         autoselect: bool = False,
-        convergence_limit: float = 10e-6,
-        convergence_method: CONVERGENCE_METHOD = "corrcoef",
-        max_iter: int = 10,
+        convergence_limit: float = ICCS_DEFAULTS.CONVERGENCE_LIMIT,
+        convergence_method: CONVERGENCE_METHOD = ICCS_DEFAULTS.CONVERGENCE_METHOD,
+        max_iter: int = ICCS_DEFAULTS.MAX_ITER,
         max_shift: timedelta | None = None,
         parallel: bool = False,
-    ) -> npt.NDArray:
+    ) -> np.ndarray:
         """Run the iccs algorithm.
 
         Parameters:
@@ -494,7 +490,7 @@ class ICCS:
             if parallel:
                 with ProcessPoolExecutor() as executor:
                     for prepared_seismogram, seismogram in zip(
-                        self.seismograms_prepared, self.seismograms
+                        self.cc_seismograms, self.seismograms
                     ):
                         future = executor.submit(
                             delay,
@@ -515,7 +511,7 @@ class ICCS:
                         )
             else:
                 for prepared_seismogram, seismogram in zip(
-                    self.seismograms_prepared, self.seismograms
+                    self.cc_seismograms, self.seismograms
                 ):
                     _delay, _ccnorm = delay(
                         self.stack,
@@ -552,6 +548,13 @@ def _prepare_seismograms(
     prep_for_plotting: bool = False,
     plot_padding: None | timedelta = None,
 ) -> list[MiniSeismogram]:
+    """Prepare seismograms for plotting or cross-correlation."""
+
+    if prep_for_plotting and plot_padding is None:
+        raise ValueError(
+            "if prep_for_plotting is True, plot_padding must also be specified."
+        )
+
     return_seismograms: list[MiniSeismogram] = []
 
     min_delta = min((s.delta for s in seismograms))
@@ -564,10 +567,8 @@ def _prepare_seismograms(
         resample(prepared_seismogram, min_delta)
 
         if prep_for_plotting:
-            if plot_padding is None:
-                raise ValueError(
-                    "if prep_for_plotting is True, plot_padding must also be specified."
-                )
+            # NOTE: This is checked above, but mypy doesn't know.
+            assert plot_padding is not None
 
             plot_window_start = window_start - plot_padding
             plot_window_end = window_end + plot_padding
@@ -661,10 +662,10 @@ def _update_seismogram_fn(
     )
 
 
-def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> list[float]:
-    ccnorms = [
-        float(pearsonr(seismogram.data, stack.data)[0]) for seismogram in seismograms
-    ]
+def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> np.ndarray:
+    ccnorms = np.array(
+        [(pearsonr(seismogram.data, stack.data)[0]) for seismogram in seismograms]
+    )
     return ccnorms
 
 
