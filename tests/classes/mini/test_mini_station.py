@@ -10,11 +10,23 @@ class TestMiniStation:
         with pytest.raises(TypeError):
             ministation = MiniStation()  # type: ignore
 
-        name, latitude, longitude = "station", 1.1, 2.2
-        ministation = MiniStation(name=name, latitude=latitude, longitude=longitude)
+        name, network, channel, latitude, longitude = (
+            "stat",
+            "nt",
+            "BHZ",
+            1.1,
+            2.2,
+        )
+        ministation = MiniStation(
+            name=name,
+            network=network,
+            channel=channel,
+            latitude=latitude,
+            longitude=longitude,
+        )
         assert isinstance(ministation, MiniStation)
         assert isinstance(ministation, Station)
-        assert ministation.name == "station"
+        assert ministation.name == "stat"
         assert ministation.latitude == 1.1
         assert ministation.longitude == 2.2
 
@@ -22,16 +34,28 @@ class TestMiniStation:
     def test_change_attributes(self) -> None:
         """Test changing attributes."""
 
-        name, latitude, longitude = "station", 1.1, 2.2
-        ministation = MiniStation(name=name, latitude=latitude, longitude=longitude)
-        ministation.network = "newnetwork"
-        assert ministation.network == "newnetwork"
+        name, network, channel, latitude, longitude = (
+            "stat",
+            "nt",
+            "BHZ",
+            1.1,
+            2.2,
+        )
+        ministation = MiniStation(
+            name=name,
+            network=network,
+            channel=channel,
+            latitude=latitude,
+            longitude=longitude,
+        )
+        ministation.network = "n2"
+        assert ministation.network == "n2"
         with pytest.raises(TypeError):
             ministation.elevation = "abc"  # type: ignore
         ministation.elevation = 123
         assert ministation.elevation == 123
-        ministation.name = "newname"
-        assert ministation.name == "newname"
+        ministation.name = "asdf"
+        assert ministation.name == "asdf"
         ministation.latitude = -90
         ministation.latitude = 90
         assert ministation.latitude == 90

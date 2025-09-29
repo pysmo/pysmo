@@ -241,10 +241,12 @@ class ICCS:
         ![Stack after run with autoflip](../../../examples/figures/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
 
 
-        To further improve results, you can interactively update the picks and
-        the time window using [`stack_pick`][pysmo.tools.iccs.stack_pick] and
-        [`stack_tw_pick`][pysmo.tools.iccs.stack_tw_pick], respectively, and
-        then run the ICCS algorithm again.
+        To further improve results, you can interactively update the picks,
+        time window, and minimum correlation coefficient using
+        [`update_pick`][pysmo.tools.iccs.update_pick],
+        [`update_timewindow`][pysmo.tools.iccs.update_timewindow], and
+        [`update_min_ccnorm`][pysmo.tools.iccs.update_min_ccnorm],
+        respectively, and then run the ICCS algorithm again.
     """
 
     seismograms: Sequence[ICCSSeismogram] = field(
@@ -372,7 +374,7 @@ class ICCS:
 
     @property
     def stack(self) -> MiniSeismogram:
-        """Returns the stacked seismograms ([`seismograms_prepared`][pysmo.tools.iccs.ICCS.seismograms_prepared]).
+        """Returns the stacked [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]).
 
         The stack is calculated as the average of all seismograms with the
         attribute [`select`][pysmo.tools.iccs.ICCSSeismogram.select] set to
@@ -391,7 +393,7 @@ class ICCS:
 
     @property
     def padded_stack(self) -> MiniSeismogram:
-        """Returns the stacked seismograms ([`seismograms_for_plotting`][pysmo.tools.iccs.ICCS.seismograms_for_plotting]).
+        """Returns the stacked [`padded_seismograms`][pysmo.tools.iccs.ICCS.padded_seismograms].
 
         Returns:
             Stacked input seismograms.

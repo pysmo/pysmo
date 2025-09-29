@@ -173,6 +173,15 @@ class TestSAC:
         sac.stlo = None
         with pytest.raises(TypeError):
             sacstation.longitude
+        sac.knetwk = None
+        with pytest.raises(TypeError):
+            sacstation.network
+        sac.khole = None
+        with pytest.raises(TypeError):
+            sacstation.location
+        sac.kcmpnm = None
+        with pytest.raises(TypeError):
+            sacstation.channel
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_event(self, sacfile: Path) -> None:
