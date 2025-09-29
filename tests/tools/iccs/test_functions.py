@@ -1,6 +1,6 @@
-from __future__ import annotations
 from pysmo.tools.iccs import ICCS, update_all_picks
 from datetime import timedelta
+from matplotlib.figure import Figure
 import pytest
 
 
@@ -27,3 +27,53 @@ def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
         update_all_picks(iccs, max_t1 + timedelta(seconds=1))
     with pytest.raises(ValueError):
         update_all_picks(iccs, min_t1 - timedelta(seconds=1))
+
+
+class TestPlotCommonBase:
+    PADDED = False
+    ALL = False
+
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+    def test_plot_common_stack_initial(self, iccs_instance: ICCS) -> Figure:
+        from pysmo.tools.iccs._functions import _plot_common_stack
+
+        fig, _ = _plot_common_stack(iccs_instance, padded=self.PADDED, all=self.ALL)
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+    def test_plot_common_stack_after(self, iccs_instance: ICCS) -> Figure:
+        from pysmo.tools.iccs._functions import _plot_common_stack
+
+        iccs_instance()
+
+        fig, _ = _plot_common_stack(iccs_instance, padded=self.PADDED, all=self.ALL)
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+    def test_plot_common_image_initial(self, iccs_instance: ICCS) -> Figure:
+        from pysmo.tools.iccs._functions import _plot_common_image
+
+        fig, *_ = _plot_common_image(iccs_instance, padded=self.PADDED, all=self.ALL)
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+    def test_plot_common_image_after(self, iccs_instance: ICCS) -> Figure:
+        from pysmo.tools.iccs._functions import _plot_common_image
+
+        iccs_instance()
+
+        fig, *_ = _plot_common_image(iccs_instance, padded=self.PADDED, all=self.ALL)
+        return fig
+
+
+class TestPlotCommonAll(TestPlotCommonBase):
+    ALL = True
+
+
+class TestPlotCommonPadded(TestPlotCommonBase):
+    PADDED = True
+
+
+class TestPlotCommonAllPadded(TestPlotCommonBase):
+    ALL = True
+    PADDED = True

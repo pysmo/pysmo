@@ -23,7 +23,6 @@ Examples:
 """
 
 import numpy as np
-import numpy.typing as npt
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
@@ -42,8 +41,8 @@ class NoiseModel:
         T: Period [seconds].
     """
 
-    psd: npt.NDArray = field(default_factory=lambda: np.array([]))
-    T: npt.NDArray = field(default_factory=lambda: np.array([]))
+    psd: np.ndarray = field(default_factory=lambda: np.array([]))
+    T: np.ndarray = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self) -> None:
         if np.size(self.psd) != np.size(self.T):

@@ -1,16 +1,15 @@
-from __future__ import annotations
+from pysmo import Seismogram
 from copy import deepcopy
 from datetime import datetime, timedelta
-from math import floor, ceil
-from typing import Any, Literal, overload, TYPE_CHECKING
+from math import floor
+from typing import Any, Literal, overload
 from functools import singledispatch
 import scipy.signal
 import numpy as np
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from numpy.lib._arraypad_impl import _ModeKind, _ModeFunc
-    from pysmo import Seismogram
-    import numpy.typing as npt
 
 __all__ = [
     "crop",
@@ -217,7 +216,7 @@ def pad[T: Seismogram](
     seismogram: T,
     begin_time: datetime,
     end_time: datetime,
-    mode: _ModeKind | _ModeFunc = "constant",
+    mode: "_ModeKind | _ModeFunc" = "constant",
     *,
     clone: Literal[True],
     **kwargs: Any,
@@ -229,7 +228,7 @@ def pad(
     seismogram: Seismogram,
     begin_time: datetime,
     end_time: datetime,
-    mode: _ModeKind | _ModeFunc = "constant",
+    mode: "_ModeKind | _ModeFunc" = "constant",
     clone: Literal[False] = False,
     **kwargs: Any,
 ) -> None: ...
@@ -239,7 +238,7 @@ def pad[T: Seismogram](
     seismogram: T,
     begin_time: datetime,
     end_time: datetime,
-    mode: _ModeKind | _ModeFunc = "constant",
+    mode: "_ModeKind | _ModeFunc" = "constant",
     clone: bool = False,
     **kwargs: Any,
 ) -> None | T:
@@ -471,7 +470,7 @@ def taper[T: Seismogram](
         ```
     """
 
-    def calc_window_data(window_length: int) -> npt.NDArray:
+    def calc_window_data(window_length: int) -> np.ndarray:
         if taper_method == "bartlett":
             return np.bartlett(window_length)
         elif taper_method == "blackman":
@@ -556,13 +555,13 @@ def time2index(
     """
 
     if method == "ceil":
-        index = ceil((time - seismogram.begin_time) / seismogram.delta)
+        index = np.ceil((time - seismogram.begin_time) / seismogram.delta)
 
     elif method == "floor":
-        index = floor((time - seismogram.begin_time) / seismogram.delta)
+        index = np.floor((time - seismogram.begin_time) / seismogram.delta)
 
     elif method == "round":
-        index = round((time - seismogram.begin_time) / seismogram.delta)
+        index = np.round((time - seismogram.begin_time) / seismogram.delta)
 
     else:
         raise ValueError(
@@ -570,6 +569,6 @@ def time2index(
         )
 
     if 0 <= index < len(seismogram) or allow_out_of_bounds is True:
-        return index
+        return int(index)
 
     raise ValueError(f"Invalid time provided, calculated {index=} is out of bounds.")
