@@ -18,16 +18,16 @@ from importlib.metadata import version
 
 
 from ._types import (
-    Event,
-    MiniEvent,
-    Location,
-    MiniLocation,
-    LocationWithDepth,
-    MiniLocationWithDepth,
     Seismogram,
-    MiniSeismogram,
     Station,
+    Event,
+    Location,
+    LocationWithDepth,
+    MiniSeismogram,
     MiniStation,
+    MiniEvent,
+    MiniLocation,
+    MiniLocationWithDepth,
 )
 
 
@@ -35,14 +35,14 @@ __version__ = version("pysmo")
 
 
 __all__ = [
-    "Event",
-    "MiniEvent",
-    "Location",
-    "MiniLocation",
-    "LocationWithDepth",
-    "MiniLocationWithDepth",
     "Seismogram",
-    "MiniSeismogram",
     "Station",
+    "Event",
+    "Location",
+    "LocationWithDepth",
+    "MiniSeismogram",
     "MiniStation",
+    "MiniEvent",
+    "MiniLocation",
+    "MiniLocationWithDepth",
 ]
