@@ -103,11 +103,13 @@ def sac_station(sac_instance: SAC) -> Station:
 @pytest.fixture()
 def mini_station(sac_station: Station) -> MiniStation:
     return MiniStation(
+        name=sac_station.name,
+        network=sac_station.network,
+        location=sac_station.location,
+        channel=sac_station.channel,
         latitude=sac_station.latitude,
         longitude=sac_station.longitude,
-        name=sac_station.name,
         elevation=sac_station.elevation,
-        network=sac_station.network,
     )
 
 
