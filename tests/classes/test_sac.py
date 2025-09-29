@@ -28,7 +28,12 @@ class TestSAC:
     def test_defaults(self) -> None:
         sac = SAC()
 
-        assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time.value
+        with pytest.warns(RuntimeWarning) as record:
+            assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time.value
+        assert (
+            str(record[0].message)
+            == "SAC object has no reference time (kzdate/kztime), assuming 1970-01-01T00:00:00+00:00"
+        )
         assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta.value
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 

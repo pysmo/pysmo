@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
 import numpy as np
-import numpy.typing as npt
 
 __all__ = [
     "time_array",
@@ -19,7 +18,7 @@ __all__ = [
 ]
 
 
-def time_array(seismogram: Seismogram) -> npt.NDArray:
+def time_array(seismogram: Seismogram) -> np.ndarray:
     """Create an array containing Matplotlib dates.
 
     Parameters:
@@ -53,7 +52,7 @@ def time_array(seismogram: Seismogram) -> npt.NDArray:
     return np.linspace(start, end, len(seismogram))
 
 
-def unix_time_array(seismogram: Seismogram) -> npt.NDArray:
+def unix_time_array(seismogram: Seismogram) -> np.ndarray:
     """Create an array containing unix epoch dates.
 
     Parameters:
