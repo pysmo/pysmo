@@ -4,5 +4,6 @@
       show_root_heading: true
       show_root_toc_entry: true
       inherited_members: true
-      members_order: source
+      members_order: __all__
       summary: true
+      show_inheritance_diagram: true
