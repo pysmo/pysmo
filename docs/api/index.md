@@ -6,4 +6,3 @@
       inherited_members: true
       members_order: __all__
       summary: true
-      show_inheritance_diagram: true
