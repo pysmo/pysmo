@@ -136,6 +136,7 @@ plugins:
             # with_preloaded_modules: true
             extra:
               trim_doctest_flags: true
+              type_parameter_headings: true
           inventories:
             - https://docs.python.org/3/objects.inv
             - https://mypy.readthedocs.io/en/stable/objects.inv
