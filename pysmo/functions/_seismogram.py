@@ -19,6 +19,7 @@ __all__ = [
     "resample",
     "taper",
     "time2index",
+    "window",
 ]
 
 
@@ -29,8 +30,6 @@ def crop(
     end_time: datetime,
     clone: Literal[False] = ...,
 ) -> None: ...
-
-
 @overload
 def crop[T: Seismogram](
     seismogram: T, begin_time: datetime, end_time: datetime, clone: Literal[True]
@@ -92,8 +91,6 @@ def crop[T: Seismogram](
 
 @overload
 def detrend(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
-
-
 @overload
 def detrend[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
 
@@ -141,23 +138,12 @@ def normalize(
     t2: datetime | None = ...,
     clone: Literal[False] = ...,
 ) -> None: ...
-
-
 @overload
 def normalize[T: Seismogram](
     seismogram: T,
     t1: datetime | None = ...,
     t2: datetime | None = ...,
     *,
-    clone: Literal[True],
-) -> T: ...
-
-
-@overload
-def normalize[T: Seismogram](
-    seismogram: T,
-    t1: datetime | None,
-    t2: datetime | None,
     clone: Literal[True],
 ) -> T: ...
 
@@ -400,18 +386,6 @@ def taper[T: Seismogram](
 ) -> T: ...
 
 
-@overload
-def taper[T: Seismogram](
-    seismogram: T,
-    taper_width: timedelta | float,
-    taper_method: Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"],
-    beta: float,
-    left: bool,
-    right: bool,
-    clone: Literal[True],
-) -> T: ...
-
-
 def taper[T: Seismogram](
     seismogram: T,
     taper_width: timedelta | float,
@@ -488,11 +462,13 @@ def taper[T: Seismogram](
 
     @calc_samples.register(float)
     def _(taper_width: float) -> int:
+        """Calculate the number of samples to taper from an int."""
         return floor(len(seismogram) * taper_width)
 
     @calc_samples.register(timedelta)
     def _(taper_width: timedelta) -> int:
-        return floor(taper_width / seismogram.delta) + 1
+        """Calculate the number of samples to taper from a timedelta."""
+        return floor(taper_width / seismogram.delta)
 
     if clone is True:
         seismogram = deepcopy(seismogram)
@@ -572,3 +548,120 @@ def time2index(
         return int(index)
 
     raise ValueError(f"Invalid time provided, calculated {index=} is out of bounds.")
+
+
+@overload
+def window(
+    seismogram: Seismogram,
+    window_begin_time: datetime,
+    window_end_time: datetime,
+    taper_width: timedelta | float,
+    taper_method: Literal[
+        "bartlett", "blackman", "hamming", "hanning", "kaiser"
+    ] = "hanning",
+    beta: float = 14.0,
+    clone: Literal[False] = ...,
+) -> None: ...
+
+
+@overload
+def window[T: Seismogram](
+    seismogram: T,
+    window_begin_time: datetime,
+    window_end_time: datetime,
+    taper_width: timedelta | float,
+    taper_method: Literal[
+        "bartlett", "blackman", "hamming", "hanning", "kaiser"
+    ] = "hanning",
+    beta: float = 14.0,
+    *,
+    clone: Literal[True],
+) -> T: ...
+
+
+def window[T: Seismogram](
+    seismogram: T,
+    window_begin_time: datetime,
+    window_end_time: datetime,
+    taper_width: timedelta | float,
+    taper_method: Literal[
+        "bartlett", "blackman", "hamming", "hanning", "kaiser"
+    ] = "hanning",
+    beta: float = 14.0,
+    clone: bool = False,
+) -> None | T:
+    """Returns a tapered window of a seismogram.
+
+    This function combines the [`crop`][pysmo.functions.crop],
+    [`detrend`][pysmo.functions.detrend], [`taper`][pysmo.functions.taper],
+    and [`pad`][pysmo.functions.pad] functions to return a 'windowed'
+    seismogram. Note that the window *includes* the tapered sections, and
+    should thus be defined accordingly.
+
+    Parameters:
+        seismogram: Seismogram object.
+        window_begin_time: Begin time of the window.
+        window_end_time: End time of the window.
+        taper_width: With of the taper to use (see [`taper`][pysmo.functions.taper]).
+        taper_method: Taper method to use (see [`taper`][pysmo.functions.taper]).
+        beta: beta value for the Kaiser window function (ignored for other methods).
+        clone: Operate on a clone of the input seismogram.
+
+    Returns:
+        Windowed [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+
+    Examples:
+        This examples applies a window starting at 100 seconds with a total
+        with of 2000 seconds and a taper width of 500 seconds:
+
+        ```python
+        >>> from pysmo.functions import window, detrend
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.plotutils import plotseis
+        >>> from datetime import timedelta
+        >>>
+        >>> sac_seis = SAC.from_file("example.sac").seismogram
+        >>> taper_width = timedelta(seconds=500)
+        >>> window_begin_time = sac_seis.begin_time + timedelta(seconds=100)
+        >>> window_end_time = window_begin_time + timedelta(seconds=2000)
+        >>> windowed_seis = window(sac_seis, window_begin_time, window_end_time, taper_width, clone=True)
+        >>> detrend(sac_seis)
+        >>> fig = plotseis(sac_seis, windowed_seis)
+        >>>
+        ```
+
+        <!-- invisible-code-block: python
+        ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close("all")
+        >>> if savedir:
+        ...     plt.style.use("dark_background")
+        ...     fig = plotseis(sac_seis, windowed_seis)
+        ...     fig.savefig(savedir / "functions_window-dark.png", transparent=True)
+        ...
+        ...     plt.style.use("default")
+        ...     fig = plotseis(sac_seis, windowed_seis)
+        ...     fig.savefig(savedir / "functions_window.png", transparent=True)
+        >>>
+        ```
+        -->
+
+        <figure markdown="span">
+        ![Functions window](../../../examples/figures/functions_window.png#only-light){ loading=lazy }
+        ![Functions window](../../../examples/figures/functions_window-dark.png#only-dark){ loading=lazy }
+        </figure>
+    """
+
+    begin_time, end_time = seismogram.begin_time, seismogram.end_time
+
+    if clone is True:
+        seismogram = crop(seismogram, window_begin_time, window_end_time, clone=True)
+    else:
+        crop(seismogram, window_begin_time, window_end_time)
+    detrend(seismogram)
+    taper(seismogram, taper_width, taper_method, beta)
+    pad(seismogram, begin_time, end_time)
+
+    if clone is True:
+        return seismogram
+    return None

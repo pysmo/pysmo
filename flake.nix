@@ -27,7 +27,8 @@
               python312
               python313
               python313Packages.tox
-              python313Packages.tkinter
+              python314
+              python314Packages.tkinter
             ];
 
             shellHook = ''
