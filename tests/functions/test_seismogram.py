@@ -1,8 +1,12 @@
 from pysmo import Seismogram
+from pysmo.tools.plotutils import time_array
 from datetime import timedelta
 from copy import deepcopy
-from numpy.testing import assert_array_equal
 from pytest_cases import parametrize_with_cases
+from matplotlib.figure import Figure
+from typing import get_args, Literal
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import pytest
 import numpy as np
 
@@ -184,12 +188,8 @@ class TestTaper:
 
     @parametrize_with_cases("seismogram")
     @pytest.mark.mpl_image_compare(remove_text=True)
-    def test_taper(self, seismogram: Seismogram):  # type: ignore
-        import matplotlib.pyplot as plt
-        import matplotlib.dates as mdates
-        from pysmo.tools.plotutils import time_array
+    def test_taper(self, seismogram: Seismogram) -> Figure:
         from pysmo.functions import taper
-        from typing import get_args, Literal
 
         seismogram.data = np.ones(len(seismogram))
 
@@ -208,15 +208,19 @@ class TestTaper:
                 seismogram, 0.2, method, left=self.LEFT, right=self.RIGHT, clone=True
             )
             plt.plot(time, seis_taper.data, scalex=True, scaley=True)
+            seis_taper = taper(
+                seismogram,
+                (seismogram.end_time - seismogram.begin_time) * 0.2,
+                method,
+                left=self.LEFT,
+                right=self.RIGHT,
+                clone=True,
+            )
+            plt.plot(time, seis_taper.data, scalex=True, scaley=True)
         plt.xlabel("Time")
         plt.gcf().autofmt_xdate()
         fmt = mdates.DateFormatter("%H:%M:%S")
         plt.gca().xaxis.set_major_formatter(fmt)
-        seis_taper_timedelta = taper(
-            seismogram, (seismogram.end_time - seismogram.begin_time) * 0.1, clone=True
-        )
-        taper(seismogram, 0.1)
-        assert_array_equal(seismogram.data, seis_taper_timedelta.data)
         return fig
 
 
@@ -233,3 +237,23 @@ class TestTaperRight(TestTaper):
 class TestTaperNone(TestTaper):
     LEFT: bool = False
     RIGHT: bool = False
+
+
+@parametrize_with_cases("seismogram")
+def test_window(seismogram: Seismogram) -> None:
+    from pysmo.functions import window, time2index
+
+    taper_width = timedelta(seconds=500)
+    window_begin_time = seismogram.begin_time + timedelta(seconds=100)
+    window_end_time = window_begin_time + timedelta(seconds=2000)
+    windowed_seis = window(
+        seismogram, window_begin_time, window_end_time, taper_width, clone=True
+    )
+    assert windowed_seis.begin_time == seismogram.begin_time
+    assert windowed_seis.end_time == seismogram.end_time
+    window_start_index = time2index(seismogram, window_begin_time)
+    assert np.max(np.abs(windowed_seis.data[:window_start_index])) < 1e-6
+    window_end_index = time2index(seismogram, window_end_time)
+    assert np.max(np.abs(windowed_seis.data[window_end_index:])) < 1e-6
+    window(seismogram, window_begin_time, window_end_time, taper_width)
+    assert all(windowed_seis.data == seismogram.data)
