@@ -51,8 +51,8 @@ def mpl_backend(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture()
 def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
     cwd = os.getcwd()
-    asset_testfile = Path(__file__).parent.parent / "tests/assets/testfile.sac"
-    asset_iccsdir = Path(__file__).parent.parent / "tests/assets/iccs/"
+    asset_testfile = Path(__file__).parent.parent.parent / "tests/assets/testfile.sac"
+    asset_iccsdir = Path(__file__).parent.parent.parent / "tests/assets/iccs/"
     test_testfile = Path(tmp_path) / "example.sac"
     test_iccsdir = Path(tmp_path) / "iccs-example/"
     copyfile(asset_testfile, test_testfile)
@@ -66,7 +66,7 @@ def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
 
 @pytest.fixture()
 def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
-    asset_iccsdir = Path(__file__).parent.parent / "tests/assets/iccs/"
+    asset_iccsdir = Path(__file__).parent.parent.parent / "tests/assets/iccs/"
     sacfiles = sorted(asset_iccsdir.glob("*.bhz"))
 
     iccs_seismograms = []
