@@ -8,7 +8,6 @@ and these classes should *not* be used directly by users.
 
 from ._sacio import SacIO
 
-
 __all__ = [
     "SacIO",
 ]
