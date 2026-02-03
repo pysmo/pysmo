@@ -1,9 +1,11 @@
 from pysmo import Seismogram
+from pysmo.types import PositiveTimedelta
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from typing import Protocol, runtime_checkable
+from beartype import beartype
 from attrs import define, field, validators
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
@@ -50,6 +52,7 @@ class ICCSSeismogram(Seismogram, Protocol):
     def t1(self, value: datetime | None) -> None: ...
 
 
+@beartype
 @define(kw_only=True, slots=True)
 class MiniICCSSeismogram:
     """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
@@ -70,9 +73,11 @@ class MiniICCSSeismogram:
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
+        >>> from datetime import timedelta
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
-        >>> update = {"t0": sac.timestamps.t0}
+        >>> # Use existing pick or set a new one 10 seconds after begin time
+        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + timedelta(seconds=10)}
         >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
         >>>
         ```
@@ -83,7 +88,7 @@ class MiniICCSSeismogram:
     )
     """Seismogram begin time."""
 
-    delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value
+    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
     """Seismogram sampling interval."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))

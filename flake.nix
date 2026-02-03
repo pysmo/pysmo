@@ -24,10 +24,9 @@
               gnumake
               uv
               ruff
+              (python314.withPackages (ps: with ps; [tkinter]))
+              (python313.withPackages (ps: with ps; [tox]))
               python312
-              python313
-              python313Packages.tox
-              python314
               python314Packages.tkinter
             ];
 
@@ -38,10 +37,12 @@
                   zlib
                   xorg.libX11
                 ]}:$LD_LIBRARY_PATH
-              [ ! -d .venv ] && uv venv --system-site-packages --no-managed-python
-              uv sync --locked --all-extras
               export MPLBACKEND="TKAgg"
               export PYSMO_SAVE_FIGS=true
+              export UV_PYTHON=$(which python3.14)
+              export UV_NO_MANAGED_PYTHON=true
+              [ ! -d .venv ] && uv venv --system-site-packages
+              uv sync --locked --all-extras
             '';
           };
         };

@@ -23,6 +23,7 @@ dependencies = [
     "cattrs>=25.3.0",
     "scipy-stubs>=1.16.2.3",
     "scipy>=1.16.2",
+    "beartype>=0.22.9",
 ]
 
 [project.urls]
@@ -53,12 +54,14 @@ docs = [
     "mkdocs-material>=9.6.22",
     "mkdocs-jupyter>=0.25.1",
     "jupyterlab>=4.4.9",
-    "mkdocstrings[python]>=0.29.1",
     "markdown-include>=0.8.1",
     "ipython>=9.6.0",
     "termynal>=0.13.1",
     "mkdocs-bibtex>=4.4.0",
     "griffe-fieldz>=0.2.1",
+    "watchdog>=6.0.0",
+    "zensical>=0.0.10",
+    "mkdocstrings-python>=2.0.1",
 ]
 
 [tool.uv]

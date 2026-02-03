@@ -49,7 +49,7 @@ docs: check-uv sync ## Build html docs.
 	uv run mkdocs build
 
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
-	uv run mkdocs serve -w README.md -w pysmo -w changelog.md -w contributors.md
+	uv run mkdocs serve --livereload -o -w README.md -w pysmo -w changelog.md -w contributors.md
 
 notebook: check-uv sync ## Run a jupyter notebook in the uv environment
 	uv run jupyter-lab
