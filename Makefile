@@ -40,16 +40,16 @@ test-tutorial: check-uv ## Check if the tutorial notebook runs error-free.
 	uv run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb
 
 tests: check-uv test-tutorial mypy ## Run all tests with pytest.
-	uv run pytest --cov=pysmo --cov-report=xml --mpl
+	uv run pytest --cov --cov-report=term-missing --mpl
 
 mypy: check-uv ## Run typing tests with pytest.
-	uv run pytest --mypy -m mypy pysmo tests docs
+	uv run pytest --mypy -m mypy src tests docs
 
 docs: check-uv sync ## Build html docs.
 	uv run mkdocs build
 
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
-	uv run mkdocs serve --livereload -o -w README.md -w pysmo -w changelog.md -w contributors.md
+	uv run mkdocs serve --livereload -o -w README.md -w src -w changelog.md -w contributors.md
 
 notebook: check-uv sync ## Run a jupyter notebook in the uv environment
 	uv run jupyter-lab
