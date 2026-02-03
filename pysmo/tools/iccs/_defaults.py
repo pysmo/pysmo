@@ -17,10 +17,10 @@ class _IccsDefaults:
     # ICCS attribute defaults
     # ------------------------------------------------------------------------
 
-    WINDOW_PRE: timedelta = timedelta(seconds=-10)
-    WINDOW_POST: timedelta = timedelta(seconds=10)
-    PLOT_PADDING: timedelta = timedelta(seconds=10)
-    TAPER_WIDTH: timedelta | float = 0.0
+    WINDOW_PRE: timedelta = timedelta(seconds=-15)
+    WINDOW_POST: timedelta = timedelta(seconds=15)
+    PLOT_PADDING: timedelta = timedelta(seconds=20)
+    RAMP_WIDTH: timedelta | float = 0.0
     MIN_CCNORM: np.floating | float = 0.5
 
     # ------------------------------------------------------------------------

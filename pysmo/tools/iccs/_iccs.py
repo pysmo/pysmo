@@ -1,16 +1,18 @@
 """The ICCS class and functions used within the class."""
 
+from beartype import beartype
 from ._types import ICCSSeismogram
 from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
+from pysmo.types import NonNegativeNumber, NonNegativeTimedelta
 from pysmo.functions import (
     crop,
-    taper,
     detrend,
     normalize,
     clone_to_mini,
     resample,
     pad,
+    window,
 )
 from pysmo.tools.signal import delay
 from pysmo.tools.utils import average_datetimes
@@ -24,7 +26,6 @@ from functools import partial
 from concurrent.futures import ProcessPoolExecutor, Future
 import warnings
 import numpy as np
-
 
 __all__ = ["ICCS"]
 
@@ -57,6 +58,7 @@ def _validate_window_post(
         raise ValueError("window_post is too high for one or more seismograms.")
 
 
+@beartype
 @define(slots=True)
 class ICCS:
     """Class to store a list of [`ICCSSeismograms`][pysmo.tools.iccs.ICCSSeismogram] and run the ICCS algorithm.
@@ -289,12 +291,12 @@ class ICCS:
 
     This padding is *not* used for the cross-correlation."""
 
-    taper_width: timedelta | float = field(
-        default=ICCS_DEFAULTS.TAPER_WIDTH, validator=_clear_cache_on_update
+    ramp_width: NonNegativeTimedelta | NonNegativeNumber = field(
+        default=ICCS_DEFAULTS.RAMP_WIDTH, validator=_clear_cache_on_update
     )
-    """Taper width.
+    """Width of taper ramp up and down.
 
-    Can be either a timedelta or a float - see [`pysmo.functions.taper()`][pysmo.functions.taper]
+    Can be either a timedelta or a float - see [`pysmo.functions.window()`][pysmo.functions.window]
     for details.
     """
 
@@ -342,7 +344,7 @@ class ICCS:
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
-                self.taper_width,
+                self.ramp_width,
             )
 
         return self._cc_seismograms
@@ -356,7 +358,7 @@ class ICCS:
                 self.seismograms,
                 self.window_pre,
                 self.window_post,
-                self.taper_width,
+                self.ramp_width,
                 True,
                 self.plot_padding,
             )
@@ -546,7 +548,7 @@ def _prepare_seismograms(
     seismograms: Sequence[ICCSSeismogram],
     window_pre: timedelta,
     window_post: timedelta,
-    taper_width: timedelta | float,
+    ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     prep_for_plotting: bool = False,
     plot_padding: None | timedelta = None,
 ) -> list[MiniSeismogram]:
@@ -589,12 +591,9 @@ def _prepare_seismograms(
 
             crop(prepared_seismogram, plot_window_start, plot_window_end)
             detrend(prepared_seismogram)
-            normalize(prepared_seismogram, window_start, window_end)
         else:
-            crop(prepared_seismogram, window_start, window_end)
-            detrend(prepared_seismogram)
-            taper(prepared_seismogram, taper_width)
-            normalize(prepared_seismogram)
+            window(prepared_seismogram, window_start, window_end, ramp_width)
+        normalize(prepared_seismogram, window_start, window_end)
         if seismogram.flip is True:
             prepared_seismogram.data *= -1
         return_seismograms.append(prepared_seismogram)

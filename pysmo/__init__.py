@@ -30,7 +30,6 @@ from ._types import (
     MiniLocationWithDepth,
 )
 
-
 __version__ = version("pysmo")
 
 

@@ -9,7 +9,6 @@ import numpy as np
 from datetime import timedelta
 import random
 
-
 SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
 MINISEIS = MiniSeismogram(
     begin_time=SACSEIS.begin_time,

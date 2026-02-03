@@ -1,8 +1,10 @@
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.types import PositiveTimedelta
 from typing import Protocol, runtime_checkable
 from attrs import define, field
 from datetime import datetime, timedelta
+from beartype import beartype
 import numpy as np
 
 __all__ = ["Seismogram", "MiniSeismogram"]
@@ -62,13 +64,17 @@ class Seismogram(Protocol):
 
     @property
     def delta(self) -> timedelta:
-        """The sampling interval."""
+        """The sampling interval.
+
+        Should be a positive `timedelta` instance.
+        """
         ...
 
     @delta.setter
     def delta(self, value: timedelta) -> None: ...
 
 
+@beartype
 @define(kw_only=True, slots=True)
 class MiniSeismogram:
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
@@ -95,7 +101,7 @@ class MiniSeismogram:
     )
     """Seismogram begin time."""
 
-    delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value
+    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
     """Seismogram sampling interval."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))
@@ -107,7 +113,7 @@ class MiniSeismogram:
         Returns:
             Number of samples in the data array.
         """
-        return np.size(self.data)
+        return len(self.data)
 
     @property
     def end_time(self) -> datetime:

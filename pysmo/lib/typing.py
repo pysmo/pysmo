@@ -1,6 +1,6 @@
 """Typing related items."""
 
-from typing import TypeAlias, get_args
+from typing import get_args, TypeAlias
 from pysmo import (
     Event,
     Location,

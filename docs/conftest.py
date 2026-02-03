@@ -3,7 +3,6 @@ from sybil.parsers.markdown import PythonCodeBlockParser, SkipParser
 
 from pysmo.conftest import copy_testfiles  # noqa: F401
 
-
 collect_ignore = [
     "snippets/division.py",
     "snippets/division_annotated.py",
