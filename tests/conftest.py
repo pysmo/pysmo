@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 import shutil
 
-
 TESTDATA = dict(
     orgfile=Path(__file__).parent / "assets/testfile.sac",
     sacfile_IB=Path(__file__).parent / "assets/testfile_iztype_is_IB.sac",
@@ -124,7 +123,7 @@ def sac_event(sac_instance: SAC):  # type: ignore
 
 
 @pytest.fixture()
-def mini_hypocenter(sac_event) -> MiniLocationWithDepth:  # type:ignore
+def mini_hypocenter(sac_event) -> MiniLocationWithDepth:  # type: ignore
     return MiniLocationWithDepth(
         latitude=sac_event.latitude,
         longitude=sac_event.longitude,
