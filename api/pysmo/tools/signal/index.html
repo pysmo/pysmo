@@ -1,0 +1,2691 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://docs.pysmo.org/api/pysmo/tools/signal/">
+      
+      
+        <link rel="prev" href="../plotutils/">
+      
+      
+        <link rel="next" href="../utils/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>signal - pysmo</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../../css/material.css">
+    
+      <link rel="stylesheet" href="../../../../css/mermaid.css">
+    
+      <link rel="stylesheet" href="../../../../css/mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../../../termynal.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pysmo.tools.signal" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="pysmo" class="md-header__button md-logo" aria-label="pysmo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pysmo
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              signal
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="blue-grey"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="blue-grey"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pysmo/pysmo" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pysmo/pysmo
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="pysmo" class="md-nav__button md-logo" aria-label="pysmo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pysmo
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pysmo/pysmo" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pysmo/pysmo
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Home
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../first-steps/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First steps
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    First steps
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../first-steps/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installing pysmo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../first-steps/tutorial/tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../user-guide/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/in-the-box/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What is in the Box?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/classes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pysmo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pysmo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../classes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pysmo.classes
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pysmo.classes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../functions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pysmo.functions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pysmo.functions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pysmo.tools
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pysmo.tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../azdist/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    azdist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../iccs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    iccs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    noise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotutils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plotutils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    signal
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    signal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;delay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;envelope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.gauss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gauss
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../lib/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pysmo.lib
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pysmo.lib
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../developing/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developing pysmo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developing pysmo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developing/developing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developing/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../contributors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;delay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;envelope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pysmo.tools.signal.gauss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gauss
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/pysmo/pysmo/edit/master/docs/api/pysmo/tools/signal.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/pysmo/pysmo/raw/master/docs/api/pysmo/tools/signal.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h1 id="pysmo.tools.signal" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">pysmo.tools.signal</span>
+
+
+<a href="#pysmo.tools.signal" class="headerlink" title="Permanent link">#</a></h1>
+
+    <div class="doc doc-contents first">
+
+        <p>Functions used in signal processing.</p>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+<p><span class="doc-section-title">Functions:</span></p>
+    <ul>
+          <li class="doc-section-item field-body">
+            <b><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;delay&lt;/span&gt; (&lt;code&gt;pysmo.tools.signal.delay&lt;/code&gt;)" href="#pysmo.tools.signal.delay">delay</a></code></b>
+            –
+            <div class="doc-md-description">
+              <p>Cross correlates two seismograms to determine signal delay.</p>
+            </div>
+          </li>
+          <li class="doc-section-item field-body">
+            <b><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;envelope&lt;/span&gt; (&lt;code&gt;pysmo.tools.signal.envelope&lt;/code&gt;)" href="#pysmo.tools.signal.envelope">envelope</a></code></b>
+            –
+            <div class="doc-md-description">
+              <p>Calculates the envelope of a gaussian filtered seismogram.</p>
+            </div>
+          </li>
+          <li class="doc-section-item field-body">
+            <b><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;gauss&lt;/span&gt; (&lt;code&gt;pysmo.tools.signal.gauss&lt;/code&gt;)" href="#pysmo.tools.signal.gauss">gauss</a></code></b>
+            –
+            <div class="doc-md-description">
+              <p>Returns a gaussian filtered seismogram.</p>
+            </div>
+          </li>
+    </ul>
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pysmo.tools.signal.delay" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">delay</span>
+
+
+<a href="#pysmo.tools.signal.delay" class="headerlink" title="Permanent link">#</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delay</span><span class="p">(</span>
+    <span class="n">seismogram1</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Seismogram&lt;/span&gt; (&lt;code&gt;pysmo.Seismogram&lt;/code&gt;)" href="../../../#pysmo.Seismogram">Seismogram</a></span><span class="p">,</span>
+    <span class="n">seismogram2</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Seismogram&lt;/span&gt; (&lt;code&gt;pysmo.Seismogram&lt;/code&gt;)" href="../../../#pysmo.Seismogram">Seismogram</a></span><span class="p">,</span>
+    <span class="n">total_delay</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_shift</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.timedelta&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta">timedelta</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">abs_max</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.timedelta&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta">timedelta</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Cross correlates two seismograms to determine signal delay.</p>
+<p>This function is a wrapper around the
+<a class="autorefs autorefs-external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate.html#scipy.signal.correlate"><code>scipy.signal.correlate</code></a> function. The default
+behavior is to call the correlate function with <code class="highlight"><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;full&quot;</span></code> using
+the full length data of the input seismograms. This is the most robust
+option, but also the slowest.</p>
+<p>If an approximate delay is known (e.g. because a particular phase is being
+targeted using a computed arrival time), the search space can be limited
+by setting the <code>max_shift</code> parameter to a value. The length of the
+seismogram data used for the cross-correlation is then set such that the
+calculated delay lies within +/- <code>max_shift</code>.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p><code>max_shift</code> intentionally does <em>not</em> take the begin times of the
+seismograms into consideration. Thus, calling <code class="highlight"><span class="n">delay</span><span class="p">()</span></code> with
+<code class="highlight"><span class="n">total_delay</span><span class="o">=</span><span class="kc">True</span></code> may return a delay that is larger than
+<code>max_shift</code>.</p>
+</details>        <p>Implications of setting the <code>max_shift</code> parameter are as follows:</p>
+<ul>
+<li>This mode requires the seismograms to be of equal length.</li>
+<li>If the true delay (i.e. the amount of time the seismograms <em>should</em> be
+  shifted by) lies within the <code>max_shift</code> range, and also produces the
+  highest correlation, the delay time returned is identical for both
+  methods.</li>
+<li>If the true delay lies outside the <code>max_shift</code> range and produces the
+  highest correlation, the delay time returned will be incorrect when
+  <code>max_shift</code> is set.</li>
+<li>In the event that the true delay lies within the <code>max_shift</code> range but
+  the maximum signal correlation occurs outside, it will be correctly
+  retrieved when the <code>max_shift</code> parameter is set, while not setting it
+  yields an incorrect result.</li>
+</ul>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>seismogram1</code></b>
+              (<code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Seismogram&lt;/span&gt; (&lt;code&gt;pysmo.Seismogram&lt;/code&gt;)" href="../../../#pysmo.Seismogram">Seismogram</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>First seismogram to use for cross correlation.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>seismogram2</code></b>
+              (<code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Seismogram&lt;/span&gt; (&lt;code&gt;pysmo.Seismogram&lt;/code&gt;)" href="../../../#pysmo.Seismogram">Seismogram</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>Second seismogram to use for cross correlation.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>total_delay</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>, default:
+                  <code>False</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Include the difference in <code>begin_time</code> in the delay.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>max_shift</code></b>
+              (<code><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.timedelta&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta">timedelta</a> | None</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Maximum (absolute) length of the delay.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>abs_max</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>, default:
+                  <code>False</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Return the delay corresponding to absolute maximum.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>delay</code></b> (              <code><a class="autorefs autorefs-external" title="&lt;code&gt;datetime.timedelta&lt;/code&gt;" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta">timedelta</a></code>
+)          –
+          <div class="doc-md-description">
+            <p>Time delay of the second seismogram with respect to the first.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+<b><code>ccnorm</code></b> (              <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+)          –
+          <div class="doc-md-description">
+            <p>Normalised cross correlation value of the overlapping
+seismograms <em>after</em> shifting (uses
+<a class="autorefs autorefs-external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mstats.pearsonr.html#scipy.stats.mstats.pearsonr"><code>scipy.stats.mstats.pearsonr</code></a> for
+the calculation). This value ranges from -1 to 1, with 1 indicating
+a perfect correlation, 0 indicating no correlation, and -1
+indicating a perfect anti-correlation.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>To illustration the use of the <code>delay()</code> function, we read a seismogram
+from a SAC file and then generate a second seismogram from it by
+modifying it with a shift in the data and a shift in the begin time.
+This means the true delay is known, and we are able to compare the
+computed delays with this known delay:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiniSeismogram</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">detrend</span><span class="p">,</span> <span class="n">clone_to_mini</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.tools.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">delay</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Create a Seismogram from a SAC file and detrend it:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis1</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;example.sac&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">seismogram</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">detrend</span><span class="p">(</span><span class="n">seis1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Create a second seismogram from the first with</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># a different begin_time and a shift in the data:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis2</span> <span class="o">=</span> <span class="n">clone_to_mini</span><span class="p">(</span><span class="n">MiniSeismogram</span><span class="p">,</span> <span class="n">seis1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">nroll</span> <span class="o">=</span> <span class="mi">1234</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis2</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">seis2</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">nroll</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">begin_time_delay</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis2</span><span class="o">.</span><span class="n">begin_time</span> <span class="o">+=</span> <span class="n">begin_time_delay</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># The signal delay is the number of samples shifted * delta:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="n">signal_delay</span> <span class="o">:=</span> <span class="n">nroll</span> <span class="o">*</span> <span class="n">seis1</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+<span class="mf">24.68</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Call the delay function with the two seismograms and verify</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># that the caclulated_delay is equal to the known signal delay:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">delay</span><span class="p">(</span><span class="n">seis1</span><span class="p">,</span> <span class="n">seis2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span> <span class="o">==</span> <span class="n">signal_delay</span>
+<span class="kc">True</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+<p>As we know what the true delay is, we can mimic a scenario where an
+approximate delay is known prior to the cross-correlation, which can be
+used to limit the search space and speed up the calculation. Here we
+assign a value of the known signal delay plus 1 second to the
+<code>max_shift</code> parameter:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">max_shift</span> <span class="o">=</span> <span class="n">signal_delay</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">delay</span><span class="p">(</span><span class="n">seis1</span><span class="p">,</span> <span class="n">seis2</span><span class="p">,</span> <span class="n">max_shift</span><span class="o">=</span><span class="n">max_shift</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># As before, the calculated delay should be equal to the signal delay:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span> <span class="o">==</span> <span class="n">signal_delay</span>
+<span class="kc">True</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+<p>Setting <code>total_delay=True</code>, we also takes into account the difference
+in <code>begin_time</code> between the two seismograms:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">delay</span><span class="p">(</span><span class="n">seis1</span><span class="p">,</span> <span class="n">seis2</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">max_shift</span><span class="o">=</span><span class="n">signal_delay</span><span class="o">+</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># With `total_delay=True`, the calculated delay should be equal to</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># the signal delay plus the begin time difference:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span> <span class="o">==</span> <span class="n">signal_delay</span> <span class="o">+</span> <span class="p">(</span><span class="n">seis1</span><span class="o">.</span><span class="n">begin_time</span> <span class="o">-</span> <span class="n">seis2</span><span class="o">.</span><span class="n">begin_time</span><span class="p">)</span>
+<span class="kc">True</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+<p>To demonstrate usage of the <code>abs_max</code> parameter, we flip the sign of
+the second seismogram data:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">seis2</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span><span class="p">,</span> <span class="n">ccnorm</span> <span class="o">=</span> <span class="n">delay</span><span class="p">(</span><span class="n">seis1</span><span class="p">,</span> <span class="n">seis2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># Without `abs_max=True`, the calculated delay is no longer equal</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># to the true signal delay (as expected):</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span> <span class="o">==</span> <span class="n">signal_delay</span>
+<span class="kc">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># The normalised cross correlation value is also not very high</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ccnorm</span>
+<span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.4267205</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span><span class="p">,</span> <span class="n">ccnorm</span> <span class="o">=</span> <span class="n">delay</span><span class="p">(</span><span class="n">seis1</span><span class="p">,</span> <span class="n">seis2</span><span class="p">,</span> <span class="n">abs_max</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># with `abs_max=True`, the signal delay is again retrieved:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">calculated_delay</span> <span class="o">==</span> <span class="n">signal_delay</span>
+<span class="kc">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># And, as the signals are completely opposite, the normalised</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c1"># cross correlation value is -1:</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_approx_equal</span><span class="p">(</span><span class="n">ccnorm</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+          
+
+
+  <div class="doc doc-backlinks">
+        <b class="doc doc-backlink-type">Referenced by:</b>
+          <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <span>API reference</span>
+  </span>
+
+            <span class="doc doc-backlink-crumb">
+      <span>pysmo.tools</span>
+  </span>
+
+            <span class="doc doc-backlink-crumb">
+      <a href="../iccs/#pysmo.tools.iccs"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;iccs</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb">
+      <a href="../iccs/#pysmo.tools.iccs.ICCS"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ICCS</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../iccs/#pysmo.tools.iccs.ICCS.__call__"><code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__call__</a>
+  </span>
+
+      </li>
+  </ul>
+
+  </div>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pysmo/tools/signal/_delay.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delay</span><span class="p">(</span>
+    <span class="n">seismogram1</span><span class="p">:</span> <span class="n">Seismogram</span><span class="p">,</span>
+    <span class="n">seismogram2</span><span class="p">:</span> <span class="n">Seismogram</span><span class="p">,</span>
+    <span class="n">total_delay</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_shift</span><span class="p">:</span> <span class="n">timedelta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">abs_max</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">timedelta</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cross correlates two seismograms to determine signal delay.</span>
+
+<span class="sd">    This function is a wrapper around the</span>
+<span class="sd">    [`scipy.signal.correlate`][scipy.signal.correlate] function. The default</span>
+<span class="sd">    behavior is to call the correlate function with `#!py mode=&quot;full&quot;` using</span>
+<span class="sd">    the full length data of the input seismograms. This is the most robust</span>
+<span class="sd">    option, but also the slowest.</span>
+
+<span class="sd">    If an approximate delay is known (e.g. because a particular phase is being</span>
+<span class="sd">    targeted using a computed arrival time), the search space can be limited</span>
+<span class="sd">    by setting the `max_shift` parameter to a value. The length of the</span>
+<span class="sd">    seismogram data used for the cross-correlation is then set such that the</span>
+<span class="sd">    calculated delay lies within +/- `max_shift`.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        `max_shift` intentionally does *not* take the begin times of the</span>
+<span class="sd">        seismograms into consideration. Thus, calling `#!py delay()` with</span>
+<span class="sd">        `#!py total_delay=True` may return a delay that is larger than</span>
+<span class="sd">        `max_shift`.</span>
+
+<span class="sd">    Implications of setting the `max_shift` parameter are as follows:</span>
+
+<span class="sd">    - This mode requires the seismograms to be of equal length.</span>
+<span class="sd">    - If the true delay (i.e. the amount of time the seismograms _should_ be</span>
+<span class="sd">      shifted by) lies within the `max_shift` range, and also produces the</span>
+<span class="sd">      highest correlation, the delay time returned is identical for both</span>
+<span class="sd">      methods.</span>
+<span class="sd">    - If the true delay lies outside the `max_shift` range and produces the</span>
+<span class="sd">      highest correlation, the delay time returned will be incorrect when</span>
+<span class="sd">      `max_shift` is set.</span>
+<span class="sd">    - In the event that the true delay lies within the `max_shift` range but</span>
+<span class="sd">      the maximum signal correlation occurs outside, it will be correctly</span>
+<span class="sd">      retrieved when the `max_shift` parameter is set, while not setting it</span>
+<span class="sd">      yields an incorrect result.</span>
+
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        seismogram1: First seismogram to use for cross correlation.</span>
+<span class="sd">        seismogram2: Second seismogram to use for cross correlation.</span>
+<span class="sd">        total_delay: Include the difference in `begin_time` in the delay.</span>
+<span class="sd">        max_shift: Maximum (absolute) length of the delay.</span>
+<span class="sd">        abs_max: Return the delay corresponding to absolute maximum.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        delay: Time delay of the second seismogram with respect to the first.</span>
+<span class="sd">        ccnorm: Normalised cross correlation value of the overlapping</span>
+<span class="sd">            seismograms *after* shifting (uses</span>
+<span class="sd">            [`scipy.stats.mstats.pearsonr`][scipy.stats.mstats.pearsonr] for</span>
+<span class="sd">            the calculation). This value ranges from -1 to 1, with 1 indicating</span>
+<span class="sd">            a perfect correlation, 0 indicating no correlation, and -1</span>
+<span class="sd">            indicating a perfect anti-correlation.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        To illustration the use of the `delay()` function, we read a seismogram</span>
+<span class="sd">        from a SAC file and then generate a second seismogram from it by</span>
+<span class="sd">        modifying it with a shift in the data and a shift in the begin time.</span>
+<span class="sd">        This means the true delay is known, and we are able to compare the</span>
+<span class="sd">        computed delays with this known delay:</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo import MiniSeismogram</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.classes import SAC</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.functions import detrend, clone_to_mini</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.tools.signal import delay</span>
+<span class="sd">        &gt;&gt;&gt; from datetime import timedelta</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Create a Seismogram from a SAC file and detrend it:</span>
+<span class="sd">        &gt;&gt;&gt; seis1 = SAC.from_file(&quot;example.sac&quot;).seismogram</span>
+<span class="sd">        &gt;&gt;&gt; detrend(seis1)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Create a second seismogram from the first with</span>
+<span class="sd">        &gt;&gt;&gt; # a different begin_time and a shift in the data:</span>
+<span class="sd">        &gt;&gt;&gt; seis2 = clone_to_mini(MiniSeismogram, seis1)</span>
+<span class="sd">        &gt;&gt;&gt; nroll = 1234</span>
+<span class="sd">        &gt;&gt;&gt; seis2.data = np.roll(seis2.data, nroll)</span>
+<span class="sd">        &gt;&gt;&gt; begin_time_delay = timedelta(seconds=100)</span>
+<span class="sd">        &gt;&gt;&gt; seis2.begin_time += begin_time_delay</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # The signal delay is the number of samples shifted * delta:</span>
+<span class="sd">        &gt;&gt;&gt; (signal_delay := nroll * seis1.delta).total_seconds()</span>
+<span class="sd">        24.68</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Call the delay function with the two seismograms and verify</span>
+<span class="sd">        &gt;&gt;&gt; # that the caclulated_delay is equal to the known signal delay:</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay, _ = delay(seis1, seis2)</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay == signal_delay</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        As we know what the true delay is, we can mimic a scenario where an</span>
+<span class="sd">        approximate delay is known prior to the cross-correlation, which can be</span>
+<span class="sd">        used to limit the search space and speed up the calculation. Here we</span>
+<span class="sd">        assign a value of the known signal delay plus 1 second to the</span>
+<span class="sd">        `max_shift` parameter:</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; max_shift = signal_delay + timedelta(seconds=1)</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay, _ = delay(seis1, seis2, max_shift=max_shift)</span>
+<span class="sd">        &gt;&gt;&gt; # As before, the calculated delay should be equal to the signal delay:</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay == signal_delay</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        Setting `total_delay=True`, we also takes into account the difference</span>
+<span class="sd">        in `begin_time` between the two seismograms:</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay, _ = delay(seis1, seis2, total_delay=True, max_shift=signal_delay+timedelta(seconds=1))</span>
+<span class="sd">        &gt;&gt;&gt; # With `total_delay=True`, the calculated delay should be equal to</span>
+<span class="sd">        &gt;&gt;&gt; # the signal delay plus the begin time difference:</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay == signal_delay + (seis1.begin_time - seis2.begin_time)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        To demonstrate usage of the `abs_max` parameter, we flip the sign of</span>
+<span class="sd">        the second seismogram data:</span>
+
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; seis2.data *= -1</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay, ccnorm = delay(seis1, seis2)</span>
+<span class="sd">        &gt;&gt;&gt; # Without `abs_max=True`, the calculated delay is no longer equal</span>
+<span class="sd">        &gt;&gt;&gt; # to the true signal delay (as expected):</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay == signal_delay</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; # The normalised cross correlation value is also not very high</span>
+<span class="sd">        &gt;&gt;&gt; ccnorm</span>
+<span class="sd">        np.float64(0.4267205)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay, ccnorm = delay(seis1, seis2, abs_max=True)</span>
+<span class="sd">        &gt;&gt;&gt; # with `abs_max=True`, the signal delay is again retrieved:</span>
+<span class="sd">        &gt;&gt;&gt; calculated_delay == signal_delay</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; # And, as the signals are completely opposite, the normalised</span>
+<span class="sd">        &gt;&gt;&gt; # cross correlation value is -1:</span>
+<span class="sd">        &gt;&gt;&gt; np.testing.assert_approx_equal(ccnorm, -1)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">seismogram1</span><span class="o">.</span><span class="n">delta</span> <span class="o">!=</span> <span class="n">seismogram2</span><span class="o">.</span><span class="n">delta</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input seismograms must have the same sampling rate.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">max_shift</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">seismogram1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seismogram2</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Input seismograms must be of equal length when using `max_shift`.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">data1</span><span class="p">,</span> <span class="n">data2</span> <span class="o">=</span> <span class="n">seismogram1</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">seismogram2</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">seismogram1</span><span class="o">.</span><span class="n">delta</span>
+
+    <span class="k">if</span> <span class="n">max_shift</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_lag_in_samples</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_shift</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span>
+        <span class="n">zeros_to_add</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_lag_in_samples</span><span class="p">)</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zeros_to_add</span><span class="p">,</span> <span class="n">data1</span><span class="p">)</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">zeros_to_add</span><span class="p">)</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">_correlate</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">_correlate</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
+
+    <span class="n">corr_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">abs_max</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">corr</span><span class="p">):</span>
+        <span class="n">corr_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">max_shift</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">corr_index</span> <span class="o">-</span> <span class="n">max_lag_in_samples</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">corr_index</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">shift</span> <span class="o">*</span> <span class="n">delta</span>
+
+    <span class="c1"># find overlapping parts of seismograms after allignment</span>
+    <span class="k">if</span> <span class="n">shift</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">data1</span><span class="p">[</span><span class="o">-</span><span class="n">shift</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data2</span> <span class="o">=</span> <span class="n">data2</span><span class="p">[</span><span class="n">shift</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data2</span><span class="p">):</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">data1</span><span class="p">[:</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data2</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data2</span> <span class="o">=</span> <span class="n">data2</span><span class="p">[:</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data1</span><span class="p">)]</span>
+
+    <span class="n">covr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_pearsonr</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">total_delay</span><span class="p">:</span>
+        <span class="n">delay</span> <span class="o">+=</span> <span class="n">seismogram1</span><span class="o">.</span><span class="n">begin_time</span> <span class="o">-</span> <span class="n">seismogram2</span><span class="o">.</span><span class="n">begin_time</span>
+
+    <span class="k">return</span> <span class="n">delay</span><span class="p">,</span> <span class="n">covr</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pysmo.tools.signal.envelope" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">envelope</span>
+
+
+<a href="#pysmo.tools.signal.envelope" class="headerlink" title="Permanent link">#</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">envelope</span><span class="p">(</span><span class="n">seismogram</span><span class="p">:</span> <span class="n"><span title="pysmo.tools.signal._gauss.envelope[T]">T</span></span><span class="p">,</span> <span class="n">Tn</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pysmo.tools.signal._gauss.envelope[T]">T</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Calculates the envelope of a gaussian filtered seismogram.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>seismogram</code></b>
+              (<code><span title="pysmo.tools.signal._gauss.envelope[T]">T</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Name of the seismogram object passed to this function.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>Tn</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>Center period of Gaussian filter [in seconds]</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>alpha</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>Set alpha (which determines filterwidth)</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="pysmo.tools.signal._gauss.envelope[T]">T</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Seismogram containing the envelope</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.tools.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">envelope</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;example.sac&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">seismogram</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tn</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1"># Center Gaussian filter at 50s period</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1"># Set alpha (which determines filterwidth) to 50</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">envelope_seis</span> <span class="o">=</span> <span class="n">envelope</span><span class="p">(</span><span class="n">seis</span><span class="p">,</span> <span class="n">Tn</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pysmo/tools/signal/_gauss.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">envelope</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Seismogram</span><span class="p">](</span><span class="n">seismogram</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">Tn</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the envelope of a gaussian filtered seismogram.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        seismogram: Name of the seismogram object passed to this function.</span>
+<span class="sd">        Tn: Center period of Gaussian filter [in seconds]</span>
+<span class="sd">        alpha: Set alpha (which determines filterwidth)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Seismogram containing the envelope</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.classes import SAC</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.tools.signal import envelope</span>
+<span class="sd">        &gt;&gt;&gt; seis = SAC.from_file(&quot;example.sac&quot;).seismogram</span>
+<span class="sd">        &gt;&gt;&gt; Tn = 50 # Center Gaussian filter at 50s period</span>
+<span class="sd">        &gt;&gt;&gt; alpha = 50 # Set alpha (which determines filterwidth) to 50</span>
+<span class="sd">        &gt;&gt;&gt; envelope_seis = envelope(seis, Tn, alpha)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clone</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">seismogram</span><span class="p">)</span>
+    <span class="n">clone</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">_gauss</span><span class="p">(</span><span class="n">seismogram</span><span class="p">,</span> <span class="n">Tn</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">clone</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pysmo.tools.signal.gauss" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">gauss</span>
+
+
+<a href="#pysmo.tools.signal.gauss" class="headerlink" title="Permanent link">#</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">gauss</span><span class="p">(</span><span class="n">seismogram</span><span class="p">:</span> <span class="n"><span title="pysmo.tools.signal._gauss.gauss[T]">T</span></span><span class="p">,</span> <span class="n">Tn</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pysmo.tools.signal._gauss.gauss[T]">T</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a gaussian filtered seismogram.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>seismogram</code></b>
+              (<code><span title="pysmo.tools.signal._gauss.gauss[T]">T</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Name of the SAC object passed to this function.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>Tn</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>Center period of Gaussian filter [in seconds]</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>alpha</code></b>
+              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>Set alpha (which determines filterwidth)</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="pysmo.tools.signal._gauss.gauss[T]">T</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Gaussian filtered seismogram.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">SAC</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pysmo.tools.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">gauss</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">seis</span> <span class="o">=</span> <span class="n">SAC</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;example.sac&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">seismogram</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tn</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1"># Center Gaussian filter at 50s period</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1"># Set alpha (which determines filterwidth) to 50</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">gauss_seis</span> <span class="o">=</span> <span class="n">gauss</span><span class="p">(</span><span class="n">seis</span><span class="p">,</span> <span class="n">Tn</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pysmo/tools/signal/_gauss.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">gauss</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Seismogram</span><span class="p">](</span><span class="n">seismogram</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">Tn</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a gaussian filtered seismogram.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        seismogram: Name of the SAC object passed to this function.</span>
+<span class="sd">        Tn: Center period of Gaussian filter [in seconds]</span>
+<span class="sd">        alpha: Set alpha (which determines filterwidth)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Gaussian filtered seismogram.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.classes import SAC</span>
+<span class="sd">        &gt;&gt;&gt; from pysmo.tools.signal import gauss</span>
+<span class="sd">        &gt;&gt;&gt; seis = SAC.from_file(&quot;example.sac&quot;).seismogram</span>
+<span class="sd">        &gt;&gt;&gt; Tn = 50 # Center Gaussian filter at 50s period</span>
+<span class="sd">        &gt;&gt;&gt; alpha = 50 # Set alpha (which determines filterwidth) to 50</span>
+<span class="sd">        &gt;&gt;&gt; gauss_seis = gauss(seis, Tn, alpha)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clone</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">seismogram</span><span class="p">)</span>
+    <span class="n">clone</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">_gauss</span><span class="p">(</span><span class="n">seismogram</span><span class="p">,</span> <span class="n">Tn</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">clone</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../plotutils/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plotutils">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                plotutils
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../utils/" class="md-footer__link md-footer__link--next" aria-label="Next: utils">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                utils
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2012 - 2026 Simon Lloyd
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "content.tabs.link", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.top"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+        <script src="../../../../termynal.js"></script>
+      
+    
+  </body>
+</html>
