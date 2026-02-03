@@ -16,7 +16,7 @@ class TestICCSBase:
     @pytest.fixture(autouse=True, scope="function")
     def _iccs(self, iccs_seismograms: list[ICCSSeismogram]) -> None:
         self.iccs = ICCS(iccs_seismograms)
-        self.iccs.taper_width = self.TAPER
+        self.iccs.ramp_width = self.TAPER
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_iccs_stack_initial(self) -> Figure:
@@ -59,11 +59,11 @@ class TestICCSParameters(TestICCSBase):
     """Test changing parameters and methods (other than __call__)."""
 
     def test_change_timewindow(self) -> None:
-        assert self.iccs.window_pre.total_seconds() == -10
+        assert self.iccs.window_pre.total_seconds() == -15
         with pytest.raises(ValueError):
             self.iccs.window_pre = timedelta(seconds=1)
         self.iccs.window_pre += timedelta(seconds=2.34)
-        assert self.iccs.window_pre.total_seconds() == -7.66
+        assert self.iccs.window_pre.total_seconds() == -12.66
 
     def test_invalid_window_pre(self) -> None:
         max_window_pre = max(

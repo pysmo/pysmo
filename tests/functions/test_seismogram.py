@@ -1,10 +1,11 @@
 from pysmo import Seismogram
+from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
 from datetime import timedelta
 from copy import deepcopy
 from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
-from typing import get_args, Literal
+from beartype.roar import BeartypeCallHintParamViolation
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pytest
@@ -183,9 +184,6 @@ def test_crop(seismogram: Seismogram) -> None:
 
 
 class TestTaper:
-    LEFT: bool = True
-    RIGHT: bool = True
-
     @parametrize_with_cases("seismogram")
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_taper(self, seismogram: Seismogram) -> Figure:
@@ -193,27 +191,31 @@ class TestTaper:
 
         seismogram.data = np.ones(len(seismogram))
 
-        with pytest.raises(TypeError):
+        with pytest.raises(BeartypeCallHintParamViolation):
             _ = taper(seismogram, "abc", clone=True)  # type: ignore
-        with pytest.raises(ValueError):
-            _ = taper(seismogram, 0.7, clone=True)
+        with pytest.raises(BeartypeCallHintParamViolation):
+            _ = taper(seismogram, 1.7, clone=True)
         fig = plt.figure()
         time = time_array(seismogram)
         plt.plot(time, seismogram.data, scalex=True, scaley=True)
         plt.plot(time, seismogram.data, scalex=True, scaley=True)
-        for method in get_args(
-            Literal["bartlett", "blackman", "hamming", "hanning", "kaiser"]
-        ):
-            seis_taper = taper(
-                seismogram, 0.2, method, left=self.LEFT, right=self.RIGHT, clone=True
-            )
+        methods: list[_WindowType] = [
+            "barthann",
+            "bartlett",
+            "blackman",
+            "blackmanharris",
+            "bohman",
+            "cosine",
+            ("general_hamming", 0.52),
+            ("general_hamming", 0.75),
+        ]
+        for method in methods:
+            seis_taper = taper(seismogram, 0.5, method, clone=True)
             plt.plot(time, seis_taper.data, scalex=True, scaley=True)
             seis_taper = taper(
                 seismogram,
-                (seismogram.end_time - seismogram.begin_time) * 0.2,
+                (seismogram.end_time - seismogram.begin_time) * 0.5,
                 method,
-                left=self.LEFT,
-                right=self.RIGHT,
                 clone=True,
             )
             plt.plot(time, seis_taper.data, scalex=True, scaley=True)
@@ -224,36 +226,49 @@ class TestTaper:
         return fig
 
 
-class TestTaperLeft(TestTaper):
-    LEFT: bool = True
-    RIGHT: bool = False
+class TestWindow:
+    TAPER_WIDTH: timedelta | float = timedelta(seconds=500)
+
+    @parametrize_with_cases("seismogram")
+    def test_window(self, seismogram: Seismogram) -> None:
+        from pysmo.functions import window, time2index
+
+        taper_width = self.TAPER_WIDTH
+
+        window_begin_time = seismogram.begin_time + timedelta(seconds=600)
+        window_end_time = window_begin_time + timedelta(seconds=1000)
+        windowed_seis = window(
+            seismogram,
+            window_begin_time,
+            window_end_time,
+            taper_width,
+            same_shape=True,
+            clone=True,
+        )
+        assert windowed_seis.begin_time == seismogram.begin_time
+        assert windowed_seis.end_time == seismogram.end_time
+
+        if isinstance(taper_width, timedelta):
+            taper_start = window_begin_time - taper_width
+            taper_end = window_end_time + taper_width
+        else:
+            taper_start = (
+                window_begin_time - (window_end_time - window_begin_time) * taper_width
+            )
+            taper_end = (
+                window_end_time + (window_end_time - window_begin_time) * taper_width
+            )
+
+        taper_start_index = time2index(seismogram, taper_start)
+        assert np.max(np.abs(windowed_seis.data[:taper_start_index])) < 1e-6
+        taper_end_index = time2index(seismogram, taper_end)
+        assert np.max(np.abs(windowed_seis.data[taper_end_index:])) < 1e-6
+
+        window(
+            seismogram, window_begin_time, window_end_time, taper_width, same_shape=True
+        )
+        assert all(windowed_seis.data == seismogram.data)
 
 
-class TestTaperRight(TestTaper):
-    LEFT: bool = False
-    RIGHT: bool = True
-
-
-class TestTaperNone(TestTaper):
-    LEFT: bool = False
-    RIGHT: bool = False
-
-
-@parametrize_with_cases("seismogram")
-def test_window(seismogram: Seismogram) -> None:
-    from pysmo.functions import window, time2index
-
-    taper_width = timedelta(seconds=500)
-    window_begin_time = seismogram.begin_time + timedelta(seconds=100)
-    window_end_time = window_begin_time + timedelta(seconds=2000)
-    windowed_seis = window(
-        seismogram, window_begin_time, window_end_time, taper_width, clone=True
-    )
-    assert windowed_seis.begin_time == seismogram.begin_time
-    assert windowed_seis.end_time == seismogram.end_time
-    window_start_index = time2index(seismogram, window_begin_time)
-    assert np.max(np.abs(windowed_seis.data[:window_start_index])) < 1e-6
-    window_end_index = time2index(seismogram, window_end_time)
-    assert np.max(np.abs(windowed_seis.data[window_end_index:])) < 1e-6
-    window(seismogram, window_begin_time, window_end_time, taper_width)
-    assert all(windowed_seis.data == seismogram.data)
+class TestWindowFloat(TestWindow):
+    TAPER_WIDTH: timedelta | float = 0.1
