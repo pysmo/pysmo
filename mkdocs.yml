@@ -114,7 +114,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: ["pysmo"]
+          paths: ["src"]
           options:
             allow_inspection: true
             backlinks: tree
