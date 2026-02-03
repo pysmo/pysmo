@@ -1,6 +1,6 @@
 site_name: pysmo
 site_url: https://docs.pysmo.org/
-copyright: Copyright &copy; 2012 - 2025 Simon Lloyd
+copyright: Copyright &copy; 2012 - 2026 Simon Lloyd
 
 # Repository
 repo_name: pysmo/pysmo
@@ -114,6 +114,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          paths: ["pysmo"]
           options:
             allow_inspection: true
             backlinks: tree

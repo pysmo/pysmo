@@ -64,6 +64,12 @@ def _make_mask(iccs: ICCS, all: bool) -> list[bool]:
     return [s.select for s in iccs.seismograms]
 
 
+def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
+    if isinstance(iccs.ramp_width, timedelta):
+        return iccs.ramp_width.total_seconds()
+    return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
+
+
 def _plot_common_stack(
     iccs: ICCS,
     padded: bool,
@@ -95,18 +101,35 @@ def _plot_common_stack(
     seismograms = iccs.padded_seismograms if padded else iccs.cc_seismograms
     stack = iccs.padded_stack if padded else iccs.stack
 
-    xmin, xmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
+    tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
     if padded:
-        ax.axvspan(xmin, xmax, color="lightgreen", alpha=0.2, label="Time Window")
-        ax.axvline(xmin, color="lightgreen", linewidth=0.5, alpha=0.7)
-        ax.axvline(xmax, color="lightgreen", linewidth=0.5, alpha=0.7)
-        xmin, xmax = (
-            (iccs.window_pre - iccs.plot_padding).total_seconds(),
-            (iccs.window_post + iccs.plot_padding).total_seconds(),
+        ax.axvspan(tmin, tmax, color="lightgreen", alpha=0.2, label="Time Window")
+        ax.axvline(tmin, color="lightgreen", linewidth=0.5, alpha=0.7)
+        ax.axvline(tmax, color="lightgreen", linewidth=0.5, alpha=0.7)
+        tmin -= iccs.plot_padding.total_seconds()
+        tmax += iccs.plot_padding.total_seconds()
+    elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
+        ax.axvspan(
+            tmin - taper_ramp_in_seconds,
+            tmin,
+            color="yellow",
+            alpha=0.2,
+            label="Tapered",
         )
+        ax.axvspan(tmax, tmax + taper_ramp_in_seconds, color="yellow", alpha=0.2)
+        ax.axvline(
+            tmin - taper_ramp_in_seconds, color="yellow", linewidth=0.5, alpha=0.7
+        )
+        ax.axvline(tmin, color="yellow", linewidth=0.5, alpha=0.7)
+        ax.axvline(tmax, color="yellow", linewidth=0.5, alpha=0.7)
+        ax.axvline(
+            tmax + taper_ramp_in_seconds, color="yellow", linewidth=0.5, alpha=0.7
+        )
+        tmin -= taper_ramp_in_seconds
+        tmax += taper_ramp_in_seconds
 
-    time = np.linspace(xmin, xmax, len(stack))
+    time = np.linspace(tmin, tmax, len(stack))
 
     mask = _make_mask(iccs, all)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
@@ -126,7 +149,7 @@ def _plot_common_stack(
     )
     plt.ylabel("Normalised amplitude")
     plt.xlabel("Time relative to pick [s]")
-    plt.xlim(xmin, xmax)
+    plt.xlim(tmin, tmax)
     plt.ylim(auto=None)
     ax.legend(loc="upper left")
     fig.colorbar(
@@ -169,13 +192,14 @@ def _plot_common_image(
     # Sort and reverse the rows
     seismogram_matrix = seismogram_matrix[np.argsort(ccnorms)[::-1]]
 
-    xmin, xmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
+    tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
     if padded:
-        xmin, xmax = (
-            (iccs.window_pre - iccs.plot_padding).total_seconds(),
-            (iccs.window_post + iccs.plot_padding).total_seconds(),
-        )
+        tmin -= iccs.plot_padding.total_seconds()
+        tmax += iccs.plot_padding.total_seconds()
+    elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
+        tmin -= taper_ramp_in_seconds
+        tmax += taper_ramp_in_seconds
 
     fig, ax = plt.subplots(
         figsize=figsize, layout="constrained" if constrained else None
@@ -187,7 +211,7 @@ def _plot_common_image(
     plt.ylabel("Seismograms sorted by correlation coefficient")
     plt.imshow(
         seismogram_matrix,
-        extent=(xmin, xmax, 0, len(seismogram_matrix)),
+        extent=(tmin, tmax, 0, len(seismogram_matrix)),
         vmin=-1,
         vmax=1,
         cmap=ICCS_DEFAULTS.IMG_CMAP,
