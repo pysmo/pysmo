@@ -1,3 +1,6 @@
+---
+icon: lucide/list
+---
 # What is in the Box?
 
 ## Library vs. framework

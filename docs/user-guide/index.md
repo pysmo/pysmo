@@ -6,7 +6,7 @@ This section of the documentation is intended to give you a good overview of
 the principal concepts behind pysmo. It describes what pysmo is, why you may
 want to use it, and how to use it. If you are looking for specifics on a
 particular component of pysmo, please refer to the relevant section in the
-[API reference](../api/index.md).
+[API reference](../api/pysmo.md).
 
 ## Rationale
 

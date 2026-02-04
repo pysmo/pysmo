@@ -13,12 +13,12 @@ Examples:
     noise models. These are Peterson's NHNM (red), NLNM (blue), and an
     interpolated model that lies between the two (green).
 
-    ![peterson example](../../../examples/tools/noise/peterson.png#only-light){ loading=lazy }
-    ![peterson example](../../../examples/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
+    ![peterson example](../../../../images/tools/noise/peterson.png#only-light){ loading=lazy }
+    ![peterson example](../../../../images/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
 
     ??? quote "Example source code"
         ```python title="peterson.py"
-        --8<-- "docs/examples/tools/noise/peterson.py"
+        --8<-- "docs/snippets/tools/noise/peterson.py"
         ```
 """
 
