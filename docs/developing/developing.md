@@ -1,3 +1,7 @@
+---
+icon: lucide/notebook-pen
+---
+
 # Development Environment
 
 ## Git repository

@@ -146,8 +146,8 @@ class ICCS:
         ```
         -->
 
-        ![Initial stack](../../../examples/figures/iccs_stack_initial.png#only-light){ loading=lazy }
-        ![Initial stack](../../../examples/figures/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
+        ![Initial stack](../../../../images/tools/iccs/iccs_stack_initial.png#only-light){ loading=lazy }
+        ![Initial stack](../../../../images/tools/iccs/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
         The phase emergance is not visible in the stack, and the (absolute)
         correlation coefficents of the the seismograms are not very high. This
@@ -179,8 +179,8 @@ class ICCS:
         ```
         -->
 
-        ![Stack after first run](../../../examples/figures/iccs_stack_first_run.png#only-light){ loading=lazy }
-        ![Stack after first run](../../../examples/figures/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
+        ![Stack after first run](../../../../images/tools/iccs/iccs_stack_first_run.png#only-light){ loading=lazy }
+        ![Stack after first run](../../../../images/tools/iccs/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
 
         Despite of the random noise seismogram, the phase arrival is now visible in
         the stack. Seismograms with low correlation coefficients can automatically
@@ -210,8 +210,8 @@ class ICCS:
         ```
         -->
 
-        ![Stack after run with autoselect](../../../examples/figures/iccs_stack_autoselect.png#only-light){ loading=lazy }
-        ![Stack after run with autoselect](../../../examples/figures/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
+        ![Stack after run with autoselect](../../../../images/tools/iccs/iccs_stack_autoselect.png#only-light){ loading=lazy }
+        ![Stack after run with autoselect](../../../../images/tools/iccs/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
 
 
         Seismograms that fit better with their polarity reversed can be flipped
@@ -239,8 +239,8 @@ class ICCS:
         ```
         -->
 
-        ![Stack after run with autoflip](../../../examples/figures/iccs_stack_autoflip.png#only-light){ loading=lazy }
-        ![Stack after run with autoflip](../../../examples/figures/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
+        ![Stack after run with autoflip](../../../../images/tools/iccs/iccs_stack_autoflip.png#only-light){ loading=lazy }
+        ![Stack after run with autoflip](../../../../images/tools/iccs/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
 
 
         To further improve results, you can interactively update the picks,

@@ -1,3 +1,9 @@
+---
+icon: lucide/package-open
+tags:
+  - getting started
+---
+
 # Installing pysmo
 
 ## Prerequisites
