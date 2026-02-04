@@ -1,3 +1,7 @@
+---
+icon: lucide/square-function
+---
+
 <!-- invisible-code-block: python 
 ```python
 >>> from pysmo.classes import SacSeismogram
@@ -60,8 +64,6 @@ script is executed:
 
 <!-- skip: next -->
 
-<!-- termynal -->
-
 ```bash
 $ python double_delta.py
 Runtime type is 'SacSeismogram'
@@ -71,8 +73,6 @@ Runtime type is 'SacSeismogram'
 This tells us that at runtime `my_seis_in` and `my_seis_out` are both of type
 [`SacSeismogram`][pysmo.classes.SacSeismogram]. Running mypy on the code,
 however, yields a different type for `my_seis_out`:
-
-<!-- termynal -->
 
 ```bash
 $ mypy double_delta.py
@@ -149,8 +149,6 @@ def double_delta_generic(seismogram: SacSeismogram) -> SacSeismogram:
 
 which is also what we used for our example. Therefore, running `mypy` on
 `double_delta_generic.py` gives:
-
-<!-- termynal -->
 
 ```bash
 $ mypy double_delta_generic.py

@@ -1,5 +1,5 @@
 .PHONY: help check-uv sync upgrade lint test-figs test-tutorial tests \
-	mypy docs live-docs notebook build publish clean python \
+	mypy docs live-docs build publish clean python \
 	format format-check
 
 ifeq ($(OS),Windows_NT)
@@ -36,10 +36,7 @@ lint: check-uv ## Check formatting with black and lint code with ruff.
 test-figs: check-uv ## Generate baseline figures for testing (then manually move them to the test directories).
 	uv run py.test --mpl-generate-path=baseline
 
-test-tutorial: check-uv ## Check if the tutorial notebook runs error-free.
-	uv run py.test --nbmake docs/first-steps/tutorial/tutorial.ipynb
-
-tests: check-uv test-tutorial mypy ## Run all tests with pytest.
+tests: check-uv mypy ## Run all tests with pytest.
 	uv run pytest --cov --cov-report=term-missing --mpl
 
 mypy: check-uv ## Run typing tests with pytest.
@@ -50,9 +47,6 @@ docs: check-uv sync ## Build html docs.
 
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
 	uv run mkdocs serve --livereload -o -w README.md -w src -w changelog.md -w contributors.md
-
-notebook: check-uv sync ## Run a jupyter notebook in the uv environment
-	uv run jupyter-lab
 
 build: clean check-uv sync ## Build distribution.
 	uv build
