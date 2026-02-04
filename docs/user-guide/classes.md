@@ -1,3 +1,7 @@
+---
+icon: lucide/box
+---
+
 # Classes
 
 The types discussed in the [previous chapter](types.md) are only useful in
@@ -27,8 +31,6 @@ is also an instance of the [`Location`][pysmo.Location] type:
 -->
 
 <!-- skip: next -->
-
-<!-- termynal -->
 
 ```bash
 $ python -i city.py
@@ -148,8 +150,6 @@ After creating [`SacIO`][pysmo.lib.io.SacIO] objects, SAC data and header
 fields can be accessed using the same names as used in the SAC file format (in
 lowercase). For example for the station location:
 
-<!-- termynal -->
-
 ```bash
 # Start an interactive python shell after executing read_sacfile.py:
 $ python -i read_sacfile.py
@@ -162,8 +162,6 @@ Station longitude: -72.56
 
 These attributes have the correct format, but not the right name for the pysmo
 [`Location`][pysmo.Location] type:
-
-<!-- termynal -->
 
 ```bash
 $ python -i read_sacfile.py
@@ -191,8 +189,6 @@ Objects created from this new class can do everything the
 [`SacIO`][pysmo.lib.io.SacIO] class can do, while also matching the
 [`Location`][pysmo.Location] type. Changing the mapped attributes will also
 change the original ones:
-
-<!-- termynal -->
 
 ```bash
 $ python -i read_sacfile2.py

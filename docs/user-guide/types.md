@@ -1,3 +1,6 @@
+---
+icon: lucide/type
+---
 # Types
 
 In the previous section we briefly [mention](index.md#type-tip) that
