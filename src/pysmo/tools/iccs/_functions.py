@@ -288,8 +288,8 @@ def plot_stack(
         ```
         -->
 
-        ![View the stack with padding](../../../examples/figures/iccs_view_stack_padded.png#only-light){ loading=lazy }
-        ![View the stack with padding](../../../examples/figures/iccs_view_stack_padded-dark.png#only-dark){ loading=lazy }
+        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack_padded.png#only-light){ loading=lazy }
+        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack_padded-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `padded` argument to `False`:
@@ -315,8 +315,8 @@ def plot_stack(
         ```
         -->
 
-        ![View the stack with padding](../../../examples/figures/iccs_view_stack.png#only-light){ loading=lazy }
-        ![View the stack with padding](../../../examples/figures/iccs_view_stack-dark.png#only-dark){ loading=lazy }
+        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack.png#only-light){ loading=lazy }
+        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax = _plot_common_stack(iccs, padded, all)
@@ -390,8 +390,8 @@ def plot_seismograms(
         ```
         -->
 
-        ![View the seismograms with padding](../../../examples/figures/iccs_plot_seismograms_padded.png#only-light){ loading=lazy }
-        ![View the seismograms with padding](../../../examples/figures/iccs_plot_seismograms_padded-dark.png#only-dark){ loading=lazy }
+        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms_padded.png#only-light){ loading=lazy }
+        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms_padded-dark.png#only-dark){ loading=lazy }
 
         To view the seismograms exactly as they are used in the
         cross-correlations, set the `padded` argument to `False`:
@@ -417,8 +417,8 @@ def plot_seismograms(
         ```
         -->
 
-        ![View the seismograms with padding](../../../examples/figures/iccs_plot_seismograms.png#only-light){ loading=lazy }
-        ![View the seismograms with padding](../../../examples/figures/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
+        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms.png#only-light){ loading=lazy }
+        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
 
     fig, ax, _ = _plot_common_image(iccs, padded, all)
@@ -505,8 +505,8 @@ def update_pick(
         ```
         -->
 
-        ![Picking a new T1](../../../examples/figures/iccs_update_pick.png#only-light){ loading=lazy }
-        ![Picking a new T1](../../../examples/figures/iccs_update_pick-dark.png#only-dark){ loading=lazy }
+        ![Picking a new T1](../../../../images/tools/iccs/iccs_update_pick.png#only-light){ loading=lazy }
+        ![Picking a new T1](../../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
 
     if use_seismogram_image:
@@ -655,8 +655,8 @@ def update_timewindow(
         ```
         -->
 
-        ![Picking a new time window](../../../examples/figures/iccs_update_timewindow.png#only-light){ loading=lazy }
-        ![Picking a new time window](../../../examples/figures/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
+        ![Picking a new time window](../../../../images/tools/iccs/iccs_update_timewindow.png#only-light){ loading=lazy }
+        ![Picking a new time window](../../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
 
     if use_seismogram_image:
@@ -787,8 +787,8 @@ def update_min_ccnorm(
         ```
         -->
 
-        ![Picking a new time window in stack](../../../examples/figures/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
-        ![Picking a new time window in stack](../../../examples/figures/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
+        ![Picking a new time window in stack](../../../../images/tools/iccs/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
+        ![Picking a new time window in stack](../../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
 
     # If the lowest index is chosen in the gui, set the new min_ccnorm to

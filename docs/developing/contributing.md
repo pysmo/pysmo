@@ -1,3 +1,7 @@
+---
+icon: lucide/copy-plus
+---
+
 # Contributing
 
 Thank you for considering contributing to pysmo. We welcome your contribution!
