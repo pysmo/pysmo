@@ -14,7 +14,8 @@ nav = [
     ]},
   { "First steps" = [
       "first-steps/index.md",
-      "first-steps/installation.md"
+      "first-steps/installation.md",
+      "first-steps/tutorial.md"
     ] },
   { "Usage" = [
       "user-guide/index.md",
@@ -68,7 +69,7 @@ features = [
     "content.footnote.tooltips",
     "content.tabs.link",
     "content.tooltips",
-    "header.autohide",
+    # "header.autohide",
     # "navigation.expand",
     "navigation.footer",
     "navigation.indexes",
@@ -79,7 +80,7 @@ features = [
     "navigation.prune",
     # "navigation.sections",
     "navigation.tabs",
-    "navigation.tabs.sticky",
+    # "navigation.tabs.sticky",
     "navigation.top",
     "navigation.tracking",
     "search.highlight",
@@ -112,13 +113,13 @@ toggle.name = "Switch to system preference"
 #text = "Inter"
 #code = "Jetbrains Mono"
 
-#[project.theme.icon]
+[project.theme.icon]
 #logo = "lucide/smile"
-#repo = "lucide/smile"
+repo = "fontawesome/brands/github"
 
-#[[project.extra.social]]
-#icon = "fontawesome/brands/github"
-#link = "https://github.com/user/repo"
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/pysmo/pysmo"
 
 [project.markdown_extensions.abbr]
 [project.markdown_extensions.admonition]
