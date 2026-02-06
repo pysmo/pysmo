@@ -9,13 +9,8 @@ __all__ = ["LocationWithDepth", "MiniLocationWithDepth"]
 class LocationWithDepth(Location, Protocol):
     """Protocol class to define the `LocationWithDepth` type."""
 
-    @property
-    def depth(self) -> float:
-        """Location depth in metres."""
-        ...
-
-    @depth.setter
-    def depth(self, value: float) -> None: ...
+    depth: float
+    """Location depth in metres."""
 
 
 @define(kw_only=True, slots=True)

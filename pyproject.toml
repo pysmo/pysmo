@@ -51,6 +51,7 @@ test = [
 docs = [
     "zensical>=0.0.10",
     "mkdocstrings-python>=2.0.1",
+    "git-cliff>=2.12.0",
 ]
 
 [tool.uv]

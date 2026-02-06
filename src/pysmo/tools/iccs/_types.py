@@ -19,37 +19,17 @@ class ICCSSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    @property
-    def flip(self) -> bool:
-        """Data in seismogram should be flipped for ICCS."""
-        ...
+    flip: bool
+    """Data in seismogram should be flipped for ICCS."""
 
-    @flip.setter
-    def flip(self, value: bool) -> None: ...
+    select: bool
+    """Use seismogram to create stack."""
 
-    @property
-    def select(self) -> bool:
-        """Use seismogram to create stack."""
-        ...
+    t0: datetime
+    """Initial pick."""
 
-    @select.setter
-    def select(self, value: bool) -> None: ...
-
-    @property
-    def t0(self) -> datetime:
-        """Initial pick."""
-        ...
-
-    @t0.setter
-    def t0(self, value: datetime) -> None: ...
-
-    @property
-    def t1(self) -> datetime | None:
-        """Updated pick."""
-        ...
-
-    @t1.setter
-    def t1(self, value: datetime | None) -> None: ...
+    t1: datetime | None
+    """Updated pick."""
 
 
 @beartype

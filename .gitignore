@@ -4,6 +4,7 @@ dist/
 *.egg-info/
 __pycache__/
 .pytest_cache/
+.mypy_cache/
 result_images/
 .DS_Store
 *.pyc
