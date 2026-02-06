@@ -43,10 +43,10 @@ mypy: check-uv ## Run typing tests with pytest.
 	uv run pytest --mypy -m mypy src tests docs
 
 docs: check-uv sync ## Build html docs.
-	uv run mkdocs build
+	uv run zensical build --clean
 
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
-	uv run mkdocs serve --livereload -o -w README.md -w src -w changelog.md -w contributors.md
+	uv run zensical serve
 
 build: clean check-uv sync ## Build distribution.
 	uv build

@@ -8,21 +8,11 @@ __all__ = ["Location", "MiniLocation"]
 class Location(Protocol):
     """Protocol class to define the `Location` type."""
 
-    @property
-    def latitude(self) -> float:
-        """Latitude in degrees."""
-        ...
+    latitude: float
+    """Latitude in degrees."""
 
-    @latitude.setter
-    def latitude(self, value: float) -> None: ...
-
-    @property
-    def longitude(self) -> float:
-        """Longitude in degrees."""
-        ...
-
-    @longitude.setter
-    def longitude(self, value: float) -> None: ...
+    longitude: float
+    """Longitude in degrees."""
 
 
 @define(kw_only=True, slots=True)
