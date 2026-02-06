@@ -9,65 +9,40 @@ __all__ = ["Station", "MiniStation"]
 class Station(Location, Protocol):
     """Protocol class to define the `Station` type."""
 
-    @property
-    def name(self) -> str:
-        """Station name or identifier.
+    name: str
+    """Station name or identifier.
 
-        A 1-5 character identifier for the station recording the data.
-        """
-        ...
+    A 1-5 character identifier for the station recording the data.
+    """
 
-    @name.setter
-    def name(self, value: str) -> None: ...
+    network: str
+    """Network name or identifier.
 
-    @property
-    def network(self) -> str:
-        """Network name or identifier.
+    A 1-2 character code identifying the network/owner of the data.
+    """
 
-        A 1-2 character code identifying the network/owner of the data.
-        """
-        ...
+    location: str
+    """Location ID.
 
-    @network.setter
-    def network(self, value: str) -> None: ...
+    A two character code used to uniquely identify different data streams
+    at a single stationa.
+    """
 
-    @property
-    def location(self) -> str:
-        """Location ID.
+    channel: str
+    """Channel code.
 
-        A two character code used to uniquely identify different data streams
-        at a single stationa.
-        """
-        ...
+    A three character combination used to identify:
 
-    @location.setter
-    def location(self, value: str) -> None: ...
+    1. Band and general sample rate.
+    2. Instrument type.
+    3. Orientation of the sensor.
+    """
 
-    @property
-    def channel(self) -> str:
-        """Channel code.
-
-        A three character combination used to identify:
-
-        1. Band and general sample rate.
-        2. Instrument type.
-        3. Orientation of the sensor.
-        """
-        ...
-
-    @channel.setter
-    def channel(self, value: str) -> None: ...
-
-    @property
-    def elevation(self) -> float | None:
-        """Station elevation in metres."""
-        ...
-
-    @elevation.setter
-    def elevation(self, value: float) -> None: ...
+    elevation: float | None
+    """Station elevation in metres."""
 
 
-def pad_string(x: str) -> str:
+def _pad_string(x: str) -> str:
     return f"{x:>2}"
 
 
@@ -105,7 +80,7 @@ class MiniStation:
     location: str = field(
         default="  ",
         validator=[validators.min_len(2), validators.max_len(2)],
-        converter=pad_string,
+        converter=_pad_string,
     )
     """Location ID.
 
