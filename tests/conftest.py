@@ -6,7 +6,7 @@ from pysmo import (
     LocationWithDepth,
     MiniLocationWithDepth,
 )
-from pysmo.classes import SAC
+from pysmo.classes import SAC, SacSeismogram, SacStation
 from pathlib import Path
 import pytest
 import shutil
@@ -74,7 +74,7 @@ def sacfile_v7(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) ->
 
 
 @pytest.fixture()
-def sac_seismogram(sac_instance: SAC) -> Seismogram:
+def sac_seismogram(sac_instance: SAC) -> SacSeismogram:
     return sac_instance.seismogram
 
 
@@ -95,7 +95,7 @@ def seismograms(
 
 
 @pytest.fixture()
-def sac_station(sac_instance: SAC) -> Station:
+def sac_station(sac_instance: SAC) -> SacStation:
     return sac_instance.station
 
 

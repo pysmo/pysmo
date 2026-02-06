@@ -11,13 +11,8 @@ __all__ = ["Event", "MiniEvent"]
 class Event(LocationWithDepth, Protocol):
     """Protocol class to define the `Event` type."""
 
-    @property
-    def time(self) -> datetime:
-        """Event origin time."""
-        ...
-
-    @time.setter
-    def time(self, value: datetime) -> None: ...
+    time: datetime
+    """Event origin time."""
 
 
 @define(kw_only=True, slots=True)

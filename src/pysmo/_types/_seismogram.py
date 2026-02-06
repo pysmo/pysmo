@@ -10,6 +10,9 @@ import numpy as np
 __all__ = ["Seismogram", "MiniSeismogram"]
 
 
+# --8<-- [start:seismogram-protocol]
+
+
 @runtime_checkable
 class Seismogram(Protocol):
     """Protocol class to define the `Seismogram` type.
@@ -33,6 +36,18 @@ class Seismogram(Protocol):
         ```
     """
 
+    begin_time: datetime
+    """Seismogram begin time."""
+
+    data: np.ndarray
+    """Seismogram data."""
+
+    delta: timedelta
+    """The sampling interval.
+
+    Should be a positive `timedelta` instance.
+    """
+
     def __len__(self) -> int:
         """The length of the Seismogram.
 
@@ -42,36 +57,12 @@ class Seismogram(Protocol):
         ...
 
     @property
-    def data(self) -> np.ndarray:
-        """Seismogram data."""
-        ...
-
-    @data.setter
-    def data(self, value: np.ndarray) -> None: ...
-
-    @property
-    def begin_time(self) -> datetime:
-        """Seismogram begin time."""
-        ...
-
-    @begin_time.setter
-    def begin_time(self, value: datetime) -> None: ...
-
-    @property
     def end_time(self) -> datetime:
         """Seismogram end time."""
         ...
 
-    @property
-    def delta(self) -> timedelta:
-        """The sampling interval.
 
-        Should be a positive `timedelta` instance.
-        """
-        ...
-
-    @delta.setter
-    def delta(self, value: timedelta) -> None: ...
+# --8<-- [end:seismogram-protocol]
 
 
 @beartype
