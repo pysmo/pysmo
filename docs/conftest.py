@@ -7,7 +7,6 @@ collect_ignore = [
     "snippets/division.py",
     "snippets/division_annotated.py",
     "snippets/duck.py",
-    "snippets/signup.py",
     "snippets/tutorial/season_detrend_v1.py",
 ]
 pytest_collect_file = Sybil(

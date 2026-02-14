@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

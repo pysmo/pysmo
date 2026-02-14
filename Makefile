@@ -1,6 +1,6 @@
 .PHONY: help check-uv sync upgrade lint test-figs test-tutorial tests \
 	mypy docs live-docs build publish clean python \
-	format format-check
+	format format-check changelog
 
 ifeq ($(OS),Windows_NT)
   UV_VERSION := $(shell uv --version 2> NUL)
@@ -45,6 +45,9 @@ mypy: check-uv ## Run typing tests with pytest.
 docs: check-uv sync ## Build html docs.
 	uv run zensical build --clean
 
+changelog: check-uv sync ## Generate CHANGELOG.md
+	uv run git-cliff --config cliff.toml --output CHANGELOG.md
+	
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
 	uv run zensical serve
 
