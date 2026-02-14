@@ -1,6 +1,6 @@
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.types import PositiveTimedelta
+from pysmo.typing import PositiveTimedelta
 from typing import Protocol, runtime_checkable
 from attrs import define, field
 from datetime import datetime, timedelta
@@ -54,20 +54,23 @@ class Seismogram(Protocol):
         Returns:
             Number of samples in the data array.
         """
-        ...
+        return len(self.data)
 
     @property
     def end_time(self) -> datetime:
         """Seismogram end time."""
-        ...
+        if len(self) == 0:
+            return self.begin_time
+        return self.begin_time + self.delta * (len(self) - 1)
 
 
 # --8<-- [end:seismogram-protocol]
+# --8<-- [start:mini-seismogram]
 
 
 @beartype
 @define(kw_only=True, slots=True)
-class MiniSeismogram:
+class MiniSeismogram(Seismogram):
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
 
     The `MiniSeismogram` class provides a minimal implementation of class that
@@ -98,17 +101,5 @@ class MiniSeismogram:
     data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""
 
-    def __len__(self) -> int:
-        """The length of the Seismogram.
 
-        Returns:
-            Number of samples in the data array.
-        """
-        return len(self.data)
-
-    @property
-    def end_time(self) -> datetime:
-        """Seismogram end time."""
-        if len(self) == 0:
-            return self.begin_time
-        return self.begin_time + self.delta * (len(self) - 1)
+# --8<-- [end:mini-seismogram]

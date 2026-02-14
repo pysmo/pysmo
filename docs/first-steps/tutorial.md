@@ -14,7 +14,7 @@ used in a project. This will provide insight into:
 
 ## Custom seismogram class
 
-The purpose of a class in Python is generally to store state (i.e data). As the
+The purpose of a class in Python is generally to store state (i.e. data). As the
 exact type of data can vary between use cases, it is often useful to define a
 new class that is tailored to the specific scenario.
 
@@ -34,7 +34,7 @@ look like this:
    generates special methods for the class, such as `__init__`, `__repr__`, and
    `__eq__`, based on the class attributes. This makes it easier to create
    classes that are primarily used to store data.
-2. Instance attributes are defined simply be declaring them in the class body
+2. Instance attributes are defined simply by declaring them in the class body
    with type annotations.
 3. Attributes can have default values too.
 4. Care must be given if default values are mutable types (like lists or
@@ -75,7 +75,7 @@ $ python -i noise_seismogram.py
       have typed them with e.g. `bool | None` instead of just `bool`.
       While this is not strictly a requirement, it does avoid having to deal
       with the possibility of multiple instances of the class having different
-      amounts of data (e.g. some instatnces having information in the
+      amounts of data (e.g. some instances having information in the
       `contains_earthquake` attribute and some not). This simplifies things
       later on, as we don't need to include checks for the presence of data in
       our functions.
@@ -109,7 +109,7 @@ Checking code with mypy is a great way to prevent errors from sneaking into
 your codebase. Most modern code editors have the same type of checking built
 in, so it is really easy to make use of type hints in this way. If we really
 commit to checking all our code while writing it, we can simplify the functions
-by striping out the bits that are unreachable. Running mypy again, but with an
+by stripping out the bits that are unreachable. Running mypy again, but with an
 extra flag we can see where this is the case:
 
 ```bash
@@ -143,7 +143,7 @@ Success: no issues found in 1 source file
     - Because we have correctly annotated both our class and our functions with
       type hints, we can easily check our code for errors with mypy.
     - Our purpose-built class avoids optional attributes, which allows us to
-      avoid redunant checks in our functions. This makes our code simpler and
+      avoid redundant checks in our functions. This makes our code simpler and
       likely easier to read.
     - Note that we are relying on checking our code before running it! If you
       want checking at runtime, you may need to look into using a library like
@@ -152,7 +152,7 @@ Success: no issues found in 1 source file
 
 ## Reusing functions in other contexts
 
-Comparing the two functions, `contains_earthquak()` and `detrend()`, we notice
+Comparing the two functions, `check_for_earthquakes()` and `detrend()`, we notice
 that only the former relies on the `contains_earthquake` attribute of our
 class. Recall that this attribute was the only one introduced for the specific
 use case of ambient noise cross-correlation. This means that the remaining
@@ -160,7 +160,7 @@ attributes form a sort of "baseline" seismogram, that we are likely to
 encounter in other use cases as well. Put another way, we ought to be able to
 reuse the `detrend()` function in other contexts.
 
-To illustrate this, lets consider a different project, where we (for some
+To illustrate this, let's consider a different project, where we (for some
 reason) want to store the season together with seismogram data. Again we write
 a bespoke class for this:
 
@@ -168,7 +168,7 @@ a bespoke class for this:
 --8<-- "docs/snippets/tutorial/season_seismogram.py"
 ```
 
-1. [`StrEnum`][enum.StrEnum] are a great way to limit the values stings can
+1. [`StrEnum`][enum.StrEnum] are a great way to limit the values strings can
    take.
 2. Much like with `NoiseSeismogram`, we have just one project specific
    attribute (`season`).
@@ -180,14 +180,14 @@ function from earlier:
 --8<-- "docs/snippets/tutorial/season_detrend_v1.py"
 ```
 
-This script will run actually without a hitch:
+This script will actually run without a hitch:
 
 ```bash
 $ python season_detrend_v1.py && echo "success\!"
 success!
 ```
 
-However, because we have a missmatch in our type annotations (`detrend()`
+However, because we have a mismatch in our type annotations (`detrend()`
 expects a `NoiseSeismogram` but we are passing it a `SeasonSeismogram`), mypy
 will complain:
 
@@ -224,7 +224,7 @@ Success: no issues found in 1 source file
       context.
     - However, it did require changing the type annotations of the function.
     - While the changes were small, making them every time we want to reuse the
-      function is cumbersone.
+      function is cumbersome.
     - The `check_for_earthquakes()` function is not reusable at all, as it
       relies on the `contains_earthquake` attribute that only exists in
       `NoiseSeismogram`. Thus we can identify two types of functions: those
@@ -236,7 +236,7 @@ Success: no issues found in 1 source file
 If we are sold on the idea of writing custom seismogram classes for particular
 use cases, we end up with a bit of a maintenance nightmare if we have a lot of
 "shared" type functions. As shown by the `detrend()` function, whenever we want
-existing functions to work smoothly with a new class, we need  use it to
+existing functions to work smoothly with a new class, we need to use it to
 annotate the function. Doing this also introduces a dependency between the
 functions and classes. It is therefore conceivable that sometime in the future
 one of the classes may change in a way that breaks functions.
@@ -245,7 +245,7 @@ This is not a new problem in programming, and is typically solved by defining
 interfaces that sit between the functions and the classes (or more generally
 between different parts of code). This means that we can write a function to be
 compatible with the interface rather than multiple different (seismogram)
-classes. Of course, the classes need to be written in a way that conform to the
+classes. Of course, the classes need to be written in a way that conforms to the
 interface too.
 
 Pysmo provides such an interface for seismogram (and other) classes. These
@@ -260,10 +260,27 @@ the actual implementation of pysmo's [`Seismogram`][pysmo.Seismogram] interface:
 
 If you strip away the extra docstrings, you will notice that this looks
 remarkably similar to the common bits of the `NoiseSeismogram` and
-`SeasonSeismogram` classes we defined above. The only obvious difference is
-that the `__len__` method and `end_time` property are not implemented. This is
-because the `Seismogram` class serves only to provide information about the
-*structure* of a class.
+`SeasonSeismogram` classes we defined above. Important to mention at this point
+is that the `__len__` method and `end_time` property do not really need to be
+implemented here. Typically the `__len__` method would look more like this:
+
+```python
+def __len__(self) -> int: ...
+```
+
+That is because the purpose of [`Seismogram`][pysmo.Seismogram] is mainly to
+provide type information - it is actually impossible to create an instance from
+a [`Protocol`][typing.Protocol] class directly. However, it is possible to
+inherit from them, so we could rewrite the `SeasonSeismogram` as follows:
+
+```python title="season_seismogram_short.py"
+--8<-- "docs/snippets/tutorial/season_seismogram_short.py"
+```
+
+1. `__len__` and `end_time` are inherited from `Seismogram`, so we don't need
+   to write an implementation anymore.
+
+The `NoiseSeismogram` class could be shortened in the same manner.
 
 !!! note
 
@@ -276,7 +293,7 @@ subclasses of the protocol class. For our particular case, this means that
 instances of `NoiseSeismogram` and `SeasonSeismogram` are also instances of
 `Seismogram`.
 
-Using pysmo types to annotate our functions, even if it is to be used with
+Using pysmo types to annotate our functions, even if they are to be used with
 loads of different seismogram classes, is now a breeze:
 
 ```python title="functions_v4.py" hl_lines="2 13"
@@ -285,11 +302,11 @@ loads of different seismogram classes, is now a breeze:
 
 1. Instead of importing `SeasonSeismogram`, we now import `Seismogram`.
 2. We no longer need to list all the seismogram classes we want to use in the
-   `deterend` function. We simply specify `Seismogram` and are done.
+   `detrend` function. We simply specify `Seismogram` and are done.
 
 !!! info "Key observations"
 
-    - The `detrend()` function now uses pysmo types in it's annotations.
+    - The `detrend()` function now uses pysmo types in its annotations.
     - Because `NoiseSeismogram` and `SeasonSeismogram` are subclasses of
       `Seismogram`, type checkers will accept instances of `NoiseSeismogram`
       and `SeasonSeismogram` as valid inputs for `detrend()`.

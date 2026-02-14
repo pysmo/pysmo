@@ -90,7 +90,6 @@ warn_unused_ignores = true
 exclude = [
   'division\.py$',
   'division_annotated\.py$',
-  'signup\.py$',
   'duck\.py$',
 ]
 

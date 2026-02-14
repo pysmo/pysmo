@@ -6,7 +6,7 @@ from copy import copy
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from pysmo.lib.typing import _AnyProto, _AnyMini
+    from pysmo.lib.mini_utils import _AnyProto, _AnyMini
 
 __all__ = [
     "copy_from_mini",
@@ -111,9 +111,9 @@ def clone_to_mini[TMini: _AnyMini](
 
     if all(
         map(
-            lambda x: hasattr(source, x.name)
-            or x.name in update
-            or x.default is not NOTHING,
+            lambda x: (
+                hasattr(source, x.name) or x.name in update or x.default is not NOTHING
+            ),
             fields(mini_cls),
         )
     ):

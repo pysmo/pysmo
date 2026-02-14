@@ -42,6 +42,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Update noise example
 - Add a small paragraph on how to use the documentation
 - Switch to zensical
+- Simpler tutorial
+- Split usage into smaller sections
 
 ### 🔍 Other Changes
 
@@ -468,6 +470,9 @@ chore: move to ./src directory
 - Merge pull request #229 from pysmo/zensical
 
 docs: switch to zensical
+- Merge pull request #230 from pysmo/new-tutorial
+
+docs: simpler tutorial
 
 ### 🚀 New Features
 
