@@ -10,7 +10,7 @@ from pysmo import (
 
 
 def test_proto2mini() -> None:
-    from pysmo.lib.typing import proto2mini
+    from pysmo.lib.mini_utils import proto2mini
 
     assert set(proto2mini(Location)) == set(
         [MiniLocation, MiniLocationWithDepth, MiniEvent, MiniStation]
@@ -18,7 +18,7 @@ def test_proto2mini() -> None:
 
 
 def test_matching_pysmo_types() -> None:
-    from pysmo.lib.typing import matching_pysmo_types
+    from pysmo.lib.mini_utils import matching_pysmo_types
 
     assert set(matching_pysmo_types(MiniEvent)) == set(
         [Location, LocationWithDepth, Event]

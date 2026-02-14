@@ -1,5 +1,5 @@
 from pysmo import Seismogram
-from pysmo.types import PositiveTimedelta
+from pysmo.typing import PositiveTimedelta
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from typing import Protocol, runtime_checkable
@@ -19,22 +19,22 @@ class ICCSSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    flip: bool
-    """Data in seismogram should be flipped for ICCS."""
-
-    select: bool
-    """Use seismogram to create stack."""
-
     t0: datetime
     """Initial pick."""
 
     t1: datetime | None
     """Updated pick."""
 
+    flip: bool
+    """Data in seismogram should be flipped for ICCS."""
+
+    select: bool
+    """Use seismogram to create stack."""
+
 
 @beartype
 @define(kw_only=True, slots=True)
-class MiniICCSSeismogram:
+class MiniICCSSeismogram(Seismogram):
     """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
 
     The [`MiniICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] class provides
@@ -87,18 +87,3 @@ class MiniICCSSeismogram:
 
     select: bool = True
     """Use seismogram to create stack."""
-
-    def __len__(self) -> int:
-        """The length of the Seismogram.
-
-        Returns:
-            Number of samples in the data array.
-        """
-        return np.size(self.data)
-
-    @property
-    def end_time(self) -> datetime:
-        """Seismogram end time."""
-        if len(self) == 0:
-            return self.begin_time
-        return self.begin_time + self.delta * (len(self) - 1)

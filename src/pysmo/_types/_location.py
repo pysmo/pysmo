@@ -4,6 +4,9 @@ from attrs import define, field, validators
 __all__ = ["Location", "MiniLocation"]
 
 
+# --8<-- [start:location-protocol]
+
+
 @runtime_checkable
 class Location(Protocol):
     """Protocol class to define the `Location` type."""
@@ -13,6 +16,11 @@ class Location(Protocol):
 
     longitude: float
     """Longitude in degrees."""
+
+
+# --8<-- [end:location-protocol]
+
+# --8<-- [start:mini-location]
 
 
 @define(kw_only=True, slots=True)
@@ -37,3 +45,6 @@ class MiniLocation:
 
     longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
     """Longitude from -180 to 180 degrees."""
+
+
+# --8<-- [end:mini-location]
