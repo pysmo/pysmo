@@ -1,4 +1,4 @@
-# Not so fast
+# First steps
 
 Before starting your journey with pysmo, you should have a basic understanding
 of *typing* in the Python programming language. More precisely, you should know
@@ -25,7 +25,7 @@ function:
 --8<-- "docs/snippets/division.py"
 ```
 
-We load load this function into an interactive Python session and call it with
+We load this function into an interactive Python session and call it with
 the arguments `#!py 5` and `#!py 2`. Thus both variables `#!py a=5` and
 `#!py b=2` are numbers and we get the expected result:
 
@@ -59,7 +59,7 @@ TypeError: unsupported operand type(s) for /: 'str' and 'str'
 >>>
 ```
 
-Evidently the function only can be used if the variables `#!py a` and `#!py b`
+Evidently the function can only be used if the variables `#!py a` and `#!py b`
 are numbers. To be clear, there is nothing wrong *syntactically* in this
 example, but certain operations are only available to the correct types (which
 is why a [`TypeError`][TypeError] was raised at runtime). In order to detect
@@ -103,7 +103,7 @@ type `Duck`):
 --8<-- "docs/snippets/duck.py"
 ```
 
-1. The `duck` class has two methods: `quack` and `waddle`.
+1. The `Duck` class has two methods: `quack` and `waddle`.
 
 2. A human can walk (`waddle`) and talk (`quack`) like a duck.
 
@@ -165,7 +165,7 @@ in some instances this is actually desired behavior.
 
     1.  :material-check: The [`#!py len()`][len] function works with a string,
         where it returns the number of characters in the string ...
-    2.  :material-check: ... and with a list, where it ruturns the number
+    2.  :material-check: ... and with a list, where it returns the number
         of items in the list.
     3.  :fontawesome-solid-xmark: But not with an integer.
 
@@ -209,7 +209,7 @@ cases similar to the [`#!py len()`][len] function they probably are, but what
 if we want duck typing with a bit more control? This is indeed possible with a
 strategy called
 [structural subtyping](https://mypy.readthedocs.io/en/stable/protocols.html).
-Revisiting the duck example from before, this time with with a new `Robot`
+Revisiting the duck example from before, this time with a new `Robot`
 class and structural subtyping:
 
 ```py title="duck_protocol.py"
@@ -219,7 +219,7 @@ class and structural subtyping:
 1. We import the [`Protocol`][typing.Protocol] class ...
 2. ... and use it to define our `Ducklike` class. This protocol class defines a
     structure (attributes and methods with their respective types) that can be
-    compared with structure present in any other class. If those classes have a
+    compared with the structure present in any other class. If those classes have a
     matching structure, they are considered subclasses (in terms of typing) of
     the protocol class.
 3. :bulb: Ellipses (`...`) are preferred over `pass` statements here.
@@ -254,9 +254,9 @@ $ python -i duck_protocol.py
 >>> robert = Robot()
 >>> like_a_duck(donald)
 I must be a duck!
-like_a_duck(joe)
+>>> like_a_duck(joe)
 I must be a duck!  # (1)!
-like_a_duck(robert)
+>>> like_a_duck(robert)
 I must be a duck!  # (2)!
 >>>
 ```
@@ -299,7 +299,7 @@ discuss in greater detail later on.
 ## Next steps
 
 * Learn more about type hinting and how to check your code for type errors using
- [mypy](https://mypy.readthedocs.io).
+  [mypy](https://mypy.readthedocs.io).
 * If you aren't already, consider switching to using a code editor that checks
   your code (not just for typing errors) as you write it.
 * Continue onwards to the [next chapter](installation.md) and install pysmo!

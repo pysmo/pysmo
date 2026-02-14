@@ -1,4 +1,5 @@
-from typing import overload, Self
+from typing import overload, Self, TYPE_CHECKING
+from pysmo import Seismogram
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_TIME_HEADERS
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
@@ -66,7 +67,7 @@ class _SacNested:
 
 
 @define(kw_only=True)
-class SacSeismogram(_SacNested):
+class SacSeismogram(_SacNested, Seismogram):
     """Helper class for SAC seismogram attributes.
 
     The `SacSeismogram` class is used to map SAC attributes in a way that
@@ -100,49 +101,45 @@ class SacSeismogram(_SacNested):
         ```
     """
 
-    def __len__(self) -> int:
-        return np.size(self.data)
+    if TYPE_CHECKING:
+        data: np.ndarray = field(init=False)
+        delta: timedelta = field(init=False)
+        begin_time: datetime = field(init=False)
 
-    @property
-    def data(self) -> np.ndarray:
-        """Seismogram data."""
+    else:
 
-        return self._parent.data
+        @property
+        def data(self) -> np.ndarray:
+            """Seismogram data."""
 
-    @data.setter
-    def data(self, value: np.ndarray) -> None:
-        self._parent.data = value
+            return self._parent.data
 
-    @property
-    def delta(self) -> timedelta:
-        """Sampling interval."""
-        return timedelta(seconds=self._parent.delta)
+        @data.setter
+        def data(self, value: np.ndarray) -> None:
+            self._parent.data = value
 
-    @delta.setter
-    def delta(self, value: timedelta) -> None:
-        self._parent.delta = value.total_seconds()
+        @property
+        def delta(self) -> timedelta:
+            """Sampling interval."""
+            return timedelta(seconds=self._parent.delta)
 
-    @property
-    def begin_time(self) -> datetime:
-        """Seismogram begin time."""
+        @delta.setter
+        def delta(self, value: timedelta) -> None:
+            self._parent.delta = value.total_seconds()
 
-        value = self._get_datetime_from_sac(SAC_TIME_HEADERS.b)
-        if value is None:
-            raise TypeError("SAC file has no begin time 'b'.")
-        return value
+        @property
+        def begin_time(self) -> datetime:
+            """Seismogram begin time."""
 
-    @begin_time.setter
-    @value_not_none
-    def begin_time(self, value: datetime) -> None:
-        self._set_sac_from_datetime(SAC_TIME_HEADERS.b, value)
+            value = self._get_datetime_from_sac(SAC_TIME_HEADERS.b)
+            if value is None:
+                raise TypeError("SAC file has no begin time 'b'.")
+            return value
 
-    @property
-    def end_time(self) -> datetime:
-        """Seismogram end time."""
-
-        if len(self) == 0:
-            return self.begin_time
-        return self.begin_time + self.delta * (len(self) - 1)
+        @begin_time.setter
+        @value_not_none
+        def begin_time(self, value: datetime) -> None:
+            self._set_sac_from_datetime(SAC_TIME_HEADERS.b, value)
 
 
 @define(kw_only=True)

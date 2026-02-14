@@ -1,5 +1,7 @@
 ---
 icon: lucide/copy-plus
+tags:
+  - Development
 ---
 
 # Contributing
@@ -12,7 +14,7 @@ carefully.
 
 Broadly speaking, contributions fall into the following categories:
 
-- *Questions*: the easiest way to contribute to pysmo is ask for help if
+- *Questions*: the easiest way to contribute to pysmo is to ask for help if
   something is unclear or you get stuck. Questions provide important
   feedback that helps us determine what parts of pysmo might need attention,
   so we are always keen to help. Development of pysmo happens publicly on
@@ -22,7 +24,7 @@ Broadly speaking, contributions fall into the following categories:
   [discussion](https://github.com/pysmo/pysmo/discussions). Please also
   feel free to answer any questions (including your own, should you figure it
   out!) to help out other users.
-- *Bug reports*: if something needs fixing in psymo we definitely want to hear
+- *Bug reports*: if something needs fixing in pysmo we definitely want to hear
   about it! Please create a new [issue](https://github.com/pysmo/pysmo/issues),
   or add relevant information to an issue if one already exists for the bug
   you found. Bonus points if you also provide a patch that fixes the bug!
@@ -30,19 +32,17 @@ Broadly speaking, contributions fall into the following categories:
   able to write code that can become part of pysmo. These can be things such as
   useful functions, new pysmo types, or a cool tool that you made using pysmo.
 
-Contributing towards making pysmo better does not necessarily mean you need to
-submit code for inclusion in pysmo. However, if you do want to submit code, we
-ask that you read the information and follow steps outlined in the remaining
-sections on this page.
+Contributing towards making pysmo better does not require submitting code.
+However, if you do want to submit code for inclusion in pysmo, please read the
+information and follow the steps outlined in the remaining sections.
 
 ## Development workflow
 
 As mentioned in the [previous chapter](./developing.md#git-repository),
-development of pysmo happens on [GitHub](https://github.com). Therefore, code
-submitted via a
+pysmo development happens on [GitHub](https://github.com). Code submitted via
 [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
-has a much greater chance to be included in pysmo than e.g. sending a patch to
-us via email.
+has a much greater chance of being included in pysmo than alternative methods
+like sending patches via email.
 
 Typically you would first
 [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) pysmo and
@@ -53,23 +53,21 @@ feature branch where you add your code:
 git checkout -b my_cool_feature
 ```
 
-This feature branch is what you will also use to submit a pull request to pysmo
-when you are finished implementing your changes. Before submitting a pull
-request, please make sure you did the following:
+This feature branch is what you will use to submit a pull request to pysmo
+when you have finished implementing your changes. Before submitting a pull
+request, please ensure you have done the following:
 
 - Write code that adheres to the [PEP 8](https://peps.python.org/pep-0008/)
   style guide.
 - Include unit tests with your submission. If you need help with that, feel
   free to contact us.
-- Run a code linter on your code and verify the unit tests all still pass.
-  Essentially this simply means [`make tests`](./developing.md#makefile) still
-  passes without errors.
-- In order to keep a clean git history, please
+- Run a code linter on your code and verify that unit tests still pass.
+  The command [`make tests`](./developing.md#makefile) should pass without errors.
+- To keep a clean git history, please
   [rebase](https://git-scm.com/docs/git-rebase) the pysmo master branch onto
-  your feature branch, and squash all commits into a single, well documented
-  commit. This avoids having commits such as "fix typo", or "undo changes"
-  finding their way into the git log. Note that this should only be done before
-  submitting the initial pull request.
+  your feature branch, and squash all commits into a single, well-documented
+  commit. This avoids commits such as "fix typo" or "undo changes" from
+  appearing in the git log. Do this before submitting your initial pull request.
 
 Once a pull request is submitted the following happens:
 

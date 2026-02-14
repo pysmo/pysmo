@@ -7,7 +7,10 @@ and these classes should *not* be used directly by users.
 """
 
 from ._sacio import SacIO
+from ..._utils import export_module_names
 
 __all__ = [
     "SacIO",
 ]
+
+export_module_names(globals(), __name__)

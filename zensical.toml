@@ -9,44 +9,45 @@ Copyright &copy; 2012 - 2026 Simon Lloyd
 repo_name = "pysmo/pysmo"
 repo_url = "https://github.com/pysmo/pysmo"
 nav = [
-  { "Home" = [
-      "index.md",
-    ]},
+  { "Home" = "index.md" },
   { "First steps" = [
-      "first-steps/index.md",
-      "first-steps/installation.md",
-      "first-steps/tutorial.md"
-    ] },
+    "first-steps/index.md",
+    "first-steps/installation.md",
+    "first-steps/tutorial.md",
+  ] },
   { "Usage" = [
-      "user-guide/index.md",
-      "user-guide/in-the-box.md",
-      "user-guide/types.md",
-      "user-guide/classes.md",
-      "user-guide/functions.md"
-    ] },
+    "usage/index.md",
+    "usage/motivation.md",
+    "usage/conventions.md",
+    "usage/in-the-box.md",
+    "usage/functions.md",
+    "usage/types.md",
+    "usage/mini-classes.md",
+    "usage/external-classes.md",
+  ] },
   { "API reference" = [
-      "api/pysmo.md",
-      "api/pysmo/classes.md",
-      "api/pysmo/functions.md",
-      "api/pysmo/lib.md",
-      {"pysmo.tools" = [
-        "api/pysmo/tools/index.md",
-        "api/pysmo/tools/azdist.md",
-        "api/pysmo/tools/iccs.md",
-        "api/pysmo/tools/noise.md",
-        "api/pysmo/tools/plotutils.md",
-        "api/pysmo/tools/signal.md",
-        "api/pysmo/tools/utils.md"
-      ] },
-      "api/pysmo/types.md",
+    "api/pysmo.md",
+    "api/pysmo/classes.md",
+    "api/pysmo/functions.md",
+    "api/pysmo/lib.md",
+    { "pysmo.tools" = [
+      "api/pysmo/tools/index.md",
+      "api/pysmo/tools/azdist.md",
+      "api/pysmo/tools/iccs.md",
+      "api/pysmo/tools/noise.md",
+      "api/pysmo/tools/plotutils.md",
+      "api/pysmo/tools/signal.md",
+      "api/pysmo/tools/utils.md",
     ] },
+    "api/pysmo/typing.md",
+  ] },
   { "Development" = [
-      "developing/index.md",
-      "developing/developing.md",
-      "developing/contributing.md",
-      "developing/contributors.md"
-    ] },
-  "changelog.md"
+    "development/index.md",
+    "development/developing.md",
+    "development/contributing.md",
+    "development/contributors.md",
+  ] },
+  "changelog.md",
 ]
 
 extra_css = [
@@ -54,38 +55,39 @@ extra_css = [
   # "css/mkdocstrings.css"
 ]
 #extra_javascript = ["javascripts/extra.js"]
+#
 [project.theme]
-#variant = "classic"
+# variant = "classic"
 #custom_dir = "overrides"
 #favicon = "images/favicon.png"
 language = "en"
 features = [
-    "announce.dismiss",
-    "content.action.edit",
-    #"content.action.view",
-    "content.code.annotate",
-    "content.code.copy",
-    "content.code.select",
-    "content.footnote.tooltips",
-    "content.tabs.link",
-    "content.tooltips",
-    # "header.autohide",
-    # "navigation.expand",
-    "navigation.footer",
-    "navigation.indexes",
-    "navigation.instant",
-    "navigation.instant.prefetch",
-    "navigation.instant.progress",
-    "navigation.path",
-    "navigation.prune",
-    # "navigation.sections",
-    "navigation.tabs",
-    # "navigation.tabs.sticky",
-    "navigation.top",
-    "navigation.tracking",
-    "search.highlight",
-    "toc.follow",
-    #"toc.integrate",
+  "announce.dismiss",
+  "content.action.edit",
+  #"content.action.view",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  # "header.autohide",
+  # "navigation.expand",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.path",
+  "navigation.prune",
+  # "navigation.sections",
+  "navigation.tabs",
+  # "navigation.tabs.sticky",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+  #"toc.integrate",
 ]
 
 [[project.theme.palette]]
@@ -139,27 +141,28 @@ default_lang = "python"
 [project.markdown_extensions.pymdownx.snippets]
 [project.markdown_extensions.pymdownx.superfences]
 custom_fences = [
-  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
 ]
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
-
 [project.plugins.mkdocstrings.handlers.python]
 paths = ["src"]
-inventories = ["https://docs.python.org/3/objects.inv",
-            "https://docs.python.org/3/objects.inv",
-            "https://mypy.readthedocs.io/en/stable/objects.inv",
-            "https://numpy.org/doc/stable/objects.inv",
-            "https://docs.scipy.org/doc/scipy/objects.inv",
-            "https://pip.pypa.io/en/stable/objects.inv",
-            "https://docs.pytest.org/en/stable/objects.inv",
-            "https://pytest-mpl.readthedocs.io/en/latest/objects.inv",
-            "https://matplotlib.org/stable/objects.inv",
-            "https://flake8.pycqa.org/en/latest/objects.inv",
-            "https://www.mkdocs.org/objects.inv",
-            "https://pyproj4.github.io/pyproj/stable/objects.inv",
-            "https://attrs.org/en/stable/objects.inv",
-            "https://attrs-strict.readthedocs.io/en/stable/objects.inv"
+inventories = [
+  "https://docs.python.org/3/objects.inv",
+  "https://docs.python.org/3/objects.inv",
+  "https://mypy.readthedocs.io/en/stable/objects.inv",
+  "https://numpy.org/doc/stable/objects.inv",
+  "https://docs.scipy.org/doc/scipy/objects.inv",
+  "https://pip.pypa.io/en/stable/objects.inv",
+  "https://docs.pytest.org/en/stable/objects.inv",
+  "https://pytest-mpl.readthedocs.io/en/latest/objects.inv",
+  "https://matplotlib.org/stable/objects.inv",
+  "https://flake8.pycqa.org/en/latest/objects.inv",
+  "https://www.mkdocs.org/objects.inv",
+  "https://pyproj4.github.io/pyproj/stable/objects.inv",
+  "https://attrs.org/en/stable/objects.inv",
+  "https://attrs-strict.readthedocs.io/en/stable/objects.inv",
+  "https://beartype.readthedocs.io/en/stable/objects.inv",
 ]
 [project.plugins.mkdocstrings.handlers.python.options]
 allow_inspection = true

@@ -1,5 +1,5 @@
 from pysmo import Seismogram
-from pysmo.types import (
+from pysmo.typing import (
     PositiveTimedelta,
     NonNegativeTimedelta,
     NonNegativeNumber,
@@ -96,8 +96,11 @@ def crop[T: Seismogram](
     return None
 
 
+# --8<-- [start:detrend]
 @overload
 def detrend(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
+
+
 @overload
 def detrend[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
 
@@ -134,8 +137,10 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
 
     if clone is True:
         return seismogram
-
     return None
+
+
+# --8<-- [end:detrend]
 
 
 @overload
