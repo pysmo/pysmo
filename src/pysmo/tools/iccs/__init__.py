@@ -119,6 +119,7 @@ visual inspection.
     https://doi.org/10.1785/BSSA0800010150.
 """
 
+from ..._utils import export_module_names
 from ._iccs import ICCS
 from ._types import MiniICCSSeismogram, ICCSSeismogram
 from ._functions import (
@@ -141,3 +142,5 @@ __all__ = [
     "update_all_picks",
     "update_min_ccnorm",
 ]
+
+export_module_names(globals(), __name__)
