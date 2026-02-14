@@ -4,6 +4,8 @@ from attrs import define, field, validators
 
 __all__ = ["Station", "MiniStation"]
 
+# --8<-- [start:station-protocol]
+
 
 @runtime_checkable
 class Station(Location, Protocol):
@@ -40,6 +42,9 @@ class Station(Location, Protocol):
 
     elevation: float | None
     """Station elevation in metres."""
+
+
+# --8<-- [end:station-protocol]
 
 
 def _pad_string(x: str) -> str:

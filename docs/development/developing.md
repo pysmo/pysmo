@@ -1,17 +1,19 @@
 ---
 icon: lucide/notebook-pen
+tags:
+  - Development
 ---
 
 # Development Environment
 
 ## Git repository
 
-We use [GitHub](https://github.com) for the development of pysmo. If you have
-never used git and/or GitHub we recommend you first have a look at their
+We use [GitHub](https://github.com) for pysmo development. If you're new to git
+and/or GitHub, we recommend reviewing their
 [documentation](https://docs.github.com/en/get-started). You can clone the pysmo
-repository two different ways:
+repository in two ways:
 
-1. Clone the psymo repository directly to your desktop.
+1. Clone the pysmo repository directly to your desktop.
 2. Fork the repository on GitHub, and then clone it to your desktop (recommended
    if you plan on submitting your changes to be included in pysmo).
 
@@ -20,7 +22,7 @@ repository two different ways:
 If you want to get started quickly, simply clone the pysmo git repository directly:
 
 ```bash
-$ git clone https://github.com/pysmo/pysmo.github
+$ git clone https://github.com/pysmo/pysmo.git
 Cloning into 'pysmo'...
 $ cd pysmo
 ```
@@ -59,14 +61,14 @@ git remote add upstream https://github.com/pysmo/pysmo.git
 Inside the pysmo folder you will find a relatively simple layout. The four most important
 items are:
 
-1. `pysmo`: this directory is for the pysmo source code. There are `README.md`
+1. `src`: this directory contains the pysmo source code. There are `README.md`
   files in all relevant sub-directories here to help you find your way around.
 2. `docs`: anything to do with documentation happens here.
 3. `tests`: we use this directory to hold unit tests.
 4. `Makefile`: Most things can be managed with this makefile.
 
 !!! tip
-    The psymo repository also contains files to create a
+    The pysmo repository also contains files to create a
     [development container](https://containers.dev/), which performs the necessary
     setup tasks (all the steps below) for you automatically.
 
@@ -90,11 +92,10 @@ needed:
 
 ### uv
 
-In order to develop pysmo in a consistent and isolated environment we use
+To develop pysmo in a consistent and isolated environment, we use
 [uv](https://docs.astral.sh/uv/). Uv creates a Python virtual environment and
-manages the Python packages that are installed in that environment. This allows
-developing and testing while also having the stable version of pysmo installed
-at the same time.
+manages Python packages installed in that environment. This allows you to develop
+and test pysmo while keeping the stable version installed separately.
 
 !!! note
     uv can also be used to install Python itself.
@@ -121,9 +122,10 @@ AVAILABLE COMMANDS
 To get you started run
 
 ```bash
-make sync
+$ make sync
+...
 ```
 
 in a shell. This will first create a Python virtual environment for development
-of pysmo (unless the environment already already exists), then install pysmo
+of pysmo (unless the environment already exists), then install pysmo
 and its dependencies.

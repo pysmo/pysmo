@@ -4,7 +4,7 @@ from beartype import beartype
 from ._types import ICCSSeismogram
 from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
-from pysmo.types import NonNegativeNumber, NonNegativeTimedelta
+from pysmo.typing import NonNegativeNumber, NonNegativeTimedelta
 from pysmo.functions import (
     crop,
     detrend,
@@ -22,8 +22,7 @@ from typing import Any, Literal
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor, Future
+from concurrent.futures import ProcessPoolExecutor
 import warnings
 import numpy as np
 
@@ -487,12 +486,14 @@ class ICCS:
             convergence: Array of convergence criterion values.
         """
         convergence_list = []
+        executor = ProcessPoolExecutor() if parallel else None
 
-        for _ in range(max_iter):
-            prev_stack = clone_to_mini(MiniSeismogram, self.stack)
+        try:
+            for _ in range(max_iter):
+                prev_stack = clone_to_mini(MiniSeismogram, self.stack)
 
-            if parallel:
-                with ProcessPoolExecutor() as executor:
+                if executor is not None:
+                    futures = []
                     for prepared_seismogram, seismogram in zip(
                         self.cc_seismograms, self.seismograms
                     ):
@@ -503,43 +504,50 @@ class ICCS:
                             max_shift=max_shift,
                             abs_max=autoflip,
                         )
-                        future.add_done_callback(
-                            partial(
-                                _update_seismogram_fn,
-                                seismogram,
-                                autoflip,
-                                autoselect,
-                                self.min_ccnorm,
-                                (self.window_pre, self.window_post),
-                            )
+                        futures.append((future, seismogram))
+                    for future, seismogram in futures:
+                        _delay, _ccnorm = future.result()
+                        _update_seismogram(
+                            _delay,
+                            _ccnorm,
+                            seismogram,
+                            autoflip,
+                            autoselect,
+                            self.min_ccnorm,
+                            (self.window_pre, self.window_post),
                         )
-            else:
-                for prepared_seismogram, seismogram in zip(
-                    self.cc_seismograms, self.seismograms
-                ):
-                    _delay, _ccnorm = delay(
-                        self.stack,
-                        prepared_seismogram,
-                        max_shift=max_shift,
-                        abs_max=autoflip,
-                    )
+                else:
+                    for prepared_seismogram, seismogram in zip(
+                        self.cc_seismograms, self.seismograms
+                    ):
+                        _delay, _ccnorm = delay(
+                            self.stack,
+                            prepared_seismogram,
+                            max_shift=max_shift,
+                            abs_max=autoflip,
+                        )
 
-                    _update_seismogram(
-                        _delay,
-                        _ccnorm,
-                        seismogram,
-                        autoflip,
-                        autoselect,
-                        self.min_ccnorm,
-                        (self.window_pre, self.window_post),
-                    )
+                        _update_seismogram(
+                            _delay,
+                            _ccnorm,
+                            seismogram,
+                            autoflip,
+                            autoselect,
+                            self.min_ccnorm,
+                            (self.window_pre, self.window_post),
+                        )
 
-            self._clear_caches()
+                self._clear_caches()
 
-            convergence = _calc_convergence(self.stack, prev_stack, convergence_method)
-            convergence_list.append(convergence)
-            if convergence <= convergence_limit:
-                break
+                convergence = _calc_convergence(
+                    self.stack, prev_stack, convergence_method
+                )
+                convergence_list.append(convergence)
+                if convergence <= convergence_limit:
+                    break
+        finally:
+            if executor is not None:
+                executor.shutdown()
 
         return np.array(convergence_list)
 
@@ -640,27 +648,6 @@ def _update_seismogram(
         return
 
     seismogram.t1 = updated_t1
-
-
-def _update_seismogram_fn(
-    seismogram: ICCSSeismogram,
-    autoflip: bool,
-    autoselect: bool,
-    min_ccnorm_for_autoselect: np.floating | float,
-    current_window: tuple[timedelta, timedelta],
-    fn: Future[tuple[timedelta, float]],
-) -> None:
-    """Update ICCSSeismogram attributes based on multi-threaded cross-correlation results."""
-    delay, ccnorm = fn.result()
-    _update_seismogram(
-        delay,
-        ccnorm,
-        seismogram,
-        autoflip,
-        autoselect,
-        min_ccnorm_for_autoselect,
-        current_window,
-    )
 
 
 def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> np.ndarray:

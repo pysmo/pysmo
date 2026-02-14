@@ -35,7 +35,7 @@
                 lib.makeLibraryPath [
                   stdenv.cc.cc.lib
                   zlib
-                  xorg.libX11
+                  libX11
                 ]}:$LD_LIBRARY_PATH
               export MPLBACKEND="TKAgg"
               export PYSMO_SAVE_FIGS=true
