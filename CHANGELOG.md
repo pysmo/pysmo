@@ -44,6 +44,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Switch to zensical
 - Simpler tutorial
 - Split usage into smaller sections
+- Update development section
 
 ### 🔍 Other Changes
 
@@ -473,6 +474,9 @@ docs: switch to zensical
 - Merge pull request #230 from pysmo/new-tutorial
 
 docs: simpler tutorial
+- Merge pull request #231 from pysmo/docs-split-usage
+
+docs: split usage into smaller sections
 
 ### 🚀 New Features
 
