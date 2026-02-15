@@ -26,7 +26,7 @@ begin with).
 
     Keep in mind, that pysmo types merely define the interface, not the
     implementation. If the external class does something internally that
-    differs from the expected behavior (this could be something as simple as
+    differs from the expected behaviour (this could be something as simple as
     using different units) you might end up with issues.
 
 ### Yes

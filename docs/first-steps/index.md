@@ -141,7 +141,7 @@ I must be a duck!
 The reason for this, is simply because the `is_a_duck` function doesn't check at
 all what it is given as input; as long as the `thing` object has the methods
 `quack` and `waddle` it will happily tell us something is a `duck`. Note that
-in some instances this is actually desired behavior.
+in some instances this is actually desired behaviour.
 
 ??? example "Duck typing in the wild."
 
