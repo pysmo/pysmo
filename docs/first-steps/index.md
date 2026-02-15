@@ -1,3 +1,7 @@
+---
+tags:
+  - First steps
+---
 # First steps
 
 Before starting your journey with pysmo, you should have a basic understanding
