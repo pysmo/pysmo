@@ -65,6 +65,11 @@ def _make_mask(iccs: ICCS, all: bool) -> list[bool]:
 
 
 def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
+    """Return the taper ramp width in seconds.
+
+    If ``ramp_width`` is a timedelta it is converted directly; if it is a
+    float it is treated as a fraction of the total time window duration.
+    """
     if isinstance(iccs.ramp_width, timedelta):
         return iccs.ramp_width.total_seconds()
     return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
@@ -72,7 +77,7 @@ def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
 
 def _plot_common_stack(
     iccs: ICCS,
-    padded: bool,
+    context: bool,
     all: bool,
     figsize: tuple[float, float] = (10, 5),
     constrained: bool = True,
@@ -81,9 +86,9 @@ def _plot_common_stack(
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         figsize: Figure size.
@@ -98,34 +103,19 @@ def _plot_common_stack(
         layout = "constrained"
     fig, ax = plt.subplots(figsize=figsize, layout=layout)
 
-    seismograms = iccs.padded_seismograms if padded else iccs.cc_seismograms
-    stack = iccs.padded_stack if padded else iccs.stack
+    seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
+    stack = iccs.context_stack if context else iccs.stack
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
-    if padded:
-        ax.axvspan(tmin, tmax, color="lightgreen", alpha=0.2, label="Time Window")
-        ax.axvline(tmin, color="lightgreen", linewidth=0.5, alpha=0.7)
-        ax.axvline(tmax, color="lightgreen", linewidth=0.5, alpha=0.7)
-        tmin -= iccs.plot_padding.total_seconds()
-        tmax += iccs.plot_padding.total_seconds()
+    ax.axvspan(tmin, tmax, color="lightgreen", alpha=0.2, label="Time Window")
+    ax.axvline(tmin, color="lightgreen", linewidth=0.5, alpha=0.7)
+    ax.axvline(tmax, color="lightgreen", linewidth=0.5, alpha=0.7)
+
+    if context:
+        tmin -= iccs.context_width.total_seconds()
+        tmax += iccs.context_width.total_seconds()
     elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
-        ax.axvspan(
-            tmin - taper_ramp_in_seconds,
-            tmin,
-            color="yellow",
-            alpha=0.2,
-            label="Tapered",
-        )
-        ax.axvspan(tmax, tmax + taper_ramp_in_seconds, color="yellow", alpha=0.2)
-        ax.axvline(
-            tmin - taper_ramp_in_seconds, color="yellow", linewidth=0.5, alpha=0.7
-        )
-        ax.axvline(tmin, color="yellow", linewidth=0.5, alpha=0.7)
-        ax.axvline(tmax, color="yellow", linewidth=0.5, alpha=0.7)
-        ax.axvline(
-            tmax + taper_ramp_in_seconds, color="yellow", linewidth=0.5, alpha=0.7
-        )
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
 
@@ -136,7 +126,7 @@ def _plot_common_stack(
     seismogram_data = [s.data for s, _ in zip(seismograms, mask) if _]
 
     norm = PowerNorm(vmin=np.min(ccnorms), vmax=np.max(ccnorms), gamma=2)
-    colors = ICCS_DEFAULTS.STACK_CMAP(norm(ccnorms))
+    colors = ICCS_DEFAULTS.stack_cmap(norm(ccnorms))
 
     for data, color in zip(seismogram_data, colors):
         ax.plot(time, data, linewidth=0.4, color=color)
@@ -153,7 +143,7 @@ def _plot_common_stack(
     plt.ylim(auto=None)
     ax.legend(loc="upper left")
     fig.colorbar(
-        ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.STACK_CMAP),
+        ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.stack_cmap),
         ax=ax,
         label="|Correlation coefficient|",
     )
@@ -162,7 +152,7 @@ def _plot_common_stack(
 
 def _plot_common_image(
     iccs: ICCS,
-    padded: bool,
+    context: bool,
     all: bool,
     figsize: tuple[float, float] = (10, 5),
     constrained: bool = True,
@@ -171,9 +161,9 @@ def _plot_common_image(
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         figsize: Figure size.
@@ -184,7 +174,7 @@ def _plot_common_image(
     """
 
     # Assemble matrix
-    seismograms = iccs.padded_seismograms if padded else iccs.cc_seismograms
+    seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
     mask = _make_mask(iccs, all)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
     seismogram_matrix = np.array([s.data for s, m in zip(seismograms, mask) if m])
@@ -194,9 +184,9 @@ def _plot_common_image(
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
-    if padded:
-        tmin -= iccs.plot_padding.total_seconds()
-        tmax += iccs.plot_padding.total_seconds()
+    if context:
+        tmin -= iccs.context_width.total_seconds()
+        tmax += iccs.context_width.total_seconds()
     elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
@@ -214,7 +204,7 @@ def _plot_common_image(
         extent=(tmin, tmax, 0, len(seismogram_matrix)),
         vmin=-1,
         vmax=1,
-        cmap=ICCS_DEFAULTS.IMG_CMAP,
+        cmap=ICCS_DEFAULTS.img_cmap,
         aspect="auto",
         interpolation="none",
     )
@@ -225,7 +215,7 @@ def _plot_common_image(
 @overload
 def plot_stack(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     return_fig: Literal[False] = False,
 ) -> None: ...
@@ -233,20 +223,20 @@ def plot_stack(
 
 @overload
 def plot_stack(
-    iccs: ICCS, padded: bool = True, all: bool = False, *, return_fig: Literal[True]
+    iccs: ICCS, context: bool = True, all: bool = False, *, return_fig: Literal[True]
 ) -> tuple[Figure, Axes]: ...
 
 
 def plot_stack(
-    iccs: ICCS, padded: bool = True, all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, all: bool = False, return_fig: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Plot the ICCS stack.
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
@@ -279,23 +269,23 @@ def plot_stack(
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_stack(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack_padded-dark.png", transparent=True)
+        ...     fig.savefig(savedir / "iccs_view_stack_context-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
         ...     fig, _ = plot_stack(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack_padded.png", transparent=True)
+        ...     fig.savefig(savedir / "iccs_view_stack_context.png", transparent=True)
         >>>
         ```
         -->
 
-        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack_padded.png#only-light){ loading=lazy }
-        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack_padded-dark.png#only-dark){ loading=lazy }
+        ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context.png#only-light){ loading=lazy }
+        ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
-        the `padded` argument to `False`:
+        the `context` argument to `False`:
 
         ```python
-        >>> plot_stack(iccs, padded=False)
+        >>> plot_stack(iccs, context=False)
         >>>
         ```
 
@@ -305,21 +295,21 @@ def plot_stack(
         >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_view_stack-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_view_stack.png", transparent=True)
         >>>
         ```
         -->
 
-        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack.png#only-light){ loading=lazy }
-        ![View the stack with padding](../../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
+        ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack.png#only-light){ loading=lazy }
+        ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
     """
 
-    fig, ax = _plot_common_stack(iccs, padded, all)
+    fig, ax = _plot_common_stack(iccs, context, all)
     if return_fig:
         return fig, ax
     plt.show()
@@ -329,7 +319,7 @@ def plot_stack(
 @overload
 def plot_seismograms(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     return_fig: Literal[False] = False,
 ) -> None: ...
@@ -337,20 +327,20 @@ def plot_seismograms(
 
 @overload
 def plot_seismograms(
-    iccs: ICCS, padded: bool = True, all: bool = False, *, return_fig: Literal[True]
+    iccs: ICCS, context: bool = True, all: bool = False, *, return_fig: Literal[True]
 ) -> tuple[Figure, Axes]: ...
 
 
 def plot_seismograms(
-    iccs: ICCS, padded: bool = True, all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, all: bool = False, return_fig: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Plot the selected ICCS seismograms as an image.
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
@@ -361,7 +351,7 @@ def plot_seismograms(
         Figure of the selected seismograms as an image if `return_fig` is `True`.
 
     Examples:
-        The default plotting mode is to pad the seismgorams beyond the time
+        The default plotting mode is to pad the seismograms beyond the time
         window used for the cross-correlations. This is particularly useful
         for narrow time windows.
 
@@ -381,23 +371,23 @@ def plot_seismograms(
         >>> if savedir:
         ...     plt.style.use("dark_background")
         ...     fig, _ = plot_seismograms(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms_padded-dark.png", transparent=True)
+        ...     fig.savefig(savedir / "iccs_plot_seismograms_context-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
         ...     fig, _ = plot_seismograms(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms_padded.png", transparent=True)
+        ...     fig.savefig(savedir / "iccs_plot_seismograms_context.png", transparent=True)
         >>>
         ```
         -->
 
-        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms_padded.png#only-light){ loading=lazy }
-        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms_padded-dark.png#only-dark){ loading=lazy }
+        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context.png#only-light){ loading=lazy }
+        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context-dark.png#only-dark){ loading=lazy }
 
         To view the seismograms exactly as they are used in the
-        cross-correlations, set the `padded` argument to `False`:
+        cross-correlations, set the `context` argument to `False`:
 
         ```python
-        >>> plot_seismograms(iccs, padded=False)
+        >>> plot_seismograms(iccs, context=False)
         >>>
         ```
 
@@ -407,21 +397,21 @@ def plot_seismograms(
         >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_seismograms(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_seismograms(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_plot_seismograms-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig, _ = plot_seismograms(iccs, padded=False, return_fig=True)
+        ...     fig, _ = plot_seismograms(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_plot_seismograms.png", transparent=True)
         >>>
         ```
         -->
 
-        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms.png#only-light){ loading=lazy }
-        ![View the seismograms with padding](../../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
+        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms.png#only-light){ loading=lazy }
+        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
 
-    fig, ax, _ = _plot_common_image(iccs, padded, all)
+    fig, ax, _ = _plot_common_image(iccs, context, all)
     if return_fig:
         return fig, ax
 
@@ -432,7 +422,7 @@ def plot_seismograms(
 @overload
 def update_pick(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: Literal[False] = False,
@@ -442,7 +432,7 @@ def update_pick(
 @overload
 def update_pick(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     *,
@@ -452,7 +442,7 @@ def update_pick(
 
 def update_pick(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = False,
@@ -464,9 +454,9 @@ def update_pick(
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_seismogram_image: Use the
@@ -505,18 +495,18 @@ def update_pick(
         ```
         -->
 
-        ![Picking a new T1](../../../../images/tools/iccs/iccs_update_pick.png#only-light){ loading=lazy }
-        ![Picking a new T1](../../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
+        ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick.png#only-light){ loading=lazy }
+        ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
 
     if use_seismogram_image:
         fig, ax, _ = _plot_common_image(
-            iccs, padded, all, figsize=(10, 6), constrained=False
+            iccs, context, all, figsize=(10, 6), constrained=False
         )
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
         fig, ax = _plot_common_stack(
-            iccs, padded, all, figsize=(10, 6), constrained=False
+            iccs, context, all, figsize=(10, 6), constrained=False
         )
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
@@ -576,7 +566,7 @@ def update_pick(
 @overload
 def update_timewindow(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: Literal[False] = False,
@@ -586,7 +576,7 @@ def update_timewindow(
 @overload
 def update_timewindow(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     *,
@@ -596,7 +586,7 @@ def update_timewindow(
 
 def update_timewindow(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = False,
@@ -609,9 +599,9 @@ def update_timewindow(
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_seismogram_image: Use the
@@ -655,18 +645,18 @@ def update_timewindow(
         ```
         -->
 
-        ![Picking a new time window](../../../../images/tools/iccs/iccs_update_timewindow.png#only-light){ loading=lazy }
-        ![Picking a new time window](../../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
+        ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow.png#only-light){ loading=lazy }
+        ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
 
     if use_seismogram_image:
         fig, ax, _ = _plot_common_image(
-            iccs, padded, all, figsize=(10, 6), constrained=False
+            iccs, context, all, figsize=(10, 6), constrained=False
         )
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
         fig, ax = _plot_common_stack(
-            iccs, padded, all, figsize=(10, 6), constrained=False
+            iccs, context, all, figsize=(10, 6), constrained=False
         )
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
@@ -725,7 +715,7 @@ def update_timewindow(
 @overload
 def update_min_ccnorm(
     iccs: ICCS,
-    padded: bool = True,
+    context: bool = True,
     all: bool = False,
     return_fig: Literal[False] = False,
 ) -> None: ...
@@ -733,12 +723,12 @@ def update_min_ccnorm(
 
 @overload
 def update_min_ccnorm(
-    iccs: ICCS, padded: bool = True, all: bool = False, *, return_fig: Literal[True]
+    iccs: ICCS, context: bool = True, all: bool = False, *, return_fig: Literal[True]
 ) -> tuple[Figure, Axes]: ...
 
 
 def update_min_ccnorm(
-    iccs: ICCS, padded: bool = True, all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, all: bool = False, return_fig: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Interactively pick a new [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm].
 
@@ -749,9 +739,9 @@ def update_min_ccnorm(
 
     Parameters:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        padded: If True, the plot is padded on both sides of the
-            time window by the amount defined in
-            [`ICCS.plot_padding`][pysmo.tools.iccs.ICCS.plot_padding].
+        context: Determines which seismograms are used:
+            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
+            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
@@ -787,8 +777,8 @@ def update_min_ccnorm(
         ```
         -->
 
-        ![Picking a new time window in stack](../../../../images/tools/iccs/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
-        ![Picking a new time window in stack](../../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
+        ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
+        ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
 
     # If the lowest index is chosen in the gui, set the new min_ccnorm to
@@ -800,7 +790,7 @@ def update_min_ccnorm(
     )
 
     fig, ax, selected_seismogram_matrix = _plot_common_image(
-        iccs, padded, all, figsize=(10, 6), constrained=False
+        iccs, context, all, figsize=(10, 6), constrained=False
     )
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
