@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import copy
 import pickle
+import time
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -412,18 +413,26 @@ def test_file_and_buffer(sacfile: Path) -> None:
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service() -> None:
-    mysac = SacIO.from_iris(
-        net="C1",
-        sta="VA01",
-        cha="BHZ",
-        loc="--",
-        start="2021-03-22T13:00:00",
-        duration=1 * 60 * 60,
-        scale="AUTO",
-        demean="true",
-        force_single_result=True,
-    )
-    assert mysac.npts == 144001  # type: ignore
+    retries = 3
+    for attempt in range(retries):
+        try:
+            mysac = SacIO.from_iris(
+                net="C1",
+                sta="VA01",
+                cha="BHZ",
+                loc="--",
+                start="2021-03-22T13:00:00",
+                duration=1 * 60 * 60,
+                scale="AUTO",
+                demean="true",
+                force_single_result=True,
+            )
+            assert mysac.npts == 144001  # type: ignore
+            break
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(20)
 
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
@@ -447,43 +456,59 @@ def test_iris_service_params_error() -> None:
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service_multi_result() -> None:
-    mysacs = SacIO.from_iris(
-        net="IU",
-        sta="MAKZ",
-        cha="HHZ",
-        loc="00",
-        start="2015-09-09T15:00:00",
-        duration=1 * 60 * 60,
-        scale="AUTO",
-        demean="true",
-        force_single_result=False,
-    )
-    assert isinstance(mysacs, dict)
-    assert len(mysacs) == 4
-    data = [
-        ("IU.MAKZ.00.HHZ.D.2015.252.150941.SAC", 36790),
-        ("IU.MAKZ.00.HHZ.D.2015.252.152559.SAC", 39196),
-        ("IU.MAKZ.00.HHZ.D.2015.252.154438.SAC", 40349),
-        ("IU.MAKZ.00.HHZ.D.2015.252.155301.SAC", 37711),
-    ]
+    retries = 3
+    for attempt in range(retries):
+        try:
+            mysacs = SacIO.from_iris(
+                net="IU",
+                sta="MAKZ",
+                cha="HHZ",
+                loc="00",
+                start="2015-09-09T15:00:00",
+                duration=1 * 60 * 60,
+                scale="AUTO",
+                demean="true",
+                force_single_result=False,
+            )
+            assert isinstance(mysacs, dict)
+            assert len(mysacs) == 4
+            data = [
+                ("IU.MAKZ.00.HHZ.D.2015.252.150941.SAC", 36790),
+                ("IU.MAKZ.00.HHZ.D.2015.252.152559.SAC", 39196),
+                ("IU.MAKZ.00.HHZ.D.2015.252.154438.SAC", 40349),
+                ("IU.MAKZ.00.HHZ.D.2015.252.155301.SAC", 37711),
+            ]
 
-    for name, npts in data:
-        assert isinstance(mysacs[name], SacIO)
-        assert mysacs[name].npts == npts
+            for name, npts in data:
+                assert isinstance(mysacs[name], SacIO)
+                assert mysacs[name].npts == npts
+            break
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(20)
 
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service_multi_result_forced() -> None:
-    mysacs = SacIO.from_iris(
-        net="IU",
-        sta="MAKZ",
-        cha="HHZ",
-        loc="00",
-        start="2015-09-09T15:00:00",
-        duration=1 * 60 * 60,
-        scale="AUTO",
-        demean="true",
-        force_single_result=True,
-    )
-    assert isinstance(mysacs, SacIO)
-    assert mysacs.npts == 36790
+    retries = 3
+    for attempt in range(retries):
+        try:
+            mysacs = SacIO.from_iris(
+                net="IU",
+                sta="MAKZ",
+                cha="HHZ",
+                loc="00",
+                start="2015-09-09T15:00:00",
+                duration=1 * 60 * 60,
+                scale="AUTO",
+                demean="true",
+                force_single_result=True,
+            )
+            assert isinstance(mysacs, SacIO)
+            assert mysacs.npts == 36790
+            break
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(20)
