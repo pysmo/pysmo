@@ -1,4 +1,4 @@
-from pysmo.tools.iccs._iccs import CONVERGENCE_METHOD
+from pysmo.tools.iccs._types import CONVERGENCE_METHOD
 from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
 from datetime import timedelta
 import pytest
@@ -10,8 +10,8 @@ class TestICCSBase:
     AUTOFLIP: bool = False
     AUTOSELECT: bool = False
     PARALLEL: bool = False
-    METHOD: CONVERGENCE_METHOD = "corrcoef"
-    PADDED_FIG: bool = False
+    METHOD: CONVERGENCE_METHOD = CONVERGENCE_METHOD.corrcoef
+    CONTEXT_FIG: bool = False
 
     @pytest.fixture(autouse=True, scope="function")
     def _iccs(self, iccs_seismograms: list[ICCSSeismogram]) -> None:
@@ -20,7 +20,7 @@ class TestICCSBase:
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_iccs_stack_initial(self) -> Figure:
-        fig, _ = plot_stack(self.iccs, padded=self.PADDED_FIG, return_fig=True)
+        fig, _ = plot_stack(self.iccs, context=self.CONTEXT_FIG, return_fig=True)
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
@@ -31,7 +31,7 @@ class TestICCSBase:
             parallel=self.PARALLEL,
             convergence_method=self.METHOD,
         )
-        fig, _ = plot_stack(self.iccs, padded=False, return_fig=True)
+        fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
 
@@ -48,11 +48,11 @@ class TestICCSParallel(TestICCSBase):
 
 
 class TestICCSMethod(TestICCSBase):
-    METHOD: CONVERGENCE_METHOD = "change"
+    METHOD: CONVERGENCE_METHOD = CONVERGENCE_METHOD.change
 
 
-class TestICCSPaddedFig(TestICCSBase):
-    PADDED_FIG: bool = True
+class TestICCSContextFig(TestICCSBase):
+    CONTEXT_FIG: bool = True
 
 
 class TestICCSParameters(TestICCSBase):

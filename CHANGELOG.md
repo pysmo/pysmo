@@ -23,6 +23,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add key to sorted call
 - Index was out of bounds with --all
 - Allow selecing index 0
+- Correct type in sacstation.elevation setter
 
 ### 📚 Documentation
 
@@ -45,6 +46,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Simpler tutorial
 - Split usage into smaller sections
 - Update development section
+- Add FAQs
 
 ### 🔍 Other Changes
 
@@ -477,6 +479,15 @@ docs: simpler tutorial
 - Merge pull request #231 from pysmo/docs-split-usage
 
 docs: split usage into smaller sections
+- Merge pull request #232 from pysmo/docs-update-dev
+
+docs: update development section
+- Merge pull request #233 from pysmo/docs-faqs
+
+docs: add FAQs
+- Merge pull request #234 from pysmo/fix-sacstation-setter
+
+fix: correct type in sacstation.elevation setter
 
 ### 🚀 New Features
 
