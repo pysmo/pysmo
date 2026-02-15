@@ -251,7 +251,7 @@ class SacStation(_SacNested):
         return self._parent.stel
 
     @elevation.setter
-    def elevation(self, value: float) -> None:
+    def elevation(self, value: float | None) -> None:
         setattr(self._parent, "stel", value)
 
 
