@@ -1,4 +1,4 @@
-"""Pysmo library module."""
+"""Internal utilities, validators, defaults, and I/O used by pysmo."""
 
 from .._utils import export_module_names
 
