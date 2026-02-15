@@ -1,4 +1,11 @@
-"""Custom types for pysmo."""
+"""Constrained type aliases used for runtime validation in pysmo.
+
+These are [`Annotated`][typing.Annotated] type aliases with
+[`beartype`][] validators that enforce value constraints (e.g.
+positivity, range). They are not the same as pysmo types (protocol
+classes); instead, they are used as type annotations within pysmo
+to ensure attribute values meet expected constraints.
+"""
 
 from typing import Annotated
 from datetime import timedelta

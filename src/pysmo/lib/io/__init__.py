@@ -1,9 +1,9 @@
-"""I/O classes.
+"""Low-level I/O classes for reading and writing seismological file formats.
 
-This module contains classes that are not compatible with
-pysmo types, but serve as bases for classes that are. This
-means all functionality in this modules is available elsewhere,
-and these classes should *not* be used directly by users.
+Classes in this module handle file format details but do not implement
+[`pysmo`][] protocol types directly. They serve as the foundation for
+the higher-level classes in [`pysmo.classes`][] and should generally not
+be used directly.
 """
 
 from ._sacio import SacIO

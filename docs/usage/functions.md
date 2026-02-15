@@ -38,7 +38,7 @@ compatible object as input, and returns a [`timedelta`][datetime.timedelta]:
     example above, the `seismogram` we use as input shares the nested objects
     in the `data` attribute with the `seismogram` inside the function. Changing
     `seismogram.data` inside the function will therefore also change it outside
-    too. This behavior is often desired, but you must be aware of when this
+    too. This behaviour is often desired, but you must be aware of when this
     occurs and when not.
 
 ## Pysmo types as output
