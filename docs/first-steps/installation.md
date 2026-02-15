@@ -1,5 +1,7 @@
 ---
 icon: lucide/package-open
+tags:
+  - First steps
 ---
 
 # Installing pysmo
