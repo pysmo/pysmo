@@ -412,7 +412,9 @@ class SacIO(SacIOBase):
         if end is not None and isinstance(end, datetime):
             kwargs["end"] = end.isoformat()
 
-        response = httpx.get(
+        transport = httpx.HTTPTransport(retries=3)
+        client = httpx.Client(transport=transport)
+        response = client.get(
             IRIS_BASE_URL,
             params=kwargs,
             follow_redirects=False,
