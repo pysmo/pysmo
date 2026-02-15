@@ -18,7 +18,7 @@ def delay(
 
     This function is a wrapper around the
     [`scipy.signal.correlate`][scipy.signal.correlate] function. The default
-    behavior is to call the correlate function with `#!py mode="full"` using
+    behaviour is to call the correlate function with `#!py mode="full"` using
     the full length data of the input seismograms. This is the most robust
     option, but also the slowest.
 

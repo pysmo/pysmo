@@ -43,7 +43,9 @@ nav = [
   ] },
   { "Development" = [
     "development/index.md",
-    "development/developing.md",
+    "development/style.md",
+    "development/testing.md",
+    "development/environment.md",
     "development/contributing.md",
     "development/contributors.md",
   ] },

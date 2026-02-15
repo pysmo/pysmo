@@ -1,9 +1,10 @@
 # flake8: noqa: E402
-"""Classes that work with pysmo types.
+"""Classes compatible with pysmo types.
 
 --8<-- [start:in-the-box]
-The [`pysmo.classes`][] module provides ready to use classes for use with pysmo
-types.
+The [`pysmo.classes`][] module provides classes that implement one or more
+[`pysmo`][] protocol types. These classes can be used directly with any
+pysmo function or tool that operates on pysmo types.
 --8<-- [end:in-the-box]
 
 """

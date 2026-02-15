@@ -1,10 +1,10 @@
-"""Extra tools or topics that use pysmo types.
+"""Topic-specific tools that operate on pysmo types.
 
 --8<-- [start:in-the-box]
-[`pysmo.tools`][] contains functions belonging to a particular topic, or
-provide more complex workflows (typically building on top of the basic
-functions or other tools). In order to use a particular tool, it must be
-imported via `pysmo.tools.<tool-name>`.
+[`pysmo.tools`][] contains higher-level, topic-specific modules that build
+on [`pysmo.functions`][] and [`pysmo`][] types. Each tool groups related
+functionality under its own submodule, imported via
+`pysmo.tools.<tool-name>`.
 --8<-- [end:in-the-box]
 
 """

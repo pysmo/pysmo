@@ -1,18 +1,16 @@
 # flake8: noqa: E402, F403
 """
-Simple operations using pysmo types.
+Building-block functions for pysmo types.
 
 --8<-- [start:in-the-box]
-The [`pysmo.functions`][] module provides functions that perform common
-operations using pysmo types (mostly [`Seismogram`][pysmo.Seismogram]). They
-are meant to be building blocks that can be used to construct more complex
-processing algorithms.
+The [`pysmo.functions`][] module provides low-level functions that perform
+common operations on [`pysmo`][] types. They are intended as building blocks
+for constructing more complex processing workflows.
 --8<-- [end:in-the-box]
 
-Many functions have a `clone` argument that controls whether the function
-should operate on the input directly, or first create a clone of it (using
-[`deepcopy`][copy.deepcopy]) and return the clone after using it for the
-the function. For example:
+Many functions accept a `clone` argument that controls whether the function
+operates on the input directly or first creates a clone (via
+[`deepcopy`][copy.deepcopy]) and returns the modified copy. For example:
 
 ```python
 >>> from pysmo.functions import resample
