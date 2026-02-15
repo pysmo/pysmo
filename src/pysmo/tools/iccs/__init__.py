@@ -10,7 +10,7 @@ The ICCS[^1] method is an iterative algorithm to rapidly determine the best
 fitting delay times between an arbitrary number of seismograms with minimal
 involvement by a human operator. Instead of looking at individual seismograms,
 parameters are set that control the algorithm, which then iteratively aligns
-seismograms, or discards them from futher consideration if they are of poor
+seismograms, or discards them from further consideration if they are of poor
 quality.
 
 The basic idea of ICCS, is that stacking all seismograms (aligned with respect
@@ -19,13 +19,13 @@ targeted phase arrival becoming visible in the stack. As the stack is generated
 from all input seismograms, the phase arrival in the stack may be considered a
 representation of the "best" mean arrival time. Each individual seismogram can
 then be cross-correlated with the stack to determine a time shift that best
-alligns them with the stack and thus each other.
+aligns them with the stack and thus each other.
 
-The results of ICCS are are similar to those of the the MCCC[^2] method, while
+The results of ICCS are similar to those of the MCCC[^2] method, while
 also requiring fewer cross-correlations to be computed (each individual
 seismogram is only cross-correlated with the stack, whereas in MCCC all
 seismograms are cross-correlated with each other). ICCS is therefore
-particularly useful to perepare data for a successful MCCC run (e.g. if the
+particularly useful to prepare data for a successful MCCC run (e.g. if the
 initial picks are calculated rather than hand picked).
 
 ## Data requirements
@@ -63,7 +63,7 @@ Two things worth mentioning:
 - Because [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] is a subclass of
   [`Seismogram`][pysmo.Seismogram], it can be used anywhere a basic
   [`Seismogram`][pysmo.Seismogram] is expected.
-- All actions performed only effect the attributes listed above. The orignal
+- All actions performed only affect the attributes listed above. The original
   [`data`][pysmo.tools.iccs.MiniICCSSeismogram.data],
   [`begin_time`][pysmo.tools.iccs.MiniICCSSeismogram.begin_time], etc. are
   never modified.
@@ -72,7 +72,7 @@ Two things worth mentioning:
 
 The diagram below shows execution flow, and how the above parameters are used
 when the ICCS algorithm is executed (see [here][pysmo.tools.iccs.ICCS.__call__]
-for parameters and default values)':
+for parameters and default values):
 
 ```mermaid
 flowchart TD
@@ -99,8 +99,8 @@ H -->|Yes| End
 I -->|Yes| End
 ```
 
-Convergence is reached when the stack iself is not changing significantly
-anymore between iteration. Typically this happens within a few iterations.
+Convergence is reached when the stack itself is not changing significantly
+anymore between iterations. Typically this happens within a few iterations.
 
 ## Operator involvement
 

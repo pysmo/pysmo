@@ -6,9 +6,15 @@ from typing import Protocol, runtime_checkable
 from beartype import beartype
 from attrs import define, field, validators
 from datetime import datetime
+from enum import StrEnum, auto
 import numpy as np
 
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
+
+
+class CONVERGENCE_METHOD(StrEnum):
+    corrcoef = auto()
+    change = auto()
 
 
 @runtime_checkable
@@ -38,14 +44,14 @@ class MiniICCSSeismogram(Seismogram):
     """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
 
     The [`MiniICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] class provides
-    a minimal implementation of class that is compatible with the
-    [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram].
+    a minimal implementation of a class that is compatible with the
+    [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] protocol.
 
     Examples:
         Because [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] inherits
         from [`Seismogram`][pysmo.Seismogram], we can easily create
         [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] instances
-        from exisiting seismograms using the
+        from existing seismograms using the
         [`clone_to_mini()`][pysmo.functions.clone_to_mini] function, whereby
         the `update` parameter is used to provide the extra information needed:
 

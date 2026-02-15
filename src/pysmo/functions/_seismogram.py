@@ -645,8 +645,8 @@ def window[T: Seismogram](
         -->
 
         <figure markdown="span">
-        ![Functions window](../../../images/functions/functions_window.png#only-light){ loading=lazy }
-        ![Functions window](../../../images/functions/functions_window-dark.png#only-dark){ loading=lazy }
+        ![Functions window](../../images/functions/functions_window.png#only-light){ loading=lazy }
+        ![Functions window](../../images/functions/functions_window-dark.png#only-dark){ loading=lazy }
         </figure>
     """
 
