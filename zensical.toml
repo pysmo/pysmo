@@ -14,6 +14,7 @@ nav = [
     "first-steps/index.md",
     "first-steps/installation.md",
     "first-steps/tutorial.md",
+   {"FAQs" = "first-steps/faqs.md"},
   ] },
   { "Usage" = [
     "usage/index.md",

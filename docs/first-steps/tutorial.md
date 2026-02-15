@@ -1,5 +1,7 @@
 ---
 icon: lucide/graduation-cap
+tags:
+  - First steps
 ---
 
 # Tutorial
