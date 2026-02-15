@@ -1,7 +1,7 @@
 """
 Generate realistic synthetic noise.
 
-This module provides support for calculating random synthetic noise that
+
 matches the naturally observed amplitude spectrum.
 
 Examples:
@@ -13,8 +13,8 @@ Examples:
     noise models. These are Peterson's NHNM (red), NLNM (blue), and an
     interpolated model that lies between the two (green).
 
-    ![peterson example](../../../../images/tools/noise/peterson.png#only-light){ loading=lazy }
-    ![peterson example](../../../../images/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
+    ![peterson example](../../../images/tools/noise/peterson.png#only-light){ loading=lazy }
+    ![peterson example](../../../images/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
 
     ??? quote "Example source code"
         ```python title="peterson.py"
