@@ -7,6 +7,7 @@ from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
 from beartype.roar import BeartypeCallHintParamViolation
 from tests.test_helpers import assert_seismogram_modification
+from syrupy.assertion import SnapshotAssertion
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pytest
@@ -70,6 +71,20 @@ def test_normalize(seismogram: Seismogram) -> None:
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_normalize_snapshot(
+    seismogram: Seismogram, snapshot: SnapshotAssertion
+) -> None:
+    """Test normalize output against snapshot for regression testing.
+
+    Uses syrupy snapshots to ensure the normalize function output remains
+    consistent across code changes.
+    """
+    from pysmo.functions import normalize
+
+    assert_seismogram_modification(seismogram, normalize, expected_data=snapshot)
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_pad(seismogram: Seismogram) -> None:
     from pysmo.functions import pad
 
@@ -111,6 +126,23 @@ def test_pad(seismogram: Seismogram) -> None:
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_pad_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    """Test pad output against snapshot for regression testing.
+
+    Uses syrupy snapshots to ensure the pad function output remains
+    consistent across code changes. Tests padding with specific begin/end times.
+    """
+    from pysmo.functions import pad
+
+    new_begin_time = seismogram.begin_time - seismogram.delta * 3.5
+    new_end_time = seismogram.end_time + seismogram.delta * 3.5
+
+    assert_seismogram_modification(
+        seismogram, pad, new_begin_time, new_end_time, expected_data=snapshot
+    )
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_detrend(seismogram: Seismogram) -> None:
     """Detrend Seismogram object and verify mean is 0."""
     from pysmo.functions import detrend
@@ -121,6 +153,18 @@ def test_detrend(seismogram: Seismogram) -> None:
     assert_seismogram_modification(
         seismogram, detrend, custom_assertions=check_detrended
     )
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_detrend_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    """Test detrend output against snapshot for regression testing.
+
+    Uses syrupy snapshots to ensure the detrend function output remains
+    consistent across code changes.
+    """
+    from pysmo.functions import detrend
+
+    assert_seismogram_modification(seismogram, detrend, expected_data=snapshot)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -149,6 +193,22 @@ def test_resample(seismogram: Seismogram) -> None:
 
     assert_seismogram_modification(
         seismogram, resample, new_delta, custom_assertions=check_resampled
+    )
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_resample_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    """Test resample output against snapshot for regression testing.
+
+    Uses syrupy snapshots to ensure the resample function output remains
+    consistent across code changes. Tests resampling with doubled delta.
+    """
+    from pysmo.functions import resample
+
+    new_delta = seismogram.delta * 2
+
+    assert_seismogram_modification(
+        seismogram, resample, new_delta, expected_data=snapshot
     )
 
 
@@ -215,6 +275,27 @@ def test_crop(seismogram: Seismogram) -> None:
         new_end_time = seis3.end_time - seis3.delta
         cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
         assert all(cropped_seis.data == seis3.data[1:-1])
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_crop_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    """Test crop output against snapshot for regression testing.
+
+    Uses syrupy snapshots to ensure the crop function output remains
+    consistent across code changes. Tests cropping to middle half of data.
+    """
+    from pysmo.functions import crop
+
+    new_begin_time = (
+        seismogram.begin_time + (seismogram.end_time - seismogram.begin_time) / 4
+    )
+    new_end_time = (
+        seismogram.end_time - (seismogram.end_time - seismogram.begin_time) / 4
+    )
+
+    assert_seismogram_modification(
+        seismogram, crop, new_begin_time, new_end_time, expected_data=snapshot
+    )
 
 
 class TestTaper:
