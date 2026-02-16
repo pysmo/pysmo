@@ -4,6 +4,14 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ## [Unreleased]
 
+### 🔍 Other Changes
+
+- Merge tag 'v1.0.0-dev1'
+
+Release version 1.0.0-dev1
+
+## [1.0.0-dev1] - 2026-02-16
+
 ### ⚙️ DevOps & Infrastructure
 
 - Combine coverage results before uploading and add osx
@@ -505,6 +513,12 @@ Add retries to test_iris_service
 - Merge pull request #239 from pysmo/hatch-vcs
 
 ci: use dynamic versioning
+- Merge pull request #240 from pysmo/iris-server-error-500
+
+feat: retry from_iris on error status 500
+- Merge pull request #239 from pysmo/hatch-vcs
+
+ci: use dynamic versioning
 
 ### 🚀 New Features
 
@@ -539,6 +553,7 @@ ci: use dynamic versioning
 - Add channel and location to station type
 - Add windows function and add py3.14
 - **(iccs)** Taper on outside of window
+- Retry from_iris on error status 500
 
 ## [1.0.0-dev0] - 2023-08-18
 
