@@ -224,8 +224,8 @@ def assert_seismogram_modification(
     if expected_data is not None:
         # Check if expected_data is a syrupy snapshot
         if SnapshotAssertion is not None and isinstance(expected_data, SnapshotAssertion):
-            # Use syrupy's snapshot comparison
-            assert cloned_modified.data == expected_data
+            # Use syrupy's assert_match method for snapshot comparison
+            expected_data.assert_match(cloned_modified.data)
         elif isinstance(expected_data, np.ndarray):
             # Use numpy's assert_allclose for array comparison
             np.testing.assert_allclose(
