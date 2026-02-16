@@ -8,7 +8,7 @@ tags:
 ## Code
 
 We recommend adhering to [PEP 8](https://peps.python.org/pep-0008/) and using
-linters like [flake8](https://flake8.pycqa.org/en/latest/) to ensure clean,
+linters like [ruff](https://docs.astral.sh/ruff/linter/) to ensure clean,
 readable code. Beyond these conventions, we highly encourage writing
 [self-documenting code](https://en.wikipedia.org/wiki/Self-documenting_code)
 with meaningful names that make the code's intent clear.
