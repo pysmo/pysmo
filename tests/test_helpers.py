@@ -22,18 +22,22 @@ Basic usage with custom assertions:
             custom_assertions=check_normalized
         )
 
-With snapshot testing (recommended for comprehensive data validation):
+With expected data validation (recommended for numerical accuracy):
 
     from pysmo.functions import gauss
 
-    def test_gauss(seismogram: Seismogram, snapshot) -> None:
-        # Snapshot captures entire data array, not just single indices
+    def test_gauss(seismogram: Seismogram) -> None:
+        # Load or compute expected output
+        expected_output = np.load('expected_gauss_output.npy')
+
+        # Validate with tolerance for floating-point precision
         modified = assert_seismogram_modification(
             seismogram,
             gauss,
             Tn=50,
             alpha=50,
-            snapshot=snapshot
+            expected_data=expected_output,
+            rtol=1e-7  # relative tolerance
         )
 
 With additional arguments:
@@ -75,7 +79,7 @@ The helper automatically:
 - Checks data arrays match using numpy.testing.assert_array_equal
 - Validates time attributes (begin_time, delta, length)
 - Runs your custom assertions on the modified seismogram
-- Optionally captures complete data snapshots for comprehensive validation
+- Optionally validates against expected data with configurable tolerance
 """
 
 from pysmo import Seismogram
@@ -89,7 +93,9 @@ def assert_seismogram_modification(
     modification_func: Callable[..., Seismogram | None],
     *args: Any,
     custom_assertions: Callable[[Seismogram], None] | None = None,
-    snapshot: Any = None,
+    expected_data: np.ndarray | None = None,
+    rtol: float = 1e-7,
+    atol: float = 0.0,
     **kwargs: Any,
 ) -> Seismogram:
     """Test that a seismogram modification function works correctly with both clone modes.
@@ -176,15 +182,14 @@ def assert_seismogram_modification(
     if custom_assertions is not None:
         custom_assertions(cloned_modified)
 
-    # Snapshot testing if provided
-    if snapshot is not None:
-        # Create a serializable representation of the seismogram data
-        snapshot_data = {
-            "data": cloned_modified.data.tolist(),
-            "begin_time": cloned_modified.begin_time.isoformat(),
-            "delta": cloned_modified.delta.total_seconds(),
-            "length": len(cloned_modified),
-        }
-        assert snapshot_data == snapshot
+    # Validate against expected data if provided
+    if expected_data is not None:
+        np.testing.assert_allclose(
+            cloned_modified.data,
+            expected_data,
+            rtol=rtol,
+            atol=atol,
+            err_msg="Modified data does not match expected data within tolerance",
+        )
 
     return cloned_modified
