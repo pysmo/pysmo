@@ -6,6 +6,7 @@ from copy import deepcopy
 from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
 from beartype.roar import BeartypeCallHintParamViolation
+from tests.test_helpers import assert_seismogram_modification
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pytest
@@ -50,12 +51,12 @@ def test_normalize(seismogram: Seismogram) -> None:
     """Normalize data with its absolute maximum value"""
     from pysmo.functions import normalize
 
-    normalized_seis = normalize(seismogram, clone=True)
-    assert np.max(normalized_seis.data) <= 1
+    def check_normalized(seis: Seismogram) -> None:
+        assert np.max(seis.data) <= 1
 
-    seis2 = deepcopy(seismogram)
-    normalize(seis2)
-    assert all(normalized_seis.data == seis2.data)
+    normalized_seis = assert_seismogram_modification(
+        seismogram, normalize, custom_assertions=check_normalized
+    )
 
     normalized_seis.data[:10] += 3
     normalized_seis.data[-10:] += 3
@@ -72,21 +73,35 @@ def test_normalize(seismogram: Seismogram) -> None:
 def test_pad(seismogram: Seismogram) -> None:
     from pysmo.functions import pad
 
-    padded_seis = pad(
+    def check_no_pad(seis: Seismogram) -> None:
+        assert all(seis.data == seismogram.data)
+
+    assert_seismogram_modification(
         seismogram,
+        pad,
         seismogram.begin_time,
         seismogram.end_time,
-        clone=True,
+        custom_assertions=check_no_pad,
     )
-    assert all(padded_seis.data == seismogram.data)
+
     new_begin_time = seismogram.begin_time - seismogram.delta * 3.5
     new_end_time = seismogram.end_time + seismogram.delta * 3.5
-    pad_seis = pad(seismogram, new_begin_time, new_end_time, clone=True)
-    assert pad_seis.begin_time == seismogram.begin_time - seismogram.delta * 4
-    assert pad_seis.end_time == seismogram.end_time + seismogram.delta * 4
-    assert pad_seis.data[:4].sum() == 0
-    assert pad_seis.data[-4:].sum() == 0
-    np.testing.assert_array_equal(pad_seis.data[4:-4], seismogram.data)
+
+    def check_padded(seis: Seismogram) -> None:
+        assert seis.begin_time == seismogram.begin_time - seismogram.delta * 4
+        assert seis.end_time == seismogram.end_time + seismogram.delta * 4
+        assert seis.data[:4].sum() == 0
+        assert seis.data[-4:].sum() == 0
+        np.testing.assert_array_equal(seis.data[4:-4], seismogram.data)
+
+    assert_seismogram_modification(
+        seismogram,
+        pad,
+        new_begin_time,
+        new_end_time,
+        custom_assertions=check_padded,
+    )
+
     with pytest.raises(ValueError):
         pad(
             seismogram,
@@ -100,12 +115,12 @@ def test_detrend(seismogram: Seismogram) -> None:
     """Detrend Seismogram object and verify mean is 0."""
     from pysmo.functions import detrend
 
-    detrended_seis = detrend(seismogram, clone=True)
-    assert pytest.approx(np.mean(detrended_seis.data), abs=1e-6) == 0
+    def check_detrended(seis: Seismogram) -> None:
+        assert pytest.approx(np.mean(seis.data), abs=1e-6) == 0
 
-    seis2 = deepcopy(seismogram)
-    detrend(seis2)
-    assert all(detrended_seis.data == seis2.data)
+    assert_seismogram_modification(
+        seismogram, detrend, custom_assertions=check_detrended
+    )
 
 
 @parametrize_with_cases("seismogram")
@@ -113,17 +128,22 @@ def test_resample(seismogram: Seismogram) -> None:
     """Resample Seismogram object and verify resampled data."""
     from pysmo.functions import resample
 
-    resampled_seis = resample(seismogram, seismogram.delta, clone=True)
-    np.testing.assert_array_equal(resampled_seis.data, seismogram.data)
+    def check_unchanged(seis: Seismogram) -> None:
+        np.testing.assert_array_equal(seis.data, seismogram.data)
+
+    assert_seismogram_modification(
+        seismogram, resample, seismogram.delta, custom_assertions=check_unchanged
+    )
 
     new_delta = seismogram.delta * 2
-    resampled_seis = resample(seismogram, new_delta, clone=True)
-    assert pytest.approx(resampled_seis.delta) == seismogram.delta * 2
-    assert pytest.approx(resampled_seis.data[6]) == 2202.0287804516634
 
-    seis2 = deepcopy(seismogram)
-    resample(seis2, new_delta)
-    assert all(resampled_seis.data == seis2.data)
+    def check_resampled(seis: Seismogram) -> None:
+        assert pytest.approx(seis.delta) == seismogram.delta * 2
+        assert pytest.approx(seis.data[6]) == 2202.0287804516634
+
+    assert_seismogram_modification(
+        seismogram, resample, new_delta, custom_assertions=check_resampled
+    )
 
 
 @parametrize_with_cases("seismogram")
@@ -131,15 +151,18 @@ def test_crop(seismogram: Seismogram) -> None:
     """Crop Seismogram object and verify cropped data."""
     from pysmo.functions import crop
 
-    cropped_seis = crop(
+    def check_no_crop(seis: Seismogram) -> None:
+        assert len(seis) == len(seismogram)
+        assert seis.begin_time == seismogram.begin_time
+        assert seis.end_time == seismogram.end_time
+
+    assert_seismogram_modification(
         seismogram,
+        crop,
         begin_time=seismogram.begin_time,
         end_time=seismogram.end_time,
-        clone=True,
+        custom_assertions=check_no_crop,
     )
-    assert len(cropped_seis) == len(seismogram)
-    assert cropped_seis.begin_time == seismogram.begin_time
-    assert cropped_seis.end_time == seismogram.end_time
 
     new_begin_time = (
         seismogram.begin_time + (seismogram.end_time - seismogram.begin_time) / 4
@@ -161,22 +184,31 @@ def test_crop(seismogram: Seismogram) -> None:
         crop(seismogram, new_begin_time, bad_new_end_time)
     with pytest.raises(ValueError):
         crop(seismogram, new_end_time, new_begin_time)
-    cropped_seis = crop(seismogram, new_begin_time, new_end_time, clone=True)
-    assert cropped_seis.begin_time.timestamp() == pytest.approx(
-        new_begin_time.timestamp(), abs=seismogram.delta.total_seconds()
-    )
-    assert cropped_seis.end_time.timestamp() == pytest.approx(
-        new_end_time.timestamp(), abs=seismogram.delta.total_seconds()
-    )
-    assert all(seismogram.data[new_start_index:new_end_index] == cropped_seis.data)
 
-    seis2 = deepcopy(seismogram)
-    crop(seis2, new_begin_time, new_end_time)
-    assert all(cropped_seis.data == seis2.data)
+    def check_cropped(seis: Seismogram) -> None:
+        assert seis.begin_time.timestamp() == pytest.approx(
+            new_begin_time.timestamp(), abs=seismogram.delta.total_seconds()
+        )
+        assert seis.end_time.timestamp() == pytest.approx(
+            new_end_time.timestamp(), abs=seismogram.delta.total_seconds()
+        )
+        assert all(seismogram.data[new_start_index:new_end_index] == seis.data)
+
+    assert_seismogram_modification(
+        seismogram,
+        crop,
+        new_begin_time,
+        new_end_time,
+        custom_assertions=check_cropped,
+    )
 
     if len(seismogram) > 100:
         seis3 = deepcopy(seismogram)
         seis3.data = seis3.data[:100]
+        new_begin_time = seis3.begin_time + seis3.delta
+        new_end_time = seis3.end_time - seis3.delta
+        cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
+        assert all(cropped_seis.data == seis3.data[1:-1])
         new_begin_time = seis3.begin_time + seis3.delta
         new_end_time = seis3.end_time - seis3.delta
         cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)

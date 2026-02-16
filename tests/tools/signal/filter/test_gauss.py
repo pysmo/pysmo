@@ -1,4 +1,5 @@
 from tests.conftest import TESTDATA
+from tests.test_helpers import assert_seismogram_modification
 from pysmo.tools.signal import gauss, envelope
 from pysmo.tools.plotutils import plotseis
 from pysmo import Seismogram, MiniSeismogram
@@ -29,8 +30,13 @@ def test_envelope(seismogram: Seismogram) -> None:
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
-    env_seis = envelope(seismogram, Tn, alpha, clone=True)
-    assert pytest.approx(env_seis.data[100]) == 6.109130497913114
+
+    def check_envelope(seis: Seismogram) -> None:
+        assert pytest.approx(seis.data[100]) == 6.109130497913114
+
+    assert_seismogram_modification(
+        seismogram, envelope, Tn, alpha, custom_assertions=check_envelope
+    )
 
 
 @pytest_cases.parametrize(
@@ -43,8 +49,13 @@ def test_gauss(seismogram: Seismogram) -> None:
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
-    gaus_seis = gauss(seismogram, Tn, alpha, clone=True)
-    assert pytest.approx(gaus_seis.data[100]) == -5.639860165811819
+
+    def check_gauss(seis: Seismogram) -> None:
+        assert pytest.approx(seis.data[100]) == -5.639860165811819
+
+    assert_seismogram_modification(
+        seismogram, gauss, Tn, alpha, custom_assertions=check_gauss
+    )
 
 
 @pytest.mark.depends(on=["test_envelope", "test_gauss"])
