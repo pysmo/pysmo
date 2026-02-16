@@ -227,7 +227,9 @@ def assert_seismogram_modification(
             expected_data, SnapshotAssertion
         ):
             # Use syrupy's assert_match method for snapshot comparison
-            expected_data.assert_match(cloned_modified.data)
+            # Round data to 6 decimals to reduce snapshot size and improve precision control
+            rounded_data = np.around(cloned_modified.data, decimals=6)
+            expected_data.assert_match(rounded_data)
         elif isinstance(expected_data, np.ndarray):
             # Use numpy's assert_allclose for array comparison
             np.testing.assert_allclose(
