@@ -3,6 +3,64 @@
 This module provides reusable test utilities for verifying functions that modify
 Seismogram objects. The helpers are designed to work with any Seismogram Protocol
 implementation (SacSeismogram, MiniSeismogram, or future classes).
+
+Usage Examples
+--------------
+
+Basic usage with custom assertions:
+
+    from pysmo.functions import normalize
+    import numpy as np
+
+    def test_normalize(seismogram: Seismogram) -> None:
+        def check_normalized(seis: Seismogram) -> None:
+            assert np.max(np.abs(seis.data)) <= 1.0
+
+        modified = assert_seismogram_modification(
+            seismogram,
+            normalize,
+            custom_assertions=check_normalized
+        )
+
+With additional arguments:
+
+    from pysmo.functions import crop
+
+    def test_crop(seismogram: Seismogram) -> None:
+        new_begin = seismogram.begin_time + timedelta(seconds=10)
+        new_end = seismogram.end_time - timedelta(seconds=10)
+
+        def check_times(seis: Seismogram) -> None:
+            assert seis.begin_time >= new_begin
+            assert seis.end_time <= new_end
+
+        assert_seismogram_modification(
+            seismogram,
+            crop,
+            new_begin,
+            new_end,
+            custom_assertions=check_times
+        )
+
+With keyword arguments:
+
+    from pysmo.functions import pad
+
+    def test_pad(seismogram: Seismogram) -> None:
+        assert_seismogram_modification(
+            seismogram,
+            pad,
+            seismogram.begin_time,
+            seismogram.end_time,
+            custom_assertions=lambda s: len(s) == len(seismogram)
+        )
+
+The helper automatically:
+- Tests both clone=True and clone=False modes
+- Verifies both produce identical results
+- Checks data arrays match using numpy.testing.assert_array_equal
+- Validates time attributes (begin_time, delta, length)
+- Runs your custom assertions on the modified seismogram
 """
 
 from pysmo import Seismogram

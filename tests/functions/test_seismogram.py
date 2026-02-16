@@ -52,7 +52,7 @@ def test_normalize(seismogram: Seismogram) -> None:
     from pysmo.functions import normalize
 
     def check_normalized(seis: Seismogram) -> None:
-        assert np.max(seis.data) <= 1
+        assert np.max(np.abs(seis.data)) <= 1
 
     normalized_seis = assert_seismogram_modification(
         seismogram, normalize, custom_assertions=check_normalized
@@ -205,10 +205,6 @@ def test_crop(seismogram: Seismogram) -> None:
     if len(seismogram) > 100:
         seis3 = deepcopy(seismogram)
         seis3.data = seis3.data[:100]
-        new_begin_time = seis3.begin_time + seis3.delta
-        new_end_time = seis3.end_time - seis3.delta
-        cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
-        assert all(cropped_seis.data == seis3.data[1:-1])
         new_begin_time = seis3.begin_time + seis3.delta
         new_end_time = seis3.end_time - seis3.delta
         cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
