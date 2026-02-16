@@ -142,7 +142,11 @@ def test_resample(seismogram: Seismogram, snapshot) -> None:
 
     # Use snapshot to capture full resampled data instead of just index 6
     assert_seismogram_modification(
-        seismogram, resample, new_delta, custom_assertions=check_resampled, snapshot=snapshot
+        seismogram,
+        resample,
+        new_delta,
+        custom_assertions=check_resampled,
+        snapshot=snapshot,
     )
 
 

@@ -22,9 +22,7 @@ def test_envelope(seismogram: Seismogram, snapshot) -> None:
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
 
-    assert_seismogram_modification(
-        seismogram, envelope, Tn, alpha, snapshot=snapshot
-    )
+    assert_seismogram_modification(seismogram, envelope, Tn, alpha, snapshot=snapshot)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -36,9 +34,7 @@ def test_gauss(seismogram: Seismogram, snapshot) -> None:
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
 
-    assert_seismogram_modification(
-        seismogram, gauss, Tn, alpha, snapshot=snapshot
-    )
+    assert_seismogram_modification(seismogram, gauss, Tn, alpha, snapshot=snapshot)
 
 
 @pytest.mark.depends(on=["test_envelope", "test_gauss"])

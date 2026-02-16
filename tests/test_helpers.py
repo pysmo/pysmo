@@ -133,7 +133,7 @@ def assert_seismogram_modification(
         ...     normalize,
         ...     custom_assertions=check_normalized
         ... )
-        
+
         With snapshot testing:
         >>> modified = assert_seismogram_modification(
         ...     my_seismogram,
@@ -143,12 +143,14 @@ def assert_seismogram_modification(
     """
     # Test with clone=True - should return a new modified seismogram
     cloned_modified = modification_func(seismogram, *args, clone=True, **kwargs)
-    assert cloned_modified is not None, "Function with clone=True should return a Seismogram"
+    assert (
+        cloned_modified is not None
+    ), "Function with clone=True should return a Seismogram"
 
     # Test with clone=False (in-place) - should modify and return None or the seismogram
     inplace_copy = deepcopy(seismogram)
     result = modification_func(inplace_copy, *args, clone=False, **kwargs)
-    
+
     # Handle functions that may return the seismogram or None
     inplace_modified = result if result is not None else inplace_copy
 
@@ -166,8 +168,8 @@ def assert_seismogram_modification(
     assert (
         cloned_modified.delta == inplace_modified.delta
     ), "Clone and in-place modifications have different delta"
-    assert (
-        len(cloned_modified) == len(inplace_modified)
+    assert len(cloned_modified) == len(
+        inplace_modified
     ), "Clone and in-place modifications have different lengths"
 
     # Run custom assertions if provided
@@ -178,10 +180,10 @@ def assert_seismogram_modification(
     if snapshot is not None:
         # Create a serializable representation of the seismogram data
         snapshot_data = {
-            'data': cloned_modified.data.tolist(),
-            'begin_time': cloned_modified.begin_time.isoformat(),
-            'delta': cloned_modified.delta.total_seconds(),
-            'length': len(cloned_modified),
+            "data": cloned_modified.data.tolist(),
+            "begin_time": cloned_modified.begin_time.isoformat(),
+            "delta": cloned_modified.delta.total_seconds(),
+            "length": len(cloned_modified),
         }
         assert snapshot_data == snapshot
 

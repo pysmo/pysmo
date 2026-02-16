@@ -27,7 +27,7 @@ from tests.conftest import TESTDATA
 
 def case_sac_seismogram() -> SacSeismogram:
     """Provide a fresh SacSeismogram instance for testing.
-    
+
     Returns a new SacSeismogram instance each time to ensure test isolation.
     """
     return SAC.from_file(TESTDATA["orgfile"]).seismogram
@@ -35,7 +35,7 @@ def case_sac_seismogram() -> SacSeismogram:
 
 def case_mini_seismogram() -> MiniSeismogram:
     """Provide a fresh MiniSeismogram instance for testing.
-    
+
     Returns a new MiniSeismogram instance each time to ensure test isolation.
     """
     sacseis = SAC.from_file(TESTDATA["orgfile"]).seismogram
