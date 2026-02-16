@@ -29,7 +29,7 @@ def test_envelope(seismogram: Seismogram) -> None:
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
-    env_seis = envelope(seismogram, Tn, alpha)
+    env_seis = envelope(seismogram, Tn, alpha, clone=True)
     assert pytest.approx(env_seis.data[100]) == 6.109130497913114
 
 
@@ -43,8 +43,8 @@ def test_gauss(seismogram: Seismogram) -> None:
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
-    gauss_seis = gauss(seismogram, Tn, alpha)
-    assert pytest.approx(gauss_seis.data[100]) == -5.639860165811819
+    gaus_seis = gauss(seismogram, Tn, alpha, clone=True)
+    assert pytest.approx(gaus_seis.data[100]) == -5.639860165811819
 
 
 @pytest.mark.depends(on=["test_envelope", "test_gauss"])
@@ -53,7 +53,7 @@ def test_plot_gauss_env(seismogram: Seismogram = SACSEIS) -> matplotlib.figure.F
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
     seismogram.data = seismogram.data - np.mean(seismogram.data)
-    gauss_seis = gauss(seismogram, Tn, alpha)
-    env_seis = envelope(seismogram, Tn, alpha)
+    gauss_seis = gauss(seismogram, Tn, alpha, clone=True)
+    env_seis = envelope(seismogram, Tn, alpha, clone=True)
     fig = plotseis(seismogram, gauss_seis, env_seis, showfig=False)
     return fig
