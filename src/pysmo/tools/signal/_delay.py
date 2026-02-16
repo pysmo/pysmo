@@ -5,6 +5,8 @@ from scipy.stats.mstats import pearsonr as _pearsonr
 import numpy as np
 import math
 
+__all__ = ["delay"]
+
 
 def delay(
     seismogram1: Seismogram,

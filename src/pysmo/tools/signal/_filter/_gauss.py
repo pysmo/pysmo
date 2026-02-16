@@ -1,9 +1,24 @@
 from pysmo import Seismogram
 from copy import deepcopy
+from typing import overload, Literal
 import numpy as np
 
 
-def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
+@overload
+def envelope(
+    seismogram: Seismogram, Tn: float, alpha: float, clone: Literal[False] = ...
+) -> None: ...
+
+
+@overload
+def envelope[T: Seismogram](
+    seismogram: T, Tn: float, alpha: float, clone: Literal[True]
+) -> T: ...
+
+
+def envelope[T: Seismogram](
+    seismogram: T, Tn: float, alpha: float, clone: bool = False
+) -> T | None:
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
@@ -11,6 +26,7 @@ def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
         seismogram: Name of the seismogram object passed to this function.
         Tn: Center period of Gaussian filter [in seconds]
         alpha: Set alpha (which determines filterwidth)
+        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
 
     Returns:
         Seismogram containing the envelope
@@ -22,16 +38,31 @@ def envelope[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
         >>> seis = SAC.from_file("example.sac").seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> envelope_seis = envelope(seis, Tn, alpha)
+        >>> envelope_seis = envelope(seis, Tn, alpha, clone=True)
         >>>
         ```
     """
-    clone = deepcopy(seismogram)
-    clone.data = _gauss(seismogram, Tn, alpha)[0]
-    return clone
+    if clone:
+        seismogram = deepcopy(seismogram)
+    seismogram.data = _gauss(seismogram, Tn, alpha)[0]
+    return seismogram if clone else None
 
 
-def gauss[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
+@overload
+def gauss(
+    seismogram: Seismogram, Tn: float, alpha: float, clone: Literal[False] = ...
+) -> None: ...
+
+
+@overload
+def gauss[T: Seismogram](
+    seismogram: T, Tn: float, alpha: float, clone: Literal[True]
+) -> T: ...
+
+
+def gauss[T: Seismogram](
+    seismogram: T, Tn: float, alpha: float, clone: bool = False
+) -> T | None:
     """
     Returns a gaussian filtered seismogram.
 
@@ -50,13 +81,14 @@ def gauss[T: Seismogram](seismogram: T, Tn: float, alpha: float) -> T:
         >>> seis = SAC.from_file("example.sac").seismogram
         >>> Tn = 50 # Center Gaussian filter at 50s period
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> gauss_seis = gauss(seis, Tn, alpha)
+        >>> gauss_seis = gauss(seis, Tn, alpha, clone=True)
         >>>
         ```
     """
-    clone = deepcopy(seismogram)
-    clone.data = _gauss(seismogram, Tn, alpha)[1]
-    return clone
+    if clone:
+        seismogram = deepcopy(seismogram)
+    seismogram.data = _gauss(seismogram, Tn, alpha)[1]
+    return seismogram if clone else None
 
 
 def _gauss(
