@@ -46,6 +46,7 @@ With syrupy snapshot testing (recommended for regression testing):
 
     def test_gauss_snapshot(seismogram: Seismogram, snapshot) -> None:
         # Use syrupy snapshot to track expected output
+        # Data is automatically rounded to 6 decimals for snapshot storage
         modified = assert_seismogram_modification(
             seismogram,
             gauss,
@@ -140,7 +141,8 @@ def assert_seismogram_modification(
             if validation fails.
         expected_data: Optional expected data to compare against. Accepts:
             - np.ndarray: Uses np.testing.assert_allclose() with tolerance
-            - SnapshotAssertion (syrupy snapshot): Uses snapshot == data for comparison
+            - SnapshotAssertion (syrupy snapshot): Rounds data to 6 decimals with
+              np.around() before comparison to reduce snapshot size
             - None: No data validation (default)
         rtol: Relative tolerance for expected_data comparison (default: 1e-7).
             Only used when expected_data is an np.ndarray.
