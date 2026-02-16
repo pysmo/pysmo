@@ -4,4 +4,5 @@
       show_root_heading: true
       show_root_toc_entry: true
       show_submodules: true
+      members_order: alphabetical
       summary: true
