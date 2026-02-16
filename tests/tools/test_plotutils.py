@@ -1,19 +1,9 @@
-from pysmo import Seismogram, MiniSeismogram
-from pysmo.classes import SAC
+from pysmo import Seismogram
+from pytest_cases import parametrize_with_cases
 import pytest
-import pytest_cases
 import matplotlib  # type: ignore
-from tests.conftest import TESTDATA
 
 matplotlib.use("Agg")
-
-
-SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
-MINISEIS = MiniSeismogram(
-    begin_time=SACSEIS.begin_time,
-    delta=SACSEIS.delta,
-    data=SACSEIS.data,
-)
 
 
 @pytest.mark.mpl_image_compare(remove_text=True)
@@ -24,9 +14,7 @@ def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignor
     return fig
 
 
-@pytest_cases.parametrize(
-    "seismogram", (SACSEIS, MINISEIS), ids=("SacSeismogram", "MiniSeismogram")
-)
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 class TestPlotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
