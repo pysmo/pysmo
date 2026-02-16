@@ -7,6 +7,7 @@ from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
 from beartype.roar import BeartypeCallHintParamViolation
 from tests.test_helpers import assert_seismogram_modification
+from syrupy.assertion import SnapshotAssertion
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pytest
@@ -124,7 +125,7 @@ def test_detrend(seismogram: Seismogram) -> None:
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_resample(seismogram: Seismogram, snapshot) -> None:
+def test_resample(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Resample Seismogram object and verify resampled data."""
     from pysmo.functions import resample
 

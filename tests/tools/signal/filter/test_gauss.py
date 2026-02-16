@@ -3,6 +3,7 @@ from pysmo.tools.signal import gauss, envelope
 from pysmo.tools.plotutils import plotseis
 from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
+from syrupy.assertion import SnapshotAssertion
 import pytest
 import matplotlib.figure
 import matplotlib
@@ -12,7 +13,7 @@ matplotlib.use("Agg")
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_envelope(seismogram: Seismogram, snapshot) -> None:
+def test_envelope(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian envelope from Seismogram object and verify the calculated
     values using snapshot testing for comprehensive data validation.
@@ -24,7 +25,7 @@ def test_envelope(seismogram: Seismogram, snapshot) -> None:
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_gauss(seismogram: Seismogram, snapshot) -> None:
+def test_gauss(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian filtered data from SacFile object and verify the calculated
     values using snapshot testing for comprehensive data validation.
