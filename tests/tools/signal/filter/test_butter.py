@@ -8,6 +8,7 @@ from tests.test_helpers import assert_seismogram_modification
 from pysmo.tools.signal._filter._butter import bandpass, highpass, lowpass, bandstop
 from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
+from syrupy.assertion import SnapshotAssertion
 import pytest
 import numpy as np
 
@@ -143,6 +144,28 @@ class TestBandpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandpass(seismogram, freqmin=0.5, freqmax=0.1)
 
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+    def test_bandpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
+        """Test bandpass filter output against snapshot for regression testing.
+
+        Uses syrupy snapshots to ensure the bandpass filter output remains
+        consistent across code changes, helping catch unintended modifications.
+        """
+        freqmin = 0.1  # 0.1 Hz
+        freqmax = 0.5  # 0.5 Hz
+        corners = 2
+
+        assert_seismogram_modification(
+            seismogram,
+            bandpass,
+            freqmin,
+            freqmax,
+            corners,
+            expected_data=snapshot,
+        )
+
 
 class TestHighpass(BaseButterFilterTest):
     """Tests for the highpass filter function."""
@@ -204,6 +227,26 @@ class TestHighpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin.*is invalid for sampling rate"):
             highpass(seismogram, freqmin=invalid_freqmin)
 
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+    def test_highpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
+        """Test highpass filter output against snapshot for regression testing.
+
+        Uses syrupy snapshots to ensure the highpass filter output remains
+        consistent across code changes, helping catch unintended modifications.
+        """
+        freqmin = 0.1  # 0.1 Hz
+        corners = 2
+
+        assert_seismogram_modification(
+            seismogram,
+            highpass,
+            freqmin,
+            corners,
+            expected_data=snapshot,
+        )
+
 
 class TestLowpass(BaseButterFilterTest):
     """Tests for the lowpass filter function."""
@@ -264,6 +307,26 @@ class TestLowpass(BaseButterFilterTest):
 
         with pytest.raises(ValueError, match="freqmax.*is invalid for sampling rate"):
             lowpass(seismogram, freqmax=invalid_freqmax)
+
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+    def test_lowpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
+        """Test lowpass filter output against snapshot for regression testing.
+
+        Uses syrupy snapshots to ensure the lowpass filter output remains
+        consistent across code changes, helping catch unintended modifications.
+        """
+        freqmax = 0.5  # 0.5 Hz
+        corners = 2
+
+        assert_seismogram_modification(
+            seismogram,
+            lowpass,
+            freqmax,
+            corners,
+            expected_data=snapshot,
+        )
 
 
 class TestBandstop(BaseButterFilterTest):
@@ -348,3 +411,25 @@ class TestBandstop(BaseButterFilterTest):
         """Test that bandstop raises ValueError when freqmin >= freqmax."""
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandstop(seismogram, freqmin=0.5, freqmax=0.1)
+
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+    def test_bandstop_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
+        """Test bandstop filter output against snapshot for regression testing.
+
+        Uses syrupy snapshots to ensure the bandstop filter output remains
+        consistent across code changes, helping catch unintended modifications.
+        """
+        freqmin = 0.1  # 0.1 Hz
+        freqmax = 0.5  # 0.5 Hz
+        corners = 2
+
+        assert_seismogram_modification(
+            seismogram,
+            bandstop,
+            freqmin,
+            freqmax,
+            corners,
+            expected_data=snapshot,
+        )
