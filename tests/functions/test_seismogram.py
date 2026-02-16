@@ -13,7 +13,7 @@ import pytest
 import numpy as np
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_time2index(seismogram: Seismogram) -> None:
     from pysmo.functions import time2index
 
@@ -46,7 +46,7 @@ def test_time2index(seismogram: Seismogram) -> None:
         )
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_normalize(seismogram: Seismogram) -> None:
     """Normalize data with its absolute maximum value"""
     from pysmo.functions import normalize
@@ -69,7 +69,7 @@ def test_normalize(seismogram: Seismogram) -> None:
     assert all(normalized_seis.data == normalized_seis2.data)
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_pad(seismogram: Seismogram) -> None:
     from pysmo.functions import pad
 
@@ -110,7 +110,7 @@ def test_pad(seismogram: Seismogram) -> None:
         )
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_detrend(seismogram: Seismogram) -> None:
     """Detrend Seismogram object and verify mean is 0."""
     from pysmo.functions import detrend
@@ -123,7 +123,7 @@ def test_detrend(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_resample(seismogram: Seismogram) -> None:
     """Resample Seismogram object and verify resampled data."""
     from pysmo.functions import resample
@@ -146,7 +146,7 @@ def test_resample(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram")
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_crop(seismogram: Seismogram) -> None:
     """Crop Seismogram object and verify cropped data."""
     from pysmo.functions import crop
@@ -212,7 +212,7 @@ def test_crop(seismogram: Seismogram) -> None:
 
 
 class TestTaper:
-    @parametrize_with_cases("seismogram")
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_taper(self, seismogram: Seismogram) -> Figure:
         from pysmo.functions import taper
@@ -257,7 +257,7 @@ class TestTaper:
 class TestWindow:
     TAPER_WIDTH: timedelta | float = timedelta(seconds=500)
 
-    @parametrize_with_cases("seismogram")
+    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_window(self, seismogram: Seismogram) -> None:
         from pysmo.functions import window, time2index
 

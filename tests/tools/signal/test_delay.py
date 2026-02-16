@@ -3,18 +3,11 @@ from pysmo.tools.signal import delay
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.functions import detrend, clone_to_mini
 from pysmo.classes import SAC
+from pytest_cases import parametrize_with_cases
 import pytest
-import pytest_cases
 import numpy as np
 from datetime import timedelta
 import random
-
-SACSEIS = SAC.from_file(TESTDATA["orgfile"]).seismogram
-MINISEIS = MiniSeismogram(
-    begin_time=SACSEIS.begin_time,
-    delta=SACSEIS.delta,
-    data=SACSEIS.data,
-)
 
 
 def test_delay_basic() -> None:
@@ -49,9 +42,7 @@ def test_delay_with_allow_negative_true() -> None:
     assert cc_coeff < 0
 
 
-@pytest_cases.parametrize(
-    "seismogram", (SACSEIS, MINISEIS), ids=("SacSeismogram", "MiniSeismogram")
-)
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     rand_int = int(random.uniform(10, 100))
     seismogram1 = clone_to_mini(MiniSeismogram, seismogram)
