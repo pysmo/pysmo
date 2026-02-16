@@ -1,8 +1,6 @@
-from tests.conftest import TESTDATA
 from pysmo.tools.signal import delay
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.functions import detrend, clone_to_mini
-from pysmo.classes import SAC
 from pytest_cases import parametrize_with_cases
 import pytest
 import numpy as np

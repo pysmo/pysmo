@@ -1,9 +1,7 @@
-from tests.conftest import TESTDATA
 from tests.test_helpers import assert_seismogram_modification
 from pysmo.tools.signal import gauss, envelope
 from pysmo.tools.plotutils import plotseis
-from pysmo import Seismogram, MiniSeismogram
-from pysmo.classes import SAC
+from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
 import pytest
 import matplotlib.figure

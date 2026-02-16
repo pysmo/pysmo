@@ -1,9 +1,7 @@
-from pysmo import Seismogram, MiniSeismogram
-from pysmo.classes import SAC
+from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
 import pytest
 import matplotlib  # type: ignore
-from tests.conftest import TESTDATA
 
 matplotlib.use("Agg")
 
