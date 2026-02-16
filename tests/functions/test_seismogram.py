@@ -124,7 +124,7 @@ def test_detrend(seismogram: Seismogram) -> None:
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_resample(seismogram: Seismogram) -> None:
+def test_resample(seismogram: Seismogram, snapshot) -> None:
     """Resample Seismogram object and verify resampled data."""
     from pysmo.functions import resample
 
@@ -139,10 +139,10 @@ def test_resample(seismogram: Seismogram) -> None:
 
     def check_resampled(seis: Seismogram) -> None:
         assert pytest.approx(seis.delta) == seismogram.delta * 2
-        assert pytest.approx(seis.data[6]) == 2202.0287804516634
 
+    # Use snapshot to capture full resampled data instead of just index 6
     assert_seismogram_modification(
-        seismogram, resample, new_delta, custom_assertions=check_resampled
+        seismogram, resample, new_delta, custom_assertions=check_resampled, snapshot=snapshot
     )
 
 

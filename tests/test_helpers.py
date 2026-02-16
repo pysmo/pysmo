@@ -22,6 +22,20 @@ Basic usage with custom assertions:
             custom_assertions=check_normalized
         )
 
+With snapshot testing (recommended for comprehensive data validation):
+
+    from pysmo.functions import gauss
+
+    def test_gauss(seismogram: Seismogram, snapshot) -> None:
+        # Snapshot captures entire data array, not just single indices
+        modified = assert_seismogram_modification(
+            seismogram,
+            gauss,
+            Tn=50,
+            alpha=50,
+            snapshot=snapshot
+        )
+
 With additional arguments:
 
     from pysmo.functions import crop
@@ -61,6 +75,7 @@ The helper automatically:
 - Checks data arrays match using numpy.testing.assert_array_equal
 - Validates time attributes (begin_time, delta, length)
 - Runs your custom assertions on the modified seismogram
+- Optionally captures complete data snapshots for comprehensive validation
 """
 
 from pysmo import Seismogram
@@ -74,6 +89,7 @@ def assert_seismogram_modification(
     modification_func: Callable[..., Seismogram | None],
     *args: Any,
     custom_assertions: Callable[[Seismogram], None] | None = None,
+    snapshot: Any = None,
     **kwargs: Any,
 ) -> Seismogram:
     """Test that a seismogram modification function works correctly with both clone modes.
@@ -83,7 +99,8 @@ def assert_seismogram_modification(
     2. clone=False (default): Modifies the Seismogram in-place
 
     It verifies that both approaches produce identical results and runs any
-    custom assertions on the modified seismogram.
+    custom assertions on the modified seismogram. Optionally uses syrupy snapshots
+    to capture and verify the complete modified data array.
 
     Args:
         seismogram: The input Seismogram to be modified (any implementation).
@@ -94,6 +111,10 @@ def assert_seismogram_modification(
         custom_assertions: Optional callback function that receives the modified
             seismogram and performs custom validation. Should raise AssertionError
             if validation fails.
+        snapshot: Optional syrupy snapshot fixture for capturing the modified
+            seismogram data. When provided, the entire data array will be compared
+            against the snapshot, ensuring comprehensive validation beyond single
+            index checks.
         **kwargs: Keyword arguments to pass to modification_func (except 'clone').
 
     Returns:
@@ -101,7 +122,7 @@ def assert_seismogram_modification(
 
     Raises:
         AssertionError: If clone and in-place modifications produce different results,
-            or if custom_assertions fail.
+            if custom_assertions fail, or if snapshot comparison fails.
 
     Example:
         >>> from pysmo.functions import normalize
@@ -111,6 +132,13 @@ def assert_seismogram_modification(
         ...     my_seismogram,
         ...     normalize,
         ...     custom_assertions=check_normalized
+        ... )
+        
+        With snapshot testing:
+        >>> modified = assert_seismogram_modification(
+        ...     my_seismogram,
+        ...     normalize,
+        ...     snapshot=snapshot  # pytest fixture
         ... )
     """
     # Test with clone=True - should return a new modified seismogram
@@ -145,5 +173,16 @@ def assert_seismogram_modification(
     # Run custom assertions if provided
     if custom_assertions is not None:
         custom_assertions(cloned_modified)
+
+    # Snapshot testing if provided
+    if snapshot is not None:
+        # Create a serializable representation of the seismogram data
+        snapshot_data = {
+            'data': cloned_modified.data.tolist(),
+            'begin_time': cloned_modified.begin_time.isoformat(),
+            'delta': cloned_modified.delta.total_seconds(),
+            'length': len(cloned_modified),
+        }
+        assert snapshot_data == snapshot
 
     return cloned_modified

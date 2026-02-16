@@ -14,36 +14,30 @@ matplotlib.use("Agg")
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_envelope(seismogram: Seismogram) -> None:
+def test_envelope(seismogram: Seismogram, snapshot) -> None:
     """
     Calculate gaussian envelope from Seismogram object and verify the calculated
-    values. The reference values were obtained from previous runs of this function.
+    values using snapshot testing for comprehensive data validation.
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
 
-    def check_envelope(seis: Seismogram) -> None:
-        assert pytest.approx(seis.data[100]) == 6.109130497913114
-
     assert_seismogram_modification(
-        seismogram, envelope, Tn, alpha, custom_assertions=check_envelope
+        seismogram, envelope, Tn, alpha, snapshot=snapshot
     )
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-def test_gauss(seismogram: Seismogram) -> None:
+def test_gauss(seismogram: Seismogram, snapshot) -> None:
     """
     Calculate gaussian filtered data from SacFile object and verify the calculated
-    values. The reference values were obtained from previous runs of this function.
+    values using snapshot testing for comprehensive data validation.
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
 
-    def check_gauss(seis: Seismogram) -> None:
-        assert pytest.approx(seis.data[100]) == -5.639860165811819
-
     assert_seismogram_modification(
-        seismogram, gauss, Tn, alpha, custom_assertions=check_gauss
+        seismogram, gauss, Tn, alpha, snapshot=snapshot
     )
 
 
