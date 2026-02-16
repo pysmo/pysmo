@@ -40,6 +40,20 @@ With expected data validation (recommended for numerical accuracy):
             rtol=1e-7  # relative tolerance
         )
 
+With syrupy snapshot testing (recommended for regression testing):
+
+    from pysmo.functions import gauss
+
+    def test_gauss_snapshot(seismogram: Seismogram, snapshot) -> None:
+        # Use syrupy snapshot to track expected output
+        modified = assert_seismogram_modification(
+            seismogram,
+            gauss,
+            Tn=50,
+            alpha=50,
+            expected_data=snapshot
+        )
+
 With additional arguments:
 
     from pysmo.functions import crop
@@ -80,6 +94,7 @@ The helper automatically:
 - Validates time attributes (begin_time, delta, length)
 - Runs your custom assertions on the modified seismogram
 - Optionally validates against expected data with configurable tolerance
+- Optionally validates against syrupy snapshots for regression testing
 """
 
 from pysmo import Seismogram
@@ -87,13 +102,18 @@ from copy import deepcopy
 from typing import Callable, Any
 import numpy as np
 
+try:
+    from syrupy.assertion import SnapshotAssertion
+except ImportError:
+    SnapshotAssertion = None  # type: ignore
+
 
 def assert_seismogram_modification(
     seismogram: Seismogram,
     modification_func: Callable[..., Seismogram | None],
     *args: Any,
     custom_assertions: Callable[[Seismogram], None] | None = None,
-    expected_data: np.ndarray | None = None,
+    expected_data: np.ndarray | Any | None = None,
     rtol: float = 1e-7,
     atol: float = 0.0,
     **kwargs: Any,
@@ -106,7 +126,8 @@ def assert_seismogram_modification(
 
     It verifies that both approaches produce identical results and runs any
     custom assertions on the modified seismogram. Optionally compares against
-    expected data using numpy array assertions with configurable tolerances.
+    expected data using numpy array assertions with configurable tolerances or
+    syrupy snapshot testing.
 
     Args:
         seismogram: The input Seismogram to be modified (any implementation).
@@ -117,10 +138,14 @@ def assert_seismogram_modification(
         custom_assertions: Optional callback function that receives the modified
             seismogram and performs custom validation. Should raise AssertionError
             if validation fails.
-        expected_data: Optional expected data array to compare against. When provided,
-            uses np.testing.assert_allclose() to validate the result with tolerance.
+        expected_data: Optional expected data to compare against. Accepts:
+            - np.ndarray: Uses np.testing.assert_allclose() with tolerance
+            - SnapshotAssertion (syrupy snapshot): Uses snapshot == data for comparison
+            - None: No data validation (default)
         rtol: Relative tolerance for expected_data comparison (default: 1e-7).
+            Only used when expected_data is an np.ndarray.
         atol: Absolute tolerance for expected_data comparison (default: 0.0).
+            Only used when expected_data is an np.ndarray.
         **kwargs: Keyword arguments to pass to modification_func (except 'clone').
 
     Returns:
@@ -150,6 +175,14 @@ def assert_seismogram_modification(
         ...     normalize,
         ...     expected_data=expected,
         ...     rtol=1e-5  # relative tolerance
+        ... )
+
+        With syrupy snapshot:
+
+        >>> modified = assert_seismogram_modification(
+        ...     my_seismogram,
+        ...     normalize,
+        ...     expected_data=snapshot  # syrupy snapshot fixture
         ... )
     """
     # Test with clone=True - should return a new modified seismogram
@@ -189,12 +222,27 @@ def assert_seismogram_modification(
 
     # Validate against expected data if provided
     if expected_data is not None:
-        np.testing.assert_allclose(
-            cloned_modified.data,
-            expected_data,
-            rtol=rtol,
-            atol=atol,
-            err_msg="Modified data does not match expected data within tolerance",
-        )
+        # Check if expected_data is a syrupy snapshot
+        if SnapshotAssertion is not None and isinstance(expected_data, SnapshotAssertion):
+            # Use syrupy's snapshot comparison
+            assert cloned_modified.data == expected_data
+        elif isinstance(expected_data, np.ndarray):
+            # Use numpy's assert_allclose for array comparison
+            np.testing.assert_allclose(
+                cloned_modified.data,
+                expected_data,
+                rtol=rtol,
+                atol=atol,
+                err_msg="Modified data does not match expected data within tolerance",
+            )
+        else:
+            # Fallback: try direct comparison (might be a list or other sequence)
+            np.testing.assert_allclose(
+                cloned_modified.data,
+                expected_data,
+                rtol=rtol,
+                atol=atol,
+                err_msg="Modified data does not match expected data within tolerance",
+            )
 
     return cloned_modified
