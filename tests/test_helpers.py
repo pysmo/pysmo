@@ -13,13 +13,13 @@ Basic usage with custom assertions:
     import numpy as np
 
     def test_normalize(seismogram: Seismogram) -> None:
-        def check_normalized(seis: Seismogram) -> None:
+        def check_normalised(seis: Seismogram) -> None:
             assert np.max(np.abs(seis.data)) <= 1.0
 
         modified = assert_seismogram_modification(
             seismogram,
             normalize,
-            custom_assertions=check_normalized
+            custom_assertions=check_normalised
         )
 
 With expected data validation (recommended for numerical accuracy):
@@ -105,8 +105,8 @@ def assert_seismogram_modification(
     2. clone=False (default): Modifies the Seismogram in-place
 
     It verifies that both approaches produce identical results and runs any
-    custom assertions on the modified seismogram. Optionally uses syrupy snapshots
-    to capture and verify the complete modified data array.
+    custom assertions on the modified seismogram. Optionally compares against
+    expected data using numpy array assertions with configurable tolerances.
 
     Args:
         seismogram: The input Seismogram to be modified (any implementation).
@@ -117,10 +117,10 @@ def assert_seismogram_modification(
         custom_assertions: Optional callback function that receives the modified
             seismogram and performs custom validation. Should raise AssertionError
             if validation fails.
-        snapshot: Optional syrupy snapshot fixture for capturing the modified
-            seismogram data. When provided, the entire data array will be compared
-            against the snapshot, ensuring comprehensive validation beyond single
-            index checks.
+        expected_data: Optional expected data array to compare against. When provided,
+            uses np.testing.assert_allclose() to validate the result with tolerance.
+        rtol: Relative tolerance for expected_data comparison (default: 1e-7).
+        atol: Absolute tolerance for expected_data comparison (default: 0.0).
         **kwargs: Keyword arguments to pass to modification_func (except 'clone').
 
     Returns:
@@ -128,23 +128,28 @@ def assert_seismogram_modification(
 
     Raises:
         AssertionError: If clone and in-place modifications produce different results,
-            if custom_assertions fail, or if snapshot comparison fails.
+            if custom_assertions fail, or if expected_data comparison fails.
 
-    Example:
+    Examples:
+        Basic usage with custom assertions:
+
         >>> from pysmo.functions import normalize
-        >>> def check_normalized(seis: Seismogram) -> None:
+        >>> def check_normalised(seis: Seismogram) -> None:
         ...     assert np.max(np.abs(seis.data)) <= 1.0
         >>> modified = assert_seismogram_modification(
         ...     my_seismogram,
         ...     normalize,
-        ...     custom_assertions=check_normalized
+        ...     custom_assertions=check_normalised
         ... )
 
-        With snapshot testing:
+        With expected data validation:
+
+        >>> expected = np.array([...])  # expected output
         >>> modified = assert_seismogram_modification(
         ...     my_seismogram,
         ...     normalize,
-        ...     snapshot=snapshot  # pytest fixture
+        ...     expected_data=expected,
+        ...     rtol=1e-5  # relative tolerance
         ... )
     """
     # Test with clone=True - should return a new modified seismogram
