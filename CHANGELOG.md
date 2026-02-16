@@ -10,6 +10,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add dependabot for gh actions
 - Add gh-pages workflow
 - Use poetry with mkdocs
+- Replace deprecated test-results-action with codecov-action ([#238](https://github.com/pysmo/pysmo/issues/238))
+- Use dynamic versioning
 
 ### 🐛 Bug Fixes
 
@@ -47,6 +49,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Split usage into smaller sections
 - Update development section
 - Add FAQs
+- Add more details to readme
 
 ### 🔍 Other Changes
 
@@ -488,6 +491,20 @@ docs: add FAQs
 - Merge pull request #234 from pysmo/fix-sacstation-setter
 
 fix: correct type in sacstation.elevation setter
+- **(tools-iccs)** Clarify types of prepared seismograms used in iccs
+- Merge pull request #235 from pysmo/refactor-iccs-context
+
+refactor(tools-iccs): Clarify types of prepared seismograms used in iccs
+- Merge pull request #236 from pysmo/new-readme
+
+docs: add more details to readme
+- **(sacio)** Add retries to IRIS web service requests and tests
+- Merge pull request #237 from pysmo/sacio-retries
+
+Add retries to test_iris_service
+- Merge pull request #239 from pysmo/hatch-vcs
+
+ci: use dynamic versioning
 
 ### 🚀 New Features
 
