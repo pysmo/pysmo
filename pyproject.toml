@@ -1,6 +1,6 @@
 [project]
 name = "pysmo"
-version = "1.0.0-dev1"
+dynamic = ["version"]
 description = "Python module for seismologists."
 authors = [{ name = "Simon M. Lloyd", email = "simon@slloyd.net" }]
 requires-python = ">=3.12,<3.15"
@@ -61,11 +61,14 @@ default-groups = [
     "docs",
 ]
 
+[tool.hatch.version]
+source = "vcs"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysmo"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
