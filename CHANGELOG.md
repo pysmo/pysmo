@@ -18,6 +18,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- Fix typo
 - Adjust tutorial to new naming in sac class
 - Add event time to SacEvent ([#120](https://github.com/pysmo/pysmo/issues/120))
 - Use paramspec (for now) on value_not_none decorator
@@ -53,6 +54,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Update development section
 - Add FAQs
 - Add more details to readme
+- **(cliff)** Add more filters
 
 ### 📦 Miscellaneous
 
@@ -75,6 +77,68 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ### 🔍 Other Changes
 
+- Add code linting to Makefile and clean up code a bit
+- Add github actions workflow for testing
+- Add codecov to github action
+- Change codecov report filetype to xml
+- Remove travis stuff and update badge in readme
+- Remove extra bracket in README
+- Add coverage filename to gitignore
+- Add version badge to readme
+- Add pypi badges
+- Add build action
+- Really add build action...
+- Add path to artifact download so that the pypi action finds build
+- Bump version to 0.8.0-dev1 to test package upload to pypi-test
+- Add quickstart to README
+- Update readme to show how to install from github directly
+- Next version will be stable 1.0.0
+- New sacheaders ([#46](https://github.com/pysmo/pysmo/issues/46))
+- Add protocols and rewrite functions to use them
+- Introduction ([#49](https://github.com/pysmo/pysmo/issues/49))
+- Update installation instructions.
+- Add devcontainer config
+- Documentation - Fundamentals ([#53](https://github.com/pysmo/pysmo/issues/53))
+- Seismogram Protocol ([#55](https://github.com/pysmo/pysmo/issues/55))
+- Fix documentation ([#57](https://github.com/pysmo/pysmo/issues/57))
+- Furo ([#58](https://github.com/pysmo/pysmo/issues/58))
+- Use newer pypi-publish action
+- Add some tests for the Station protocol
+- Skip publishing to test pypi on untagged commits
+- Add tests for event protocol
+- First draft of intro section
+- Event is too generic as a type -> Epicenter and Hypcenter ([#67](https://github.com/pysmo/pysmo/issues/67))
+- Update readme to fit in better with the documentation. ([#68](https://github.com/pysmo/pysmo/issues/68))
+- New Documentation Structure ([#70](https://github.com/pysmo/pysmo/issues/70))
+- Edit Makefile to run also on windows
+- Remove "core" directory and reorganise psymo content
+- Add readme files to source directory
+- Use nested classes in SAC class ([#77](https://github.com/pysmo/pysmo/issues/77))
+- Add Mini classes ([#78](https://github.com/pysmo/pysmo/issues/78))
+- Normalize function and test file for the func ([#76](https://github.com/pysmo/pysmo/issues/76))
+- Cleanup tests
+- Documentation for "types"
+- Update dependencies
+- Bug fix in normalize function
+- Classes documentation
+- Add docs for functions
+- Add tools documentation
+- Add inherited attributes to SAC documentation
+- Added instructions for setting up dev env on Windows ([#82](https://github.com/pysmo/pysmo/issues/82))
+- Update packages
+- Update Devcontainer Config ([#93](https://github.com/pysmo/pysmo/issues/93))
+- Don't run make notebook on attach
+- Test with tox and add windows to matrix ([#94](https://github.com/pysmo/pysmo/issues/94))
+- Fix spaces in tox.ini
+- Ignore additinal coverage files
+- Add lib/defaults.py
+- Change tox config
+- Update packages
+- Create tox venv without docs packages
+- Update noise tool to use pysmo types
+- Added content to contributing section of docs ([#88](https://github.com/pysmo/pysmo/issues/88))
+- Add rules of the land chapter to docs. ([#102](https://github.com/pysmo/pysmo/issues/102))
+- Update "more on types" section
 - Bump version in pyproj.toml
 - Modify build workflow to run on new tags
 - Issue #65: providing error message from IRIS service ([#105](https://github.com/pysmo/pysmo/issues/105))
@@ -154,77 +218,6 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Check tutorial notebook runs error free
 - Add codecov token to workflow
 - **(sacio)** Add retries to IRIS web service requests and tests
-
-## [1.0.0-dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...1.0.0-dev0) - 2023-08-18
-
-### 🐛 Bug Fixes
-
-- Fix typo
-
-### 🔍 Other Changes
-
-- Add code linting to Makefile and clean up code a bit
-- Add github actions workflow for testing
-- Add codecov to github action
-- Change codecov report filetype to xml
-- Remove travis stuff and update badge in readme
-- Remove extra bracket in README
-- Add coverage filename to gitignore
-- Add version badge to readme
-- Add pypi badges
-- Add build action
-- Really add build action...
-- Add path to artifact download so that the pypi action finds build
-- Bump version to 0.8.0-dev1 to test package upload to pypi-test
-- Add quickstart to README
-- Update readme to show how to install from github directly
-- Next version will be stable 1.0.0
-- New sacheaders ([#46](https://github.com/pysmo/pysmo/issues/46))
-- Add protocols and rewrite functions to use them
-- Introduction ([#49](https://github.com/pysmo/pysmo/issues/49))
-- Update installation instructions.
-- Add devcontainer config
-- Documentation - Fundamentals ([#53](https://github.com/pysmo/pysmo/issues/53))
-- Seismogram Protocol ([#55](https://github.com/pysmo/pysmo/issues/55))
-- Fix documentation ([#57](https://github.com/pysmo/pysmo/issues/57))
-- Furo ([#58](https://github.com/pysmo/pysmo/issues/58))
-- Use newer pypi-publish action
-- Add some tests for the Station protocol
-- Skip publishing to test pypi on untagged commits
-- Add tests for event protocol
-- First draft of intro section
-- Event is too generic as a type -> Epicenter and Hypcenter ([#67](https://github.com/pysmo/pysmo/issues/67))
-- Update readme to fit in better with the documentation. ([#68](https://github.com/pysmo/pysmo/issues/68))
-- New Documentation Structure ([#70](https://github.com/pysmo/pysmo/issues/70))
-- Edit Makefile to run also on windows
-- Remove "core" directory and reorganise psymo content
-- Add readme files to source directory
-- Use nested classes in SAC class ([#77](https://github.com/pysmo/pysmo/issues/77))
-- Add Mini classes ([#78](https://github.com/pysmo/pysmo/issues/78))
-- Normalize function and test file for the func ([#76](https://github.com/pysmo/pysmo/issues/76))
-- Cleanup tests
-- Documentation for "types"
-- Update dependencies
-- Bug fix in normalize function
-- Classes documentation
-- Add docs for functions
-- Add tools documentation
-- Add inherited attributes to SAC documentation
-- Added instructions for setting up dev env on Windows ([#82](https://github.com/pysmo/pysmo/issues/82))
-- Update packages
-- Update Devcontainer Config ([#93](https://github.com/pysmo/pysmo/issues/93))
-- Don't run make notebook on attach
-- Test with tox and add windows to matrix ([#94](https://github.com/pysmo/pysmo/issues/94))
-- Fix spaces in tox.ini
-- Ignore additinal coverage files
-- Add lib/defaults.py
-- Change tox config
-- Update packages
-- Create tox venv without docs packages
-- Update noise tool to use pysmo types
-- Added content to contributing section of docs ([#88](https://github.com/pysmo/pysmo/issues/88))
-- Add rules of the land chapter to docs. ([#102](https://github.com/pysmo/pysmo/issues/102))
-- Update "more on types" section
 
 ## [0.8.0](https://github.com/pysmo/pysmo/compare/v0.7.7...v0.8.0) - 2021-08-23
 
