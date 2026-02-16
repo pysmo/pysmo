@@ -42,7 +42,7 @@ tests: check-uv mypy ## Run all tests with pytest.
 mypy: check-uv ## Run typing tests with pytest.
 	uv run pytest --mypy -m mypy src tests docs
 
-docs: check-uv sync ## Build html docs.
+docs: check-uv sync changelog ## Build html docs.
 	uv run zensical build --clean
 
 changelog: check-uv sync ## Generate CHANGELOG.md

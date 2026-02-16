@@ -3,7 +3,9 @@ name: release
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+"
 
 jobs:
   build:
@@ -48,6 +50,8 @@ jobs:
 
   publish-pypi:
     needs: publish-testpypi
+    # Only publish to PyPI if it's NOT a dev release
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '.dev')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -73,6 +77,20 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Determine pre-release status
+        id: prerelease
+        run: |
+          VERSION=$(uv run --with hatch-vcs hatch version)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" =~ (a|b|rc|dev) ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Generate release notes
         uses: orhun/git-cliff-action@v4
         with:
@@ -81,6 +99,7 @@ jobs:
         env:
           OUTPUT: RELEASE_NOTES.md
       - name: Update CHANGELOG.md
+        if: steps.prerelease.outputs.is_prerelease == 'false'
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
@@ -88,21 +107,13 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
       - name: Commit CHANGELOG.md
+        if: steps.prerelease.outputs.is_prerelease == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
           git commit -m "docs: update CHANGELOG.md for ${{ github.ref_name }}"
           git push origin HEAD:master
-      - name: Determine pre-release status
-        id: prerelease
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          if [[ "$TAG" =~ (dev|pre) ]]; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
