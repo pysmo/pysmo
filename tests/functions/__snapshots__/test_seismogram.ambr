@@ -1,0 +1,37 @@
+# serializer version: 1
+# name: test_crop_snapshot[mini_seismogram]
+  array([2300., 2310., 2341., ..., 2219., 2179., 2144.], shape=(90000,))
+# ---
+# name: test_crop_snapshot[sac_seismogram]
+  array([2300., 2310., 2341., ..., 2219., 2179., 2144.], shape=(90000,))
+# ---
+# name: test_detrend_snapshot[mini_seismogram]
+  array([ 95.596522, 106.595218, 138.593914, ..., 394.900041, 330.898737,
+         281.897433], shape=(180000,))
+# ---
+# name: test_detrend_snapshot[sac_seismogram]
+  array([ 95.596522, 106.595218, 138.593914, ..., 394.900041, 330.898737,
+         281.897433], shape=(180000,))
+# ---
+# name: test_normalize_snapshot[mini_seismogram]
+  array([0.550981, 0.553614, 0.561273, ..., 0.678794, 0.663475, 0.651747],
+        shape=(180000,))
+# ---
+# name: test_normalize_snapshot[sac_seismogram]
+  array([0.550981, 0.553614, 0.561273, ..., 0.678794, 0.663475, 0.651747],
+        shape=(180000,))
+# ---
+# name: test_pad_snapshot[mini_seismogram]
+  array([0., 0., 0., ..., 0., 0., 0.], shape=(180008,))
+# ---
+# name: test_pad_snapshot[sac_seismogram]
+  array([0., 0., 0., ..., 0., 0., 0.], shape=(180008,))
+# ---
+# name: test_resample_snapshot[mini_seismogram]
+  array([2402.102462, 2314.475547, 2407.60952 , ..., 2836.780166,
+         2806.003015, 2804.510199], shape=(90000,))
+# ---
+# name: test_resample_snapshot[sac_seismogram]
+  array([2402.102462, 2314.475547, 2407.60952 , ..., 2836.780166,
+         2806.003015, 2804.510199], shape=(90000,))
+# ---
