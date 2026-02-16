@@ -7,3 +7,27 @@
   array([  1.40388556,   6.92420142,  17.69319578, ..., 387.61852338,
          390.63046411, 393.33751681], shape=(180000,))
 # ---
+# name: TestBandstop.test_bandstop_snapshot[mini_seismogram]
+  array([2221.61643057, 2074.43161679, 1952.73976307, ..., 2407.67131807,
+         2338.42770037, 2288.7505787 ], shape=(180000,))
+# ---
+# name: TestBandstop.test_bandstop_snapshot[sac_seismogram]
+  array([2221.61643057, 2074.43161679, 1952.73976307, ..., 2407.67131807,
+         2338.42770037, 2288.7505787 ], shape=(180000,))
+# ---
+# name: TestHighpass.test_highpass_snapshot[mini_seismogram]
+  array([2281.63557592, 2251.99115946, 2243.33065803, ...,  413.73149931,
+          341.94152624,  286.22988416], shape=(180000,))
+# ---
+# name: TestHighpass.test_highpass_snapshot[sac_seismogram]
+  array([2281.63557592, 2251.99115946, 2243.33065803, ...,  413.73149931,
+          341.94152624,  286.22988416], shape=(180000,))
+# ---
+# name: TestLowpass.test_lowpass_snapshot[mini_seismogram]
+  array([2.17468062e+00, 1.06906767e+01, 2.72023372e+01, ...,
+         2.62160224e+03, 2.63060857e+03, 2.63939759e+03], shape=(180000,))
+# ---
+# name: TestLowpass.test_lowpass_snapshot[sac_seismogram]
+  array([2.17468062e+00, 1.06906767e+01, 2.72023372e+01, ...,
+         2.62160224e+03, 2.63060857e+03, 2.63939759e+03], shape=(180000,))
+# ---

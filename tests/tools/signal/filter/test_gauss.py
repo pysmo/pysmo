@@ -57,23 +57,21 @@ def test_gauss(seismogram: Seismogram) -> None:
 def test_gauss_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian filtered data and verify against snapshot for regression testing.
-    
+
     This test uses syrupy snapshots to ensure the gauss filter output remains
     consistent across code changes, helping catch unintended modifications.
     """
     Tn = 50  # Center Gaussian filter at 50s period
     alpha = 50  # Set alpha (which determines filterwidth) to 50
 
-    assert_seismogram_modification(
-        seismogram, gauss, Tn, alpha, expected_data=snapshot
-    )
+    assert_seismogram_modification(seismogram, gauss, Tn, alpha, expected_data=snapshot)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_envelope_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian envelope and verify against snapshot for regression testing.
-    
+
     This test uses syrupy snapshots to ensure the envelope output remains
     consistent across code changes, helping catch unintended modifications.
     """

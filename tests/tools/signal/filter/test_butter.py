@@ -145,9 +145,11 @@ class TestBandpass(BaseButterFilterTest):
             bandpass(seismogram, freqmin=0.5, freqmax=0.1)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-    def test_bandpass_snapshot(self, seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    def test_bandpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
         """Test bandpass filter output against snapshot for regression testing.
-        
+
         Uses syrupy snapshots to ensure the bandpass filter output remains
         consistent across code changes, helping catch unintended modifications.
         """
@@ -226,9 +228,11 @@ class TestHighpass(BaseButterFilterTest):
             highpass(seismogram, freqmin=invalid_freqmin)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-    def test_highpass_snapshot(self, seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    def test_highpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
         """Test highpass filter output against snapshot for regression testing.
-        
+
         Uses syrupy snapshots to ensure the highpass filter output remains
         consistent across code changes, helping catch unintended modifications.
         """
@@ -305,9 +309,11 @@ class TestLowpass(BaseButterFilterTest):
             lowpass(seismogram, freqmax=invalid_freqmax)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-    def test_lowpass_snapshot(self, seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    def test_lowpass_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
         """Test lowpass filter output against snapshot for regression testing.
-        
+
         Uses syrupy snapshots to ensure the lowpass filter output remains
         consistent across code changes, helping catch unintended modifications.
         """
@@ -407,9 +413,11 @@ class TestBandstop(BaseButterFilterTest):
             bandstop(seismogram, freqmin=0.5, freqmax=0.1)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
-    def test_bandstop_snapshot(self, seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
+    def test_bandstop_snapshot(
+        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+    ) -> None:
         """Test bandstop filter output against snapshot for regression testing.
-        
+
         Uses syrupy snapshots to ensure the bandstop filter output remains
         consistent across code changes, helping catch unintended modifications.
         """
