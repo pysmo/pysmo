@@ -28,7 +28,25 @@ that has the right attributes and methods is automatically compatible — there 
 no need to inherit from a pysmo base class. In many cases, minor adjustments to
 an existing class are all that is needed for it to conform to a pysmo type.
 Crucially, these adjustments are purely additive, so they will not break any
-code that already uses the class.
+code that already uses the class. The diagram below illustrates this: a bespoke
+class and two third party classes all conform to the same pysmo type, making
+them usable with any function that accepts that type. At the same time, the
+third party classes continue to work with their own existing functions.
+
+```mermaid
+flowchart TD
+    C1@{ shape: das, label: "**Bespoke Class**" }
+    C2@{ shape: das, label: "**Third Party Class A**" }
+    C3@{ shape: das, label: "**Third Party Class B**" }
+    PT@{ shape: stadium, label: "**Pysmo Type**" }
+    C2 ---> TF1@{ shape: rounded, label: "*third_party_func_a*(Third Party Class A)" }
+    C3 ---> TF2@{ shape: rounded, label: "*third_party_func_b*(Third Party Class B)" }
+    C1 ---> PT
+    C2 ---> PT
+    C3 ---> PT
+    PT e1@--- PF@{ shape: rounded, label: "*pysmo_func*(Pysmo Type)" }
+    e1@{ animate: true }
+```
 
 ## What does pysmo *not* do?
 
@@ -38,9 +56,13 @@ deliberately narrow: define types, and provide functions that operate on those
 types. Everything else — how you store your data, where you fetch it from, how
 you orchestrate your processing — is up to you.
 
-## Pysmo seems hard. Is it really worth learning?
+## Is pysmo complicated?
 
-Pysmo relies heavily on standard Python concepts — type hints,
+There is a bit of a learning curve at first, but once the core ideas click,
+things actually become easier than before. Your editor can autocomplete
+attributes, catch type mismatches before you run anything, and guide you toward
+correct usage — all of which means faster coding and fewer errors. Pysmo also
+relies heavily on standard Python concepts — type hints,
 [Protocol][typing.Protocol] classes, and dataclasses. These are not
 pysmo-specific; they are part of modern Python and are widely used across the
 broader Python ecosystem. Learning to use them effectively will improve your
