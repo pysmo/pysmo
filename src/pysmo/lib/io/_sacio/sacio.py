@@ -6,6 +6,7 @@ from ._sacio_rendered import (
     SAC_HEADERS,
     SAC_FOOTERS,
 )
+from ._lib import SACIO_DEFAULTS
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 from attrs import define
@@ -17,10 +18,8 @@ from os import PathLike
 from pathlib import Path
 import struct
 import httpx
+import time as _time
 import numpy as np
-
-IRIS_BASE_URL = "https://service.iris.edu/irisws/timeseries/1/query"
-IRIS_TIMOUT_SECONDS = 10
 
 
 @define(kw_only=True)
@@ -414,13 +413,21 @@ class SacIO(SacIOBase):
 
         transport = httpx.HTTPTransport(retries=3)
         client = httpx.Client(transport=transport)
-        response = client.get(
-            IRIS_BASE_URL,
-            params=kwargs,
-            follow_redirects=False,
-            timeout=IRIS_TIMOUT_SECONDS,
-        )
-        response.raise_for_status()
+        for attempt in range(SACIO_DEFAULTS.iris_request_retries):
+            response = client.get(
+                SACIO_DEFAULTS.iris_base_url,
+                params=kwargs,
+                follow_redirects=False,
+                timeout=SACIO_DEFAULTS.iris_timeout_seconds,
+            )
+            if (
+                response.status_code == 500
+                and attempt < SACIO_DEFAULTS.iris_request_retries - 1
+            ):
+                _time.sleep(SACIO_DEFAULTS.iris_retry_delay_seconds)
+                continue
+            response.raise_for_status()
+            break
 
         zip = ZipFile(BytesIO(response.content))
 
