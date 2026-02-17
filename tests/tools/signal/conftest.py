@@ -20,7 +20,8 @@ def butter_seis(
     butter_instanances = {}
     for sac_file in sac_files:
         name = sac_file.name
-        next if "butter" not in name else None
+        if "butter" not in name:
+            continue
         sac = SAC.from_file(sac_file)
         mini = clone_to_mini(MiniSeismogram, sac.seismogram)
         butter_instanances[name] = mini
