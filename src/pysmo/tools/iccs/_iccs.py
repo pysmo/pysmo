@@ -167,7 +167,7 @@ class ICCS:
         ![Initial stack](../../../images/tools/iccs/iccs_stack_initial.png#only-light){ loading=lazy }
         ![Initial stack](../../../images/tools/iccs/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
-        The phase emergance is not visible in the stack, and the (absolute)
+        The phase emergence is not visible in the stack, and the (absolute)
         correlation coefficients of the seismograms are not very high. This
         shows the initial picks are not very good and/or that the data are of
         low quality. To run the ICCS algorithm, we simply call (execute) the
