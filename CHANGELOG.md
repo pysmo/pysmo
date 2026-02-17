@@ -55,6 +55,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add FAQs
 - Add more details to readme
 - **(cliff)** Add more filters
+- **(faqs)** Add diagram showing how pysmo relates to third party modules
 
 ### 📦 Miscellaneous
 
@@ -209,6 +210,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add windows function and add py3.14
 - **(iccs)** Taper on outside of window
 - Retry from_iris on error status 500
+- **(signal)** Add butterworth filters
 
 ### 🧪 Testing
 
@@ -218,6 +220,10 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Check tutorial notebook runs error free
 - Add codecov token to workflow
 - **(sacio)** Add retries to IRIS web service requests and tests
+- Add common test helper script and use snapshots ([#243](https://github.com/pysmo/pysmo/issues/243))
+- **(signal)** Add unit tests for butter filters
+- Snapshot regression testing with 6-decimal rounding to seismogram functions ([#246](https://github.com/pysmo/pysmo/issues/246))
+- **(signal)** Verify butterworth with sac implementation ([#247](https://github.com/pysmo/pysmo/issues/247))
 
 ## [0.8.0](https://github.com/pysmo/pysmo/compare/v0.7.7...v0.8.0) - 2021-08-23
 
