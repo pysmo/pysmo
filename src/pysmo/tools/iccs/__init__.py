@@ -65,7 +65,7 @@ pysmo, the following parameters are required:
     cross-correlation and relevant visualisation functions happens
     internally, and does not affect the data of the original seismograms.
 
-## Epheremal seismograms
+## Ephemeral seismograms
 
 As the ICCS algorithm operates on a window around the targeted phase arrival,
 only a small portion of the input seismogram data are used. These smaller
