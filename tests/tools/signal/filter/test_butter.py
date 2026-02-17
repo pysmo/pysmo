@@ -6,11 +6,54 @@ Each function is tested for both clone modes, parameter validation, and zerophas
 
 from tests.test_helpers import assert_seismogram_modification
 from pysmo.tools.signal._filter._butter import bandpass, highpass, lowpass, bandstop
-from pysmo import Seismogram
+from pysmo import Seismogram, MiniSeismogram
 from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 import pytest
 import numpy as np
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_bandpass_against_sac(
+    seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
+) -> None:
+    """Verify that the bandpass filter produces results consistent with SAC's implementation."""
+    freqmin = 0.1
+    freqmax = 0.5
+    corners = 2
+    zerophase = False
+    bandpass(seismogram, freqmin, freqmax, corners, zerophase)
+    np.testing.assert_allclose(
+        seismogram.data, butter_seis["butter_bandpass.sac"].data, atol=0.3
+    )
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_lowpass_against_sac(
+    seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
+) -> None:
+    """Verify that the lowpass filter produces results consistent with SAC's implementation."""
+    freqmax = 0.5
+    corners = 2
+    zerophase = False
+    lowpass(seismogram, freqmax, corners, zerophase)
+    np.testing.assert_allclose(
+        seismogram.data, butter_seis["butter_lowpass.sac"].data, atol=0.3
+    )
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_highpass_against_sac(
+    seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
+) -> None:
+    """Verify that the highpass filter produces results consistent with SAC's implementation."""
+    freqmin = 0.1
+    corners = 2
+    zerophase = False
+    highpass(seismogram, freqmin, corners, zerophase)
+    np.testing.assert_allclose(
+        seismogram.data, butter_seis["butter_highpass.sac"].data, atol=0.3
+    )
 
 
 class BaseButterFilterTest:
