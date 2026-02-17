@@ -86,7 +86,7 @@ seismograms and parameters used in their creation.
 
     Both types can be used for visualisation purposes. It is therefore possible
     to e.g. pick an updated arrival in the cross-correlation seismograms, and
-    pick new time window bounderies in the context seismograms.
+    pick new time window boundaries in the context seismograms.
 
 ## Execution flow
 
