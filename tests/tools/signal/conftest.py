@@ -17,7 +17,6 @@ def sac_files() -> Generator[list[Path], Any, None]:
 def butter_seis(
     sac_files: list[Path],
 ) -> Generator[dict[str, MiniSeismogram], Any, None]:
-    butter_instanances = {}
     butter_instances = {}
     for sac_file in sac_files:
         name = sac_file.name
