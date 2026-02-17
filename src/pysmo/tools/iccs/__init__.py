@@ -30,13 +30,12 @@ initial picks are calculated rather than hand picked).
 
 ## Data requirements
 
-The [`iccs`][pysmo.tools.iccs] module requires seismograms containing extra
+The [`iccs`][pysmo.tools.iccs] module requires that seismograms contain extra
 attributes specific to the ICCS method. Hence it provides a protocol class
 ([`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram]) and corresponding Mini
-class ([`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram]) for that
-purpose. In addition to the common attributes of a
-[`Seismogram`][pysmo.Seismogram] in pysmo, the following parameters are
-required:
+class ([`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram]). In
+addition to the common attributes of a [`Seismogram`][pysmo.Seismogram] in
+pysmo, the following parameters are required:
 
 | Attribute                                          | Description |
 | -------------------------------------------------- | ----------- |
@@ -54,19 +53,40 @@ required:
     the stack. Recovery is therefore possible and previously de-selected \
     seismograms may be selected again for the next iteration. |
 | [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip]     | Determines if the \
-    seismogram data should be flipped (i.e. multiplied with -1) before using \
-    it in the stack and cross-correlation. Can be automatically toggled when \
-    `autoflip`is [`True`][True] during a [run][pysmo.tools.iccs.ICCS.__call__]. |
+    seismogram data should be flipped (i.e. data are multiplied with -1) when \
+    using  it in the stack and cross-correlation. Can be automatically toggled \
+    when `autoflip`is [`True`][True] during a \
+    [run][pysmo.tools.iccs.ICCS.__call__]. |
 
-Two things worth mentioning:
+!!! tip
 
-- Because [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] is a subclass of
-  [`Seismogram`][pysmo.Seismogram], it can be used anywhere a basic
-  [`Seismogram`][pysmo.Seismogram] is expected.
-- All actions performed only affect the attributes listed above. The original
-  [`data`][pysmo.tools.iccs.MiniICCSSeismogram.data],
-  [`begin_time`][pysmo.tools.iccs.MiniICCSSeismogram.begin_time], etc. are
-  never modified.
+    Functions and methods in this module do not modify any attributes other
+    than the ones listed above. Preparation of seismograms for use in the
+    cross-correlation and relevant visualisation functions happens
+    internally, and does not affect the data of the original seismograms.
+
+## Epheremal seismograms
+
+As the ICCS algorithm operates on a window around the targeted phase arrival,
+only a small portion of the input seismogram data are used. These smaller
+portions are generated on the fly in two ways:
+
+- **Cross-correlation seismograms** are used for the execution of the ICCS
+  algorithm. They consist of the windowed portion around the phase arrival and
+  a tapered ramp up and down *outside* the window.
+- **Context seismograms** are used to provide extra context. They consist of a
+  broader window around the phase arrival, and without any tapering applied.
+
+Both share common processing steps, and are used to create a corresponding
+stack. As they are completely reprocessible, they only exist for the lifetime
+of the [`ICCS`][pysmo.tools.iccs.ICCS] instance that contains the input
+seismograms and parameters used in their creation.
+
+!!! tip
+
+    Both types can be used for visualisation purposes. It is therefore possible
+    to e.g. pick an updated arrival in the cross-correlation seismograms, and
+    pick new time window bounderies in the context seismograms.
 
 ## Execution flow
 
