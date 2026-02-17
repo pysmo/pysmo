@@ -11,9 +11,7 @@ import pytest
 @pytest.fixture()
 def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
     seismograms: list[MiniICCSSeismogram] = []
-    iccs_files = sorted(
-        (Path(__file__).parent.parent.parent / "assets/iccs/").glob("*.bhz")
-    )
+    iccs_files = sorted((Path(__file__).parent / "assets/").glob("*.bhz"))
 
     for sacfile in iccs_files:
         sac = SAC.from_file(sacfile)
