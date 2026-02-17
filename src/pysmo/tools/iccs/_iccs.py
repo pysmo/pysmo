@@ -17,11 +17,11 @@ from pysmo.functions import (
     pad,
     window,
 )
-from pysmo.tools.signal import delay
+from pysmo.tools.signal import delay, bandpass
 from pysmo.tools.utils import average_datetimes
 from datetime import timedelta
 from attrs import define, field, validators, Attribute
-from typing import Any, Literal, overload
+from typing import Any
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
@@ -111,9 +111,9 @@ class ICCS:
         >>>
         ```
 
-        To better illustrate the different modes of running the ICCS algorithm, we
-        modify the data and picks in the seismograms to make them **worse** than
-        they actually are:
+        To better illustrate the different modes of running the ICCS algorithm,
+        we modify the data and picks in the seismograms to make them **worse**
+        than they actually are:
 
         ```python
         >>> from datetime import timedelta
@@ -137,8 +137,9 @@ class ICCS:
         >>>
         ```
 
-        We can now create an instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class
-        and plot the initial stack together with the input seismograms:
+        We can now create an instance of the [`ICCS`][pysmo.tools.iccs.ICCS]
+        class and plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
+        [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]:
 
         ```python
         >>> from pysmo.tools.iccs import ICCS, plot_stack
@@ -166,11 +167,11 @@ class ICCS:
         ![Initial stack](../../../images/tools/iccs/iccs_stack_initial.png#only-light){ loading=lazy }
         ![Initial stack](../../../images/tools/iccs/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
-        The phase emergance is not visible in the stack, and the (absolute)
-        correlation coefficents of the the seismograms are not very high. This
-        shows the initial picks are not very good and/or that the data are of low
-        quality. To run the ICCS algorithm, we simply call (execute) the ICCS
-        instance:
+        The phase emergence is not visible in the stack, and the (absolute)
+        correlation coefficients of the seismograms are not very high. This
+        shows the initial picks are not very good and/or that the data are of
+        low quality. To run the ICCS algorithm, we simply call (execute) the
+        ICCS instance:
 
         ```python
         >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
@@ -317,6 +318,31 @@ class ICCS:
     for details.
     """
 
+    bandpass_apply: bool = field(
+        default=ICCS_DEFAULTS.bandpass_apply, validator=_clear_cache_on_update
+    )
+    """Filter seismograms with a bandpass filter before running ICCS.
+
+    Setting this to [`True`][] will apply a
+    [`bandpass`][pysmo.tools.signal.bandpass] filter (with `zerophase` set to
+    [`True`][]) to the [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
+    and [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms].
+
+    As the [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] may have already
+    been pre-processed (i.e. already filtered) the default value for this
+    parameter is [`False`][].
+    """
+
+    bandpass_fmin: float = field(
+        default=ICCS_DEFAULTS.bandpass_fmin, validator=_clear_cache_on_update
+    )
+    """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
+
+    bandpass_fmax: float = field(
+        default=ICCS_DEFAULTS.bandpass_fmax, validator=_clear_cache_on_update
+    )
+    """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
+
     min_ccnorm: np.floating | float = ICCS_DEFAULTS.min_ccnorm
     """Minimum normalised cross-correlation coefficient for seismograms.
 
@@ -352,34 +378,85 @@ class ICCS:
         self._valid_pick_range = None
         self._valid_time_window_range = None
 
+    def _prepare_seismograms(
+        self,
+        add_context: bool = False,
+    ) -> list[MiniSeismogram]:
+        """Prepare cc_seismograms or context_seismograms."""
+
+        return_seismograms: list[MiniSeismogram] = []
+
+        min_delta = min((s.delta for s in self.seismograms))
+
+        for seismogram in self.seismograms:
+            pick = seismogram.t1 or seismogram.t0
+            window_start = pick + self.window_pre
+            window_end = pick + self.window_post
+
+            prepared_seismogram = clone_to_mini(MiniSeismogram, seismogram)
+
+            if self.bandpass_apply:
+                bandpass(
+                    prepared_seismogram,
+                    self.bandpass_fmin,
+                    self.bandpass_fmax,
+                    zerophase=True,
+                )
+
+            if prepared_seismogram.delta != min_delta:
+                resample(prepared_seismogram, min_delta)
+
+            if add_context:
+                context_window_start = window_start - self.context_width
+                context_window_end = window_end + self.context_width
+
+                if (
+                    context_window_start < seismogram.begin_time
+                    or context_window_end > seismogram.end_time
+                ):
+                    pad(
+                        prepared_seismogram,
+                        context_window_start,
+                        context_window_end,
+                        mode="linear_ramp",
+                        end_values=(0, 0),
+                    )
+
+                crop(prepared_seismogram, context_window_start, context_window_end)
+                detrend(prepared_seismogram)
+            else:
+                window(prepared_seismogram, window_start, window_end, self.ramp_width)
+
+            normalize(prepared_seismogram, window_start, window_end)
+
+            if seismogram.flip is True:
+                prepared_seismogram.data *= -1
+
+            return_seismograms.append(prepared_seismogram)
+
+        # If all seismograms have the same length, return them now.
+        if len(lengths := set(len(s) for s in return_seismograms)) == 1:
+            return return_seismograms
+
+        # Shorten seismograms if necessary and return.
+        for s in return_seismograms:
+            s.data = s.data[: min(lengths)]
+        return return_seismograms
+
     @property
     def cc_seismograms(self) -> list[MiniSeismogram]:
         """Returns the seismograms as used for the cross-correlation."""
 
         if self._cc_seismograms is None:
-            self._cc_seismograms = _prepare_seismograms(
-                self.seismograms,
-                self.window_pre,
-                self.window_post,
-                self.ramp_width,
-            )
-
+            self._cc_seismograms = self._prepare_seismograms(add_context=False)
         return self._cc_seismograms
 
     @property
     def context_seismograms(self) -> list[MiniSeismogram]:
-        """Returns the seismograms with extra padding for plotting."""
+        """Returns the seismograms with extra context for plotting."""
 
         if self._context_seismograms is None:
-            self._context_seismograms = _prepare_seismograms(
-                self.seismograms,
-                self.window_pre,
-                self.window_post,
-                self.ramp_width,
-                True,
-                self.context_width,
-            )
-
+            self._context_seismograms = self._prepare_seismograms(add_context=True)
         return self._context_seismograms
 
     @property
@@ -387,8 +464,12 @@ class ICCS:
         """Returns an array of the normalised cross-correlation coefficients."""
 
         if self._ccnorms is None:
-            self._ccnorms = _calc_ccnorms(self.cc_seismograms, self.stack)
-
+            self._ccnorms = np.array(
+                [
+                    (pearsonr(seismogram.data, self.stack.data)[0])
+                    for seismogram in self.cc_seismograms
+                ]
+            )
         return self._ccnorms
 
     @property
@@ -404,10 +485,8 @@ class ICCS:
         Returns:
             Stacked input seismograms.
         """
-        if self._cc_stack is not None:
-            return self._cc_stack
-
-        self._cc_stack = _create_stack(self.cc_seismograms, self.seismograms)
+        if self._cc_stack is None:
+            self._cc_stack = _create_stack(self.cc_seismograms, self.seismograms)
         return self._cc_stack
 
     @property
@@ -417,10 +496,10 @@ class ICCS:
         Returns:
             Stacked input seismograms with context padding.
         """
-        if self._context_stack is not None:
-            return self._context_stack
-
-        self._context_stack = _create_stack(self.context_seismograms, self.seismograms)
+        if self._context_stack is None:
+            self._context_stack = _create_stack(
+                self.context_seismograms, self.seismograms
+            )
         return self._context_stack
 
     def validate_pick(self, pick: timedelta) -> bool:
@@ -570,90 +649,6 @@ class ICCS:
         return np.array(convergence_list)
 
 
-@overload
-def _prepare_seismograms(
-    seismograms: Sequence[ICCSSeismogram],
-    window_pre: timedelta,
-    window_post: timedelta,
-    ramp_width: timedelta | float,
-    add_context: Literal[False] = ...,
-    context_width: None = ...,
-) -> list[MiniSeismogram]: ...
-
-
-@overload
-def _prepare_seismograms(
-    seismograms: Sequence[ICCSSeismogram],
-    window_pre: timedelta,
-    window_post: timedelta,
-    ramp_width: timedelta | float,
-    add_context: Literal[True],
-    context_width: timedelta,
-) -> list[MiniSeismogram]: ...
-
-
-def _prepare_seismograms(
-    seismograms: Sequence[ICCSSeismogram],
-    window_pre: timedelta,
-    window_post: timedelta,
-    ramp_width: timedelta | float,
-    add_context: bool = False,
-    context_width: None | timedelta = None,
-) -> list[MiniSeismogram]:
-    """Prepare seismograms for plotting or cross-correlation."""
-
-    if add_context and context_width is None:
-        raise ValueError(
-            "if add_context is True, context_width must also be specified."
-        )
-
-    return_seismograms: list[MiniSeismogram] = []
-
-    min_delta = min((s.delta for s in seismograms))
-
-    for seismogram in seismograms:
-        pick = seismogram.t1 or seismogram.t0
-        window_start = pick + window_pre
-        window_end = pick + window_post
-        prepared_seismogram = clone_to_mini(MiniSeismogram, seismogram)
-        resample(prepared_seismogram, min_delta)
-
-        if add_context:
-            assert context_width is not None
-            plot_window_start = window_start - context_width
-            plot_window_end = window_end + context_width
-
-            if (
-                plot_window_start < seismogram.begin_time
-                or plot_window_end > seismogram.end_time
-            ):
-                pad(
-                    prepared_seismogram,
-                    plot_window_start,
-                    plot_window_end,
-                    mode="linear_ramp",
-                    end_values=(0, 0),
-                )
-
-            crop(prepared_seismogram, plot_window_start, plot_window_end)
-            detrend(prepared_seismogram)
-        else:
-            window(prepared_seismogram, window_start, window_end, ramp_width)
-        normalize(prepared_seismogram, window_start, window_end)
-        if seismogram.flip is True:
-            prepared_seismogram.data *= -1
-        return_seismograms.append(prepared_seismogram)
-
-    # If all seismograms must have the same length, return them now.
-    if len(lengths := set(len(s) for s in return_seismograms)) == 1:
-        return return_seismograms
-
-    # Shorten seismograms if necessary and return.
-    for s in return_seismograms:
-        s.data = s.data[: min(lengths)]
-    return return_seismograms
-
-
 def _update_seismogram(
     delay: timedelta,
     ccnorm: float,
@@ -704,22 +699,6 @@ def _update_seismogram(
     seismogram.t1 = updated_t1
 
 
-def _calc_ccnorms(seismograms: Sequence[Seismogram], stack: Seismogram) -> np.ndarray:
-    """Calculate normalised cross-correlation coefficients between each seismogram and the stack.
-
-    Parameters:
-        seismograms: Prepared seismograms to correlate with the stack.
-        stack: The stacked seismogram to correlate against.
-
-    Returns:
-        Array of Pearson correlation coefficients, one per seismogram.
-    """
-    ccnorms = np.array(
-        [(pearsonr(seismogram.data, stack.data)[0]) for seismogram in seismograms]
-    )
-    return ccnorms
-
-
 def _create_stack(
     prepared_seismograms: Sequence[Seismogram], seismograms: Sequence[ICCSSeismogram]
 ) -> MiniSeismogram:
@@ -763,10 +742,10 @@ def _calc_convergence(
         prev_stack: Stack from last iteration.
         method: Method of convergence criterion calculation.
     """
-    if method == "corrcoef":
+    if method == CONVERGENCE_METHOD.corrcoef:
         covr, _ = pearsonr(current_stack.data, prev_stack.data)
         return 1 - float(covr)
-    elif method == "change":
+    elif method == CONVERGENCE_METHOD.change:
         return float(
             norm(current_stack.data - prev_stack.data, 1)
             / norm(current_stack.data, 2)
