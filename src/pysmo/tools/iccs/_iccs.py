@@ -384,11 +384,6 @@ class ICCS:
     ) -> list[MiniSeismogram]:
         """Prepare cc_seismograms or context_seismograms."""
 
-        if add_context and self.context_width is None:
-            raise ValueError(
-                "if add_context is True, context_width must also be specified."
-            )
-
         return_seismograms: list[MiniSeismogram] = []
 
         min_delta = min((s.delta for s in self.seismograms))
