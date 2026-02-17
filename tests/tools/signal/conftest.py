@@ -18,11 +18,11 @@ def butter_seis(
     sac_files: list[Path],
 ) -> Generator[dict[str, MiniSeismogram], Any, None]:
     butter_instanances = {}
+    butter_instances = {}
     for sac_file in sac_files:
         name = sac_file.name
-        if "butter" not in name:
-            continue
+        next if "butter" not in name else None
         sac = SAC.from_file(sac_file)
         mini = clone_to_mini(MiniSeismogram, sac.seismogram)
-        butter_instanances[name] = mini
-    yield butter_instanances
+        butter_instances[name] = mini
+    yield butter_instances
