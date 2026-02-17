@@ -55,7 +55,7 @@ pysmo, the following parameters are required:
 | [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip]     | Determines if the \
     seismogram data should be flipped (i.e. data are multiplied with -1) when \
     using  it in the stack and cross-correlation. Can be automatically toggled \
-    when `autoflip`is [`True`][True] during a \
+    when `autoflip` is [`True`][True] during a \
     [run][pysmo.tools.iccs.ICCS.__call__]. |
 
 !!! tip
