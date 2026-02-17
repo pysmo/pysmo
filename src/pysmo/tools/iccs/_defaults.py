@@ -18,6 +18,9 @@ class _IccsDefaults:
     context_width: timedelta = timedelta(seconds=20)
     ramp_width: timedelta | float = 0.1
     min_ccnorm: np.floating | float = 0.5
+    bandpass_apply: bool = False
+    bandpass_fmin: float = 0.05
+    bandpass_fmax: float = 2
 
     # ------------------------------------------------------------------------
     # ICCS __call__ defaults
