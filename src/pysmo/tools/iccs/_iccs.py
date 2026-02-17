@@ -324,7 +324,7 @@ class ICCS:
     """Filter seismograms with a bandpass filter before running ICCS.
 
     Setting this to [`True`][] will apply a
-    [`bandpass`][pysmo.tools.signal.bandpass] filter (with `zerophase`set to
+    [`bandpass`][pysmo.tools.signal.bandpass] filter (with `zerophase` set to
     [`True`][]) to the [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
     and [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms].
 
