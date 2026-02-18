@@ -1,11 +1,10 @@
-from pysmo.lib.validators import datetime_is_utc
+from pysmo.lib.validators import datetime64_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.typing import PositiveTimedelta
+from pysmo.typing import PositiveTimedelta64
 from typing import Protocol, runtime_checkable
 from attrs import define, field
-from datetime import datetime, timedelta
-from beartype import beartype
 import numpy as np
+from beartype import beartype
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 
@@ -19,33 +18,33 @@ class Seismogram(Protocol):
 
     Examples:
         Usage for a function that takes a Seismogram compatible class instance as
-        argument and returns the begin time in isoformat:
+        argument and returns the begin time as string:
 
         ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import SAC  # SAC is a class that "speaks" Seismogram
         >>>
         >>> def example_function(seis_in: Seismogram) -> str:
-        ...     return seis_in.begin_time.isoformat()
+        ...     return str(seis_in.begin_time)
         ...
         >>> sac = SAC.from_file("example.sac")
         >>> seismogram = sac.seismogram
         >>> example_function(seismogram)
-        '2005-03-01T07:23:02.160000+00:00'
+        '2005-03-01T07:23:02.160000'
         >>>
         ```
     """
 
-    begin_time: datetime
-    """Seismogram begin time."""
+    begin_time: np.datetime64
+    """Seismogram begin time as numpy datetime64[us]."""
 
     data: np.ndarray
     """Seismogram data."""
 
-    delta: timedelta
-    """The sampling interval.
+    delta: np.timedelta64
+    """The sampling interval as numpy timedelta64[us].
 
-    Should be a positive `timedelta` instance.
+    Should be a positive timedelta64 value.
     """
 
     def __len__(self) -> int:
@@ -57,8 +56,8 @@ class Seismogram(Protocol):
         return len(self.data)
 
     @property
-    def end_time(self) -> datetime:
-        """Seismogram end time."""
+    def end_time(self) -> np.datetime64:
+        """Seismogram end time as numpy datetime64[us]."""
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + self.delta * (len(self) - 1)
@@ -79,10 +78,9 @@ class MiniSeismogram(Seismogram):
     Examples:
         ```python
         >>> from pysmo import MiniSeismogram, Seismogram
-        >>> from datetime import datetime, timedelta, timezone
         >>> import numpy as np
-        >>> now = datetime.now(timezone.utc)
-        >>> delta = timedelta(seconds=0.1)
+        >>> now = np.datetime64('2020-01-01T12:00:00', 'us')
+        >>> delta = np.timedelta64(100_000, 'us')  # 0.1 seconds
         >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
         >>> isinstance(seismogram, Seismogram)
         True
@@ -90,13 +88,13 @@ class MiniSeismogram(Seismogram):
         ```
     """
 
-    begin_time: datetime = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime_is_utc
+    begin_time: np.datetime64 = field(
+        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime64_is_utc
     )
-    """Seismogram begin time."""
+    """Seismogram begin time as numpy datetime64[us]."""
 
-    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
-    """Seismogram sampling interval."""
+    delta: PositiveTimedelta64 = SEISMOGRAM_DEFAULTS.delta.value
+    """Seismogram sampling interval as numpy timedelta64[us]."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""

@@ -8,17 +8,23 @@ to ensure attribute values meet expected constraints.
 """
 
 from typing import Annotated
-from datetime import timedelta
+import numpy as np
 from beartype.vale import Is
+
+
+def _td64_to_seconds(td: np.timedelta64) -> float:
+    """Convert timedelta64 to seconds as float."""
+    return td.astype("timedelta64[us]").astype(np.int64) / 1_000_000.0
+
 
 # Reusable Validators
 _is_unit = Is[lambda x: 0.0 <= x <= 1.0]
 _is_positive = Is[lambda x: x > 0]
 _is_negative = Is[lambda x: x < 0]
 _is_non_negative = Is[lambda x: x >= 0]
-_is_positive_timedelta = Is[lambda x: x.total_seconds() > 0]
-_is_negative_timedelta = Is[lambda x: x.total_seconds() < 0]
-_is_non_negative_timedelta = Is[lambda x: x.total_seconds() >= 0]
+_is_positive_timedelta64 = Is[lambda x: _td64_to_seconds(x) > 0]
+_is_negative_timedelta64 = Is[lambda x: _td64_to_seconds(x) < 0]
+_is_non_negative_timedelta64 = Is[lambda x: _td64_to_seconds(x) >= 0]
 
 UnitFloat = Annotated[float, _is_unit]
 """Float between 0.0 and 1.0."""
@@ -32,11 +38,16 @@ NegativeNumber = Annotated[float | int, _is_negative]
 NonNegativeNumber = Annotated[float | int, _is_non_negative]
 """Non-negative Numbers (Float or Int)."""
 
-PositiveTimedelta = Annotated[timedelta, _is_positive_timedelta]
-"""Positive Timedelta."""
+PositiveTimedelta64 = Annotated[np.timedelta64, _is_positive_timedelta64]
+"""Positive timedelta64."""
 
-NegativeTimedelta = Annotated[timedelta, _is_negative_timedelta]
-"""Positive Timedelta."""
+NegativeTimedelta64 = Annotated[np.timedelta64, _is_negative_timedelta64]
+"""Negative timedelta64."""
 
-NonNegativeTimedelta = Annotated[timedelta, _is_non_negative_timedelta]
-"""Non-negative Timedelta (includes 0 total_seconds)."""
+NonNegativeTimedelta64 = Annotated[np.timedelta64, _is_non_negative_timedelta64]
+"""Non-negative timedelta64 (includes 0 total_seconds)."""
+
+# Legacy aliases for backwards compatibility (deprecated)
+PositiveTimedelta = PositiveTimedelta64
+NegativeTimedelta = NegativeTimedelta64
+NonNegativeTimedelta = NonNegativeTimedelta64

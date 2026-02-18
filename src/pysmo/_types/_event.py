@@ -1,8 +1,8 @@
 from ._location_with_depth import LocationWithDepth
-from pysmo.lib.validators import datetime_is_utc
+from pysmo.lib.validators import datetime64_is_utc
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
-from datetime import datetime
+import numpy as np
 
 __all__ = ["Event", "MiniEvent"]
 
@@ -11,8 +11,8 @@ __all__ = ["Event", "MiniEvent"]
 class Event(LocationWithDepth, Protocol):
     """Protocol class to define the `Event` type."""
 
-    time: datetime
-    """Event origin time."""
+    time: np.datetime64
+    """Event origin time as numpy datetime64[us]."""
 
 
 @define(kw_only=True, slots=True)
@@ -25,8 +25,8 @@ class MiniEvent:
     Examples:
         ```python
         >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location
-        >>> from datetime import datetime, timezone
-        >>> now = datetime.now(timezone.utc)
+        >>> import numpy as np
+        >>> now = np.datetime64('2020-01-01T12:00:00', 'us')
         >>> event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
         >>> isinstance(event, Event)
         True
@@ -38,11 +38,11 @@ class MiniEvent:
         ```
     """
 
-    time: datetime = field(validator=datetime_is_utc)
-    """Event origin time."""
+    time: np.datetime64 = field(validator=datetime64_is_utc)
+    """Event origin time as numpy datetime64[us]."""
 
     latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
-    """Event atitude from -90 to 90 degrees."""
+    """Event latitude from -90 to 90 degrees."""
 
     longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
     """Event longitude from -180 to 180 degrees."""
