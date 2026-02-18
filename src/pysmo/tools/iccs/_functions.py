@@ -2,6 +2,7 @@
 
 from ._iccs import ICCS
 from ._defaults import ICCS_DEFAULTS
+from pysmo.tools.utils import to_seconds
 from collections.abc import Callable
 from typing import overload, Any, Literal
 from datetime import timedelta
@@ -68,12 +69,12 @@ def _make_mask(iccs: ICCS, show_all: bool) -> list[bool]:
 def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
     """Return the taper ramp width in seconds.
 
-    If `ramp_width` is a timedelta it is converted directly; if it is a
+    If `ramp_width` is a timedelta64 it is converted directly; if it is a
     float it is treated as a fraction of the total time window duration.
     """
-    if isinstance(iccs.ramp_width, timedelta):
-        return iccs.ramp_width.total_seconds()
-    return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
+    if isinstance(iccs.ramp_width, (timedelta, np.timedelta64)):
+        return to_seconds(iccs.ramp_width)
+    return iccs.ramp_width * to_seconds(iccs.window_post - iccs.window_pre)
 
 
 def _add_save_cancel_buttons(fig: Figure, on_save: Callable[[Event], None]) -> None:
@@ -121,15 +122,15 @@ def _plot_common_stack(
     seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
     stack = iccs.context_stack if context else iccs.stack
 
-    tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
+    tmin, tmax = to_seconds(iccs.window_pre), to_seconds(iccs.window_post)
 
     ax.axvspan(tmin, tmax, color="lightgreen", alpha=0.2, label="Time Window")
     ax.axvline(tmin, color="lightgreen", linewidth=0.5, alpha=0.7)
     ax.axvline(tmax, color="lightgreen", linewidth=0.5, alpha=0.7)
 
     if context:
-        tmin -= iccs.context_width.total_seconds()
-        tmax += iccs.context_width.total_seconds()
+        tmin -= to_seconds(iccs.context_width)
+        tmax += to_seconds(iccs.context_width)
     elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
@@ -198,11 +199,11 @@ def _plot_common_image(
     # Sort and reverse the rows
     seismogram_matrix = seismogram_matrix[np.argsort(ccnorms)[::-1]]
 
-    tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
+    tmin, tmax = to_seconds(iccs.window_pre), to_seconds(iccs.window_post)
 
     if context:
-        tmin -= iccs.context_width.total_seconds()
-        tmax += iccs.context_width.total_seconds()
+        tmin -= to_seconds(iccs.context_width)
+        tmax += to_seconds(iccs.context_width)
     elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
@@ -676,7 +677,7 @@ def update_timewindow(
     ax.set_title("Pick a new time window.")
 
     # 'old_extents' is used to revert to the last valid extents
-    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+    old_extents = (to_seconds(iccs.window_pre), to_seconds(iccs.window_post))
 
     def onselect(xmin: float, xmax: float) -> None:
         nonlocal old_extents

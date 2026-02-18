@@ -18,7 +18,7 @@ from pysmo.functions import (
     window,
 )
 from pysmo.tools.signal import bandpass, multi_delay
-from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
+from pysmo.tools.utils import average_datetimes, pearson_matrix_vector, to_seconds
 from attrs import define, field, validators, Attribute
 from typing import Any
 from collections.abc import Sequence
@@ -433,7 +433,7 @@ class ICCS:
                 )
 
             if not np.isclose(
-                prepared_seismogram.delta.total_seconds(), min_delta.total_seconds()
+                to_seconds(prepared_seismogram.delta), to_seconds(min_delta)
             ):
                 resample(prepared_seismogram, min_delta)
 

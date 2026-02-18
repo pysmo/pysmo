@@ -252,11 +252,12 @@ def test_crop(seismogram: Seismogram) -> None:
         crop(seismogram, new_end_time, new_begin_time)
 
     def check_cropped(seis: Seismogram) -> None:
+        from pysmo.tools.utils import to_seconds
         assert seis.begin_time.timestamp() == pytest.approx(
-            new_begin_time.timestamp(), abs=seismogram.delta.total_seconds()
+            new_begin_time.timestamp(), abs=to_seconds(seismogram.delta)
         )
         assert seis.end_time.timestamp() == pytest.approx(
-            new_end_time.timestamp(), abs=seismogram.delta.total_seconds()
+            new_end_time.timestamp(), abs=to_seconds(seismogram.delta)
         )
         assert all(seismogram.data[new_start_index:new_end_index] == seis.data)
 

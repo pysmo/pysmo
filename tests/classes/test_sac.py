@@ -5,6 +5,7 @@ from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.tools.utils import to_seconds
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
@@ -61,7 +62,7 @@ class TestSAC:
         assert sacseis.data.all() == sacio.data.all()
         assert list(sacseis.data[:5]) == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0]
         assert (
-            sacseis.delta.total_seconds()
+            to_seconds(sacseis.delta)
             == pytest.approx(sacio.delta, 0.001)
             == pytest.approx(0.02, 0.001)
         )
@@ -85,7 +86,7 @@ class TestSAC:
         assert sacseis.end_time.timestamp() == pytest.approx(
             datetime(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
         )
-        assert (sacseis.end_time - sacseis.begin_time).total_seconds() == pytest.approx(
+        assert to_seconds(sacseis.end_time - sacseis.begin_time) == pytest.approx(
             sacio.delta * (sacio.npts - 1)
         )
 
@@ -228,7 +229,7 @@ class TestSAC:
         sacio = SacIO.from_file(sacfile)
         assert sac.timestamps.e is not None
         assert sac.timestamps.b is not None
-        assert (sac.timestamps.e - sac.timestamps.b).total_seconds() == pytest.approx(
+        assert to_seconds(sac.timestamps.e - sac.timestamps.b) == pytest.approx(
             sacio.e - sacio.b, 0.000001
         )
         now = datetime.now(timezone.utc)

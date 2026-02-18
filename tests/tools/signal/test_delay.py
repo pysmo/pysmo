@@ -251,7 +251,7 @@ def test_multi_multi_delay_known_shifts() -> None:
     for i in range(n):
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * delta
-            assert to_seconds(delays[i, j]) == pytest.approx(expected_delay.total_seconds())
+            assert to_seconds(delays[i, j]) == pytest.approx(to_seconds(expected_delay))
             assert coeffs[i, j] == pytest.approx(1, abs=0.05)
 
 
@@ -279,7 +279,7 @@ def test_multi_multi_delay_abs_max() -> None:
     ]
     delays, coeffs = multi_multi_delay(seismograms, abs_max=True)
     expected_delay = nroll * seismograms[0].delta
-    assert to_seconds(delays[0, 1]) == pytest.approx(expected_delay.total_seconds())
+    assert to_seconds(delays[0, 1]) == pytest.approx(to_seconds(expected_delay))
     assert coeffs[0, 1] < 0
 
 
@@ -328,7 +328,7 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     for i in range(n):
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * base.delta
-            assert to_seconds(delays[i, j]) == pytest.approx(expected_delay.total_seconds())
+            assert to_seconds(delays[i, j]) == pytest.approx(to_seconds(expected_delay))
             assert coeffs[i, j] == pytest.approx(1, abs=0.05)
 
 
@@ -368,7 +368,7 @@ def test_mccc_known_shifts() -> None:
             expected = (shifts[j] - shifts[i]) * seismograms[0].delta
             actual = times[i] - times[j]
             assert to_seconds(actual) == pytest.approx(
-                expected.total_seconds(), abs=0.1
+                to_seconds(expected), abs=0.1
             )
 
 
@@ -425,7 +425,7 @@ def test_mccc_errors_are_nonnegative() -> None:
     _, errors, _ = mccc(seismograms)
 
     for e in errors:
-        assert e.total_seconds() >= 0
+        assert to_seconds(e) >= 0
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -451,5 +451,5 @@ def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
             expected = (shifts[j] - shifts[i]) * delta
             actual = times[i] - times[j]
             assert to_seconds(actual) == pytest.approx(
-                expected.total_seconds(), abs=0.1
+                to_seconds(expected), abs=0.1
             )

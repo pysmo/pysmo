@@ -3,6 +3,7 @@ import pytest
 from datetime import datetime, timedelta, timezone
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.tools.utils import to_seconds
 
 
 class TestMiniSeismogram:
@@ -68,8 +69,8 @@ class TestMiniSeismogram:
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis) - 1
         )
-        miniseis.delta = timedelta(seconds=0.1)
-        assert miniseis.delta.total_seconds() == 0.1
+        miniseis.delta = np.timedelta64(100_000, 'us')  # 0.1 seconds
+        assert to_seconds(miniseis.delta) == 0.1
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis) - 1
         )

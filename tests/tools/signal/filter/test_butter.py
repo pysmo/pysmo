@@ -6,6 +6,7 @@ Each function is tested for both clone modes, parameter validation, and zerophas
 
 from tests.test_helpers import assert_seismogram_modification
 from pysmo.tools.signal._filter._butter import bandpass, highpass, lowpass, bandstop
+from pysmo.tools.utils import to_seconds
 from pysmo import Seismogram, MiniSeismogram
 from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
@@ -93,7 +94,7 @@ class BaseButterFilterTest:
         Returns:
             The Nyquist frequency in Hz.
         """
-        sampling_rate = 1 / seismogram.delta.total_seconds()
+        sampling_rate = 1 / to_seconds(seismogram.delta)
         return sampling_rate / 2
 
 
