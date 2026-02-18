@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 from pysmo.tools.noise import generate_noise, peterson
-from datetime import timedelta
+from pandas import Timedelta
 
 
 def calc_power(
@@ -24,7 +24,7 @@ def calc_power(
 def main() -> None:
     # Set parameters
     npts: int = 200000  # multiple of 4
-    delta = timedelta(seconds=0.1)
+    delta = Timedelta(seconds=0.1)
     sampling_frequency = 1 / delta.total_seconds()
     nperseg = int(npts / 4)
     nfft = int(npts / 2)
