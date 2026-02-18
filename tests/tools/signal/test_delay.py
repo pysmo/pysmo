@@ -8,6 +8,11 @@ from datetime import timedelta
 import random
 
 
+def td64_to_seconds(td64: np.timedelta64) -> float:
+    """Convert numpy timedelta64 to seconds as float."""
+    return td64.astype("timedelta64[us]").astype(np.int64) / 1_000_000.0
+
+
 def test_delay_basic() -> None:
     data1 = np.array([1, 1, 1, 1, 2, 3, 4, 1, 1])
     data2 = np.array([1, 1, 1, 2, 3, 4, 1])
@@ -103,6 +108,8 @@ def test_multi_delay_empty_list() -> None:
     delays, coeffs = multi_delay(template, [])
     assert len(delays) == 0
     assert len(coeffs) == 0
+    assert isinstance(delays, np.ndarray)
+    assert isinstance(coeffs, np.ndarray)
 
 
 def test_multi_delay_single_identical() -> None:
@@ -111,7 +118,7 @@ def test_multi_delay_single_identical() -> None:
     template = MiniSeismogram(data=data.copy())
     seis = MiniSeismogram(data=data.copy())
     delays, coeffs = multi_delay(template, [seis])
-    assert delays[0].total_seconds() == pytest.approx(0, abs=1e-6)
+    assert td64_to_seconds(delays[0]) == pytest.approx(0, abs=1e-6)
     assert coeffs[0] == pytest.approx(1, abs=0.05)
 
 
@@ -177,7 +184,7 @@ def test_multi_delay_different_lengths() -> None:
     assert len(delays) == 2
     assert len(coeffs) == 2
     # The identical-length copy should have zero delay
-    assert delays[1].total_seconds() == pytest.approx(0, abs=1e-6)
+    assert td64_to_seconds(delays[1]) == pytest.approx(0, abs=1e-6)
     assert coeffs[1] == pytest.approx(1, abs=0.05)
 
 
@@ -230,7 +237,7 @@ def test_multi_multi_delay_diagonal_zero() -> None:
     ]
     delays, coeffs = multi_multi_delay(seismograms)
     for i in range(len(seismograms)):
-        assert delays[i, i].total_seconds() == pytest.approx(0, abs=1e-6)
+        assert td64_to_seconds(delays[i, i]) == pytest.approx(0, abs=1e-6)
         assert coeffs[i, i] == pytest.approx(1, abs=0.05)
 
 
@@ -249,7 +256,7 @@ def test_multi_multi_delay_known_shifts() -> None:
     for i in range(n):
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * delta
-            assert delays[i, j] == expected_delay
+            assert td64_to_seconds(delays[i, j]) == pytest.approx(expected_delay.total_seconds())
             assert coeffs[i, j] == pytest.approx(1, abs=0.05)
 
 
@@ -264,7 +271,7 @@ def test_multi_multi_delay_antisymmetric() -> None:
     n = len(shifts)
     for i in range(n):
         for j in range(n):
-            assert delays[i, j] == -delays[j, i]
+            assert td64_to_seconds(delays[i, j]) == pytest.approx(-td64_to_seconds(delays[j, i]))
 
 
 def test_multi_multi_delay_abs_max() -> None:
@@ -277,7 +284,7 @@ def test_multi_multi_delay_abs_max() -> None:
     ]
     delays, coeffs = multi_multi_delay(seismograms, abs_max=True)
     expected_delay = nroll * seismograms[0].delta
-    assert delays[0, 1] == expected_delay
+    assert td64_to_seconds(delays[0, 1]) == pytest.approx(expected_delay.total_seconds())
     assert coeffs[0, 1] < 0
 
 
@@ -301,7 +308,7 @@ def test_multi_multi_delay_consistent_with_multi_delay() -> None:
     for i in range(len(seismograms)):
         delays_1d, coeffs_1d = multi_delay(seismograms[i], seismograms)
         for j in range(len(seismograms)):
-            assert delays_2d[i, j] == delays_1d[j]
+            assert td64_to_seconds(delays_2d[i, j]) == pytest.approx(td64_to_seconds(delays_1d[j]))
             assert coeffs_2d[i, j] == pytest.approx(coeffs_1d[j], abs=0.05)
 
 
@@ -326,7 +333,7 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     for i in range(n):
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * base.delta
-            assert delays[i, j] == expected_delay
+            assert td64_to_seconds(delays[i, j]) == pytest.approx(expected_delay.total_seconds())
             assert coeffs[i, j] == pytest.approx(1, abs=0.05)
 
 
@@ -338,9 +345,9 @@ def test_mccc_single_seismogram() -> None:
     seis = MiniSeismogram(data=np.sin(np.linspace(0, 4 * np.pi, 500)))
     times, errors, rmse = mccc([seis])
     assert len(times) == 1
-    assert times[0].total_seconds() == 0
-    assert errors[0].total_seconds() == 0
-    assert rmse.total_seconds() == 0
+    assert td64_to_seconds(times[0]) == 0
+    assert td64_to_seconds(errors[0]) == 0
+    assert td64_to_seconds(rmse) == 0
 
 
 def test_mccc_empty_list() -> None:
@@ -348,7 +355,7 @@ def test_mccc_empty_list() -> None:
     times, errors, rmse = mccc([])
     assert len(times) == 0
     assert len(errors) == 0
-    assert rmse.total_seconds() == 0
+    assert td64_to_seconds(rmse) == 0
 
 
 def test_mccc_known_shifts() -> None:
@@ -365,7 +372,7 @@ def test_mccc_known_shifts() -> None:
         for j in range(len(shifts)):
             expected = (shifts[j] - shifts[i]) * seismograms[0].delta
             actual = times[i] - times[j]
-            assert actual.total_seconds() == pytest.approx(
+            assert td64_to_seconds(actual) == pytest.approx(
                 expected.total_seconds(), abs=0.1
             )
 
@@ -378,7 +385,7 @@ def test_mccc_zero_mean() -> None:
 
     times, _, _ = mccc(seismograms)
 
-    total = sum(t.total_seconds() for t in times)
+    total = sum(td64_to_seconds(t) for t in times)
     assert total == pytest.approx(0, abs=0.1)
 
 
@@ -392,9 +399,9 @@ def test_mccc_two_identical() -> None:
 
     times, errors, rmse = mccc(seismograms)
 
-    assert times[0].total_seconds() == pytest.approx(0, abs=1e-6)
-    assert times[1].total_seconds() == pytest.approx(0, abs=1e-6)
-    assert rmse.total_seconds() == pytest.approx(0, abs=1e-6)
+    assert td64_to_seconds(times[0]) == pytest.approx(0, abs=1e-6)
+    assert td64_to_seconds(times[1]) == pytest.approx(0, abs=1e-6)
+    assert td64_to_seconds(rmse) == pytest.approx(0, abs=1e-6)
 
 
 def test_mccc_min_cc_filters_pairs() -> None:
@@ -410,8 +417,8 @@ def test_mccc_min_cc_filters_pairs() -> None:
     times, errors, rmse = mccc(seismograms, min_cc=1.0)
 
     # All pairs filtered → returns zeros
-    assert times[0].total_seconds() == 0
-    assert times[1].total_seconds() == 0
+    assert td64_to_seconds(times[0]) == 0
+    assert td64_to_seconds(times[1]) == 0
 
 
 def test_mccc_errors_are_nonnegative() -> None:
@@ -448,6 +455,6 @@ def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
         for j in range(len(shifts)):
             expected = (shifts[j] - shifts[i]) * delta
             actual = times[i] - times[j]
-            assert actual.total_seconds() == pytest.approx(
+            assert td64_to_seconds(actual) == pytest.approx(
                 expected.total_seconds(), abs=0.1
             )
