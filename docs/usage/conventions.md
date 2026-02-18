@@ -18,22 +18,24 @@ This is also consistent with e.g. [`scipy.constants`][].
 
 ## Time
 
-Throughout pysmo you will notice extensive use of Python's [`datetime`][]
-module and NumPy's datetime64/timedelta64 types. Points in time in Seismogram
-Protocol classes are always [`datetime.datetime`][] objects with the
-[`tzinfo`][datetime.datetime.tzinfo] attribute set (ideally to
-[UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time)). Time
-calculations are straightforward with the [`datetime`][] module, so things like
-relative times (e.g. for a begin time in a seismogram) are avoided. Similarly,
-time deltas (e.g. sampling interval) in Protocol classes are always
-[`datetime.timedelta`][] objects.
+Throughout pysmo, time values use NumPy's [`datetime64`][numpy.datetime64] and
+[`timedelta64`][numpy.timedelta64] types. Points in time in Protocol classes
+(e.g. [`Seismogram.begin_time`][pysmo.Seismogram.begin_time],
+[`Event.time`][pysmo.Event.time]) are [`datetime64[us]`][numpy.datetime64]
+values (microsecond precision) assumed to be in
+[UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). Time intervals
+(e.g. [`Seismogram.delta`][pysmo.Seismogram.delta]) use
+[`timedelta64[us]`][numpy.timedelta64] (microsecond precision).
 
-For functions that operate on sequences of datetime or timedelta values (e.g.
-multiple arrival times, delays from cross-correlation), pysmo uses NumPy's
-[`datetime64`][numpy.datetime64] and [`timedelta64`][numpy.timedelta64] arrays
-for efficiency. Helper functions in [`pysmo.tools.utils`][] are provided to
-convert between Python datetime/timedelta and NumPy datetime64/timedelta64
-types.
+NumPy datetime64 and timedelta64 types provide efficient array operations and
+seamless integration with NumPy-based scientific computing workflows. For
+functions that return sequences of time values (e.g. multiple arrival times,
+delays from cross-correlation), pysmo uses NumPy arrays of datetime64/timedelta64
+for efficiency.
+
+Helper functions in [`pysmo.tools.utils`][] are provided to convert between
+Python datetime/timedelta and NumPy datetime64/timedelta64 types when needed for
+interoperability with external libraries or legacy code.
 
 ## SciPy and NumPy parameters
 
