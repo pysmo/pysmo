@@ -1,4 +1,5 @@
 from pysmo import Seismogram
+from pysmo.tools.utils import to_seconds
 from datetime import timedelta
 from scipy.fft import rfft, irfft, next_fast_len
 from scipy.linalg import lstsq, inv
@@ -19,10 +20,10 @@ def _check_same_delta(
 ) -> None:
     """Checks if the sampling interval (delta) of two seismograms or a seismogram and a sequence of seismograms are the same."""
 
-    ref_delta = seismogram1.delta.total_seconds()
+    ref_delta = to_seconds(seismogram1.delta)
 
     for s in seismogram2 if isinstance(seismogram2, Sequence) else [seismogram2]:
-        if not np.isclose(ref_delta, s.delta.total_seconds()):
+        if not np.isclose(ref_delta, to_seconds(s.delta)):
             raise ValueError(f"Sampling intervals differ: {ref_delta} vs {s.delta}.")
 
 
@@ -110,11 +111,14 @@ def delay(
         >>> seis2 = clone_to_mini(MiniSeismogram, seis1)
         >>> nroll = 1234
         >>> seis2.data = np.roll(seis2.data, nroll)
-        >>> begin_time_delay = timedelta(seconds=100)
+        >>> begin_time_delay = np.timedelta64(100_000_000, 'us')  # 100 seconds
         >>> seis2.begin_time += begin_time_delay
         >>>
         >>> # The signal delay is the number of samples shifted * delta:
-        >>> (signal_delay := nroll * seis1.delta).total_seconds()
+        >>> from pysmo.tools.utils import to_seconds
+        >>> (signal_delay := nroll * seis1.delta)
+        numpy.timedelta64(24680000,'us')
+        >>> to_seconds(signal_delay)
         24.68
         >>>
         >>> # Call the delay function with the two seismograms and verify
@@ -341,7 +345,7 @@ def multi_delay(
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
 
     # Convert delays to timedelta64
-    delta_us = int(template.delta.total_seconds() * 1_000_000)
+    delta_us = int(to_seconds(template.delta) * 1_000_000)
     delays = (signed_lags * delta_us).astype("timedelta64[us]")
     coeffs = cc_matrix[np.arange(n_traces), max_indices]
 
@@ -452,7 +456,7 @@ def multi_multi_delay(
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
 
     # Convert delays to timedelta64
-    delta_us = int(seismograms[0].delta.total_seconds() * 1_000_000)
+    delta_us = int(to_seconds(seismograms[0].delta) * 1_000_000)
     delays = (signed_lags * delta_us).astype("timedelta64[us]")
 
     # extract coefficients at max indices
@@ -511,14 +515,15 @@ def mccc(
         >>> times, errors, rmse = mccc(seismograms)
         >>>
         >>> # The relative times sum to approximately zero:
-        >>> abs(sum(t.total_seconds() for t in times)) < 1e-10
+        >>> from pysmo.tools.utils import to_seconds
+        >>> abs(sum(to_seconds(t) for t in times)) < 1e-10
         True
         >>>
         >>> # Pairwise differences recover the known shifts
         >>> # (times[i] - times[j] ≈ (shifts[j] - shifts[i]) * delta):
-        >>> round((times[1] - times[0]).total_seconds())
+        >>> round(to_seconds(times[1] - times[0]))
         -5
-        >>> round((times[2] - times[0]).total_seconds())
+        >>> round(to_seconds(times[2] - times[0]))
         10
         >>>
         ```

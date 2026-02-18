@@ -1,4 +1,5 @@
 from pysmo import Seismogram
+from pysmo.tools.utils import to_seconds
 from copy import deepcopy
 from typing import overload, Literal
 from scipy.signal import iirfilter, sosfilt, sosfiltfilt
@@ -49,17 +50,17 @@ def bandpass[T: Seismogram](
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
     """
-    fe = 0.5 / seismogram.delta.total_seconds()
+    fe = 0.5 / to_seconds(seismogram.delta)
     low = freqmin / fe
     high = freqmax / fe
 
     if not (0 < low < 1):
         raise ValueError(
-            f"freqmin ({freqmin}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmin ({freqmin}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
     if not (0 < high < 1):
         raise ValueError(
-            f"freqmax ({freqmax}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmax ({freqmax}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
     if freqmin >= freqmax:
         raise ValueError("freqmin must be less than freqmax.")
@@ -118,12 +119,12 @@ def highpass[T: Seismogram](
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
     """
-    fe = 0.5 / seismogram.delta.total_seconds()
+    fe = 0.5 / to_seconds(seismogram.delta)
     low = freqmin / fe
 
     if not (0 < low < 1):
         raise ValueError(
-            f"freqmin ({freqmin}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmin ({freqmin}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
 
     sos = iirfilter(corners, low, btype="high", ftype="butter", output="sos")
@@ -179,12 +180,12 @@ def lowpass[T: Seismogram](
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
     """
-    fe = 0.5 / seismogram.delta.total_seconds()
+    fe = 0.5 / to_seconds(seismogram.delta)
     high = freqmax / fe
 
     if not (0 < high < 1):
         raise ValueError(
-            f"freqmax ({freqmax}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmax ({freqmax}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
 
     sos = iirfilter(corners, high, btype="low", ftype="butter", output="sos")
@@ -245,17 +246,17 @@ def bandstop[T: Seismogram](
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
     """
-    fe = 0.5 / seismogram.delta.total_seconds()
+    fe = 0.5 / to_seconds(seismogram.delta)
     low = freqmin / fe
     high = freqmax / fe
 
     if not (0 < low < 1):
         raise ValueError(
-            f"freqmin ({freqmin}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmin ({freqmin}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
     if not (0 < high < 1):
         raise ValueError(
-            f"freqmax ({freqmax}) is invalid for sampling rate {1 / seismogram.delta.total_seconds()} Hz."
+            f"freqmax ({freqmax}) is invalid for sampling rate {1 / to_seconds(seismogram.delta)} Hz."
         )
     if freqmin >= freqmax:
         raise ValueError("freqmin must be less than freqmax.")

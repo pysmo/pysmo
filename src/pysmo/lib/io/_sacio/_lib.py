@@ -1,4 +1,5 @@
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.tools.utils import to_seconds
 from dataclasses import dataclass
 
 
@@ -7,7 +8,7 @@ class _SACIO_DEFAULTS:
     """SacIO defaults."""
 
     b: float = 0
-    delta: float = SEISMOGRAM_DEFAULTS.delta.value.total_seconds()
+    delta: float = to_seconds(SEISMOGRAM_DEFAULTS.delta.value)
     nvhdr: int = 7
     iftype: str = "time"
     idep: str = "unkn"

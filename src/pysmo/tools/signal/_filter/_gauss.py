@@ -1,4 +1,5 @@
 from pysmo import Seismogram
+from pysmo.tools.utils import to_seconds
 from copy import deepcopy
 from typing import overload, Literal
 import numpy as np
@@ -95,7 +96,7 @@ def _gauss(
     seismogram: Seismogram, Tn: float, alpha: float
 ) -> tuple[np.ndarray, np.ndarray]:
     Wn = 1 / float(Tn)
-    Nyq = 0.5 / seismogram.delta.total_seconds()
+    Nyq = 0.5 / to_seconds(seismogram.delta)
     npts = len(seismogram)
     spec = np.fft.fft(seismogram.data)
     W = np.array(np.linspace(0, Nyq, npts))
