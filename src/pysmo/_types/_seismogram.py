@@ -1,8 +1,9 @@
-from pysmo.lib.validators import datetime64_is_utc
+from pysmo.lib.validators import timestamp_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.typing import PositiveTimedelta64
+from pysmo.typing import PositiveTimedelta
 from typing import Protocol, runtime_checkable
 from attrs import define, field
+import pandas as pd
 import numpy as np
 from beartype import beartype
 
@@ -30,21 +31,21 @@ class Seismogram(Protocol):
         >>> sac = SAC.from_file("example.sac")
         >>> seismogram = sac.seismogram
         >>> example_function(seismogram)
-        '2005-03-01T07:23:02.160000'
+        '2005-03-01 07:23:02.160000+00:00'
         >>>
         ```
     """
 
-    begin_time: np.datetime64
-    """Seismogram begin time as numpy datetime64[us]."""
+    begin_time: pd.Timestamp
+    """Seismogram begin time as pandas Timestamp with UTC timezone."""
 
     data: np.ndarray
     """Seismogram data."""
 
-    delta: np.timedelta64
-    """The sampling interval as numpy timedelta64[us].
+    delta: pd.Timedelta
+    """The sampling interval as pandas Timedelta.
 
-    Should be a positive timedelta64 value.
+    Should be a positive Timedelta value.
     """
 
     def __len__(self) -> int:
@@ -56,8 +57,8 @@ class Seismogram(Protocol):
         return len(self.data)
 
     @property
-    def end_time(self) -> np.datetime64:
-        """Seismogram end time as numpy datetime64[us]."""
+    def end_time(self) -> pd.Timestamp:
+        """Seismogram end time as pandas Timestamp with UTC timezone."""
         if len(self) == 0:
             return self.begin_time
         return self.begin_time + self.delta * (len(self) - 1)
@@ -78,9 +79,9 @@ class MiniSeismogram(Seismogram):
     Examples:
         ```python
         >>> from pysmo import MiniSeismogram, Seismogram
-        >>> import numpy as np
-        >>> now = np.datetime64('2020-01-01T12:00:00', 'us')
-        >>> delta = np.timedelta64(100_000, 'us')  # 0.1 seconds
+        >>> import pandas as pd
+        >>> now = pd.Timestamp('2020-01-01T12:00:00', tz='UTC')
+        >>> delta = pd.Timedelta(seconds=0.1)
         >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
         >>> isinstance(seismogram, Seismogram)
         True
@@ -88,13 +89,13 @@ class MiniSeismogram(Seismogram):
         ```
     """
 
-    begin_time: np.datetime64 = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime64_is_utc
+    begin_time: pd.Timestamp = field(
+        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=timestamp_is_utc
     )
-    """Seismogram begin time as numpy datetime64[us]."""
+    """Seismogram begin time as pandas Timestamp with UTC timezone."""
 
-    delta: PositiveTimedelta64 = SEISMOGRAM_DEFAULTS.delta.value
-    """Seismogram sampling interval as numpy timedelta64[us]."""
+    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
+    """Seismogram sampling interval as pandas Timedelta."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""

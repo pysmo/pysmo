@@ -16,6 +16,7 @@ classifiers = [
 dependencies = [
     "httpx>=0.28.1",
     "numpy>=2.3.4",
+    "pandas>=2.2.0",
     "matplotlib>=3.10.7",
     "pyproj>=3.7.2",
     "attrs>=25.4.0",
