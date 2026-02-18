@@ -1,6 +1,7 @@
 from pysmo import Seismogram
 from datetime import timedelta
 from scipy.fft import rfft, irfft, next_fast_len
+from scipy.linalg import lstsq, inv
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 from collections.abc import Sequence
@@ -8,7 +9,7 @@ from beartype import beartype
 import numpy as np
 import math
 
-__all__ = ["delay", "multi_delay", "multi_multi_delay"]
+__all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 
 
 @beartype
@@ -224,7 +225,7 @@ def delay(
 
 def multi_delay(
     template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[list[timedelta], list[float]]:
     """
     Calculates delays and correlation coefficients for a list of seismograms against a template.
 
@@ -277,12 +278,12 @@ def multi_delay(
         >>> delays[0].total_seconds()
         10.0
         >>> coeffs[0] < 0
-        np.True_
+        True
         >>>
         ```
     """
     if not seismograms:
-        return np.array([]), np.array([])
+        return [], []
 
     _check_same_delta(template, seismograms)
 
@@ -333,8 +334,9 @@ def multi_delay(
     # convert circular indices to signed lags
     mid_point = n_fft // 2
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
-    delays = signed_lags * template.delta
-    coeffs = cc_matrix[np.arange(n_traces), max_indices]
+    delta = template.delta
+    delays = [int(lag) * delta for lag in signed_lags]
+    coeffs: list[float] = cc_matrix[np.arange(n_traces), max_indices].tolist()
 
     return delays, coeffs
 
@@ -445,3 +447,144 @@ def multi_multi_delay(
     coeffs = cc_matrix[i_idx, j_idx, max_indices]
 
     return delays, coeffs
+
+
+def mccc(
+    seismograms: Sequence[Seismogram], min_cc: float = 0.5, damping: float = 0.1
+) -> tuple[list[timedelta], list[timedelta], timedelta]:
+    """
+    Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
+
+    Computes all pairwise cross-correlation delays using
+    [`multi_multi_delay`][pysmo.tools.signal.multi_multi_delay], then solves
+    for self-consistent relative time shifts using a weighted least-squares
+    inversion with a zero-mean constraint and Tikhonov regularization. Pairs
+    whose correlation coefficient falls below `min_cc` are excluded from the
+    inversion.
+
+    The returned `times` list sums to zero by construction, so the values
+    represent relative shifts around the group mean.
+
+    Args:
+        seismograms: Sequence of Seismogram objects. All must share the same
+            sampling interval.
+        min_cc: Minimum correlation coefficient required to include a pair
+            in the inversion.
+        damping: Tikhonov regularization strength. Set to 0 to disable.
+
+    Returns:
+        times: List of relative arrival times (as `datetime.timedelta`).
+        errors: List of standard errors (as `datetime.timedelta`).
+        rmse: Root-mean-square error of the fit (as `datetime.timedelta`).
+
+    Raises:
+        ValueError: If any seismogram has a different sampling rate than the
+            others (raised by `multi_multi_delay`).
+
+    Examples:
+        Create seismograms with known shifts and recover them with `mccc`:
+
+        ```python
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.tools.signal import mccc
+        >>> import numpy as np
+        >>>
+        >>> # Build three seismograms with known shifts (in samples):
+        >>> data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+        >>> shifts = [0, 5, -10]
+        >>> seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
+        >>>
+        >>> # Run MCCC inversion:
+        >>> times, errors, rmse = mccc(seismograms)
+        >>>
+        >>> # The relative times sum to approximately zero:
+        >>> abs(sum(t.total_seconds() for t in times)) < 1e-10
+        True
+        >>>
+        >>> # Pairwise differences recover the known shifts
+        >>> # (times[i] - times[j] ≈ (shifts[j] - shifts[i]) * delta):
+        >>> round((times[1] - times[0]).total_seconds())
+        -5
+        >>> round((times[2] - times[0]).total_seconds())
+        10
+        >>>
+        ```
+
+    References:
+        VanDecar, J. C., and R. S. Crosson. “Determination of Teleseismic
+        Relative Phase Arrival Times Using Multi-Channel Cross-Correlation and
+        Least Squares.” Bulletin of the Seismological Society of America,
+        vol. 80, no. 1, Feb. 1990, pp. 150–69,
+        <https://doi.org/10.1785/BSSA0800010150>.
+    """
+    n_traces = len(seismograms)
+    zero_delta = timedelta(0)
+
+    if n_traces < 2:
+        return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
+
+    delay_matrix, coeff_matrix = multi_multi_delay(seismograms)
+
+    # Build linear system (g @ m = d)
+    rows: list[np.ndarray] = []
+    data_vec: list[float] = []
+    weights: list[float] = []
+
+    for i in range(n_traces):
+        for j in range(i + 1, n_traces):
+            cc = coeff_matrix[i, j]
+            if cc < min_cc:
+                continue
+
+            lag_seconds = delay_matrix[i, j].total_seconds()
+
+            row = np.zeros(n_traces)
+            row[i] = 1.0
+            row[j] = -1.0
+
+            rows.append(row)
+            data_vec.append(lag_seconds)
+            weights.append(cc**2)
+
+    if not rows:
+        return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
+
+    g = np.array(rows)
+    d = np.array(data_vec)
+    w = np.array(weights)
+
+    # Apply weights
+    g_weighted = g * w[:, np.newaxis]
+    d_weighted = d * w
+
+    # Zero-mean constraint (sum of times = 0)
+    constraint_weight = np.sum(w)
+    g_system = np.vstack([g_weighted, np.ones(n_traces) * constraint_weight])
+    d_system = np.concatenate([d_weighted, [0.0]])
+
+    # Tikhonov regularization
+    if damping > 0:
+        g_system = np.vstack([g_system, damping * np.eye(n_traces)])
+        d_system = np.concatenate([d_system, np.zeros(n_traces)])
+
+    # Solve least squares
+    solution, _, _, _ = lstsq(g_system, d_system)
+
+    # Compute statistics
+    predicted = g @ solution
+    residuals = d - predicted
+    sse = np.sum((residuals**2) * w)
+    dof = max(len(d) - n_traces, 1)
+    sigma_squared = sse / dof
+
+    try:
+        cov_matrix = sigma_squared * inv(g_system.T @ g_system)
+        std_errors = np.sqrt(np.abs(np.diag(cov_matrix)))
+    except np.linalg.LinAlgError:
+        std_errors = np.zeros(n_traces)
+
+    times = [timedelta(seconds=float(t)) for t in solution]
+    errors = [timedelta(seconds=float(e)) for e in std_errors]
+    rmse = timedelta(seconds=float(np.sqrt(sse / len(d))))
+
+    return times, errors, rmse
