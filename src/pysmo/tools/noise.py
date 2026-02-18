@@ -23,11 +23,12 @@ Examples:
 """
 
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.tools.utils import to_seconds
 
 __all__ = ["NoiseModel", "peterson", "generate_noise"]
 
@@ -186,8 +187,8 @@ def peterson(noise_level: float) -> NoiseModel:
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value,
-    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time.value,
+    delta: np.timedelta64 = SEISMOGRAM_DEFAULTS.delta.value,
+    begin_time: np.datetime64 = SEISMOGRAM_DEFAULTS.begin_time.value,
     return_velocity: bool = False,
     seed: int | None = None,
 ) -> MiniSeismogram:
@@ -198,8 +199,8 @@ def generate_noise(
     Args:
         model: Noise model used to compute seismic noise.
         npts: Number of points of generated noise
-        delta: Sampling interval of generated noise
-        begin_time: Seismogram begin time
+        delta: Sampling interval of generated noise as numpy timedelta64
+        begin_time: Seismogram begin time as numpy datetime64
         return_velocity: Return velocity instead of acceleration.
         seed: set random seed manually (usually for testing purposes).
 
@@ -207,10 +208,10 @@ def generate_noise(
         Seismogram with random seismic noise as data.
     """
     # Sampling frequency
-    Fs = 1 / delta.total_seconds()
+    Fs = 1 / to_seconds(delta)
 
     # Nyquist frequency
-    Fnyq = 0.5 / delta.total_seconds()
+    Fnyq = 0.5 / to_seconds(delta)
 
     # get next power of 2 of the nunmber of points and calculate frequencies from
     # Fs/NPTS to Fnyq (we skip a frequency of 0 for now to avoid dividing by 0)
@@ -221,7 +222,7 @@ def generate_noise(
     # term=0 (i.e. mean=0).
     Pxx = np.interp(1 / freqs, model.T, model.psd)
     spectrum = np.append(
-        np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / delta.total_seconds() * 2)
+        np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / to_seconds(delta) * 2)
     )
 
     # phase is randomly generated
@@ -235,7 +236,7 @@ def generate_noise(
     start = int((NPTS - npts) / 2)
     end = start + npts
     if return_velocity:
-        velocity = cumulative_trapezoid(acceleration, dx=delta.total_seconds())
+        velocity = cumulative_trapezoid(acceleration, dx=to_seconds(delta))
         velocity = velocity[start:end]
         return MiniSeismogram(begin_time=begin_time, delta=delta, data=velocity)
     acceleration = acceleration[start:end]
