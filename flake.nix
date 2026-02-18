@@ -7,7 +7,6 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     systems,
     ...
@@ -24,8 +23,8 @@
           gnumake
           uv
           ruff
-          (python314.withPackages (ps: with ps; [tkinter]))
-          (python313.withPackages (ps: with ps; [tox]))
+          (python314.withPackages (ps: with ps; [tkinter tox]))
+          python313
           python312
           python314Packages.tkinter
         ];

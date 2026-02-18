@@ -1,4 +1,4 @@
-from pysmo.tools.signal import delay, multi_delay, multi_multi_delay
+from pysmo.tools.signal import delay, multi_delay, multi_multi_delay, mccc
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.functions import detrend, clone_to_mini
 from pytest_cases import parametrize_with_cases
@@ -328,3 +328,126 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
             expected_delay = (shifts[j] - shifts[i]) * base.delta
             assert delays[i, j] == expected_delay
             assert coeffs[i, j] == pytest.approx(1, abs=0.05)
+
+
+# --- mccc tests ---
+
+
+def test_mccc_single_seismogram() -> None:
+    """Single seismogram returns zero time, zero error, zero rmse."""
+    seis = MiniSeismogram(data=np.sin(np.linspace(0, 4 * np.pi, 500)))
+    times, errors, rmse = mccc([seis])
+    assert len(times) == 1
+    assert times[0].total_seconds() == 0
+    assert errors[0].total_seconds() == 0
+    assert rmse.total_seconds() == 0
+
+
+def test_mccc_empty_list() -> None:
+    """Empty list returns empty arrays and zero rmse."""
+    times, errors, rmse = mccc([])
+    assert len(times) == 0
+    assert len(errors) == 0
+    assert rmse.total_seconds() == 0
+
+
+def test_mccc_known_shifts() -> None:
+    """Pairwise differences should match known shifts."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    shifts = [0, 5, -10]
+    seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
+
+    times, errors, rmse = mccc(seismograms)
+
+    assert len(times) == 3
+    # times[i] - times[j] should equal delay_matrix[i, j] = (shifts[j] - shifts[i]) * delta
+    for i in range(len(shifts)):
+        for j in range(len(shifts)):
+            expected = (shifts[j] - shifts[i]) * seismograms[0].delta
+            actual = times[i] - times[j]
+            assert actual.total_seconds() == pytest.approx(
+                expected.total_seconds(), abs=0.1
+            )
+
+
+def test_mccc_zero_mean() -> None:
+    """Relative times should sum to zero."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    shifts = [0, 7, -4, 15]
+    seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
+
+    times, _, _ = mccc(seismograms)
+
+    total = sum(t.total_seconds() for t in times)
+    assert total == pytest.approx(0, abs=0.1)
+
+
+def test_mccc_two_identical() -> None:
+    """Two identical seismograms should have zero relative delay."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    seismograms = [
+        MiniSeismogram(data=data.copy()),
+        MiniSeismogram(data=data.copy()),
+    ]
+
+    times, errors, rmse = mccc(seismograms)
+
+    assert times[0].total_seconds() == pytest.approx(0, abs=1e-6)
+    assert times[1].total_seconds() == pytest.approx(0, abs=1e-6)
+    assert rmse.total_seconds() == pytest.approx(0, abs=1e-6)
+
+
+def test_mccc_min_cc_filters_pairs() -> None:
+    """Setting min_cc=1.0 with noisy data should filter all pairs, returning zeros."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    rng = np.random.default_rng(42)
+    noisy = data + rng.normal(0, 5, len(data))
+    seismograms = [
+        MiniSeismogram(data=data.copy()),
+        MiniSeismogram(data=noisy),
+    ]
+
+    times, errors, rmse = mccc(seismograms, min_cc=1.0)
+
+    # All pairs filtered → returns zeros
+    assert times[0].total_seconds() == 0
+    assert times[1].total_seconds() == 0
+
+
+def test_mccc_errors_are_nonnegative() -> None:
+    """Standard errors should be non-negative."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    shifts = [0, 3, -7, 12]
+    seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
+
+    _, errors, _ = mccc(seismograms)
+
+    for e in errors:
+        assert e.total_seconds() >= 0
+
+
+@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
+    """Test mccc with real seismogram data and known shifts."""
+    base = clone_to_mini(MiniSeismogram, seismogram)
+    base.data = seismogram.data[1000:10000]
+    base = detrend(base, clone=True)
+
+    shifts = [0, 10, -20]
+    seismograms = []
+    for shift in shifts:
+        s = clone_to_mini(MiniSeismogram, base)
+        s.data = np.roll(base.data, shift)
+        seismograms.append(s)
+
+    times, errors, rmse = mccc(seismograms)
+
+    # times[i] - times[j] should equal delay_matrix[i, j] = (shifts[j] - shifts[i]) * delta
+    delta = base.delta
+    for i in range(len(shifts)):
+        for j in range(len(shifts)):
+            expected = (shifts[j] - shifts[i]) * delta
+            actual = times[i] - times[j]
+            assert actual.total_seconds() == pytest.approx(
+                expected.total_seconds(), abs=0.1
+            )
