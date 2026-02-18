@@ -21,12 +21,13 @@ representation of the "best" mean arrival time. Each individual seismogram can
 then be cross-correlated with the stack to determine a time shift that best
 aligns them with the stack and thus each other.
 
-The results of ICCS are similar to those of the MCCC[^2] method, while
-also requiring fewer cross-correlations to be computed (each individual
-seismogram is only cross-correlated with the stack, whereas in MCCC all
-seismograms are cross-correlated with each other). ICCS is therefore
-particularly useful to prepare data for a successful MCCC run (e.g. if the
-initial picks are calculated rather than hand picked).
+The results of ICCS are similar to those produced by the
+[`mccc`][pysmo.tools.signal.mccc] algorithm, while also requiring fewer
+cross-correlations to be computed (each individual seismogram is only
+cross-correlated with the stack, whereas in MCCC all seismograms are
+cross-correlated with each other). ICCS is therefore particularly useful to
+prepare data for a successful MCCC run (e.g. if the initial picks are
+calculated rather than hand picked).
 
 ## Data requirements
 
@@ -78,7 +79,7 @@ portions are generated on the fly in two ways:
   broader window around the phase arrival, and without any tapering applied.
 
 Both share common processing steps, and are used to create a corresponding
-stack. As they are completely reprocessible, they only exist for the lifetime
+stack. As they are completely reproducable, they only exist for the lifetime
 of the [`ICCS`][pysmo.tools.iccs.ICCS] instance that contains the input
 seismograms and parameters used in their creation.
 
@@ -131,12 +132,7 @@ visual inspection.
 
 [^1]: Lou, X., et al. “AIMBAT: A Python/Matplotlib Tool for Measuring
     Teleseismic Arrival Times.” Seismological Research Letters, vol. 84,
-    no. 1, Jan. 2013, pp. 85–93, https://doi.org/10.1785/0220120033.
-[^2]: VanDecar, J. C., and R. S. Crosson. “Determination of Teleseismic
-    Relative Phase Arrival Times Using Multi-Channel Cross-Correlation and
-    Least Squares.” Bulletin of the Seismological Society of America,
-    vol. 80, no. 1, Feb. 1990, pp. 150–69,
-    https://doi.org/10.1785/BSSA0800010150.
+    no. 1, Jan. 2013, pp. 85–93, <https://doi.org/10.1785/0220120033>.
 """
 
 from ..._utils import export_module_names
