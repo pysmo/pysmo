@@ -91,8 +91,9 @@ def clone_to_mini[TMini: _AnyMini](
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo import MiniSeismogram
         >>> from pysmo.classes import SAC
-        >>> from datetime import datetime, timezone
-        >>> now = datetime.now(timezone.utc)
+        >>> from pandas import Timestamp
+        >>> from datetime import timezone
+        >>> now = Timestamp.now(timezone.utc)
         >>> sac_seismogram = SAC.from_file("example.sac").seismogram
         >>> mini_seismogram = clone_to_mini(MiniSeismogram, sac_seismogram, update={"begin_time": now})
         >>> all(sac_seismogram.data == mini_seismogram.data)
