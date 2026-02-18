@@ -45,7 +45,6 @@ def to_seconds(td: timedelta | np.timedelta64) -> float:
 
 
 def datetimes_to_datetime64(
-def datetimes_to_datetime64(
     datetimes: Sequence[datetime],
 ) -> npt.NDArray[np.datetime64]:
     """Convert a sequence of datetime objects to numpy datetime64 array.
