@@ -647,9 +647,13 @@ class ICCS:
             )
 
             # Update seismograms based on results and settings.
-            for delay, ccnorm, cc_seismogram in zip(
+            for delay_td64, ccnorm, cc_seismogram in zip(
                 delays, ccnorms, self.cc_seismograms
             ):
+                # Convert numpy timedelta64 to Python timedelta
+                delay_us = delay_td64.astype("timedelta64[us]").astype(np.int64)
+                delay = timedelta(microseconds=int(delay_us))
+
                 _update_seismogram(
                     delay,
                     ccnorm,
