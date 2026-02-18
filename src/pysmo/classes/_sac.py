@@ -5,7 +5,6 @@ from pysmo.lib.io._sacio import SAC_TIME_HEADERS
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.decorators import value_not_none
 from attrs import define, field
-from datetime import datetime, timedelta
 import warnings
 import numpy as np
 
@@ -26,10 +25,10 @@ class _SacNested:
     """_parent (SacIO): Parent SacIO instance."""
 
     @property
-    def _ref_datetime(self) -> datetime:
+    def _ref_datetime64(self) -> np.datetime64:
         """
         Returns:
-            Reference time date in a SAC file.
+            Reference time date in a SAC file as datetime64.
 
         Note:
             If the SAC instance has no reference time this function assumes
@@ -37,32 +36,46 @@ class _SacNested:
         """
 
         if self._parent.ref_datetime is not None:
-            return self._parent.ref_datetime
+            # Convert Python datetime to numpy datetime64
+            from datetime import timezone
+            dt = self._parent.ref_datetime
+            # Ensure UTC
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+            # Convert to microseconds since epoch
+            us_since_epoch = int(dt.timestamp() * 1_000_000)
+            return np.datetime64(us_since_epoch, "us")
 
         warnings.warn(
-            f"SAC object has no reference time (kzdate/kztime), assuming {SEISMOGRAM_DEFAULTS.begin_time.value.isoformat()}",
+            f"SAC object has no reference time (kzdate/kztime), assuming epoch start",
             RuntimeWarning,
         )
         return SEISMOGRAM_DEFAULTS.begin_time.value
 
-    def _get_datetime_from_sac(
+    def _get_datetime64_from_sac(
         self, sac_time_header: SAC_TIME_HEADERS
-    ) -> datetime | None:
-        """Convert SAC times to datetime."""
+    ) -> np.datetime64 | None:
+        """Convert SAC times to datetime64."""
 
         seconds = getattr(self._parent, sac_time_header)
 
         if seconds is None:
             return None
 
-        return self._ref_datetime + timedelta(seconds=seconds)
+        # Convert seconds to microseconds and add to reference time
+        us = int(seconds * 1_000_000)
+        return self._ref_datetime64 + np.timedelta64(us, "us")
 
-    def _set_sac_from_datetime(
-        self, sac_time_header: SAC_TIME_HEADERS, value: datetime
+    def _set_sac_from_datetime64(
+        self, sac_time_header: SAC_TIME_HEADERS, value: np.datetime64
     ) -> None:
-        """Set SAC times using datetimes."""
+        """Set SAC times using datetime64."""
 
-        seconds = (value - self._ref_datetime).total_seconds()
+        # Calculate difference in microseconds
+        diff_us = (value - self._ref_datetime64).astype("timedelta64[us]").astype(np.int64)
+        seconds = diff_us / 1_000_000.0
         setattr(self._parent, sac_time_header, seconds)
 
 
@@ -91,20 +104,20 @@ class SacSeismogram(_SacNested, Seismogram):
         Timing operations in a SAC file use a reference time, and all times
         (begin time, event origin time, picks, etc.) are relative to this
         reference time. In pysmo only absolute times are used. The example
-        below shows the `begin_time` is the absolute time (in UTC) of the first
-        data point:
+        below shows the `begin_time` is the absolute time (in UTC) as numpy
+        datetime64:
 
         ```python
         >>> sac.seismogram.begin_time
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
+        numpy.datetime64('2005-03-01T07:23:02.160000')
         >>>
         ```
     """
 
     if TYPE_CHECKING:
         data: np.ndarray = field(init=False)
-        delta: timedelta = field(init=False)
-        begin_time: datetime = field(init=False)
+        delta: np.timedelta64 = field(init=False)
+        begin_time: np.datetime64 = field(init=False)
 
     else:
 
@@ -119,27 +132,30 @@ class SacSeismogram(_SacNested, Seismogram):
             self._parent.data = value
 
         @property
-        def delta(self) -> timedelta:
-            """Sampling interval."""
-            return timedelta(seconds=self._parent.delta)
+        def delta(self) -> np.timedelta64:
+            """Sampling interval as numpy timedelta64."""
+            us = int(self._parent.delta * 1_000_000)
+            return np.timedelta64(us, "us")
 
         @delta.setter
-        def delta(self, value: timedelta) -> None:
-            self._parent.delta = value.total_seconds()
+        def delta(self, value: np.timedelta64) -> None:
+            # Convert timedelta64 to seconds
+            us = value.astype("timedelta64[us]").astype(np.int64)
+            self._parent.delta = us / 1_000_000.0
 
         @property
-        def begin_time(self) -> datetime:
-            """Seismogram begin time."""
+        def begin_time(self) -> np.datetime64:
+            """Seismogram begin time as numpy datetime64."""
 
-            value = self._get_datetime_from_sac(SAC_TIME_HEADERS.b)
+            value = self._get_datetime64_from_sac(SAC_TIME_HEADERS.b)
             if value is None:
                 raise TypeError("SAC file has no begin time 'b'.")
             return value
 
         @begin_time.setter
         @value_not_none
-        def begin_time(self, value: datetime) -> None:
-            self._set_sac_from_datetime(SAC_TIME_HEADERS.b, value)
+        def begin_time(self, value: np.datetime64) -> None:
+            self._set_sac_from_datetime64(SAC_TIME_HEADERS.b, value)
 
 
 @define(kw_only=True)
@@ -321,8 +337,8 @@ class SacEvent(_SacNested):
         setattr(self._parent, "evdp", value / 1000)
 
     @property
-    def time(self) -> datetime:
-        """Event origin time (UTC).
+    def time(self) -> np.datetime64:
+        """Event origin time (UTC) as numpy datetime64.
 
         Important:
             This property uses the [`SacIO.o`][pysmo.lib.io.SacIO.o] time
@@ -333,15 +349,15 @@ class SacEvent(_SacNested):
             is not possible if this is is the case.
         """
 
-        event_time = self._get_datetime_from_sac(SAC_TIME_HEADERS.o)
+        event_time = self._get_datetime64_from_sac(SAC_TIME_HEADERS.o)
         if event_time is None:
             raise TypeError("SAC object event time 'o' is None.")
         return event_time
 
     @time.setter
     @value_not_none
-    def time(self, value: datetime) -> None:
-        self._set_sac_from_datetime(SAC_TIME_HEADERS.o, value)
+    def time(self, value: np.datetime64) -> None:
+        self._set_sac_from_datetime64(SAC_TIME_HEADERS.o, value)
 
 
 class SacTimeConverter:
@@ -355,23 +371,23 @@ class SacTimeConverter:
     def __get__(self, instance: None, owner: None) -> Self: ...
 
     @overload
-    def __get__(self, instance: _SacNested, owner: type[object]) -> datetime | None: ...
+    def __get__(self, instance: _SacNested, owner: type[object]) -> np.datetime64 | None: ...
 
     def __get__(
         self, instance: _SacNested | None, owner: type[object] | None = None
-    ) -> Self | datetime | None:
+    ) -> Self | np.datetime64 | None:
         if instance is None:
             return self
-        return instance._get_datetime_from_sac(self._name)
+        return instance._get_datetime64_from_sac(self._name)
 
-    def __set__(self, obj: _SacNested, value: datetime) -> None:
+    def __set__(self, obj: _SacNested, value: np.datetime64) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read only.")
-        obj._set_sac_from_datetime(self._name, value)
+        obj._set_sac_from_datetime64(self._name, value)
 
 
 class SacTimestamps(_SacNested):
-    """Helper class to access times stored in SAC headers as datetime objects.
+    """Helper class to access times stored in SAC headers as numpy datetime64 objects.
 
     The `SacTimestamps` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
@@ -381,7 +397,7 @@ class SacTimestamps(_SacNested):
 
     Examples:
         Relative seismogram begin time as a float vs absolute begin time
-        as a [`datetime`][datetime] object.
+        as numpy datetime64:
 
         ```python
         >>> from pysmo.classes import SAC
@@ -394,22 +410,22 @@ class SacTimestamps(_SacNested):
         >>> sac.kzdate , sac.kztime
         ('2005-03-01', '07:24:05.500')
         >>> # Accessing the same SAC header via a `SacTimestamps` object
-        >>> # yields a corresponding datetime object with the absolute time:
+        >>> # yields a corresponding numpy datetime64 with the absolute time:
         >>> sac.timestamps.b
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
+        numpy.datetime64('2005-03-01T07:23:02.160000')
         >>>
         ```
 
         Changing timestamp values:
 
         ```python
-        >>> from datetime import timedelta
+        >>> import numpy as np
         >>> sac = SAC.from_file("example.sac")
         >>> # Original value of the "B" SAC header:
         >>> sac.b
         -63.34000015258789
         >>> # Add 30 seconds to the absolute time:
-        >>> sac.timestamps.b += timedelta(seconds=30)
+        >>> sac.timestamps.b += np.timedelta64(30_000_000, 'us')  # 30 seconds
         >>> # The relative time also changes by the same amount:
         >>> sac.b
         -33.34

@@ -1,7 +1,6 @@
 from ._types import ConvergenceMethod
 from dataclasses import dataclass, field
 from matplotlib.colors import Colormap
-from datetime import timedelta
 import matplotlib as mpl
 import numpy as np
 
@@ -13,10 +12,10 @@ class _IccsDefaults:
     # ------------------------------------------------------------------------
     # ICCS attribute defaults
     # ------------------------------------------------------------------------
-    window_pre: timedelta = timedelta(seconds=-15)
-    window_post: timedelta = timedelta(seconds=15)
-    context_width: timedelta = timedelta(seconds=20)
-    ramp_width: timedelta | float = 0.1
+    window_pre: np.timedelta64 = np.timedelta64(-15_000_000, "us")  # -15 seconds
+    window_post: np.timedelta64 = np.timedelta64(15_000_000, "us")  # 15 seconds
+    context_width: np.timedelta64 = np.timedelta64(20_000_000, "us")  # 20 seconds
+    ramp_width: np.timedelta64 | float = 0.1
     min_ccnorm: np.floating | float = 0.5
     bandpass_apply: bool = False
     bandpass_fmin: float = 0.05

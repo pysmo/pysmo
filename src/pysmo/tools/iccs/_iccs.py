@@ -6,7 +6,7 @@ from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.typing import (
     NonNegativeNumber,
-    NonNegativeTimedelta,
+    NonNegativeTimedelta64,
 )
 from pysmo.functions import (
     crop,
@@ -19,7 +19,6 @@ from pysmo.functions import (
 )
 from pysmo.tools.signal import bandpass, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
-from datetime import timedelta, datetime
 from attrs import define, field, validators, Attribute
 from typing import Any
 from collections.abc import Sequence
@@ -38,7 +37,7 @@ def _clear_cache_on_update(instance: "ICCS", attribute: Attribute, value: Any) -
 
 
 def _validate_window_pre(
-    instance: "ICCS", attribute: Attribute, value: timedelta
+    instance: "ICCS", attribute: Attribute, value: np.timedelta64
 ) -> None:
     """Ensure window_pre is with the seismogram limits for all selected seismograms."""
     if not all(
@@ -48,7 +47,7 @@ def _validate_window_pre(
 
 
 def _validate_window_post(
-    instance: "ICCS", attribute: Attribute, value: timedelta
+    instance: "ICCS", attribute: Attribute, value: np.timedelta64
 ) -> None:
     """Ensure window_post is with the seismogram limits for all selected seismograms."""
     if not all(
@@ -73,11 +72,11 @@ class _EphemeralSeismogram(Seismogram):
     parent_seismogram: ICCSSeismogram
     """Reference to the parent ICCSSeismogram from which this ephemeral seismogram is derived."""
 
-    begin_time: datetime = field(init=False)
-    """Seismogram begin time."""
+    begin_time: np.datetime64 = field(init=False)
+    """Seismogram begin time as numpy datetime64."""
 
-    delta: timedelta = field(init=False)
-    """Seismogram sampling interval."""
+    delta: np.timedelta64 = field(init=False)
+    """Seismogram sampling interval as numpy timedelta64."""
 
     data: np.ndarray = field(init=False)
     """Seismogram data."""
@@ -311,40 +310,40 @@ class ICCS:
     [pysmo.tools.iccs.ICCS] instance.
     """
 
-    window_pre: timedelta = field(
+    window_pre: np.timedelta64 = field(
         default=ICCS_DEFAULTS.window_pre,
         validator=[
-            validators.lt(timedelta(seconds=0)),
+            validators.lt(np.timedelta64(0, "us")),
             _validate_window_pre,
             _clear_cache_on_update,
         ],
     )
-    """Beginning of the time window relative to the pick."""
+    """Beginning of the time window relative to the pick as numpy timedelta64."""
 
-    window_post: timedelta = field(
+    window_post: np.timedelta64 = field(
         default=ICCS_DEFAULTS.window_post,
         validator=[
-            validators.gt(timedelta(seconds=0)),
+            validators.gt(np.timedelta64(0, "us")),
             _validate_window_post,
             _clear_cache_on_update,
         ],
     )
-    """End of the time window relative to the pick."""
+    """End of the time window relative to the pick as numpy timedelta64."""
 
-    context_width: timedelta = field(
+    context_width: np.timedelta64 = field(
         default=ICCS_DEFAULTS.context_width,
-        validator=[validators.gt(timedelta(seconds=0)), _clear_cache_on_update],
+        validator=[validators.gt(np.timedelta64(0, "us")), _clear_cache_on_update],
     )
-    """Context padding to apply before and after the time window.
+    """Context padding to apply before and after the time window as numpy timedelta64.
 
     This padding is *not* used for the cross-correlation."""
 
-    ramp_width: NonNegativeTimedelta | NonNegativeNumber = field(
+    ramp_width: NonNegativeTimedelta64 | NonNegativeNumber = field(
         default=ICCS_DEFAULTS.ramp_width, validator=_clear_cache_on_update
     )
     """Width of taper ramp up and down.
 
-    Can be either a timedelta or a float - see [`pysmo.functions.window()`][pysmo.functions.window]
+    Can be either a numpy timedelta64 or a float - see [`pysmo.functions.window()`][pysmo.functions.window]
     for details.
     """
 
@@ -564,13 +563,13 @@ class ICCS:
             self._context_stack = _create_stack(self.context_seismograms)
         return self._context_stack
 
-    def validate_pick(self, pick: timedelta) -> bool:
+    def validate_pick(self, pick: np.timedelta64) -> bool:
         """Check if a new pick is valid.
 
         This checks if a new manual pick is valid for all selected seismograms.
 
         Args:
-            pick: New pick to validate.
+            pick: New pick to validate as numpy timedelta64.
 
         Returns:
             Whether the new pick is valid.
@@ -583,13 +582,13 @@ class ICCS:
         return self._valid_pick_range[0] <= pick <= self._valid_pick_range[1]
 
     def validate_time_window(
-        self, window_pre: timedelta, window_post: timedelta
+        self, window_pre: np.timedelta64, window_post: np.timedelta64
     ) -> bool:
         """Check if a new time window (relative to pick) is valid.
 
         Args:
-            window_pre: New window start time to validate.
-            window_post: New window end time to validate.
+            window_pre: New window start time to validate as numpy timedelta64.
+            window_post: New window end time to validate as numpy timedelta64.
 
         Returns:
             Whether the new time window is valid.
@@ -620,7 +619,7 @@ class ICCS:
         convergence_limit: float = ICCS_DEFAULTS.convergence_limit,
         convergence_method: ConvergenceMethod = ICCS_DEFAULTS.convergence_method,
         max_iter: int = ICCS_DEFAULTS.max_iter,
-        max_shift: timedelta | None = None,
+        max_shift: np.timedelta64 | None = None,
     ) -> np.ndarray:
         """Run the iccs algorithm.
 
@@ -647,13 +646,9 @@ class ICCS:
             )
 
             # Update seismograms based on results and settings.
-            for delay_td64, ccnorm, cc_seismogram in zip(
+            for delay, ccnorm, cc_seismogram in zip(
                 delays, ccnorms, self.cc_seismograms
             ):
-                # Convert numpy timedelta64 to Python timedelta
-                delay_us = delay_td64.astype("timedelta64[us]").astype(np.int64)
-                delay = timedelta(microseconds=int(delay_us))
-
                 _update_seismogram(
                     delay,
                     ccnorm,
@@ -675,13 +670,13 @@ class ICCS:
 
 
 def _update_seismogram(
-    delay: timedelta,
+    delay: np.timedelta64,
     ccnorm: float,
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: np.floating | float,
-    current_window: tuple[timedelta, timedelta],
+    current_window: tuple[np.timedelta64, np.timedelta64],
 ) -> None:
     """Update ICCSSeismogram attributes based on cross-correlation results.
 
@@ -692,13 +687,13 @@ def _update_seismogram(
     limits.
 
     Args:
-        delay: Time shift from cross-correlation.
+        delay: Time shift from cross-correlation as numpy timedelta64.
         ccnorm: Normalised cross-correlation coefficient.
         seismogram: Seismogram to update.
         autoflip: Automatically toggle the ``flip`` attribute.
         autoselect: Automatically toggle the ``select`` attribute.
         min_ccnorm_for_autoselect: Threshold for ``autoselect``.
-        current_window: Current ``(window_pre, window_post)`` tuple.
+        current_window: Current ``(window_pre, window_post)`` tuple as numpy timedelta64.
     """
 
     if autoflip and ccnorm < 0:

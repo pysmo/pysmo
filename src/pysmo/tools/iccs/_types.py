@@ -1,11 +1,10 @@
 from pysmo import Seismogram
-from pysmo.typing import PositiveTimedelta
-from pysmo.lib.validators import datetime_is_utc
+from pysmo.typing import PositiveTimedelta64
+from pysmo.lib.validators import datetime64_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from typing import Protocol, runtime_checkable
 from beartype import beartype
 from attrs import define, field, validators
-from datetime import datetime
 from enum import StrEnum, auto
 import numpy as np
 
@@ -25,11 +24,11 @@ class ICCSSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    t0: datetime
-    """Initial pick."""
+    t0: np.datetime64
+    """Initial pick as numpy datetime64."""
 
-    t1: datetime | None
-    """Updated pick."""
+    t1: np.datetime64 | None
+    """Updated pick as numpy datetime64."""
 
     flip: bool
     """Data in seismogram should be flipped for ICCS."""
@@ -59,34 +58,34 @@ class MiniICCSSeismogram(Seismogram):
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
-        >>> from datetime import timedelta
+        >>> import numpy as np
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
         >>> # Use existing pick or set a new one 10 seconds after begin time
-        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + timedelta(seconds=10)}
+        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + np.timedelta64(10_000_000, 'us')}
         >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
         >>>
         ```
     """
 
-    begin_time: datetime = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime_is_utc
+    begin_time: np.datetime64 = field(
+        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime64_is_utc
     )
-    """Seismogram begin time."""
+    """Seismogram begin time as numpy datetime64."""
 
-    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
-    """Seismogram sampling interval."""
+    delta: PositiveTimedelta64 = SEISMOGRAM_DEFAULTS.delta.value
+    """Seismogram sampling interval as numpy timedelta64."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""
 
-    t0: datetime = field(validator=datetime_is_utc)
-    """Initial pick."""
+    t0: np.datetime64 = field(validator=datetime64_is_utc)
+    """Initial pick as numpy datetime64."""
 
-    t1: datetime | None = field(
-        default=None, validator=validators.optional(datetime_is_utc)
+    t1: np.datetime64 | None = field(
+        default=None, validator=validators.optional(datetime64_is_utc)
     )
-    """Updated pick."""
+    """Updated pick as numpy datetime64."""
 
     flip: bool = False
     """Data in seismogram should be flipped for ICCS."""
