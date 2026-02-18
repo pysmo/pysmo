@@ -273,7 +273,7 @@ class SacIO(SacIOBase):
     def read(self, filename: str | PathLike) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
 
-        Parameters:
+        Args:
             filename: Name of the sac file to read.
         """
 
@@ -284,7 +284,7 @@ class SacIO(SacIOBase):
     def write(self, filename: str | PathLike) -> None:
         """Writes data and header values to a SAC file.
 
-        Parameters:
+        Args:
             filename: Name of the sacfile to write to.
         """
         with open(filename, "wb") as file_handle:
@@ -350,7 +350,7 @@ class SacIO(SacIOBase):
     def from_file(cls, filename: str | PathLike) -> Self:
         """Create a new SAC instance from a SAC file.
 
-        Parameters:
+        Args:
             filename: Name of the SAC file to read.
 
         Returns:
@@ -364,7 +364,7 @@ class SacIO(SacIOBase):
     def from_buffer(cls, buffer: bytes) -> Self:
         """Create a new SAC instance from a SAC data buffer.
 
-        Parameters:
+        Args:
             buffer: Buffer containing SAC file content.
 
         Returns:
@@ -387,7 +387,7 @@ class SacIO(SacIOBase):
         """Create a list of SAC instances from a single IRIS
         request using the output format as "sac.zip".
 
-        Parameters:
+        Args:
             net: Network code (e.g. "US")
             sta: Station code (e.g. "BSS")
             cha: Channel code (e.g. "BHZ")
@@ -443,7 +443,7 @@ class SacIO(SacIOBase):
     def read_buffer(self, buffer: bytes) -> None:
         """Read data and headers from a SAC byte buffer into an existing SAC instance.
 
-        Parameters:
+        Args:
             buffer: Buffer containing SAC file content.
         """
 
@@ -554,7 +554,7 @@ class SacIO(SacIOBase):
     def change_all_times(self, dtime: float) -> None:
         """Change all time headers by the same amount.
 
-        Attributes:
+        Args:
             dtime: Time offset to apply.
 
         Warning:

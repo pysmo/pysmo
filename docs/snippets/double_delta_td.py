@@ -5,7 +5,7 @@ from datetime import timedelta
 def double_delta_td(seismogram: Seismogram) -> timedelta:
     """Return double the sampling interval of a seismogram.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
 
     Returns:

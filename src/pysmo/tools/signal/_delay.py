@@ -1,11 +1,27 @@
 from pysmo import Seismogram
 from datetime import timedelta
+from scipy.fft import rfft, irfft, next_fast_len
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
+from collections.abc import Sequence
+from beartype import beartype
 import numpy as np
 import math
 
-__all__ = ["delay"]
+__all__ = ["delay", "multi_delay", "multi_multi_delay"]
+
+
+@beartype
+def _check_same_delta(
+    seismogram1: Seismogram, seismogram2: Seismogram | Sequence[Seismogram]
+) -> None:
+    """Checks if the sampling interval (delta) of two seismograms or a seismogram and a sequence of seismograms are the same."""
+
+    ref_delta = seismogram1.delta.total_seconds()
+
+    for s in seismogram2 if isinstance(seismogram2, Sequence) else [seismogram2]:
+        if not np.isclose(ref_delta, s.delta.total_seconds()):
+            raise ValueError(f"Sampling intervals differ: {ref_delta} vs {s.delta}.")
 
 
 def delay(
@@ -52,7 +68,7 @@ def delay(
       yields an incorrect result.
 
 
-    Parameters:
+    Args:
         seismogram1: First seismogram to use for cross correlation.
         seismogram2: Second seismogram to use for cross correlation.
         total_delay: Include the difference in `begin_time` in the delay.
@@ -159,8 +175,7 @@ def delay(
         ```
     """
 
-    if seismogram1.delta != seismogram2.delta:
-        raise ValueError("Input seismograms must have the same sampling rate.")
+    _check_same_delta(seismogram1, seismogram2)
 
     if max_shift is not None and len(seismogram1) != len(seismogram2):
         raise ValueError(
@@ -172,9 +187,7 @@ def delay(
 
     if max_shift is not None:
         max_lag_in_samples = math.ceil(max_shift / delta)
-        zeros_to_add = np.zeros(max_lag_in_samples)
-        data1 = np.append(zeros_to_add, data1)
-        data1 = np.append(data1, zeros_to_add)
+        data1 = np.pad(data1, max_lag_in_samples)
         corr = _correlate(data1, data2, mode="valid")
     else:
         corr = _correlate(data1, data2, mode="full")
@@ -187,19 +200,19 @@ def delay(
     if max_shift is not None:
         shift = -int(corr_index - max_lag_in_samples)
     else:
-        shift = int(np.size(data2) - 1 - corr_index)
+        shift = int(len(data2) - 1 - corr_index)
 
     delay = shift * delta
 
-    # find overlapping parts of seismograms after allignment
+    # find overlapping parts of seismograms after alignment
     if shift < 0:
         data1 = data1[-shift:]
     else:
         data2 = data2[shift:]
-    if np.size(data1) > np.size(data2):
-        data1 = data1[: np.size(data2)]
+    if len(data1) > len(data2):
+        data1 = data1[: len(data2)]
     else:
-        data2 = data2[: np.size(data1)]
+        data2 = data2[: len(data1)]
 
     covr, _ = _pearsonr(data1, data2)
 
@@ -207,3 +220,228 @@ def delay(
         delay += seismogram1.begin_time - seismogram2.begin_time
 
     return delay, covr
+
+
+def multi_delay(
+    template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculates delays and correlation coefficients for a list of seismograms against a template.
+
+    This function uses FFT-based cross-correlation to efficiently compute delays
+    for multiple seismograms at once against a single template. This is faster
+    than calling [`delay`][pysmo.tools.signal.delay] in a loop, as the template
+    FFT is computed only once.
+
+    Args:
+        template: Template seismogram object.
+        seismograms: Sequence of Seismogram objects.
+        abs_max: If `True`, uses absolute max correlation (polarity insensitive).
+
+    Returns:
+        delays: Delays of each input seismogram relative to template.
+        coeffs: Correlation coefficients at maximum correlation for each seismogram.
+
+    Raises:
+        ValueError: If any seismogram has a different sampling rate than the template.
+
+    Examples:
+        Create a template seismogram and several shifted copies, then use
+        `multi_delay` to recover the known shifts:
+
+        ```python
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.tools.signal import multi_delay
+        >>> import numpy as np
+        >>>
+        >>> # Create a template seismogram with sinusoidal data:
+        >>> data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+        >>> template = MiniSeismogram(data=data)
+        >>>
+        >>> # Create shifted copies (shifts in samples):
+        >>> shifts = [0, 10, -5]
+        >>> seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
+        >>>
+        >>> # Calculate delays for all seismograms at once:
+        >>> delays, coeffs = multi_delay(template, seismograms)
+        >>> [d.total_seconds() for d in delays]
+        [0.0, 10.0, -5.0]
+        >>>
+        ```
+
+        Use `abs_max=True` for polarity-insensitive matching:
+
+        ```python
+        >>> flipped = MiniSeismogram(data=-np.roll(data, 10))
+        >>> delays, coeffs = multi_delay(template, [flipped], abs_max=True)
+        >>> delays[0].total_seconds()
+        10.0
+        >>> coeffs[0] < 0
+        np.True_
+        >>>
+        ```
+    """
+    if not seismograms:
+        return np.array([]), np.array([])
+
+    _check_same_delta(template, seismograms)
+
+    # setup dimensions & FFT length
+    n_traces = len(seismograms)
+    len_t = len(template)
+    len_s = max(len(s.data) for s in seismograms)
+
+    # pad to avoid circular convolution artifacts
+    # (length >= len_template + len_signal - 1)
+    n_fft = next_fast_len(len_s + len_t - 1)
+
+    # pad and normalize template
+    t_data = template.data
+    t_mean = np.mean(t_data)
+    t_std = np.std(t_data)
+    if t_std == 0:
+        t_std = 1.0
+    template_padded = np.zeros(n_fft, dtype=float)
+    template_padded[:len_t] = (t_data - t_mean) / t_std
+
+    # normalize *before* padding to keep stats valid
+    seismogram_matrix = np.zeros((n_traces, n_fft), dtype=float)
+    for i, s in enumerate(seismograms):
+        data = s.data
+        mean = np.mean(data)
+        std = np.std(data)
+        if std == 0:
+            std = 1.0
+        seismogram_matrix[i, : len(data)] = (data - mean) / std
+
+    # forward FFT (rfft is faster for real data)
+    t_freq = rfft(template_padded, n=n_fft)
+    s_freq = rfft(seismogram_matrix, n=n_fft, axis=1)
+
+    # cross-correlation in frequency domain
+    cc_freq = s_freq * np.conj(t_freq)
+
+    # inverse FFT & scale (div by len(template) for Pearson approx)
+    cc_matrix = irfft(cc_freq, n=n_fft, axis=1) / len_t
+
+    # find maxima
+    if abs_max:
+        max_indices = np.argmax(np.abs(cc_matrix), axis=1)
+    else:
+        max_indices = np.argmax(cc_matrix, axis=1)
+
+    # convert circular indices to signed lags
+    mid_point = n_fft // 2
+    signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
+    delays = signed_lags * template.delta
+    coeffs = cc_matrix[np.arange(n_traces), max_indices]
+
+    return delays, coeffs
+
+
+def multi_multi_delay(
+    seismograms: Sequence[Seismogram],
+    abs_max: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
+
+    This function cross-correlates every seismogram with every other seismogram
+    in the sequence using FFT-based cross-correlation. All FFTs are computed once
+    and combined via broadcasting, making this significantly faster than calling
+    [`delay`][pysmo.tools.signal.delay] for each pair individually.
+
+    The result at `delays[i, j]` is the delay of seismogram `j` relative to
+    seismogram `i` (treating `i` as the reference). The delay matrix is
+    antisymmetric: `delays[i, j] == -delays[j, i]`, and the diagonal is zero.
+
+    Args:
+        seismograms: Sequence of Seismogram objects.
+        abs_max: If `True`, uses absolute max correlation (polarity insensitive).
+
+    Returns:
+        delays: 2D array of shape `(N, N)` with delay times as `timedelta`
+            objects, where `N = len(seismograms)`.
+        coeffs: 2D array of shape `(N, N)` with correlation coefficients.
+
+    Raises:
+        ValueError: If any seismogram has a different sampling rate than the others.
+
+    Examples:
+        Create seismograms with known shifts and compute all pairwise delays:
+
+        ```python
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.tools.signal import multi_multi_delay
+        >>> import numpy as np
+        >>>
+        >>> data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+        >>> seismograms = [
+        ...     MiniSeismogram(data=data.copy()),
+        ...     MiniSeismogram(data=np.roll(data, 5)),
+        ...     MiniSeismogram(data=np.roll(data, -10)),
+        ... ]
+        >>>
+        >>> delays, coeffs = multi_multi_delay(seismograms)
+        >>> delays.shape
+        (3, 3)
+        >>> # delay of seismogram 1 relative to seismogram 0:
+        >>> delays[0, 1].total_seconds()
+        5.0
+        >>> # delay of seismogram 2 relative to seismogram 0:
+        >>> delays[0, 2].total_seconds()
+        -10.0
+        >>> # antisymmetric: delays[i, j] == -delays[j, i]
+        >>> delays[1, 0].total_seconds()
+        -5.0
+        >>>
+        ```
+    """
+    n = len(seismograms)
+    if n < 2:
+        return np.empty((n, n), dtype=object), np.empty((n, n), dtype=float)
+
+    _check_same_delta(seismograms[0], seismograms)
+
+    lengths = np.array([len(s.data) for s in seismograms])
+    max_len = int(lengths.max())
+
+    # pad to avoid circular convolution artifacts
+    n_fft = next_fast_len(2 * max_len - 1)
+
+    # normalize and pad all seismograms
+    data_matrix = np.zeros((n, n_fft), dtype=float)
+    for i, s in enumerate(seismograms):
+        data = s.data
+        std = np.std(data)
+        if std == 0:
+            std = 1.0
+        data_matrix[i, : len(data)] = (data - np.mean(data)) / std
+
+    # forward FFT (computed once for all seismograms)
+    s_freq = rfft(data_matrix, n=n_fft, axis=1)
+
+    # cross-correlation via broadcasting: (N, 1, freq) * (1, N, freq)
+    # row i = reference, column j = target
+    cc_freq = s_freq[np.newaxis, :, :] * np.conj(s_freq[:, np.newaxis, :])
+
+    # inverse FFT & scale by reference length
+    cc_matrix = irfft(cc_freq, n=n_fft, axis=2)
+    cc_matrix /= lengths[:, np.newaxis, np.newaxis]
+
+    # find maxima
+    if abs_max:
+        max_indices = np.argmax(np.abs(cc_matrix), axis=2)
+    else:
+        max_indices = np.argmax(cc_matrix, axis=2)
+
+    # convert circular indices to signed lags
+    mid_point = n_fft // 2
+    signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
+    delays = signed_lags * seismograms[0].delta
+
+    # extract coefficients at max indices
+    i_idx, j_idx = np.meshgrid(np.arange(n), np.arange(n), indexing="ij")
+    coeffs = cc_matrix[i_idx, j_idx, max_indices]
+
+    return delays, coeffs

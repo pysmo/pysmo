@@ -21,7 +21,7 @@ __all__ = [
 def time_array(seismogram: Seismogram) -> np.ndarray:
     """Create an array containing Matplotlib dates.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
 
     Returns:
@@ -55,7 +55,7 @@ def time_array(seismogram: Seismogram) -> np.ndarray:
 def unix_time_array(seismogram: Seismogram) -> np.ndarray:
     """Create an array containing unix epoch dates.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
 
     Returns:
@@ -94,7 +94,7 @@ def plotseis(
 ) -> matplotlib.figure.Figure:
     """Plot Seismogram objects.
 
-    Parameters:
+    Args:
         seismograms: One or more seismogram objects. If a 'label' attribute is found
                      it will be used to label the trace in the plot.
         outfile: Optionally save figure to this filename.

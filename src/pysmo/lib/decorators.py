@@ -8,7 +8,7 @@ from functools import wraps
 def value_not_none(function: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to ensure the value in Class properties is not None.
 
-    Parameters:
+    Args:
         function: The function to decorate.
 
     Returns:
@@ -32,7 +32,7 @@ def add_doc(docstring: str) -> Callable:
 
     Useful to use e.g. f-strings in the docstring.
 
-    Attributes:
+    Args:
         docstring: The docstring to add.
 
     Returns:

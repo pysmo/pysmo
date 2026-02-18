@@ -3,6 +3,7 @@
 ## Code Style and Standards
 
 ### PEP 8 Compliance
+
 - Follow [PEP 8](https://peps.python.org/pep-0008/) style guide for all Python code
 - Use 4 spaces for indentation (no tabs)
 - Maximum line length: 88 characters (Black default)
@@ -10,6 +11,7 @@
 - Imports should be grouped: standard library, third-party, local
 
 ### Code Formatting
+
 - All code must pass **Black** formatting
   - Target Python versions: 3.12, 3.13, 3.14
   - Line length: 88 characters
@@ -21,6 +23,7 @@
   - Fix issues with `ruff check --fix .`
 
 ### Language
+
 - Use **British English** spelling in all:
   - Comments
   - Docstrings
@@ -37,8 +40,10 @@
 ### Documentation Style
 
 #### Docstrings
+
 - Use **Google Style** docstrings for all public functions, classes, and methods
 - Format:
+
   ```python
   def function_name(param1: type1, param2: type2) -> return_type:
       """Brief one-line description.
@@ -64,6 +69,7 @@
   ```
 
 #### Type Hints
+
 - Use type hints for all function parameters and return values
 - Use modern Python type syntax (Python 3.12+):
   - `list[str]` not `List[str]`
@@ -72,35 +78,51 @@
   - `type | None` not `Optional[type]`
 
 ### Testing
+
 - Write tests for all new functionality
 - Use pytest framework
 - Tests should be in the `tests/` directory
 - Use descriptive test names: `test_function_does_expected_behaviour`
+- Try to mirror the directory structure of `src/pysmo/` in `tests/`
 
 ### Commit Messages
+
 - Use clear, descriptive commit messages
 - Follow conventional commits format when appropriate
 - Use British English spelling
 
+## Review Priorities
+
+- Take the above Code Style and Standards into account when reviewing pull requests
+- Suggest improvements to code style, efficiency, documentation, and testing
+- Suggest improvements to variable names, function names, and overall code readability
+- Suggest newer syntax features where appropriate
+- Check spelling
+- Check if docstrings in existing code follow Google style and suggest improvements if needed
+
 ## Project-Specific Guidelines
 
 ### Seismology Domain
+
 - Follow seismological conventions for variable names
 - Use proper units and document them
 - Maintain scientific accuracy in all calculations
 
 ### Dependencies
+
 - Minimum Python version: 3.12
 - Core dependencies: numpy, matplotlib, scipy, beartype
 - Keep dependencies up to date
 
 ### File Organisation
+
 - Source code in `src/pysmo/`
 - Tests in `tests/`
 - Documentation in `docs/`
 - Use appropriate module structure
 
 ## Before Committing
+
 1. Run `black .` to format code
 2. Run `ruff check --fix .` to check and fix linting issues
 3. Run tests with `pytest`

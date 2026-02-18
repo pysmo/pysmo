@@ -22,7 +22,7 @@ def copy_from_mini(
     This function [copies][copy.copy] all attributes in the `source` Mini class
     instance to a compatible `target` instance.
 
-    Parameters:
+    Args:
         source: The Mini instance to copy attributes from.
         target: Compatible target instance.
         update: Update or add attributes in the target instance.
@@ -68,7 +68,7 @@ def clone_to_mini[TMini: _AnyMini](
     defined in the target class, then that default value for that attribute is
     used.
 
-    Parameters:
+    Args:
         mini_cls: The type of Mini class to create.
         source: The instance to clone (must contain all attributes present
             in `mini_cls`).
