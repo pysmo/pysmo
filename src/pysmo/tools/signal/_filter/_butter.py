@@ -38,7 +38,7 @@ def bandpass[T: Seismogram](
     """
     Apply a bandpass filter to the input seismogram.
 
-    Parameters:
+    Args:
         seismogram: The input seismogram to be filtered.
         freqmin: The minimum frequency of the bandpass filter (in Hz).
         freqmax: The maximum frequency of the bandpass filter (in Hz).
@@ -108,7 +108,7 @@ def highpass[T: Seismogram](
     """
     Apply a highpass filter to the input seismogram.
 
-    Parameters:
+    Args:
         seismogram: The input seismogram to be filtered.
         freqmin: The minimum frequency of the highpass filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
@@ -169,7 +169,7 @@ def lowpass[T: Seismogram](
     """
     Apply a lowpass filter to the input seismogram.
 
-    Parameters:
+    Args:
         seismogram: The input seismogram to be filtered.
         freqmax: The maximum frequency of the lowpass filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
@@ -234,7 +234,7 @@ def bandstop[T: Seismogram](
     """
     Apply a bandstop filter to the input seismogram.
 
-    Parameters:
+    Args:
         seismogram: The input seismogram to be filtered.
         freqmin: The minimum frequency of the bandstop filter (in Hz).
         freqmax: The maximum frequency of the bandstop filter (in Hz).

@@ -12,7 +12,7 @@ import numpy as np
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
 
 
-class CONVERGENCE_METHOD(StrEnum):
+class ConvergenceMethod(StrEnum):
     corrcoef = auto()
     change = auto()
 

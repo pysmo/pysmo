@@ -55,7 +55,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
     unions) and filters the available 'Mini' classes to find those that
     structurally implement it.
 
-    Parameters:
+    Args:
         proto: A pysmo type (e.g., `Location`, `Event`) or a type alias
             pointing to one.
 
@@ -96,7 +96,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
     """Returns pysmo types that objects may be an instance of.
 
-    Parameters:
+    Args:
         obj: Name of the object to check.
 
     Returns:

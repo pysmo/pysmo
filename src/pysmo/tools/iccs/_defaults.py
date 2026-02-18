@@ -1,4 +1,4 @@
-from ._types import CONVERGENCE_METHOD
+from ._types import ConvergenceMethod
 from dataclasses import dataclass, field
 from matplotlib.colors import Colormap
 from datetime import timedelta
@@ -26,7 +26,7 @@ class _IccsDefaults:
     # ICCS __call__ defaults
     # ------------------------------------------------------------------------
     convergence_limit: float = 1e-5
-    convergence_method: CONVERGENCE_METHOD = CONVERGENCE_METHOD.corrcoef
+    convergence_method: ConvergenceMethod = ConvergenceMethod.corrcoef
     max_iter: int = 10
 
     # ------------------------------------------------------------------------

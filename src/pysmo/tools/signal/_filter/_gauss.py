@@ -22,7 +22,7 @@ def envelope[T: Seismogram](
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
-    Parameters:
+    Args:
         seismogram: Name of the seismogram object passed to this function.
         Tn: Center period of Gaussian filter [in seconds]
         alpha: Set alpha (which determines filterwidth)
@@ -66,7 +66,7 @@ def gauss[T: Seismogram](
     """
     Returns a gaussian filtered seismogram.
 
-    Parameters:
+    Args:
         seismogram: Name of the SAC object passed to this function.
         Tn: Center period of Gaussian filter [in seconds]
         alpha: Set alpha (which determines filterwidth)
