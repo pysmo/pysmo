@@ -25,7 +25,6 @@ from typing import Any
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
-from copy import copy
 import warnings
 import numpy as np
 
@@ -86,7 +85,7 @@ class _EphemeralSeismogram(Seismogram):
     def __attrs_post_init__(self) -> None:
         self.begin_time = self.parent_seismogram.begin_time
         self.delta = self.parent_seismogram.delta
-        self.data = copy(self.parent_seismogram.data)
+        self.data = self.parent_seismogram.data.copy()
 
 
 @beartype
