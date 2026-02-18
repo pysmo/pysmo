@@ -24,6 +24,8 @@ dependencies = [
     "scipy-stubs>=1.16.2.3",
     "scipy>=1.16.2",
     "beartype>=0.22.9",
+    "pandas-stubs>=3.0.0.260204",
+    "pandas>=3.0.1",
 ]
 
 [project.urls]
