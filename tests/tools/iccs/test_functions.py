@@ -37,7 +37,9 @@ class TestPlotCommonBase:
     def test_plot_common_stack_initial(self, iccs_instance: ICCS) -> Figure:
         from pysmo.tools.iccs._functions import _plot_common_stack
 
-        fig, _ = _plot_common_stack(iccs_instance, context=self.PADDED, all=self.ALL)
+        fig, _ = _plot_common_stack(
+            iccs_instance, context=self.PADDED, show_all=self.ALL
+        )
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
@@ -46,14 +48,18 @@ class TestPlotCommonBase:
 
         iccs_instance()
 
-        fig, _ = _plot_common_stack(iccs_instance, context=self.PADDED, all=self.ALL)
+        fig, _ = _plot_common_stack(
+            iccs_instance, context=self.PADDED, show_all=self.ALL
+        )
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_image_initial(self, iccs_instance: ICCS) -> Figure:
         from pysmo.tools.iccs._functions import _plot_common_image
 
-        fig, *_ = _plot_common_image(iccs_instance, context=self.PADDED, all=self.ALL)
+        fig, *_ = _plot_common_image(
+            iccs_instance, context=self.PADDED, show_all=self.ALL
+        )
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
@@ -62,7 +68,9 @@ class TestPlotCommonBase:
 
         iccs_instance()
 
-        fig, *_ = _plot_common_image(iccs_instance, context=self.PADDED, all=self.ALL)
+        fig, *_ = _plot_common_image(
+            iccs_instance, context=self.PADDED, show_all=self.ALL
+        )
         return fig
 
 

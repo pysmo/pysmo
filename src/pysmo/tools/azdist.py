@@ -14,7 +14,7 @@ def _azdist(
 ) -> tuple[float, float, float]:
     """Return forward/backazimuth and distance using pyproj (proj4 bindings).
 
-    Parameters:
+    Args:
         location_1: location of point 1.
         location_2: location of point 2.
         ellps: Ellipsoid to use for calculations.
@@ -46,7 +46,7 @@ def azimuth(
     """Calculate azimuth between two points.
 
 
-    Parameters:
+    Args:
         location_1: Name of the event object providing coordinates of the origin location.
         location_2: Name of the station object providing coordinates of the target location.
         ellps: Ellipsoid to use for azimuth calculation
@@ -76,7 +76,7 @@ def backazimuth(
 ) -> float:
     """Calculate backazimuth (in DEG) between two points.
 
-    Parameters:
+    Args:
         location_1: Name of the event object providing coordinates of the origin location.
         location_2: Name of the station object providing coordinates of the target location.
         ellps: Ellipsoid to use for azimuth calculation
@@ -106,7 +106,7 @@ def distance(
 ) -> float:
     """Calculate the great circle distance (in metres) between two locations.
 
-    Parameters:
+    Args:
         location_1: Name of the event object providing coordinates of the origin location.
         location_2: Name of the station object providing coordinates of the target location.
         ellps: Ellipsoid to use for distance calculation

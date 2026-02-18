@@ -41,7 +41,7 @@ def filter[T: Seismogram](
 
     This function is a convenience wrapper that calls other filters in this module.
 
-    Parameters:
+    Args:
         seismogram: The input seismogram to be filtered.
         filter_name: The type of filter to apply.
         clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.

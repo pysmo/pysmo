@@ -3,12 +3,13 @@
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from uuid import UUID
+import numpy as np
 
 
 def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
     """Average a sequence of datetimes.
 
-    Parameters:
+    Args:
         datetimes: Datetimes to average.
 
     Returns:
@@ -27,7 +28,7 @@ def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
 def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID]:
     """Shorten a sequence of UUIDs to their shortest unique representation.
 
-    Parameters:
+    Args:
         uuids: UUIDs to shorten.
         min_length: Minimum length of the shortened UUID strings.
 
@@ -70,3 +71,57 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
 
     # Fallback to full UUIDs if necessary (like that's going to happen...)
     return {str(u): u for u in uuids}
+
+
+def pearson_matrix_vector(matrix: np.ndarray, vector: np.ndarray) -> np.ndarray:
+    """Compute Pearson correlation of each row in a matrix against a vector.
+
+    This is a vectorized alternative to calling
+    [`scipy.stats.pearsonr`][scipy.stats.pearsonr] in a loop. All row
+    correlations are computed in a single matrix operation.
+
+    Args:
+        matrix: 2D array of shape `(N, M)` where each row is correlated
+            against `vector`.
+        vector: 1D array of length `M`.
+
+    Returns:
+        1D array of length `N` with Pearson correlation coefficients.
+
+    Raises:
+        ValueError: If `matrix` is not 2D or `vector` is not 1D.
+        ValueError: If the number of columns in `matrix` does not match the
+            length of `vector`.
+
+    Examples:
+        ```python
+        >>> import numpy as np
+        >>> from pysmo.tools.utils import pearson_matrix_vector
+        >>>
+        >>> vector = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        >>> matrix = np.array([
+        ...     [1.0, 2.0, 3.0, 4.0, 5.0],
+        ...     [5.0, 4.0, 3.0, 2.0, 1.0],
+        ...     [1.0, 1.0, 1.0, 1.0, 1.0],
+        ... ])
+        >>> pearson_matrix_vector(matrix, vector)
+        array([ 1., -1.,  0.])
+        >>>
+        ```
+    """
+    if matrix.ndim != 2:
+        raise ValueError(f"matrix must be 2D, got {matrix.ndim}D.")
+    if vector.ndim != 1:
+        raise ValueError(f"vector must be 1D, got {vector.ndim}D.")
+    if matrix.shape[1] != vector.shape[0]:
+        raise ValueError(
+            f"Shape mismatch: matrix has {matrix.shape[1]} columns "
+            f"but vector has {vector.shape[0]} elements."
+        )
+
+    matrix_dm = matrix - matrix.mean(axis=1, keepdims=True)
+    vector_dm = vector - vector.mean()
+    numer = matrix_dm @ vector_dm
+    denom = np.sqrt((matrix_dm**2).sum(axis=1) * (vector_dm**2).sum())
+    # Rows with zero std produce 0/0; return 0 for those.
+    return np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)

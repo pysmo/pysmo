@@ -1,7 +1,7 @@
 """The ICCS class and functions used within the class."""
 
 from beartype import beartype
-from ._types import ICCSSeismogram, CONVERGENCE_METHOD
+from ._types import ICCSSeismogram, ConvergenceMethod
 from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.typing import (
@@ -17,15 +17,14 @@ from pysmo.functions import (
     pad,
     window,
 )
-from pysmo.tools.signal import delay, bandpass
-from pysmo.tools.utils import average_datetimes
-from datetime import timedelta
+from pysmo.tools.signal import bandpass, multi_delay
+from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
+from datetime import timedelta, datetime
 from attrs import define, field, validators, Attribute
 from typing import Any
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
-from concurrent.futures import ProcessPoolExecutor
 import warnings
 import numpy as np
 
@@ -58,6 +57,37 @@ def _validate_window_post(
         raise ValueError("window_post is too high for one or more seismograms.")
 
 
+@define(slots=True)
+class _EphemeralSeismogram(Seismogram):
+    """A Seismogram class used internally in ICCS to store the prepared seismograms.
+
+    This class is not intended for use outside of the ICCS class, and is not
+    exposed in the public API. It is used to store the prepared seismograms
+    (i.e. the seismograms that are cropped, tapered, and normalised based on
+    the current pick and time window) for use in the cross-correlation and
+    stacking. The data in these seismograms are modified on the fly when the
+    picks and time windows are updated, but they are not intended to be modified
+    directly by users.
+    """
+
+    parent_seismogram: ICCSSeismogram
+    """Reference to the parent ICCSSeismogram from which this ephemeral seismogram is derived."""
+
+    begin_time: datetime = field(init=False)
+    """Seismogram begin time."""
+
+    delta: timedelta = field(init=False)
+    """Seismogram sampling interval."""
+
+    data: np.ndarray = field(init=False)
+    """Seismogram data."""
+
+    def __attrs_post_init__(self) -> None:
+        self.begin_time = self.parent_seismogram.begin_time
+        self.delta = self.parent_seismogram.delta
+        self.data = self.parent_seismogram.data.copy()
+
+
 @beartype
 @define(slots=True)
 class ICCS:
@@ -69,7 +99,7 @@ class ICCS:
     class is called. Processing parameters that are common to all seismograms
     are stored as attributes (e.g. time window limits).
 
-    The seismograms stored in an instance are prepared in two distict ways:
+    The seismograms stored in an instance are prepared in two distinct ways:
 
     - **For cross-correlation:** uses [`ramp_width`][pysmo.tools.iccs.ICCS.ramp_width]
       to define how much of the seismogram should be used as *taper* before and
@@ -357,8 +387,8 @@ class ICCS:
     # The following attributes are cached to prevent unnecessary processing.
     # Setting the caches to None will force a new calculation when they are
     # requested.
-    _cc_seismograms: list[MiniSeismogram] | None = field(init=False)
-    _context_seismograms: list[MiniSeismogram] | None = field(init=False)
+    _cc_seismograms: list[_EphemeralSeismogram] | None = field(init=False)
+    _context_seismograms: list[_EphemeralSeismogram] | None = field(init=False)
     _ccnorms: np.ndarray | None = field(init=False)
     _cc_stack: MiniSeismogram | None = field(init=False)
     _context_stack: MiniSeismogram | None = field(init=False)
@@ -381,10 +411,10 @@ class ICCS:
     def _prepare_seismograms(
         self,
         add_context: bool = False,
-    ) -> list[MiniSeismogram]:
+    ) -> list[_EphemeralSeismogram]:
         """Prepare cc_seismograms or context_seismograms."""
 
-        return_seismograms: list[MiniSeismogram] = []
+        return_seismograms: list[_EphemeralSeismogram] = []
 
         min_delta = min((s.delta for s in self.seismograms))
 
@@ -393,7 +423,7 @@ class ICCS:
             window_start = pick + self.window_pre
             window_end = pick + self.window_post
 
-            prepared_seismogram = clone_to_mini(MiniSeismogram, seismogram)
+            prepared_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
 
             if self.bandpass_apply:
                 bandpass(
@@ -403,7 +433,9 @@ class ICCS:
                     zerophase=True,
                 )
 
-            if prepared_seismogram.delta != min_delta:
+            if not np.isclose(
+                prepared_seismogram.delta.total_seconds(), min_delta.total_seconds()
+            ):
                 resample(prepared_seismogram, min_delta)
 
             if add_context:
@@ -424,12 +456,12 @@ class ICCS:
 
                 crop(prepared_seismogram, context_window_start, context_window_end)
                 detrend(prepared_seismogram)
+                normalize(prepared_seismogram, window_start, window_end)
             else:
                 window(prepared_seismogram, window_start, window_end, self.ramp_width)
+                normalize(prepared_seismogram)
 
-            normalize(prepared_seismogram, window_start, window_end)
-
-            if seismogram.flip is True:
+            if seismogram.flip:
                 prepared_seismogram.data *= -1
 
             return_seismograms.append(prepared_seismogram)
@@ -444,16 +476,52 @@ class ICCS:
         return return_seismograms
 
     @property
-    def cc_seismograms(self) -> list[MiniSeismogram]:
-        """Returns the seismograms as used for the cross-correlation."""
+    def cc_seismograms(self) -> list[_EphemeralSeismogram]:
+        """Returns the seismograms as used for the cross-correlation.
+
+        These seismograms are derived from the input seismograms and used for
+        the cross-correlation steps. Starting with the input seismograms, they
+        are processed as follows:
+
+        1. Bandpass filtered if
+           [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+           [`True`][].
+        2. Resampled to the minimum sampling interval of all input seismograms
+           (only if it is not equal in all seismograms).
+        3. Cropped to `ramp_width` +  current time window + `ramp_width`.
+        4. Detrended.
+        5. Tapered using [`ramp_width`][pysmo.tools.iccs.ICCS.ramp_width]
+           (tapered sections are *outside* time window).
+        6. Normalised based on the highest absolute value within the cropped
+           window. This step is done slightly differently in
+           [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms]
+           --see the documentation of that property for details.
+        """
 
         if self._cc_seismograms is None:
             self._cc_seismograms = self._prepare_seismograms(add_context=False)
         return self._cc_seismograms
 
     @property
-    def context_seismograms(self) -> list[MiniSeismogram]:
-        """Returns the seismograms with extra context for plotting."""
+    def context_seismograms(self) -> list[_EphemeralSeismogram]:
+        """Returns the seismograms with extra context for plotting.
+
+        These seismograms are derived from the input seismograms and used
+        primarily for plotting with extra context (e.g. when selecting new
+        time window boundaries). Starting with the input seismograms, they are
+        processed as follows:
+
+        1. Bandpass filtered if
+           [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+           [`True`][].
+        2. Resampled to the minimum sampling interval of all input seismograms
+           (only if it is not equal in all seismograms).
+        3. Cropped and/or padded to `context_width` +  current time window +
+           `context_width`.
+        4. Detrended.
+        5. Normalised based on the highest absolute value within the selected
+           time window (i.e. without the context).
+        """
 
         if self._context_seismograms is None:
             self._context_seismograms = self._prepare_seismograms(add_context=True)
@@ -464,12 +532,8 @@ class ICCS:
         """Returns an array of the normalised cross-correlation coefficients."""
 
         if self._ccnorms is None:
-            self._ccnorms = np.array(
-                [
-                    (pearsonr(seismogram.data, self.stack.data)[0])
-                    for seismogram in self.cc_seismograms
-                ]
-            )
+            matrix = np.array([s.data for s in self.cc_seismograms])
+            self._ccnorms = pearson_matrix_vector(matrix, self.stack.data)
         return self._ccnorms
 
     @property
@@ -486,7 +550,7 @@ class ICCS:
             Stacked input seismograms.
         """
         if self._cc_stack is None:
-            self._cc_stack = _create_stack(self.cc_seismograms, self.seismograms)
+            self._cc_stack = _create_stack(self.cc_seismograms)
         return self._cc_stack
 
     @property
@@ -497,9 +561,7 @@ class ICCS:
             Stacked input seismograms with context padding.
         """
         if self._context_stack is None:
-            self._context_stack = _create_stack(
-                self.context_seismograms, self.seismograms
-            )
+            self._context_stack = _create_stack(self.context_seismograms)
         return self._context_stack
 
     def validate_pick(self, pick: timedelta) -> bool:
@@ -507,7 +569,7 @@ class ICCS:
 
         This checks if a new manual pick is valid for all selected seismograms.
 
-        Parameters:
+        Args:
             pick: New pick to validate.
 
         Returns:
@@ -518,16 +580,14 @@ class ICCS:
         if self._valid_pick_range is None:
             self._valid_pick_range = _calc_valid_pick_range(self)
 
-        if self._valid_pick_range[0] <= pick <= self._valid_pick_range[1]:
-            return True
-        return False
+        return self._valid_pick_range[0] <= pick <= self._valid_pick_range[1]
 
     def validate_time_window(
         self, window_pre: timedelta, window_post: timedelta
     ) -> bool:
         """Check if a new time window (relative to pick) is valid.
 
-        Parameters:
+        Args:
             window_pre: New window start time to validate.
             window_post: New window end time to validate.
 
@@ -548,103 +608,64 @@ class ICCS:
         if self._valid_time_window_range is None:
             self._valid_time_window_range = _calc_valid_time_window_range(self)
 
-        if (
+        return (
             self._valid_time_window_range[0] <= window_pre
             and window_post <= self._valid_time_window_range[1]
-        ):
-            return True
-        return False
+        )
 
     def __call__(
         self,
         autoflip: bool = False,
         autoselect: bool = False,
         convergence_limit: float = ICCS_DEFAULTS.convergence_limit,
-        convergence_method: CONVERGENCE_METHOD = ICCS_DEFAULTS.convergence_method,
+        convergence_method: ConvergenceMethod = ICCS_DEFAULTS.convergence_method,
         max_iter: int = ICCS_DEFAULTS.max_iter,
         max_shift: timedelta | None = None,
-        parallel: bool = False,
     ) -> np.ndarray:
         """Run the iccs algorithm.
 
-        Parameters:
+        Args:
             autoflip: Automatically toggle [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip] attribute of seismograms.
             autoselect: Automatically set `select` attribute to `False` for poor quality seismograms.
             convergence_limit: Convergence limit at which the algorithm stops.
             convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
             max_shift: Maximum shift in seconds (see [`delay()`][pysmo.tools.signal.delay]).
-            parallel: Whether to use parallel processing. Setting this to `True`
-                will perform the cross-correlation calculations in parallel
-                using [`ProcessPoolExecutor`][concurrent.futures.ProcessPoolExecutor].
-                In most cases this will *not* be faster.
 
         Returns:
             convergence: Array of convergence criterion values.
         """
         convergence_list = []
-        executor = ProcessPoolExecutor() if parallel else None
 
-        try:
-            for _ in range(max_iter):
-                prev_stack = clone_to_mini(MiniSeismogram, self.stack)
+        for _ in range(max_iter):
+            # Save the previous stack to calculate convergence criterion after updating the seismograms.
+            prev_stack = clone_to_mini(MiniSeismogram, self.stack)
 
-                if executor is not None:
-                    futures = []
-                    for prepared_seismogram, seismogram in zip(
-                        self.cc_seismograms, self.seismograms
-                    ):
-                        future = executor.submit(
-                            delay,
-                            self.stack,
-                            prepared_seismogram,
-                            max_shift=max_shift,
-                            abs_max=autoflip,
-                        )
-                        futures.append((future, seismogram))
-                    for future, seismogram in futures:
-                        _delay, _ccnorm = future.result()
-                        _update_seismogram(
-                            _delay,
-                            _ccnorm,
-                            seismogram,
-                            autoflip,
-                            autoselect,
-                            self.min_ccnorm,
-                            (self.window_pre, self.window_post),
-                        )
-                else:
-                    for prepared_seismogram, seismogram in zip(
-                        self.cc_seismograms, self.seismograms
-                    ):
-                        _delay, _ccnorm = delay(
-                            self.stack,
-                            prepared_seismogram,
-                            max_shift=max_shift,
-                            abs_max=autoflip,
-                        )
+            # Get delays and correlation coefficients for all seismograms in one go
+            delays, ccnorms = multi_delay(
+                self.stack, self.cc_seismograms, abs_max=autoflip
+            )
 
-                        _update_seismogram(
-                            _delay,
-                            _ccnorm,
-                            seismogram,
-                            autoflip,
-                            autoselect,
-                            self.min_ccnorm,
-                            (self.window_pre, self.window_post),
-                        )
-
-                self._clear_caches()
-
-                convergence = _calc_convergence(
-                    self.stack, prev_stack, convergence_method
+            # Update seismograms based on results and settings.
+            for delay, ccnorm, cc_seismogram in zip(
+                delays, ccnorms, self.cc_seismograms
+            ):
+                _update_seismogram(
+                    delay,
+                    ccnorm,
+                    cc_seismogram.parent_seismogram,
+                    autoflip,
+                    autoselect,
+                    self.min_ccnorm,
+                    (self.window_pre, self.window_post),
                 )
-                convergence_list.append(convergence)
-                if convergence <= convergence_limit:
-                    break
-        finally:
-            if executor is not None:
-                executor.shutdown()
+
+            self._clear_caches()
+
+            convergence = _calc_convergence(self.stack, prev_stack, convergence_method)
+            convergence_list.append(convergence)
+            if convergence <= convergence_limit:
+                break
 
         return np.array(convergence_list)
 
@@ -666,7 +687,7 @@ def _update_seismogram(
     ``t1`` is updated unless the new value would fall outside the seismogram
     limits.
 
-    Parameters:
+    Args:
         delay: Time shift from cross-correlation.
         ccnorm: Normalised cross-correlation coefficient.
         seismogram: Seismogram to update.
@@ -681,10 +702,7 @@ def _update_seismogram(
         ccnorm = abs(ccnorm)
 
     if autoselect:
-        if ccnorm < min_ccnorm_for_autoselect:
-            seismogram.select = False
-        else:
-            seismogram.select = True
+        seismogram.select = bool(ccnorm >= min_ccnorm_for_autoselect)
 
     updated_t1 = (seismogram.t1 or seismogram.t0) + delay
     limit_pre = seismogram.begin_time - current_window[0]
@@ -699,26 +717,21 @@ def _update_seismogram(
     seismogram.t1 = updated_t1
 
 
-def _create_stack(
-    prepared_seismograms: Sequence[Seismogram], seismograms: Sequence[ICCSSeismogram]
-) -> MiniSeismogram:
+def _create_stack(seismograms: Sequence[_EphemeralSeismogram]) -> MiniSeismogram:
     """Create a stack by averaging all selected seismograms.
 
-    Parameters:
-        prepared_seismograms: Prepared (cropped, normalised) seismograms to stack.
-        seismograms: Original ICCS seismograms, used to check the ``select`` flag.
+    Args:
+        seismograms: Prepared seismograms to stack.
 
     Returns:
         A new seismogram whose data is the mean of all selected input seismograms.
     """
     begin_time = average_datetimes(
-        [p.begin_time for p, s in zip(prepared_seismograms, seismograms) if s.select]
+        [p.begin_time for p in seismograms if p.parent_seismogram.select]
     )
-    delta = prepared_seismograms[0].delta
+    delta = seismograms[0].delta
     data = np.mean(
-        np.array(
-            [p.data for p, s in zip(prepared_seismograms, seismograms) if s.select]
-        ),
+        np.array([p.data for p in seismograms if p.parent_seismogram.select]),
         axis=0,
     )
     return MiniSeismogram(begin_time=begin_time, delta=delta, data=data)
@@ -727,7 +740,7 @@ def _create_stack(
 def _calc_convergence(
     current_stack: Seismogram,
     prev_stack: Seismogram,
-    method: CONVERGENCE_METHOD,
+    method: ConvergenceMethod,
 ) -> float:
     """Calculate criterion of convergence.
 
@@ -737,15 +750,15 @@ def _calc_convergence(
     - Convergence by correlation coefficient.
     - Convergence by change of stack
 
-    Parameters:
+    Args:
         current_stack: Current stack.
         prev_stack: Stack from last iteration.
         method: Method of convergence criterion calculation.
     """
-    if method == CONVERGENCE_METHOD.corrcoef:
+    if method == ConvergenceMethod.corrcoef:
         covr, _ = pearsonr(current_stack.data, prev_stack.data)
         return 1 - float(covr)
-    elif method == CONVERGENCE_METHOD.change:
+    elif method == ConvergenceMethod.change:
         return float(
             norm(current_stack.data - prev_stack.data, 1)
             / norm(current_stack.data, 2)

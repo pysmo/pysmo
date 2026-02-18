@@ -54,7 +54,7 @@ def crop[T: Seismogram](
     slices the seismogram `data` array accordingly and updates the
     `begin_time`.
 
-    Parameters:
+    Args:
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
         begin_time: New begin time.
         end_time: New end time.
@@ -108,7 +108,7 @@ def detrend[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
 def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
     """Remove linear and/or constant trends from a seismogram.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         clone: Operate on a clone of the input seismogram.
 
@@ -168,7 +168,7 @@ def normalize[T: Seismogram](
 ) -> None | T:
     """Normalize a seismogram with its absolute max value.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         t1: Optionally restrict searching of maximum to time after this time.
         t2: Optionally restrict searching of maximum to time before this time.
@@ -250,7 +250,7 @@ def pad[T: Seismogram](
     end times are set by indexing, so they may be slightly different than the
     provided input begin and end times.
 
-    Parameters:
+    Args:
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
         begin_time: New begin time.
         end_time: New end time.
@@ -336,7 +336,7 @@ def resample[T: Seismogram](
     the data to a new sampling interval. If the new sampling interval is
     identical to the current one, no action is taken.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         delta: New sampling interval.
         clone: Operate on a clone of the input seismogram.
@@ -429,7 +429,7 @@ def taper[T: Seismogram](
         [`get_window()`][scipy.signal.windows.get_window] to see if they can be
         split in the middle and used as "ramp up" and "ramp down" functions.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         taper_width: Width of the taper to use.
         window_type: Function to calculate taper shape (see
@@ -499,7 +499,7 @@ def time2index(
     - ceil: always round up to next higher index.
     - floor: always round down to next lower index.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         time: Time to convert to index.
         method: Method to use for selecting the index to return.
@@ -587,7 +587,7 @@ def window[T: Seismogram](
         entire signal. In a sense the tapering here is applied to the 'outside'
         of the region of interest rather than the 'inside'.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
         window_begin_time: Begin time of the window.
         window_end_time: End time of the window.
