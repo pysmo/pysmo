@@ -1,6 +1,6 @@
 from dataclasses import FrozenInstanceError
 from scipy import signal  # type: ignore
-from datetime import timedelta
+from pandas import Timedelta
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
 import numpy as np
@@ -94,7 +94,7 @@ def test_generate_noise():  # type: ignore
     nperseg = npts / 4
     nfft = npts / 2
     srate = 0.1
-    delta = timedelta(seconds=srate)
+    delta = Timedelta(seconds=srate)
     sfrec = 1 / srate
     nhnm = noise.NHNM
 

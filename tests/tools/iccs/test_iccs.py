@@ -1,6 +1,6 @@
 from pysmo.tools.iccs._types import ConvergenceMethod
 from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
-from datetime import timedelta
+from pandas import Timedelta
 import pytest
 from matplotlib.figure import Figure
 
@@ -55,8 +55,8 @@ class TestICCSParameters(TestICCSBase):
     def test_change_timewindow(self) -> None:
         assert self.iccs.window_pre.total_seconds() == -15
         with pytest.raises(ValueError):
-            self.iccs.window_pre = timedelta(seconds=1)
-        self.iccs.window_pre += timedelta(seconds=2.34)
+            self.iccs.window_pre = Timedelta(seconds=1)
+        self.iccs.window_pre += Timedelta(seconds=2.34)
         assert self.iccs.window_pre.total_seconds() == -12.66
 
     def test_invalid_window_pre(self) -> None:
@@ -64,14 +64,14 @@ class TestICCSParameters(TestICCSBase):
             s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms if s.select
         )
         with pytest.raises(ValueError):
-            self.iccs.window_pre -= timedelta(seconds=1) + max_window_pre
+            self.iccs.window_pre -= Timedelta(seconds=1) + max_window_pre
 
     def test_invalid_window_post(self) -> None:
         min_window_post = min(
             (s.t1 or s.t0) - s.end_time for s in self.iccs.seismograms if s.select
         )
         with pytest.raises(ValueError):
-            self.iccs.window_post += timedelta(seconds=1) + min_window_post
+            self.iccs.window_post += Timedelta(seconds=1) + min_window_post
 
     def test_validate_pick(self) -> None:
         from pysmo.tools.iccs._iccs import _calc_valid_pick_range
@@ -80,8 +80,8 @@ class TestICCSParameters(TestICCSBase):
 
         assert self.iccs.validate_pick(min_pick) is True
         assert self.iccs.validate_pick(max_pick) is True
-        assert self.iccs.validate_pick(min_pick - timedelta(seconds=0.01)) is False
-        assert self.iccs.validate_pick(max_pick + timedelta(seconds=0.01)) is False
+        assert self.iccs.validate_pick(min_pick - Timedelta(seconds=0.01)) is False
+        assert self.iccs.validate_pick(max_pick + Timedelta(seconds=0.01)) is False
 
     def test_validate_time_window(self) -> None:
         from pysmo.tools.iccs._iccs import _calc_valid_time_window_range
@@ -100,13 +100,13 @@ class TestICCSParameters(TestICCSBase):
         )
         assert (
             self.iccs.validate_time_window(
-                min_window_pre - timedelta(seconds=0.01), max_window_post
+                min_window_pre - Timedelta(seconds=0.01), max_window_post
             )
             is False
         )
         assert (
             self.iccs.validate_time_window(
-                min_window_pre, max_window_post + timedelta(seconds=0.01)
+                min_window_pre, max_window_post + Timedelta(seconds=0.01)
             )
             is False
         )

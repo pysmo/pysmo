@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from pandas import Timestamp, Timedelta
+from datetime import timezone
 import pytest
 from pysmo import Event, MiniEvent
 
@@ -15,7 +16,7 @@ class TestMiniEvent:
             2.2,
         )
         depth = 1000
-        time_utc, time_no_tz = datetime.now(timezone.utc), datetime.now()
+        time_utc, time_no_tz = Timestamp.now(timezone.utc), Timestamp.now()
         minievent = MiniEvent(
             latitude=latitude, longitude=longitude, depth=depth, time=time_utc
         )
@@ -28,12 +29,12 @@ class TestMiniEvent:
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
-        latitude, longitude, depth, time = 1.1, 2.2, 1000, datetime.now(timezone.utc)
+        latitude, longitude, depth, time = 1.1, 2.2, 1000, Timestamp.now(timezone.utc)
         new_latitude, new_longitude, new_depth, new_time = (
             -21.1,
             -22.2,
             500.2,
-            time + timedelta(minutes=3),
+            time + Timedelta(minutes=3),
         )
 
         minievent = MiniEvent(

@@ -4,7 +4,7 @@ from pysmo.functions import detrend, clone_to_mini
 from pytest_cases import parametrize_with_cases
 import pytest
 import numpy as np
-from datetime import timedelta
+from pandas import Timedelta
 import random
 
 
@@ -23,7 +23,7 @@ def test_delay_with_total_delay_true() -> None:
     data2 = np.array([1, 1, 1, 2, 3, 4, 1])
     seismogram1 = MiniSeismogram(data=data1)
     seismogram2 = MiniSeismogram(data=data2)
-    seismogram2.begin_time += timedelta(seconds=1)
+    seismogram2.begin_time += Timedelta(seconds=1)
     cc_delay, cc_coeff = delay(seismogram1, seismogram2, total_delay=True)
     assert cc_delay.total_seconds() == pytest.approx(-2)
     assert cc_coeff == pytest.approx(1)
@@ -55,7 +55,7 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     seismogram2 = clone_to_mini(MiniSeismogram, seismogram1)
     seismogram2.data = seismogram1.data[0:rand_int]
     with pytest.raises(ValueError):
-        cc_delay, _ = delay(seismogram1, seismogram2, max_shift=timedelta(seconds=1))
+        cc_delay, _ = delay(seismogram1, seismogram2, max_shift=Timedelta(seconds=1))
 
     # create seismogram2 by cutting off first rand_int samples
     seismogram2 = clone_to_mini(MiniSeismogram, seismogram1)
@@ -80,7 +80,7 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     cc_delay, _ = delay(
         seismogram1,
         seismogram2,
-        max_shift=rand_int * seismogram1.delta + timedelta(seconds=2),
+        max_shift=rand_int * seismogram1.delta + Timedelta(seconds=2),
     )
 
     assert cc_delay == rand_int * seismogram1.delta
@@ -88,7 +88,7 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     cc_delay, _ = delay(
         seismogram2,
         seismogram1,
-        max_shift=rand_int * seismogram1.delta + timedelta(seconds=2),
+        max_shift=rand_int * seismogram1.delta + Timedelta(seconds=2),
     )
 
     assert cc_delay == -rand_int * seismogram1.delta

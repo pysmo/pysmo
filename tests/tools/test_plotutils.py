@@ -1,5 +1,7 @@
 from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
+from pandas import Timestamp
+from datetime import timezone
 import pytest
 import matplotlib  # type: ignore
 
@@ -29,13 +31,12 @@ class TestPlotseisFunctions:
     def test_unix_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
         from pysmo.tools.plotutils import unix_time_array
-        from datetime import datetime, timezone
 
         unix_times = unix_time_array(seismogram)
         assert len(unix_times) == len(seismogram)
         assert (
-            datetime.fromtimestamp(unix_times[0], timezone.utc) == seismogram.begin_time
+            Timestamp.fromtimestamp(unix_times[0], timezone.utc) == seismogram.begin_time
         )
         assert (
-            datetime.fromtimestamp(unix_times[-1], timezone.utc) == seismogram.end_time
+            Timestamp.fromtimestamp(unix_times[-1], timezone.utc) == seismogram.end_time
         )
