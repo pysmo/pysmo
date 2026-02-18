@@ -2,13 +2,14 @@
 Validators for pysmo classes using [`attrs`][attrs].
 """
 
-from datetime import datetime, timezone
+from pandas import Timestamp
+from datetime import timezone
 from attrs import Attribute
 from typing import Any
 
 
-def datetime_is_utc(_: Any, attribute: Attribute, value: datetime | None) -> None:
-    """Ensure [`datetime`][datetime.datetime] datetime objects have `#!py tzdata=timezone.utc` set."""
+def datetime_is_utc(_: Any, attribute: Attribute, value: Timestamp | None) -> None:
+    """Ensure [`pandas.Timestamp`][pandas.Timestamp] datetime objects have `#!py tzdata=timezone.utc` set."""
     if value is None:
         return
     if value.tzinfo != timezone.utc:

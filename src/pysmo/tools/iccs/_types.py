@@ -5,7 +5,7 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from typing import Protocol, runtime_checkable
 from beartype import beartype
 from attrs import define, field, validators
-from datetime import datetime
+from pandas import Timestamp, Timedelta
 from enum import StrEnum, auto
 import numpy as np
 
@@ -25,10 +25,10 @@ class ICCSSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    t0: datetime
+    t0: Timestamp
     """Initial pick."""
 
-    t1: datetime | None
+    t1: Timestamp | None
     """Updated pick."""
 
     flip: bool
@@ -59,17 +59,17 @@ class MiniICCSSeismogram(Seismogram):
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
-        >>> from datetime import timedelta
+        >>> from pandas import Timedelta
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
         >>> # Use existing pick or set a new one 10 seconds after begin time
-        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + timedelta(seconds=10)}
+        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + Timedelta(seconds=10)}
         >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
         >>>
         ```
     """
 
-    begin_time: datetime = field(
+    begin_time: Timestamp = field(
         default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime_is_utc
     )
     """Seismogram begin time."""
@@ -80,10 +80,10 @@ class MiniICCSSeismogram(Seismogram):
     data: np.ndarray = field(factory=lambda: np.array([]))
     """Seismogram data."""
 
-    t0: datetime = field(validator=datetime_is_utc)
+    t0: Timestamp = field(validator=datetime_is_utc)
     """Initial pick."""
 
-    t1: datetime | None = field(
+    t1: Timestamp | None = field(
         default=None, validator=validators.optional(datetime_is_utc)
     )
     """Updated pick."""
