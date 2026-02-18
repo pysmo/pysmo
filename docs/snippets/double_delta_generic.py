@@ -8,7 +8,7 @@ from typing import reveal_type
 def double_delta_generic[T: Seismogram](seismogram: T) -> T:  # (1)!
     """Double the sampling interval of a seismogram.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
 
     Returns:

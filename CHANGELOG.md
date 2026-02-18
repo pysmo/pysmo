@@ -4,6 +4,12 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ## [Unreleased]
 
+### 📚 Documentation
+
+- Remove unused mkdocs-macros-plugin
+
+## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
+
 ### ⚙️ DevOps & Infrastructure
 
 - Combine coverage results before uploading and add osx
@@ -211,6 +217,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Taper on outside of window
 - Retry from_iris on error status 500
 - **(signal)** Add butterworth filters
+- **(iccs)** Add bandpass filtering to iccs ([#248](https://github.com/pysmo/pysmo/issues/248))
 
 ### 🧪 Testing
 

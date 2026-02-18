@@ -5,7 +5,7 @@ from pysmo.functions import clone_to_mini
 def double_delta_mini(seismogram: Seismogram) -> MiniSeismogram:
     """Double the sampling interval of a seismogram.
 
-    Parameters:
+    Args:
         seismogram: Seismogram object.
 
     Returns:
