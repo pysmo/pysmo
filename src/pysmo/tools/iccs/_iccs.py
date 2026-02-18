@@ -520,7 +520,7 @@ class ICCS:
         3. Cropped and/or padded to `context_width` +  current time window +
            `context_width`.
         4. Detrended.
-        6. Normalised based on the highest absolute value within the selected
+        5. Normalised based on the highest absolute value within the selected
            time window (i.e. without the context).
         """
 
