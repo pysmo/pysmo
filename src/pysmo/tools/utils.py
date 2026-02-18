@@ -1,9 +1,204 @@
 """Pysmo's little helpers."""
 
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 import numpy as np
+import numpy.typing as npt
+
+
+def datetime_sequence_to_datetime64(
+    datetimes: Sequence[datetime],
+) -> npt.NDArray[np.datetime64]:
+    """Convert a sequence of datetime objects to numpy datetime64 array.
+
+    If a datetime has no tzinfo, it is assumed to be UTC. If a datetime
+    has tzinfo, it is converted to UTC before converting to datetime64.
+
+    Args:
+        datetimes: Sequence of datetime objects to convert.
+
+    Returns:
+        NumPy array of datetime64[us] objects in UTC.
+
+    Raises:
+        ValueError: If an empty sequence is provided as input.
+
+    Examples:
+        ```python
+        >>> from datetime import datetime, timezone
+        >>> from pysmo.tools.utils import datetime_sequence_to_datetime64
+        >>>
+        >>> # Create some datetimes
+        >>> dt1 = datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        >>> dt2 = datetime(2020, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        >>>
+        >>> # Convert to datetime64
+        >>> dt64_array = datetime_sequence_to_datetime64([dt1, dt2])
+        >>> dt64_array
+        array(['2020-01-01T12:00:00.000000', '2020-01-02T12:00:00.000000'],
+              dtype='datetime64[us]')
+        >>>
+        ```
+    """
+    if len(datetimes) == 0:
+        raise ValueError("Cannot convert empty sequence of datetimes.")
+
+    # Convert datetimes to UTC timestamps (as microseconds since epoch)
+    utc_timestamps = []
+    for dt in datetimes:
+        if dt.tzinfo is None:
+            # Assume UTC
+            utc_dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            # Convert to UTC
+            utc_dt = dt.astimezone(timezone.utc)
+        # Convert to microseconds since epoch
+        us_since_epoch = int(utc_dt.timestamp() * 1_000_000)
+        utc_timestamps.append(us_since_epoch)
+
+    # Create datetime64 array from microseconds since epoch
+    return np.array(utc_timestamps, dtype="int64").astype("datetime64[us]")
+
+
+def datetime64_to_datetime_sequence(
+    datetime64_array: npt.NDArray[np.datetime64],
+) -> list[datetime]:
+    """Convert a numpy datetime64 array to a list of datetime objects.
+
+    The resulting datetime objects are always in UTC timezone.
+
+    Args:
+        datetime64_array: NumPy array of datetime64 objects.
+
+    Returns:
+        List of datetime objects in UTC.
+
+    Raises:
+        ValueError: If an empty array is provided as input.
+
+    Examples:
+        ```python
+        >>> from datetime import datetime, timezone
+        >>> from pysmo.tools.utils import (
+        ...     datetime_sequence_to_datetime64,
+        ...     datetime64_to_datetime_sequence,
+        ... )
+        >>>
+        >>> # Create some datetimes
+        >>> dt1 = datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        >>> dt2 = datetime(2020, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        >>>
+        >>> # Convert to datetime64 and back
+        >>> dt64_array = datetime_sequence_to_datetime64([dt1, dt2])
+        >>> result = datetime64_to_datetime_sequence(dt64_array)
+        >>> result[0] == dt1
+        True
+        >>> result[1] == dt2
+        True
+        >>>
+        ```
+    """
+    if len(datetime64_array) == 0:
+        raise ValueError("Cannot convert empty array of datetime64 objects.")
+
+    # Convert to Python datetime objects with UTC timezone
+    result = []
+    for dt64 in datetime64_array:
+        # Convert to timestamp and create datetime
+        timestamp = dt64.astype("datetime64[us]").astype(np.int64) / 1_000_000
+        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        result.append(dt)
+
+    return result
+
+
+def timedelta_sequence_to_timedelta64(
+    timedeltas: Sequence[timedelta],
+) -> npt.NDArray[np.timedelta64]:
+    """Convert a sequence of timedelta objects to numpy timedelta64 array.
+
+    Args:
+        timedeltas: Sequence of timedelta objects to convert.
+
+    Returns:
+        NumPy array of timedelta64[us] objects.
+
+    Raises:
+        ValueError: If an empty sequence is provided as input.
+
+    Examples:
+        ```python
+        >>> from datetime import timedelta
+        >>> from pysmo.tools.utils import timedelta_sequence_to_timedelta64
+        >>>
+        >>> # Create some timedeltas
+        >>> td1 = timedelta(seconds=1.5)
+        >>> td2 = timedelta(seconds=2.5)
+        >>>
+        >>> # Convert to timedelta64
+        >>> td64_array = timedelta_sequence_to_timedelta64([td1, td2])
+        >>> td64_array
+        array([1500000, 2500000], dtype='timedelta64[us]')
+        >>>
+        ```
+    """
+    if len(timedeltas) == 0:
+        raise ValueError("Cannot convert empty sequence of timedeltas.")
+
+    # Convert timedeltas to microseconds
+    us_values = [int(td.total_seconds() * 1_000_000) for td in timedeltas]
+    return np.array(us_values, dtype="timedelta64[us]")
+
+
+def timedelta64_to_timedelta_sequence(
+    timedelta64_array: npt.NDArray[np.timedelta64],
+) -> list[timedelta]:
+    """Convert a numpy timedelta64 array to a list of timedelta objects.
+
+    Args:
+        timedelta64_array: NumPy array of timedelta64 objects.
+
+    Returns:
+        List of timedelta objects.
+
+    Raises:
+        ValueError: If an empty array is provided as input.
+
+    Examples:
+        ```python
+        >>> from datetime import timedelta
+        >>> from pysmo.tools.utils import (
+        ...     timedelta_sequence_to_timedelta64,
+        ...     timedelta64_to_timedelta_sequence,
+        ... )
+        >>>
+        >>> # Create some timedeltas
+        >>> td1 = timedelta(seconds=1.5)
+        >>> td2 = timedelta(seconds=2.5)
+        >>>
+        >>> # Convert to timedelta64 and back
+        >>> td64_array = timedelta_sequence_to_timedelta64([td1, td2])
+        >>> result = timedelta64_to_timedelta_sequence(td64_array)
+        >>> result[0] == td1
+        True
+        >>> result[1] == td2
+        True
+        >>>
+        ```
+    """
+    if len(timedelta64_array) == 0:
+        raise ValueError("Cannot convert empty array of timedelta64 objects.")
+
+    # Convert to Python timedelta objects
+    result = []
+    for td64 in timedelta64_array:
+        # Convert to microseconds and create timedelta
+        us = td64.astype("timedelta64[us]").astype(np.int64)
+        td = timedelta(microseconds=int(us))
+        result.append(td)
+
+    return result
 
 
 def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
@@ -16,13 +211,35 @@ def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
         Datetime representing average of all datetimes.
 
     Raises:
-        ValueError: If an empty sequence is provides as input.
+        ValueError: If an empty sequence is provided as input.
+
+    Examples:
+        ```python
+        >>> from datetime import datetime, timezone
+        >>> from pysmo.tools.utils import average_datetimes
+        >>>
+        >>> # Create some datetimes
+        >>> dt1 = datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        >>> dt2 = datetime(2020, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        >>> dt3 = datetime(2020, 1, 3, 12, 0, 0, tzinfo=timezone.utc)
+        >>>
+        >>> # Average them
+        >>> result = average_datetimes([dt1, dt2, dt3])
+        >>> result
+        datetime.datetime(2020, 1, 2, 12, 0, tzinfo=datetime.timezone.utc)
+        >>>
+        ```
     """
     if len(datetimes) == 0:
         raise ValueError("Cannot average empty sequence of datetimes.")
-    reference_time = datetimes[0]
-    seconds = sum((i - reference_time).total_seconds() for i in datetimes[1:])
-    return reference_time + timedelta(seconds=seconds / len(datetimes))
+
+    # Use numpy datetime64 for efficient averaging
+    dt64_array = datetime_sequence_to_datetime64(datetimes)
+    avg_dt64 = dt64_array.astype("datetime64[us]").view("int64").mean()
+    avg_dt64 = np.datetime64(int(avg_dt64), "us")
+
+    # Convert back to datetime
+    return datetime64_to_datetime_sequence(np.array([avg_dt64]))[0]
 
 
 def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID]:
