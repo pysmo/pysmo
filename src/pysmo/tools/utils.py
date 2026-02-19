@@ -1,12 +1,12 @@
 """Pysmo's little helpers."""
 
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from pandas import Timestamp, Timedelta
 from uuid import UUID
 import numpy as np
 
 
-def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
+def average_datetimes(datetimes: Sequence[Timestamp]) -> Timestamp:
     """Average a sequence of datetimes.
 
     Args:
@@ -22,7 +22,7 @@ def average_datetimes(datetimes: Sequence[datetime]) -> datetime:
         raise ValueError("Cannot average empty sequence of datetimes.")
     reference_time = datetimes[0]
     seconds = sum((i - reference_time).total_seconds() for i in datetimes[1:])
-    return reference_time + timedelta(seconds=seconds / len(datetimes))
+    return reference_time + Timedelta(seconds=seconds / len(datetimes))
 
 
 def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID]:

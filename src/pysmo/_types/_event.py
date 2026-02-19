@@ -2,7 +2,7 @@ from ._location_with_depth import LocationWithDepth
 from pysmo.lib.validators import datetime_is_utc
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
-from datetime import datetime
+from pandas import Timestamp
 
 __all__ = ["Event", "MiniEvent"]
 
@@ -11,7 +11,7 @@ __all__ = ["Event", "MiniEvent"]
 class Event(LocationWithDepth, Protocol):
     """Protocol class to define the `Event` type."""
 
-    time: datetime
+    time: Timestamp
     """Event origin time."""
 
 
@@ -25,8 +25,9 @@ class MiniEvent:
     Examples:
         ```python
         >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location
-        >>> from datetime import datetime, timezone
-        >>> now = datetime.now(timezone.utc)
+        >>> from pandas import Timestamp
+        >>> from datetime import timezone
+        >>> now = Timestamp.now(timezone.utc)
         >>> event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
         >>> isinstance(event, Event)
         True
@@ -38,7 +39,7 @@ class MiniEvent:
         ```
     """
 
-    time: datetime = field(validator=datetime_is_utc)
+    time: Timestamp = field(validator=datetime_is_utc)
     """Event origin time."""
 
     latitude: float = field(validator=[validators.ge(-90), validators.le(90)])

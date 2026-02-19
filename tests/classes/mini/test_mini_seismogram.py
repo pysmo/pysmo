@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from datetime import datetime, timedelta, timezone
+from pandas import Timestamp, Timedelta
+from datetime import timezone
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 
@@ -46,7 +47,7 @@ class TestMiniSeismogram:
             == SEISMOGRAM_DEFAULTS.begin_time.value.microsecond
             == 0
         )
-        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta.value == timedelta(seconds=1)
+        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta.value == Timedelta(seconds=1)
         assert miniseis.data.size == 0
         assert len(miniseis) == 0
 
@@ -54,8 +55,8 @@ class TestMiniSeismogram:
     def test_change_attributes(self) -> None:
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
-        new_time_no_tz = datetime.fromisoformat("2011-11-04T00:05:23.123")
-        new_time_utc = datetime.fromisoformat("2011-11-04T00:05:23.123").replace(
+        new_time_no_tz = Timestamp.fromisoformat("2011-11-04T00:05:23.123")
+        new_time_utc = Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
             tzinfo=timezone.utc
         )
         miniseis.data = random_data
@@ -68,7 +69,7 @@ class TestMiniSeismogram:
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis) - 1
         )
-        miniseis.delta = timedelta(seconds=0.1)
+        miniseis.delta = Timedelta(seconds=0.1)
         assert miniseis.delta.total_seconds() == 0.1
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis) - 1
@@ -88,8 +89,8 @@ class TestMiniSeismogram:
             _ = len(seismogram)
             _ = np.mean(seismogram.data)
             _ = seismogram.delta * 1.1
-            _ = seismogram.begin_time + timedelta(seconds=12)
-            _ = seismogram.end_time + timedelta(seconds=12)
+            _ = seismogram.begin_time + Timedelta(seconds=12)
+            _ = seismogram.end_time + Timedelta(seconds=12)
 
         miniseis = MiniSeismogram(data=np.random.rand(1000))
         seis_func(miniseis)

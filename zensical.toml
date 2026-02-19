@@ -161,11 +161,13 @@ inventories = [
   "https://pytest-mpl.readthedocs.io/en/latest/objects.inv",
   "https://matplotlib.org/stable/objects.inv",
   "https://flake8.pycqa.org/en/latest/objects.inv",
-  "https://www.mkdocs.org/objects.inv",
   "https://pyproj4.github.io/pyproj/stable/objects.inv",
   "https://attrs.org/en/stable/objects.inv",
   "https://attrs-strict.readthedocs.io/en/stable/objects.inv",
   "https://beartype.readthedocs.io/en/stable/objects.inv",
+  "https://beartype.readthedocs.io/en/stable/objects.inv",
+  "https://www.mkdocs.org/objects.inv",
+  "https://pandas.pydata.org/docs/objects.inv",
 ]
 [project.plugins.mkdocstrings.handlers.python.options]
 allow_inspection = true

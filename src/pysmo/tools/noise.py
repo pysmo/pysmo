@@ -23,7 +23,7 @@ Examples:
 """
 
 import numpy as np
-from datetime import datetime, timedelta
+from pandas import Timestamp, Timedelta
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
@@ -186,8 +186,8 @@ def peterson(noise_level: float) -> NoiseModel:
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    delta: timedelta = SEISMOGRAM_DEFAULTS.delta.value,
-    begin_time: datetime = SEISMOGRAM_DEFAULTS.begin_time.value,
+    delta: Timedelta = SEISMOGRAM_DEFAULTS.delta.value,
+    begin_time: Timestamp = SEISMOGRAM_DEFAULTS.begin_time.value,
     return_velocity: bool = False,
     seed: int | None = None,
 ) -> MiniSeismogram:

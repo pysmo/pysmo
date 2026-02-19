@@ -84,6 +84,7 @@
 - Tests should be in the `tests/` directory
 - Use descriptive test names: `test_function_does_expected_behaviour`
 - Try to mirror the directory structure of `src/pysmo/` in `tests/`
+- Sybil is used to test docstring examples - ensure all docstring examples are correct and executable
 
 ### Commit Messages
 
