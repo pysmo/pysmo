@@ -66,8 +66,8 @@ class TestSAC:
             == pytest.approx(sacio.delta, 0.001)
             == pytest.approx(0.02, 0.001)
         )
-        assert sacseis.begin_time == Timestamp(
-            2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc
+        assert sacseis.begin_time.timestamp() == pytest.approx(
+            Timestamp(2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc).timestamp()
         )
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
@@ -79,9 +79,8 @@ class TestSAC:
         if sacio.nzsec:
             assert sacseis.begin_time.second == (sacio.nzsec + int(sacio.b)) % 60
         if sacio.nzmsec:
-            assert (
-                sacseis.begin_time.microsecond
-                == (1000 * (sacio.nzmsec + int(sacio.b * 1000))) % 1000000
+            assert sacseis.begin_time.microsecond == pytest.approx(
+                1000 * (sacio.nzmsec + int(sacio.b * 1000)) % 1000000, abs=1
             )
         assert sacseis.end_time.timestamp() == pytest.approx(
             Timestamp(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
@@ -104,7 +103,7 @@ class TestSAC:
         # changing delta also changes end time
         new_delta = sacseis.delta * 2
         sacseis.delta = new_delta
-        assert sacseis.delta == new_delta
+        assert sacseis.delta.total_seconds() == pytest.approx(new_delta.total_seconds())
         assert sacseis.end_time - sacseis.begin_time == sacseis.delta * (
             len(sacseis.data) - 1
         )
@@ -237,6 +236,6 @@ class TestSAC:
             sac.timestamps.e = now
         assert sac.timestamps.t0 is None
         sac.timestamps.b = now
-        assert sac.timestamps.b == now
+        assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
         with pytest.raises(TypeError):
             sac.timestamps.b = Timestamp.now()

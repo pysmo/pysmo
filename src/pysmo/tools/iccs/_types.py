@@ -5,7 +5,7 @@ from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from typing import Protocol, runtime_checkable
 from beartype import beartype
 from attrs import define, field, validators
-from pandas import Timestamp, Timedelta
+from pandas import Timestamp
 from enum import StrEnum, auto
 import numpy as np
 

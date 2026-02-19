@@ -19,8 +19,9 @@ This is also consistent with e.g. [`scipy.constants`][].
 ## Time
 
 Throughout pysmo you will notice extensive use of pandas datetime types.
-Points in time are always [`pandas.Timestamp`][pandas.Timestamp] objects with the
-[`tzinfo`][pandas.Timestamp.tzinfo] attribute set (ideally to
+Pandas time objects are used similarly to built-in datetime objects, but work
+better with numpy arrays. Points in time are always [`pandas.Timestamp`][pandas.Timestamp]
+objects with the [`tzinfo`][pandas.Timestamp.tzinfo] attribute set (ideally to
 [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time)). Time
 calculations are straightforward with pandas datetime types, so things like
 relative times (e.g. for a begin time in a seismogram) are avoided. Similarly,

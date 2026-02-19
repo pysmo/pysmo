@@ -25,8 +25,14 @@ class TestPlotseisFunctions:
 
         times = time_array(seismogram)
         assert len(times) == len(seismogram)
-        assert num2date(times[0]) == seismogram.begin_time
-        assert num2date(times[-1]) == seismogram.end_time
+        assert (
+            Timestamp(num2date(times[0])).timestamp()
+            == seismogram.begin_time.timestamp()
+        )
+        assert (
+            Timestamp(num2date(times[-1])).timestamp()
+            == seismogram.end_time.timestamp()
+        )
 
     def test_unix_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
@@ -35,8 +41,12 @@ class TestPlotseisFunctions:
         unix_times = unix_time_array(seismogram)
         assert len(unix_times) == len(seismogram)
         assert (
-            Timestamp.fromtimestamp(unix_times[0], timezone.utc) == seismogram.begin_time
+            pytest.approx(
+                Timestamp.fromtimestamp(unix_times[0], timezone.utc).timestamp()
+            )
+            == seismogram.begin_time.timestamp()
         )
         assert (
-            Timestamp.fromtimestamp(unix_times[-1], timezone.utc) == seismogram.end_time
+            Timestamp.fromtimestamp(unix_times[-1], timezone.utc).timestamp()
+            == seismogram.end_time.timestamp()
         )

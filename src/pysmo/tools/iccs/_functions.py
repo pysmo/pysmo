@@ -4,7 +4,7 @@ from ._iccs import ICCS
 from ._defaults import ICCS_DEFAULTS
 from collections.abc import Callable
 from typing import overload, Any, Literal
-from datetime import timedelta
+from pandas import Timedelta
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
 from matplotlib.widgets import Cursor, Button, SpanSelector
@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-def update_all_picks(iccs: ICCS, pickdelta: timedelta) -> None:
+def update_all_picks(iccs: ICCS, pickdelta: Timedelta) -> None:
     """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
 
     Args:
@@ -68,10 +68,10 @@ def _make_mask(iccs: ICCS, show_all: bool) -> list[bool]:
 def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
     """Return the taper ramp width in seconds.
 
-    If `ramp_width` is a timedelta it is converted directly; if it is a
+    If `ramp_width` is a Timedelta it is converted directly; if it is a
     float it is treated as a fraction of the total time window duration.
     """
-    if isinstance(iccs.ramp_width, timedelta):
+    if isinstance(iccs.ramp_width, Timedelta):
         return iccs.ramp_width.total_seconds()
     return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
 
@@ -546,7 +546,7 @@ def update_pick(
         if (
             event.inaxes is ax
             and event.xdata is not None
-            and iccs.validate_pick(timedelta(seconds=event.xdata))
+            and iccs.validate_pick(Timedelta(seconds=event.xdata))
         ):
             pick_line.set_xdata(np.array((event.xdata, event.xdata)))
             ax.set_title(f"Click save to adjust t1 by {event.xdata:.3f} seconds.")
@@ -555,13 +555,13 @@ def update_pick(
 
     def on_mouse_move(event: MouseEvent) -> Any:
         if event.inaxes == ax and event.xdata is not None:
-            if iccs.validate_pick(timedelta(seconds=event.xdata)):
+            if iccs.validate_pick(Timedelta(seconds=event.xdata)):
                 cursor.linev.set_color("g")
             else:
                 cursor.linev.set_color("r")
 
     def on_save(_: Event) -> None:
-        pickdelta = timedelta(seconds=pick_line.get_xdata(orig=True)[0])  # type: ignore
+        pickdelta = Timedelta(seconds=pick_line.get_xdata(orig=True)[0])  # type: ignore
         plt.close()
         update_all_picks(iccs, pickdelta)
 
@@ -680,7 +680,7 @@ def update_timewindow(
 
     def onselect(xmin: float, xmax: float) -> None:
         nonlocal old_extents
-        if iccs.validate_time_window(timedelta(seconds=xmin), timedelta(seconds=xmax)):
+        if iccs.validate_time_window(Timedelta(seconds=xmin), Timedelta(seconds=xmax)):
             ax.set_title(
                 f"Click save to set window at {xmin:.3f} to {xmax:.3f} seconds."
             )
@@ -703,8 +703,8 @@ def update_timewindow(
     span.extents = old_extents
 
     def on_save(_: Event) -> None:
-        iccs.window_pre = timedelta(seconds=span.extents[0])
-        iccs.window_post = timedelta(seconds=span.extents[1])
+        iccs.window_pre = Timedelta(seconds=span.extents[0])
+        iccs.window_post = Timedelta(seconds=span.extents[1])
         plt.close()
 
     _add_save_cancel_buttons(fig, on_save)

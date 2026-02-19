@@ -1,11 +1,11 @@
-from typing import overload, Self, TYPE_CHECKING
 from pysmo import Seismogram
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_TIME_HEADERS
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.decorators import value_not_none
+from pandas import Timestamp, Timedelta
+from typing import overload, Self, TYPE_CHECKING
 from attrs import define, field
-from datetime import datetime, timedelta
 import warnings
 import numpy as np
 
@@ -26,7 +26,7 @@ class _SacNested:
     """_parent (SacIO): Parent SacIO instance."""
 
     @property
-    def _ref_datetime(self) -> datetime:
+    def _ref_datetime(self) -> Timestamp:
         """
         Returns:
             Reference time date in a SAC file.
@@ -37,7 +37,7 @@ class _SacNested:
         """
 
         if self._parent.ref_datetime is not None:
-            return self._parent.ref_datetime
+            return Timestamp(self._parent.ref_datetime)
 
         warnings.warn(
             f"SAC object has no reference time (kzdate/kztime), assuming {SEISMOGRAM_DEFAULTS.begin_time.value.isoformat()}",
@@ -45,22 +45,22 @@ class _SacNested:
         )
         return SEISMOGRAM_DEFAULTS.begin_time.value
 
-    def _get_datetime_from_sac(
+    def _get_timestamp_from_sac(
         self, sac_time_header: SAC_TIME_HEADERS
-    ) -> datetime | None:
-        """Convert SAC times to datetime."""
+    ) -> Timestamp | None:
+        """Convert SAC times to Timestamp."""
 
         seconds = getattr(self._parent, sac_time_header)
 
         if seconds is None:
             return None
 
-        return self._ref_datetime + timedelta(seconds=seconds)
+        return self._ref_datetime + Timedelta(seconds=seconds)
 
-    def _set_sac_from_datetime(
-        self, sac_time_header: SAC_TIME_HEADERS, value: datetime
+    def _set_sac_from_timestamp(
+        self, sac_time_header: SAC_TIME_HEADERS, value: Timestamp
     ) -> None:
-        """Set SAC times using datetimes."""
+        """Set SAC times using Timestamp."""
 
         seconds = (value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
@@ -96,15 +96,15 @@ class SacSeismogram(_SacNested, Seismogram):
 
         ```python
         >>> sac.seismogram.begin_time
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
+        Timestamp('2005-03-01 07:23:02.159999848+0000', tz='UTC')
         >>>
         ```
     """
 
     if TYPE_CHECKING:
         data: np.ndarray = field(init=False)
-        delta: timedelta = field(init=False)
-        begin_time: datetime = field(init=False)
+        delta: Timedelta = field(init=False)
+        begin_time: Timestamp = field(init=False)
 
     else:
 
@@ -119,27 +119,27 @@ class SacSeismogram(_SacNested, Seismogram):
             self._parent.data = value
 
         @property
-        def delta(self) -> timedelta:
+        def delta(self) -> Timedelta:
             """Sampling interval."""
-            return timedelta(seconds=self._parent.delta)
+            return Timedelta(seconds=self._parent.delta)
 
         @delta.setter
-        def delta(self, value: timedelta) -> None:
+        def delta(self, value: Timedelta) -> None:
             self._parent.delta = value.total_seconds()
 
         @property
-        def begin_time(self) -> datetime:
+        def begin_time(self) -> Timestamp:
             """Seismogram begin time."""
 
-            value = self._get_datetime_from_sac(SAC_TIME_HEADERS.b)
+            value = self._get_timestamp_from_sac(SAC_TIME_HEADERS.b)
             if value is None:
                 raise TypeError("SAC file has no begin time 'b'.")
             return value
 
         @begin_time.setter
         @value_not_none
-        def begin_time(self, value: datetime) -> None:
-            self._set_sac_from_datetime(SAC_TIME_HEADERS.b, value)
+        def begin_time(self, value: Timestamp) -> None:
+            self._set_sac_from_timestamp(SAC_TIME_HEADERS.b, value)
 
 
 @define(kw_only=True)
@@ -321,7 +321,7 @@ class SacEvent(_SacNested):
         setattr(self._parent, "evdp", value / 1000)
 
     @property
-    def time(self) -> datetime:
+    def time(self) -> Timestamp:
         """Event origin time (UTC).
 
         Important:
@@ -333,15 +333,15 @@ class SacEvent(_SacNested):
             is not possible if this is is the case.
         """
 
-        event_time = self._get_datetime_from_sac(SAC_TIME_HEADERS.o)
+        event_time = self._get_timestamp_from_sac(SAC_TIME_HEADERS.o)
         if event_time is None:
             raise TypeError("SAC object event time 'o' is None.")
         return event_time
 
     @time.setter
     @value_not_none
-    def time(self, value: datetime) -> None:
-        self._set_sac_from_datetime(SAC_TIME_HEADERS.o, value)
+    def time(self, value: Timestamp) -> None:
+        self._set_sac_from_timestamp(SAC_TIME_HEADERS.o, value)
 
 
 class SacTimeConverter:
@@ -355,23 +355,25 @@ class SacTimeConverter:
     def __get__(self, instance: None, owner: None) -> Self: ...
 
     @overload
-    def __get__(self, instance: _SacNested, owner: type[object]) -> datetime | None: ...
+    def __get__(
+        self, instance: _SacNested, owner: type[object]
+    ) -> Timestamp | None: ...
 
     def __get__(
         self, instance: _SacNested | None, owner: type[object] | None = None
-    ) -> Self | datetime | None:
+    ) -> Self | Timestamp | None:
         if instance is None:
             return self
-        return instance._get_datetime_from_sac(self._name)
+        return instance._get_timestamp_from_sac(self._name)
 
-    def __set__(self, obj: _SacNested, value: datetime) -> None:
+    def __set__(self, obj: _SacNested, value: Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read only.")
-        obj._set_sac_from_datetime(self._name, value)
+        obj._set_sac_from_timestamp(self._name, value)
 
 
 class SacTimestamps(_SacNested):
-    """Helper class to access times stored in SAC headers as datetime objects.
+    """Helper class to access times stored in SAC headers as pandas.Timestamp objects.
 
     The `SacTimestamps` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
@@ -381,7 +383,7 @@ class SacTimestamps(_SacNested):
 
     Examples:
         Relative seismogram begin time as a float vs absolute begin time
-        as a [`datetime`][datetime] object.
+        as a [`Timestamp`][pandas.Timestamp] object.
 
         ```python
         >>> from pysmo.classes import SAC
@@ -394,22 +396,22 @@ class SacTimestamps(_SacNested):
         >>> sac.kzdate , sac.kztime
         ('2005-03-01', '07:24:05.500')
         >>> # Accessing the same SAC header via a `SacTimestamps` object
-        >>> # yields a corresponding datetime object with the absolute time:
+        >>> # yields a corresponding Timestamp object with the absolute time:
         >>> sac.timestamps.b
-        datetime.datetime(2005, 3, 1, 7, 23, 2, 160000, tzinfo=datetime.timezone.utc)
+        Timestamp('2005-03-01 07:23:02.159999848+0000', tz='UTC')
         >>>
         ```
 
         Changing timestamp values:
 
         ```python
-        >>> from datetime import timedelta
+        >>> from pandas import Timedelta
         >>> sac = SAC.from_file("example.sac")
         >>> # Original value of the "B" SAC header:
         >>> sac.b
         -63.34000015258789
         >>> # Add 30 seconds to the absolute time:
-        >>> sac.timestamps.b += timedelta(seconds=30)
+        >>> sac.timestamps.b += Timedelta(seconds=30)
         >>> # The relative time also changes by the same amount:
         >>> sac.b
         -33.34
@@ -552,7 +554,7 @@ class SAC(SacIO):
     """Access data stored in the SAC object compatible with the [`Event`][pysmo.Event] type."""
 
     timestamps: SacTimestamps = field(init=False)
-    """Maps a SAC times such as B, E, O, T0-T9 to datetime objects."""
+    """Maps a SAC times such as B, E, O, T0-T9 to Timestamp objects."""
 
     def __attrs_post_init__(self) -> None:
         self.seismogram = SacSeismogram(parent=self)

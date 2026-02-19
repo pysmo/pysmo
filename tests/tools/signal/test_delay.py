@@ -230,7 +230,7 @@ def test_multi_multi_delay_diagonal_zero() -> None:
     ]
     delays, coeffs = multi_multi_delay(seismograms)
     for i in range(len(seismograms)):
-        assert delays[i, i].total_seconds() == pytest.approx(0, abs=1e-6)
+        assert delays[i, i] == pytest.approx(0, abs=1e-6)
         assert coeffs[i, i] == pytest.approx(1, abs=0.05)
 
 
