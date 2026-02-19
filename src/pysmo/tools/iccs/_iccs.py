@@ -19,7 +19,8 @@ from pysmo.functions import (
 )
 from pysmo.tools.signal import bandpass, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
-from datetime import timedelta, datetime
+from datetime import timedelta
+from pandas import Timestamp, Timedelta
 from attrs import define, field, validators, Attribute
 from typing import Any
 from collections.abc import Sequence
@@ -38,7 +39,7 @@ def _clear_cache_on_update(instance: "ICCS", attribute: Attribute, value: Any) -
 
 
 def _validate_window_pre(
-    instance: "ICCS", attribute: Attribute, value: timedelta
+    instance: "ICCS", attribute: Attribute, value: Timedelta
 ) -> None:
     """Ensure window_pre is with the seismogram limits for all selected seismograms."""
     if not all(
@@ -48,7 +49,7 @@ def _validate_window_pre(
 
 
 def _validate_window_post(
-    instance: "ICCS", attribute: Attribute, value: timedelta
+    instance: "ICCS", attribute: Attribute, value: Timedelta
 ) -> None:
     """Ensure window_post is with the seismogram limits for all selected seismograms."""
     if not all(
@@ -73,10 +74,10 @@ class _EphemeralSeismogram(Seismogram):
     parent_seismogram: ICCSSeismogram
     """Reference to the parent ICCSSeismogram from which this ephemeral seismogram is derived."""
 
-    begin_time: datetime = field(init=False)
+    begin_time: Timestamp = field(init=False)
     """Seismogram begin time."""
 
-    delta: timedelta = field(init=False)
+    delta: Timedelta = field(init=False)
     """Seismogram sampling interval."""
 
     data: np.ndarray = field(init=False)
@@ -146,7 +147,7 @@ class ICCS:
         than they actually are:
 
         ```python
-        >>> from datetime import timedelta
+        >>> from pandas import Timedelta
         >>> from copy import deepcopy
         >>> import numpy as np
         >>>
@@ -154,10 +155,10 @@ class ICCS:
         >>> seismograms[0].data *= -1
         >>>
         >>> # move the initial pick 2 seconds earlier in second seismogram
-        >>> seismograms[1].t0 += timedelta(seconds=-2)
+        >>> seismograms[1].t0 += Timedelta(seconds=-2)
         >>>
         >>> # move the initial pick 2 seconds later in third seismogram
-        >>> seismograms[2].t0 += timedelta(seconds=2)
+        >>> seismograms[2].t0 += Timedelta(seconds=2)
         >>>
         >>> # create a seismogram with completely random data
         >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
@@ -311,29 +312,29 @@ class ICCS:
     [pysmo.tools.iccs.ICCS] instance.
     """
 
-    window_pre: timedelta = field(
+    window_pre: Timedelta = field(
         default=ICCS_DEFAULTS.window_pre,
         validator=[
-            validators.lt(timedelta(seconds=0)),
+            validators.lt(Timedelta(seconds=0)),
             _validate_window_pre,
             _clear_cache_on_update,
         ],
     )
     """Beginning of the time window relative to the pick."""
 
-    window_post: timedelta = field(
+    window_post: Timedelta = field(
         default=ICCS_DEFAULTS.window_post,
         validator=[
-            validators.gt(timedelta(seconds=0)),
+            validators.gt(Timedelta(seconds=0)),
             _validate_window_post,
             _clear_cache_on_update,
         ],
     )
     """End of the time window relative to the pick."""
 
-    context_width: timedelta = field(
+    context_width: Timedelta = field(
         default=ICCS_DEFAULTS.context_width,
-        validator=[validators.gt(timedelta(seconds=0)), _clear_cache_on_update],
+        validator=[validators.gt(Timedelta(seconds=0)), _clear_cache_on_update],
     )
     """Context padding to apply before and after the time window.
 
@@ -393,7 +394,7 @@ class ICCS:
     _cc_stack: MiniSeismogram | None = field(init=False)
     _context_stack: MiniSeismogram | None = field(init=False)
     _valid_pick_range: tuple[timedelta, timedelta] | None = field(init=False)
-    _valid_time_window_range: tuple[timedelta, timedelta] | None = field(init=False)
+    _valid_time_window_range: tuple[Timedelta, Timedelta] | None = field(init=False)
 
     def __attrs_post_init__(self) -> None:
         self._clear_caches()
@@ -564,7 +565,7 @@ class ICCS:
             self._context_stack = _create_stack(self.context_seismograms)
         return self._context_stack
 
-    def validate_pick(self, pick: timedelta) -> bool:
+    def validate_pick(self, pick: Timedelta) -> bool:
         """Check if a new pick is valid.
 
         This checks if a new manual pick is valid for all selected seismograms.
@@ -583,7 +584,7 @@ class ICCS:
         return self._valid_pick_range[0] <= pick <= self._valid_pick_range[1]
 
     def validate_time_window(
-        self, window_pre: timedelta, window_post: timedelta
+        self, window_pre: Timedelta, window_post: Timedelta
     ) -> bool:
         """Check if a new time window (relative to pick) is valid.
 
@@ -620,7 +621,7 @@ class ICCS:
         convergence_limit: float = ICCS_DEFAULTS.convergence_limit,
         convergence_method: ConvergenceMethod = ICCS_DEFAULTS.convergence_method,
         max_iter: int = ICCS_DEFAULTS.max_iter,
-        max_shift: timedelta | None = None,
+        max_shift: Timedelta | None = None,
     ) -> np.ndarray:
         """Run the iccs algorithm.
 
@@ -671,13 +672,13 @@ class ICCS:
 
 
 def _update_seismogram(
-    delay: timedelta,
+    delay: Timedelta,
     ccnorm: float,
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: np.floating | float,
-    current_window: tuple[timedelta, timedelta],
+    current_window: tuple[Timedelta, Timedelta],
 ) -> None:
     """Update ICCSSeismogram attributes based on cross-correlation results.
 
@@ -767,7 +768,7 @@ def _calc_convergence(
     raise ValueError(f"Unknown convergence method: {method}.")
 
 
-def _calc_valid_pick_range(iccs: ICCS) -> tuple[timedelta, timedelta]:
+def _calc_valid_pick_range(iccs: ICCS) -> tuple[Timedelta, Timedelta]:
     """Calculate the valid range for updating pick."""
 
     min_pick = max(
@@ -784,7 +785,7 @@ def _calc_valid_pick_range(iccs: ICCS) -> tuple[timedelta, timedelta]:
     return min_pick, max_pick
 
 
-def _calc_valid_time_window_range(iccs: ICCS) -> tuple[timedelta, timedelta]:
+def _calc_valid_time_window_range(iccs: ICCS) -> tuple[Timedelta, Timedelta]:
     """Calculate the valid range for updating time window."""
 
     min_window_pre = max(

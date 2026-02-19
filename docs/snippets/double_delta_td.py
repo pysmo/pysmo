@@ -1,8 +1,8 @@
 from pysmo import Seismogram
-from datetime import timedelta
+from pandas import Timedelta
 
 
-def double_delta_td(seismogram: Seismogram) -> timedelta:
+def double_delta_td(seismogram: Seismogram) -> Timedelta:
     """Return double the sampling interval of a seismogram.
 
     Args:

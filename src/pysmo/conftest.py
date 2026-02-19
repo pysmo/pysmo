@@ -9,7 +9,7 @@ from pathlib import Path
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
-from datetime import timedelta
+from pandas import Timedelta
 from getpass import getuser
 import random as rd
 import pytest
@@ -79,8 +79,8 @@ def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
         iccs_seismograms.append(iccs_seismogram)
 
     iccs_seismograms[0].data *= -1
-    iccs_seismograms[1].t0 += timedelta(seconds=-2)
-    iccs_seismograms[2].t0 += timedelta(seconds=2)
+    iccs_seismograms[1].t0 += Timedelta(seconds=-2)
+    iccs_seismograms[2].t0 += Timedelta(seconds=2)
     yield iccs_seismograms
 
 
