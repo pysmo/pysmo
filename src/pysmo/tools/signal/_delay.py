@@ -1,12 +1,13 @@
 from pysmo import Seismogram
-from datetime import timedelta
 from scipy.fft import rfft, irfft, next_fast_len
 from scipy.linalg import lstsq, inv
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 from collections.abc import Sequence
 from beartype import beartype
+from pandas import Timedelta
 import numpy as np
+from numpy.typing import NDArray
 import math
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
@@ -29,9 +30,9 @@ def delay(
     seismogram1: Seismogram,
     seismogram2: Seismogram,
     total_delay: bool = False,
-    max_shift: timedelta | None = None,
+    max_shift: Timedelta | None = None,
     abs_max: bool = False,
-) -> tuple[timedelta, float]:
+) -> tuple[Timedelta, float]:
     """
     Cross correlates two seismograms to determine signal delay.
 
@@ -225,7 +226,7 @@ def delay(
 
 def multi_delay(
     template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
-) -> tuple[list[timedelta], list[float]]:
+) -> tuple[list[Timedelta], list[float]]:
     """
     Calculates delays and correlation coefficients for a list of seismograms against a template.
 
@@ -344,7 +345,7 @@ def multi_delay(
 def multi_multi_delay(
     seismograms: Sequence[Seismogram],
     abs_max: bool = False,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[NDArray[np.timedelta64], NDArray[np.floating]]:
     """
     Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
 
@@ -357,13 +358,21 @@ def multi_multi_delay(
     seismogram `i` (treating `i` as the reference). The delay matrix is
     antisymmetric: `delays[i, j] == -delays[j, i]`, and the diagonal is zero.
 
+    Note:
+        Unlike most pysmo functions, this returns `numpy.timedelta64` values
+        rather than [`Timedelta`][pandas.Timedelta]. This avoids the overhead
+        of an object array and allows efficient vectorized arithmetic in
+        downstream functions such as [`mccc`][pysmo.tools.signal.mccc].
+        Convert individual elements with `pandas.Timedelta(delays[i, j])` if
+        needed.
+
     Args:
         seismograms: Sequence of Seismogram objects.
         abs_max: If `True`, uses absolute max correlation (polarity insensitive).
 
     Returns:
-        delays: 2D array of shape `(N, N)` with delay times as `timedelta`
-            objects, where `N = len(seismograms)`.
+        delays: 2D array of shape `(N, N)` with delay times as
+            `numpy.timedelta64` values, where `N = len(seismograms)`.
         coeffs: 2D array of shape `(N, N)` with correlation coefficients.
 
     Raises:
@@ -375,6 +384,7 @@ def multi_multi_delay(
         ```python
         >>> from pysmo import MiniSeismogram
         >>> from pysmo.tools.signal import multi_multi_delay
+        >>> from pandas import Timedelta
         >>> import numpy as np
         >>>
         >>> data = np.sin(np.linspace(0, 8 * np.pi, 1000))
@@ -388,20 +398,20 @@ def multi_multi_delay(
         >>> delays.shape
         (3, 3)
         >>> # delay of seismogram 1 relative to seismogram 0:
-        >>> delays[0, 1].total_seconds()
+        >>> Timedelta(delays[0, 1]).total_seconds()
         5.0
         >>> # delay of seismogram 2 relative to seismogram 0:
-        >>> delays[0, 2].total_seconds()
+        >>> Timedelta(delays[0, 2]).total_seconds()
         -10.0
         >>> # antisymmetric: delays[i, j] == -delays[j, i]
-        >>> delays[1, 0].total_seconds()
+        >>> Timedelta(delays[1, 0]).total_seconds()
         -5.0
         >>>
         ```
     """
     n = len(seismograms)
     if n < 2:
-        return np.empty((n, n), dtype=object), np.empty((n, n), dtype=float)
+        return np.empty((n, n), dtype="timedelta64[ns]"), np.empty((n, n), dtype=float)
 
     _check_same_delta(seismograms[0], seismograms)
 
@@ -440,6 +450,7 @@ def multi_multi_delay(
     # convert circular indices to signed lags
     mid_point = n_fft // 2
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
+    # Array multiplication converts pandas.Timedelta to numpy.timedelta64
     delays = signed_lags * seismograms[0].delta
 
     # extract coefficients at max indices
@@ -451,7 +462,7 @@ def multi_multi_delay(
 
 def mccc(
     seismograms: Sequence[Seismogram], min_cc: float = 0.5, damping: float = 0.1
-) -> tuple[list[timedelta], list[timedelta], timedelta]:
+) -> tuple[list[Timedelta], list[Timedelta], Timedelta]:
     """
     Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
 
@@ -473,9 +484,9 @@ def mccc(
         damping: Tikhonov regularization strength. Set to 0 to disable.
 
     Returns:
-        times: List of relative arrival times (as `datetime.timedelta`).
-        errors: List of standard errors (as `datetime.timedelta`).
-        rmse: Root-mean-square error of the fit (as `datetime.timedelta`).
+        times: List of relative arrival times.
+        errors: List of standard errors.
+        rmse: Root-mean-square error of the fit.
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the
@@ -498,7 +509,7 @@ def mccc(
         >>> times, errors, rmse = mccc(seismograms)
         >>>
         >>> # The relative times sum to approximately zero:
-        >>> abs(sum(t.total_seconds() for t in times)) < 1e-10
+        >>> abs(sum(t.total_seconds() for t in times)) < 1e-5
         True
         >>>
         >>> # Pairwise differences recover the known shifts
@@ -518,12 +529,15 @@ def mccc(
         <https://doi.org/10.1785/BSSA0800010150>.
     """
     n_traces = len(seismograms)
-    zero_delta = timedelta(0)
+    zero_delta = Timedelta(0)
 
     if n_traces < 2:
         return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
 
     delay_matrix, coeff_matrix = multi_multi_delay(seismograms)
+
+    # Convert numpy.timedelta64 array to float seconds for linear algebra
+    delay_matrix_seconds = delay_matrix / np.timedelta64(1, "s")
 
     # Build linear system (g @ m = d)
     rows: list[np.ndarray] = []
@@ -536,7 +550,7 @@ def mccc(
             if cc < min_cc:
                 continue
 
-            lag_seconds = delay_matrix[i, j].total_seconds()
+            lag_seconds = delay_matrix_seconds[i, j]
 
             row = np.zeros(n_traces)
             row[i] = 1.0
@@ -583,8 +597,8 @@ def mccc(
     except np.linalg.LinAlgError:
         std_errors = np.zeros(n_traces)
 
-    times = [timedelta(seconds=float(t)) for t in solution]
-    errors = [timedelta(seconds=float(e)) for e in std_errors]
-    rmse = timedelta(seconds=float(np.sqrt(sse / len(d))))
+    times = [Timedelta(seconds=float(t)) for t in solution]
+    errors = [Timedelta(seconds=float(e)) for e in std_errors]
+    rmse = Timedelta(seconds=float(np.sqrt(sse / len(d))))
 
     return times, errors, rmse

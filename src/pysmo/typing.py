@@ -8,7 +8,7 @@ to ensure attribute values meet expected constraints.
 """
 
 from typing import Annotated
-from datetime import timedelta
+from pandas import Timedelta
 from beartype.vale import Is
 
 # Reusable Validators
@@ -32,11 +32,11 @@ NegativeNumber = Annotated[float | int, _is_negative]
 NonNegativeNumber = Annotated[float | int, _is_non_negative]
 """Non-negative Numbers (Float or Int)."""
 
-PositiveTimedelta = Annotated[timedelta, _is_positive_timedelta]
+PositiveTimedelta = Annotated[Timedelta, _is_positive_timedelta]
 """Positive Timedelta."""
 
-NegativeTimedelta = Annotated[timedelta, _is_negative_timedelta]
-"""Positive Timedelta."""
+NegativeTimedelta = Annotated[Timedelta, _is_negative_timedelta]
+"""Negative Timedelta."""
 
-NonNegativeTimedelta = Annotated[timedelta, _is_non_negative_timedelta]
+NonNegativeTimedelta = Annotated[Timedelta, _is_non_negative_timedelta]
 """Non-negative Timedelta (includes 0 total_seconds)."""

@@ -8,6 +8,20 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 - Remove unused mkdocs-macros-plugin
 
+### 🔍 Other Changes
+
+- Install pandas
+- Initial plan
+- Update core types and simple files to use pandas Timestamp/Timedelta
+- Update functions and documentation to use pandas Timestamp/Timedelta
+- Update all test files to use pandas Timestamp and Timedelta
+- Update remaining src, tests, and snippets to use pandas Timestamp/Timedelta
+
+### 🚀 New Features
+
+- **(tools-signal)** Add multi-delay functions ([#249](https://github.com/pysmo/pysmo/issues/249))
+- **(tools-signal)** Add mccc function
+
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 
 ### ⚙️ DevOps & Infrastructure

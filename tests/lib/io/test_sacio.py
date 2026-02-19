@@ -1,6 +1,7 @@
 from attrs_strict import AttributeTypeError, UnionError
 from pysmo.lib.io import SacIO
-from datetime import datetime, timezone, timedelta
+from pandas import Timestamp, Timedelta
+from datetime import timezone
 from pathlib import Path
 import copy
 import pickle
@@ -28,9 +29,9 @@ def test_ref_datetime() -> None:
     assert sac.kzdate is None
     assert sac.kztime is None
     assert sac.ref_datetime is None
-    now = datetime.now(timezone.utc)
+    now = Timestamp.now(timezone.utc)
     sac.ref_datetime = now
-    now += timedelta(microseconds=500)
+    now += Timedelta(microseconds=500)
     assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(  # type: ignore
         timespec="milliseconds"
     )

@@ -1,6 +1,7 @@
 from pysmo import MiniSeismogram, MiniStation
 from pysmo.classes import SAC
-from datetime import datetime, timezone
+from pandas import Timestamp
+from datetime import timezone
 import numpy.testing as npt
 import pytest
 
@@ -18,7 +19,7 @@ class TestUtilsFunctions:
         npt.assert_equal(mini_clone.data, mini_seismogram.data)
 
         # clone sac with updated begin_time
-        now = datetime.now(timezone.utc)
+        now = Timestamp.now(timezone.utc)
         mini_clone = clone_to_mini(
             MiniSeismogram, sac_instance.seismogram, update={"begin_time": now}
         )

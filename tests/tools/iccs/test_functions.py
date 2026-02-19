@@ -1,5 +1,5 @@
 from pysmo.tools.iccs import ICCS, update_all_picks
-from datetime import timedelta
+from pandas import Timedelta
 from matplotlib.figure import Figure
 import pytest
 
@@ -9,7 +9,7 @@ def test_update_pick(iccs_instance: ICCS) -> None:
     iccs = iccs_instance
     _ = iccs()
     org_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
-    pickdelta = timedelta(seconds=1.23)
+    pickdelta = Timedelta(seconds=1.23)
     update_all_picks(iccs, pickdelta)
     new_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
     for org, new in zip(org_picks, new_picks):
@@ -24,9 +24,9 @@ def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
     iccs = iccs_instance
     min_t1, max_t1 = _calc_valid_pick_range(iccs)
     with pytest.raises(ValueError):
-        update_all_picks(iccs, max_t1 + timedelta(seconds=1))
+        update_all_picks(iccs, max_t1 + Timedelta(seconds=1))
     with pytest.raises(ValueError):
-        update_all_picks(iccs, min_t1 - timedelta(seconds=1))
+        update_all_picks(iccs, min_t1 - Timedelta(seconds=1))
 
 
 class TestPlotCommonBase:

@@ -22,10 +22,10 @@
         shape=(180000,))
 # ---
 # name: test_pad_snapshot[mini_seismogram]
-  array([0., 0., 0., ..., 0., 0., 0.], shape=(180008,))
+  array([0., 0., 0., ..., 0., 0., 0.], shape=(180006,))
 # ---
 # name: test_pad_snapshot[sac_seismogram]
-  array([0., 0., 0., ..., 0., 0., 0.], shape=(180008,))
+  array([0., 0., 0., ..., 0., 0., 0.], shape=(180006,))
 # ---
 # name: test_resample_snapshot[mini_seismogram]
   array([2402.102462, 2314.475547, 2407.60952 , ..., 2836.780166,

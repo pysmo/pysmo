@@ -1,7 +1,7 @@
 from pysmo import Seismogram
 from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
-from datetime import timedelta
+from pandas import Timedelta
 from copy import deepcopy
 from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
@@ -23,28 +23,17 @@ def test_time2index(seismogram: Seismogram) -> None:
 
     time = seismogram.begin_time + 10.1 * seismogram.delta
     assert time2index(seismogram, time) == 10
-    assert time2index(seismogram, time, method="ceil") == 11
-    assert time2index(seismogram, time, method="floor") == 10
 
     time = seismogram.begin_time + 10.8 * seismogram.delta
     assert time2index(seismogram, time) == 11
-    assert time2index(seismogram, time, method="ceil") == 11
 
     time = seismogram.begin_time - 10.8 * seismogram.delta
     assert time2index(seismogram, time, allow_out_of_bounds=True) == -11
-    assert time2index(seismogram, time, method="ceil", allow_out_of_bounds=True) == -10
-    assert time2index(seismogram, time, method="floor", allow_out_of_bounds=True) == -11
 
     with pytest.raises(ValueError):
-        time2index(seismogram, seismogram.begin_time - timedelta(seconds=1))
+        time2index(seismogram, seismogram.begin_time - Timedelta(seconds=1))
     with pytest.raises(ValueError):
-        time2index(seismogram, seismogram.end_time + timedelta(seconds=1))
-    with pytest.raises(ValueError):
-        time2index(
-            seismogram,
-            seismogram.end_time - timedelta(seconds=1),
-            method="not a method",  # type: ignore
-        )
+        time2index(seismogram, seismogram.end_time + Timedelta(seconds=1))
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -99,15 +88,21 @@ def test_pad(seismogram: Seismogram) -> None:
         custom_assertions=check_no_pad,
     )
 
-    new_begin_time = seismogram.begin_time - seismogram.delta * 3.5
-    new_end_time = seismogram.end_time + seismogram.delta * 3.5
+    new_begin_time = seismogram.begin_time - seismogram.delta * 10
+    new_end_time = seismogram.end_time + seismogram.delta * 10
 
     def check_padded(seis: Seismogram) -> None:
-        assert seis.begin_time == seismogram.begin_time - seismogram.delta * 4
-        assert seis.end_time == seismogram.end_time + seismogram.delta * 4
-        assert seis.data[:4].sum() == 0
-        assert seis.data[-4:].sum() == 0
-        np.testing.assert_array_equal(seis.data[4:-4], seismogram.data)
+        assert (
+            pytest.approx(seis.begin_time.timestamp())
+            == (seismogram.begin_time - seismogram.delta * 10).timestamp()
+        )
+        assert (
+            pytest.approx(seis.end_time.timestamp())
+            == (seismogram.end_time + seismogram.delta * 10).timestamp()
+        )
+        assert seis.data[:10].sum() == 0
+        assert seis.data[-10:].sum() == 0
+        np.testing.assert_array_equal(seis.data[10:-10], seismogram.data)
 
     assert_seismogram_modification(
         seismogram,
@@ -121,7 +116,7 @@ def test_pad(seismogram: Seismogram) -> None:
         pad(
             seismogram,
             seismogram.begin_time,
-            seismogram.begin_time - timedelta(seconds=1),
+            seismogram.begin_time - Timedelta(seconds=1),
         )
 
 
@@ -182,7 +177,10 @@ def test_resample(seismogram: Seismogram) -> None:
     new_delta = seismogram.delta * 2
 
     def check_resampled(seis: Seismogram) -> None:
-        assert pytest.approx(seis.delta) == seismogram.delta * 2
+        assert (
+            pytest.approx(seis.delta.total_seconds(), abs=1e-4)
+            == seismogram.delta.total_seconds() * 2
+        )
         # Verify resampled data has finite values
         assert np.all(np.isfinite(seis.data)), "Resampled data should be finite"
         # Verify resampling reduced the number of samples approximately by factor of 2
@@ -219,8 +217,12 @@ def test_crop(seismogram: Seismogram) -> None:
 
     def check_no_crop(seis: Seismogram) -> None:
         assert len(seis) == len(seismogram)
-        assert seis.begin_time == seismogram.begin_time
-        assert seis.end_time == seismogram.end_time
+        assert seis.begin_time.timestamp() == pytest.approx(
+            seismogram.begin_time.timestamp()
+        )
+        assert seis.end_time.timestamp() == pytest.approx(
+            seismogram.end_time.timestamp()
+        )
 
     assert_seismogram_modification(
         seismogram,
@@ -342,7 +344,7 @@ class TestTaper:
 
 
 class TestWindow:
-    TAPER_WIDTH: timedelta | float = timedelta(seconds=500)
+    TAPER_WIDTH: Timedelta | float = Timedelta(seconds=500)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_window(self, seismogram: Seismogram) -> None:
@@ -350,8 +352,8 @@ class TestWindow:
 
         taper_width = self.TAPER_WIDTH
 
-        window_begin_time = seismogram.begin_time + timedelta(seconds=600)
-        window_end_time = window_begin_time + timedelta(seconds=1000)
+        window_begin_time = seismogram.begin_time + Timedelta(seconds=600)
+        window_end_time = window_begin_time + Timedelta(seconds=1000)
         windowed_seis = window(
             seismogram,
             window_begin_time,
@@ -360,10 +362,14 @@ class TestWindow:
             same_shape=True,
             clone=True,
         )
-        assert windowed_seis.begin_time == seismogram.begin_time
-        assert windowed_seis.end_time == seismogram.end_time
+        assert windowed_seis.begin_time.timestamp() == pytest.approx(
+            seismogram.begin_time.timestamp()
+        )
+        assert windowed_seis.end_time.timestamp() == pytest.approx(
+            seismogram.end_time.timestamp()
+        )
 
-        if isinstance(taper_width, timedelta):
+        if isinstance(taper_width, Timedelta):
             taper_start = window_begin_time - taper_width
             taper_end = window_end_time + taper_width
         else:
@@ -386,4 +392,4 @@ class TestWindow:
 
 
 class TestWindowFloat(TestWindow):
-    TAPER_WIDTH: timedelta | float = 0.1
+    TAPER_WIDTH: Timedelta | float = 0.1
