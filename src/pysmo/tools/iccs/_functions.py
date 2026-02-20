@@ -3,7 +3,7 @@
 from ._iccs import ICCS
 from ._defaults import ICCS_DEFAULTS
 from collections.abc import Callable
-from typing import overload, Any, Literal
+from typing import overload, Literal
 from pandas import Timedelta
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
@@ -98,33 +98,52 @@ def _add_save_cancel_buttons(
     return b_save, b_cancel
 
 
-def _plot_common_stack(
-    iccs: ICCS,
-    context: bool,
-    show_all: bool,
-    figsize: tuple[float, float] = (10, 5),
-    constrained: bool = True,
-) -> tuple[Figure, Axes]:
+class _ScrollIndexTracker:
+    """Helper class to track scrolling for the min_ccnorm picker."""
+
+    def __init__(self, ax: Axes, fig: Figure) -> None:
+        self.scroll_index = ax.get_ylim()[1]
+        self.max_scroll_index = ax.get_ylim()[1]
+        self.ax = ax
+        self.fig = fig
+        self.update()
+
+    def on_scroll(self, event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes is self.ax:
+            increment = (
+                np.ceil(self.scroll_index / 10)
+                if event.button == "up"
+                else -np.ceil(self.scroll_index / 10)
+            )
+            self.scroll_index = max(
+                1, min(self.max_scroll_index, self.scroll_index + increment)
+            )
+            self.update()
+
+    def update(self) -> None:
+        self.ax.set_ylim(0, self.scroll_index)
+        self.fig.canvas.draw_idle()
+
+
+# ==============================================================================
+# PURE DRAWING & LOGIC HELPERS (REUSABLE BY QT)
+# ==============================================================================
+
+
+def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> None:
     """Returns a basic stack plot for use in other plots.
 
     Args:
+        ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         show_all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        figsize: Figure size.
-        constrained: If True, the figure is constrained to the plot area.
-
-    Returns:
-        Basic stack plot for use in other plots.
     """
-
-    layout = None
-    if constrained:
-        layout = "constrained"
-    fig, ax = plt.subplots(figsize=figsize, layout=layout)
 
     seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
     stack = iccs.context_stack if context else iccs.stack
@@ -164,38 +183,34 @@ def _plot_common_stack(
     ax.set_xlabel("Time relative to pick [s]")
     ax.set_xlim(tmin, tmax)
     ax.legend(loc="upper left")
-    fig.colorbar(
-        ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.stack_cmap),
-        ax=ax,
-        label="|Correlation coefficient|",
-    )
-    return fig, ax
+
+    fig = ax.get_figure()
+    if fig:
+        fig.colorbar(
+            ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.stack_cmap),
+            ax=ax,
+            label="|Correlation coefficient|",
+        )
 
 
-def _plot_common_image(
-    iccs: ICCS,
-    context: bool,
-    show_all: bool,
-    figsize: tuple[float, float] = (10, 5),
-    constrained: bool = True,
-) -> tuple[Figure, Axes, np.ndarray]:
+def _draw_common_image(
+    ax: Axes, iccs: ICCS, context: bool, show_all: bool
+) -> np.ndarray:
     """Returns a basic image plot for use in other plots.
 
     Args:
+        ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         show_all: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        figsize: Figure size.
-        constrained: If True, the figure is constrained to the plot area.
 
     Returns:
-        Basic image plot for use in other plots.
+        Sorted seismogram matrix used for the plot.
     """
 
-    # Assemble matrix
     seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
     mask = _make_mask(iccs, show_all)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
@@ -203,7 +218,6 @@ def _plot_common_image(
         [s.data for s, selected in zip(seismograms, mask) if selected]
     )
 
-    # Sort and reverse the rows
     seismogram_matrix = seismogram_matrix[np.argsort(ccnorms)[::-1]]
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
@@ -214,10 +228,6 @@ def _plot_common_image(
     elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
-
-    fig, ax = plt.subplots(
-        figsize=figsize, layout="constrained" if constrained else None
-    )
 
     ax.set_ylim((0, len(seismogram_matrix)))
     ax.set_yticks([])
@@ -233,7 +243,141 @@ def _plot_common_image(
         interpolation="none",
     )
 
-    return fig, ax, seismogram_matrix
+    return seismogram_matrix
+
+
+def _setup_phase_picker(
+    ax: Axes, iccs: ICCS, on_valid_pick: Callable[[float], None]
+) -> tuple[Cursor, Line2D]:
+    """Configures a Cursor and Pick Line with validation logic."""
+    pick_line = ax.axvline(0, color="g", linewidth=2)
+    cursor = Cursor(
+        ax, useblit=True, color="g", linewidth=2, horizOn=False, linestyle="--"
+    )
+
+    def onclick(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if (
+            event.inaxes is ax
+            and event.xdata is not None
+            and iccs.validate_pick(Timedelta(seconds=event.xdata))
+        ):
+            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
+            on_valid_pick(event.xdata)
+            if ax.figure:
+                ax.figure.canvas.draw()
+                ax.figure.canvas.flush_events()
+
+    def on_mouse_move(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes == ax and event.xdata is not None:
+            is_valid = iccs.validate_pick(Timedelta(seconds=event.xdata))
+            cursor.linev.set_color("g" if is_valid else "r")
+
+    if isinstance(ax.figure, Figure):
+        ax.figure.canvas.mpl_connect("button_press_event", onclick)
+        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
+
+    return cursor, pick_line
+
+
+def _setup_timewindow_picker(
+    ax: Axes, iccs: ICCS, on_valid_selection: Callable[[float, float], None]
+) -> SpanSelector:
+    """Configures a SpanSelector with validation logic."""
+    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+
+    def onselect(xmin: float, xmax: float) -> None:
+        nonlocal old_extents
+        if iccs.validate_time_window(Timedelta(seconds=xmin), Timedelta(seconds=xmax)):
+            old_extents = xmin, xmax
+            on_valid_selection(xmin, xmax)
+        else:
+            span.extents = old_extents
+            ax.set_title("Invalid window choice.", color="red")
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
+
+    span = SpanSelector(
+        ax,
+        onselect,
+        "horizontal",
+        useblit=True,
+        props=dict(alpha=0.5, facecolor="tab:blue"),
+        interactive=True,
+        drag_from_anywhere=True,
+    )
+    span.extents = old_extents
+    return span
+
+
+def _setup_ccnorm_picker(
+    ax: Axes,
+    iccs: ICCS,
+    show_all: bool,
+    max_index: int,
+    on_valid_pick: Callable[[float], None],
+) -> tuple[Cursor, Line2D, _ScrollIndexTracker]:
+    """Configures a Cursor and Pick Line with snapping logic for ccnorm selection."""
+    current_ccnorms = sorted(
+        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or show_all
+    )
+
+    start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
+
+    pick_line = ax.axhline(start_index, color="g", linewidth=2)
+    pick_line_cursor = ax.axhline(start_index, color="g", linewidth=2, linestyle="--")
+
+    def snap_ydata(ydata: float) -> int:
+        return max(0, round(min(ydata, max_index)))
+
+    def calc_ccnorm(line: Line2D) -> float:
+        index = round(line.get_ydata()[0], 0)  # type: ignore
+        if index == 0:
+            return ICCS_DEFAULTS.index_zero_multiplier * current_ccnorms[0]
+        return float(np.mean(current_ccnorms[index - 1 : index + 1]))
+
+    def onclick(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_ydata(event.ydata)
+            pick_line.set_ydata((ydata, ydata))
+            pick_line.set_visible(True)
+            on_valid_pick(calc_ccnorm(pick_line))
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
+
+    def on_mouse_move(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_ydata(event.ydata)
+            pick_line_cursor.set_ydata((ydata, ydata))
+            pick_line_cursor.set_visible(True)
+        else:
+            pick_line_cursor.set_visible(False)
+        if ax.figure:
+            ax.figure.canvas.draw_idle()
+
+    cursor = Cursor(ax, useblit=True, vertOn=False, horizOn=False)
+
+    if isinstance(ax.figure, Figure):
+        tracker = _ScrollIndexTracker(ax, ax.figure)
+        ax.figure.canvas.mpl_connect("scroll_event", tracker.on_scroll)
+        ax.figure.canvas.mpl_connect("button_press_event", onclick)
+        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
+    else:
+        tracker = _ScrollIndexTracker(ax, Figure())
+
+    return cursor, pick_line, tracker
+
+
+# ==============================================================================
+# CLI ADAPTERS (WINDOW MANAGERS)
+# ==============================================================================
 
 
 @overload
@@ -290,22 +434,6 @@ def plot_stack(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack_context-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack_context.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context.png#only-light){ loading=lazy }
         ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context-dark.png#only-dark){ loading=lazy }
 
@@ -317,27 +445,11 @@ def plot_stack(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_view_stack.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack.png#only-light){ loading=lazy }
         ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
     """
-
-    fig, ax = _plot_common_stack(iccs, context, show_all)
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    _draw_common_stack(ax, iccs, context, show_all)
     if return_fig:
         return fig, ax
     plt.show()
@@ -396,22 +508,6 @@ def plot_seismograms(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_seismograms(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms_context-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_seismograms(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms_context.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context.png#only-light){ loading=lazy }
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context-dark.png#only-dark){ loading=lazy }
 
@@ -423,30 +519,13 @@ def plot_seismograms(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_seismograms(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_seismograms(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_plot_seismograms.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms.png#only-light){ loading=lazy }
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
-
-    fig, ax, _ = _plot_common_image(iccs, context, show_all)
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    _draw_common_image(ax, iccs, context, show_all)
     if return_fig:
         return fig, ax
-
     plt.show()
     return None
 
@@ -469,7 +548,7 @@ def update_pick(
     use_seismogram_image: bool = False,
     *,
     return_fig: Literal[True],
-) -> tuple[Figure, Axes]: ...
+) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
 
 
 def update_pick(
@@ -478,7 +557,7 @@ def update_pick(
     show_all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = False,
-) -> tuple[Figure, Axes] | None:
+) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
     """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] and apply it to all seismograms.
 
     This function launches an interactive figure to manually pick a new phase
@@ -511,75 +590,34 @@ def update_pick(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = update_pick(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_pick-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = update_pick(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_pick.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick.png#only-light){ loading=lazy }
         ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
-
+    fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        fig, ax, _ = _plot_common_image(
-            iccs, context, show_all, figsize=(10, 6), constrained=False
-        )
+        _draw_common_image(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        fig, ax = _plot_common_stack(
-            iccs, context, show_all, figsize=(10, 6), constrained=False
-        )
+        _draw_common_stack(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Update t1 for all seismograms.")
+    pending_pick = [0.0]
 
-    pick_line = ax.axvline(0, color="g", linewidth=2)
+    def handle_valid_pick(xdata: float) -> None:
+        pending_pick[0] = xdata
+        ax.set_title(f"Click save to adjust t1 by {xdata:.3f} seconds.")
 
-    cursor = Cursor(  # noqa: F841
-        ax, useblit=True, color="g", linewidth=2, horizOn=False, linestyle="--"
-    )
-
-    def onclick(event: MouseEvent) -> Any:
-        if (
-            event.inaxes is ax
-            and event.xdata is not None
-            and iccs.validate_pick(Timedelta(seconds=event.xdata))
-        ):
-            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
-            ax.set_title(f"Click save to adjust t1 by {event.xdata:.3f} seconds.")
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-
-    def on_mouse_move(event: MouseEvent) -> Any:
-        if event.inaxes == ax and event.xdata is not None:
-            if iccs.validate_pick(Timedelta(seconds=event.xdata)):
-                cursor.linev.set_color("g")
-            else:
-                cursor.linev.set_color("r")
+    cursor, pick_line = _setup_phase_picker(ax, iccs, handle_valid_pick)
 
     def on_save(_: Event) -> None:
-        pickdelta = Timedelta(seconds=pick_line.get_xdata(orig=True)[0])  # type: ignore
         plt.close()
-        update_all_picks(iccs, pickdelta)
+        update_all_picks(iccs, Timedelta(seconds=pending_pick[0]))
 
-    _ = _add_save_cancel_buttons(fig, on_save)
-
-    fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
-    fig.canvas.mpl_connect("motion_notify_event", on_mouse_move)  # type: ignore
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
 
     if return_fig:
-        return fig, ax
+        return fig, ax, (cursor, pick_line, b_save, b_cancel)
     plt.show()
     return None
 
@@ -602,7 +640,7 @@ def update_timewindow(
     use_seismogram_image: bool = False,
     *,
     return_fig: Literal[True],
-) -> tuple[Figure, Axes]: ...
+) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
 
 
 def update_timewindow(
@@ -611,7 +649,7 @@ def update_timewindow(
     show_all: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = False,
-) -> tuple[Figure, Axes] | None:
+) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
     """Pick new time window limits.
 
     This function launches an interactive figure to pick new values for
@@ -650,75 +688,35 @@ def update_timewindow(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = update_timewindow(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_timewindow-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = update_timewindow(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_timewindow.png", transparent=True)
-        >>>
-        ```
-        -->
-
         ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow.png#only-light){ loading=lazy }
         ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
-
+    fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        fig, ax, _ = _plot_common_image(
-            iccs, context, show_all, figsize=(10, 6), constrained=False
-        )
+        _draw_common_image(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        fig, ax = _plot_common_stack(
-            iccs, context, show_all, figsize=(10, 6), constrained=False
-        )
+        _draw_common_stack(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Pick a new time window.")
+    pending_window = [iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()]
 
-    # 'old_extents' is used to revert to the last valid extents
-    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+    def handle_valid_selection(xmin: float, xmax: float) -> None:
+        pending_window[0], pending_window[1] = xmin, xmax
+        ax.set_title(f"Click save to set window at {xmin:.3f} to {xmax:.3f} seconds.")
 
-    def onselect(xmin: float, xmax: float) -> None:
-        nonlocal old_extents
-        if iccs.validate_time_window(Timedelta(seconds=xmin), Timedelta(seconds=xmax)):
-            ax.set_title(
-                f"Click save to set window at {xmin:.3f} to {xmax:.3f} seconds."
-            )
-            old_extents = xmin, xmax
-            fig.canvas.draw()
-            return
-        span.extents = old_extents
-
-    span = SpanSelector(
-        ax,
-        onselect,
-        "horizontal",
-        useblit=True,
-        props=dict(alpha=0.5, facecolor="tab:blue"),
-        interactive=True,
-        drag_from_anywhere=True,
-    )
-
-    # Set the initial extents to the existing time window
-    span.extents = old_extents
+    span = _setup_timewindow_picker(ax, iccs, handle_valid_selection)
 
     def on_save(_: Event) -> None:
-        iccs.window_pre = Timedelta(seconds=span.extents[0])
-        iccs.window_post = Timedelta(seconds=span.extents[1])
+        iccs.window_pre = Timedelta(seconds=pending_window[0])
+        iccs.window_post = Timedelta(seconds=pending_window[1])
         plt.close()
 
-    _ = _add_save_cancel_buttons(fig, on_save)
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
 
     if return_fig:
-        return fig, ax
+        return fig, ax, (span, b_save, b_cancel)
     plt.show()
     return None
 
@@ -739,12 +737,17 @@ def update_min_ccnorm(
     show_all: bool = False,
     *,
     return_fig: Literal[True],
-) -> tuple[Figure, Axes]: ...
+) -> tuple[
+    Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]
+]: ...
 
 
 def update_min_ccnorm(
     iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = False
-) -> tuple[Figure, Axes] | None:
+) -> (
+    tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]]
+    | None
+):
     """Interactively pick a new [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm].
 
     This function launches an interactive figure to manually pick a new
@@ -764,7 +767,7 @@ def update_min_ccnorm(
             shown.
 
     Returns:
-        Figure with the selector if `return_fig` is `True`.
+        Figure with the selector widgets if `return_fig` is `True`.
 
     Examples:
         ```python
@@ -775,117 +778,32 @@ def update_min_ccnorm(
         >>>
         ```
 
-        <!-- invisible-code-block: python
-        ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
-        >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = update_min_ccnorm(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_min_ccnorm-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = update_min_ccnorm(iccs, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_update_min_ccnorm.png", transparent=True)
-        ...     plt.close()
-        >>>
-        ```
-        -->
-
         ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
         ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
-
-    # If the lowest index is chosen in the gui, set the new min_ccnorm to
-    # the lowest value of all seismograms multiplied by a multiplier
-    _INDEX_ZERO_MULTIPLIER = 0.9
-
-    current_ccnorms = sorted(
-        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or show_all
-    )
-
-    fig, ax, selected_seismogram_matrix = _plot_common_image(
-        iccs, context, show_all, figsize=(10, 6), constrained=False
-    )
+    fig, ax = plt.subplots(figsize=(10, 6))
+    matrix = _draw_common_image(ax, iccs, context, show_all)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
+
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
+    pending_val = [iccs.min_ccnorm]
 
-    start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
-    max_index = len(selected_seismogram_matrix) - 1
+    def handle_valid_pick(new_val: float) -> None:
+        pending_val[0] = new_val
+        ax.set_title(f"Click save to set min_ccnorm to {new_val:.4f}")
 
-    pick_line = ax.axhline(start_index, color="g", linewidth=2)
-    pick_line_cursor = ax.axhline(start_index, color="g", linewidth=2, linestyle="--")
-
-    def snap_ydata(ydata: float) -> int:
-        return max(0, round(min(ydata, max_index)))
-
-    def calc_ccnorm(pick_line: Line2D) -> float | np.floating:
-        # NOTE: the pick_line ydata should already be a round number, but
-        # mypy complains without it.
-        index = round(pick_line.get_ydata()[0], 0)  # type: ignore
-        if index == 0:
-            return _INDEX_ZERO_MULTIPLIER * current_ccnorms[0]
-        return np.mean(current_ccnorms[index - 1 : index + 1])
-
-    def onclick(event: MouseEvent) -> Any:
-        if event.inaxes is ax and event.ydata is not None:
-            ydata = snap_ydata(event.ydata)
-            pick_line.set_ydata((ydata, ydata))
-            pick_line.set_visible(True)
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-            ax.set_title(
-                f"Click save to set min_ccnorm to {calc_ccnorm(pick_line):.4f}"
-            )
-            fig.canvas.draw_idle()
-
-    def on_mouse_move(event: MouseEvent) -> Any:
-        if event.inaxes is ax and event.ydata is not None:
-            ydata = snap_ydata(event.ydata)
-            pick_line_cursor.set_ydata((ydata, ydata))
-            pick_line_cursor.set_visible(True)
-            fig.canvas.draw_idle()
-        else:
-            pick_line_cursor.set_visible(False)
-            fig.canvas.draw_idle()
-
-    class ScrollIndexTracker:
-        def __init__(self, ax: Axes) -> None:
-            self.scroll_index = ax.get_ylim()[1]
-            self.max_scroll_index = ax.get_ylim()[1]
-            self.ax = ax
-            self.update()
-
-        def on_scroll(self, event: MouseEvent) -> None:
-            if event.inaxes is ax:
-                increment = (
-                    np.ceil(self.scroll_index / 10)
-                    if event.button == "up"
-                    else -np.ceil(self.scroll_index / 10)
-                )
-                self.scroll_index = max(
-                    1, min(self.max_scroll_index, self.scroll_index + increment)
-                )
-                self.update()
-
-        def update(self) -> None:
-            self.ax.set_ylim(0, self.scroll_index)
-            fig.canvas.draw_idle()
+    cursor, pick_line, tracker = _setup_ccnorm_picker(
+        ax, iccs, show_all, len(matrix) - 1, handle_valid_pick
+    )
 
     def on_save(_: Event) -> None:
-        iccs.min_ccnorm = calc_ccnorm(pick_line)
+        iccs.min_ccnorm = pending_val[0]
         iccs._clear_caches()
         plt.close()
 
-    _ = Cursor(ax, useblit=True, vertOn=False, horizOn=False)
-    _ = _add_save_cancel_buttons(fig, on_save)
-    tracker = ScrollIndexTracker(ax)
-
-    fig.canvas.mpl_connect("scroll_event", tracker.on_scroll)  # type: ignore
-    fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
-    fig.canvas.mpl_connect("motion_notify_event", on_mouse_move)  # type: ignore
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
 
     if return_fig:
-        return fig, ax
+        return fig, ax, (cursor, pick_line, b_save, b_cancel, tracker)
     plt.show()
     return None
