@@ -76,8 +76,14 @@ def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
     return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
 
 
-def _add_save_cancel_buttons(fig: Figure, on_save: Callable[[Event], None]) -> None:
-    """Add Save and Cancel buttons to an interactive figure."""
+def _add_save_cancel_buttons(
+    fig: Figure, on_save: Callable[[Event], None]
+) -> tuple[Button, Button]:
+    """Add Save and Cancel buttons to an interactive figure.
+
+    Returns:
+        Tuple of (save_button, cancel_button). Must be stored to prevent garbage collection.
+    """
 
     def on_cancel(_: Event) -> None:
         plt.close()
@@ -88,6 +94,8 @@ def _add_save_cancel_buttons(fig: Figure, on_save: Callable[[Event], None]) -> N
     b_save.on_clicked(on_save)
     b_cancel = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
     b_cancel.on_clicked(on_cancel)
+
+    return b_save, b_cancel
 
 
 def _plot_common_stack(
@@ -565,7 +573,7 @@ def update_pick(
         plt.close()
         update_all_picks(iccs, pickdelta)
 
-    _add_save_cancel_buttons(fig, on_save)
+    _ = _add_save_cancel_buttons(fig, on_save)
 
     fig.canvas.mpl_connect("button_press_event", onclick)  # type: ignore
     fig.canvas.mpl_connect("motion_notify_event", on_mouse_move)  # type: ignore
@@ -707,7 +715,7 @@ def update_timewindow(
         iccs.window_post = Timedelta(seconds=span.extents[1])
         plt.close()
 
-    _add_save_cancel_buttons(fig, on_save)
+    _ = _add_save_cancel_buttons(fig, on_save)
 
     if return_fig:
         return fig, ax
@@ -869,8 +877,8 @@ def update_min_ccnorm(
         iccs._clear_caches()
         plt.close()
 
-    Cursor(ax, useblit=True, vertOn=False, horizOn=False)
-    _add_save_cancel_buttons(fig, on_save)
+    _ = Cursor(ax, useblit=True, vertOn=False, horizOn=False)
+    _ = _add_save_cancel_buttons(fig, on_save)
     tracker = ScrollIndexTracker(ax)
 
     fig.canvas.mpl_connect("scroll_event", tracker.on_scroll)  # type: ignore
