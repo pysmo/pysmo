@@ -34,6 +34,7 @@ class _IccsDefaults:
     # ------------------------------------------------------------------------
     img_cmap: Colormap = field(default_factory=lambda: mpl.colormaps["RdBu"])
     stack_cmap: Colormap = field(default_factory=lambda: mpl.colormaps["cool"])
+    index_zero_multiplier: float = 0.9
 
 
 ICCS_DEFAULTS = _IccsDefaults()
