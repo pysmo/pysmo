@@ -9,6 +9,8 @@
 - Maximum line length: 88 characters (Black default)
 - Use blank lines to separate functions and classes
 - Imports should be grouped: standard library, third-party, local
+- Use ellipsis (`...`) for code that is not implemented yet, rather than `pass`
+  or leaving it blank
 
 ### Code Formatting
 
