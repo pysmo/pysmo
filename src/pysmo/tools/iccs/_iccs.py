@@ -415,7 +415,7 @@ class ICCS:
     ) -> list[_EphemeralSeismogram]:
         """Prepare cc_seismograms or context_seismograms."""
 
-        return_seismograms: list[_EphemeralSeismogram] = []
+        ephemeral_seismograms: list[_EphemeralSeismogram] = []
 
         min_delta = min((s.delta for s in self.seismograms))
 
@@ -424,20 +424,20 @@ class ICCS:
             window_start = pick + self.window_pre
             window_end = pick + self.window_post
 
-            prepared_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
+            ephemeral_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
 
             if self.bandpass_apply:
                 bandpass(
-                    prepared_seismogram,
+                    ephemeral_seismogram,
                     self.bandpass_fmin,
                     self.bandpass_fmax,
                     zerophase=True,
                 )
 
             if not np.isclose(
-                prepared_seismogram.delta.total_seconds(), min_delta.total_seconds()
+                ephemeral_seismogram.delta.total_seconds(), min_delta.total_seconds()
             ):
-                resample(prepared_seismogram, min_delta)
+                resample(ephemeral_seismogram, min_delta)
 
             if add_context:
                 context_window_start = window_start - self.context_width
@@ -448,33 +448,35 @@ class ICCS:
                     or context_window_end > seismogram.end_time
                 ):
                     pad(
-                        prepared_seismogram,
+                        ephemeral_seismogram,
                         context_window_start,
                         context_window_end,
                         mode="linear_ramp",
                         end_values=(0, 0),
                     )
 
-                crop(prepared_seismogram, context_window_start, context_window_end)
-                detrend(prepared_seismogram)
-                normalize(prepared_seismogram, window_start, window_end)
+                crop(ephemeral_seismogram, context_window_start, context_window_end)
+                detrend(ephemeral_seismogram)
+                normalize(ephemeral_seismogram, window_start, window_end)
             else:
-                window(prepared_seismogram, window_start, window_end, self.ramp_width)
-                normalize(prepared_seismogram)
+                window(ephemeral_seismogram, window_start, window_end, self.ramp_width)
+                normalize(ephemeral_seismogram)
 
             if seismogram.flip:
-                prepared_seismogram.data *= -1
+                ephemeral_seismogram.data *= -1
 
-            return_seismograms.append(prepared_seismogram)
+            ephemeral_seismograms.append(ephemeral_seismogram)
 
         # If all seismograms have the same length, return them now.
-        if len(lengths := set(len(s) for s in return_seismograms)) == 1:
-            return return_seismograms
+        if len(lengths := set(len(s) for s in ephemeral_seismograms)) == 1:
+            return ephemeral_seismograms
 
-        # Shorten seismograms if necessary and return.
-        for s in return_seismograms:
+        # Shorten seismograms if necessary and return (floating-point precision
+        # can cause small differences in length after resampling). We cut off
+        # at the end so the `begin_time` will not change.
+        for s in ephemeral_seismograms:
             s.data = s.data[: min(lengths)]
-        return return_seismograms
+        return ephemeral_seismograms
 
     @property
     def cc_seismograms(self) -> list[_EphemeralSeismogram]:
