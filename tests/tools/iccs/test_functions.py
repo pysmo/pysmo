@@ -1,6 +1,7 @@
 from pysmo.tools.iccs import ICCS, update_all_picks
 from pandas import Timedelta
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import pytest
 
 
@@ -17,7 +18,7 @@ def test_update_pick(iccs_instance: ICCS) -> None:
 
 
 def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
-    """Test if error is raised whith a bad pick."""
+    """Test if error is raised with a bad pick."""
 
     from pysmo.tools.iccs._iccs import _calc_valid_pick_range
 
@@ -35,42 +36,48 @@ class TestPlotCommonBase:
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_stack_initial(self, iccs_instance: ICCS) -> Figure:
-        from pysmo.tools.iccs._functions import _plot_common_stack
+        from pysmo.tools.iccs._functions import _draw_common_stack
 
-        fig, _ = _plot_common_stack(
-            iccs_instance, context=self.PADDED, show_all=self.ALL
-        )
+        # 1. The Test acts as the Window Manager
+        fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+
+        # 2. Call the pure drawing function
+        _draw_common_stack(ax, iccs_instance, context=self.PADDED, show_all=self.ALL)
+
+        # 3. Return the figure to pytest-mpl
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_stack_after(self, iccs_instance: ICCS) -> Figure:
-        from pysmo.tools.iccs._functions import _plot_common_stack
+        from pysmo.tools.iccs._functions import _draw_common_stack
 
         iccs_instance()
 
-        fig, _ = _plot_common_stack(
-            iccs_instance, context=self.PADDED, show_all=self.ALL
-        )
+        fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+        _draw_common_stack(ax, iccs_instance, context=self.PADDED, show_all=self.ALL)
+
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_image_initial(self, iccs_instance: ICCS) -> Figure:
-        from pysmo.tools.iccs._functions import _plot_common_image
+        from pysmo.tools.iccs._functions import _draw_common_image
 
-        fig, *_ = _plot_common_image(
-            iccs_instance, context=self.PADDED, show_all=self.ALL
-        )
+        fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+
+        # Notice we don't need to capture the returned matrix for the image test
+        _draw_common_image(ax, iccs_instance, context=self.PADDED, show_all=self.ALL)
+
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_image_after(self, iccs_instance: ICCS) -> Figure:
-        from pysmo.tools.iccs._functions import _plot_common_image
+        from pysmo.tools.iccs._functions import _draw_common_image
 
         iccs_instance()
 
-        fig, *_ = _plot_common_image(
-            iccs_instance, context=self.PADDED, show_all=self.ALL
-        )
+        fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+        _draw_common_image(ax, iccs_instance, context=self.PADDED, show_all=self.ALL)
+
         return fig
 
 
