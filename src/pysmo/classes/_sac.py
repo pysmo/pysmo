@@ -1,6 +1,9 @@
 from pysmo import Seismogram
 from pysmo.lib.io import SacIO
-from pysmo.lib.io._sacio import SAC_TIME_HEADERS
+from pysmo.lib.io._sacio import (
+    SAC_REQUIRED_TIME_HEADERS,
+    SAC_OPTIONAL_TIME_HEADERS,
+)
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.lib.decorators import value_not_none
 from pandas import Timestamp, Timedelta
@@ -45,8 +48,18 @@ class _SacNested:
         )
         return SEISMOGRAM_DEFAULTS.begin_time.value
 
+    @overload
     def _get_timestamp_from_sac(
-        self, sac_time_header: SAC_TIME_HEADERS
+        self, sac_time_header: SAC_REQUIRED_TIME_HEADERS
+    ) -> Timestamp: ...
+
+    @overload
+    def _get_timestamp_from_sac(
+        self, sac_time_header: SAC_OPTIONAL_TIME_HEADERS
+    ) -> Timestamp | None: ...
+
+    def _get_timestamp_from_sac(
+        self, sac_time_header: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS
     ) -> Timestamp | None:
         """Convert SAC times to Timestamp."""
 
@@ -57,11 +70,28 @@ class _SacNested:
 
         return self._ref_datetime + Timedelta(seconds=seconds)
 
+    @overload
     def _set_sac_from_timestamp(
-        self, sac_time_header: SAC_TIME_HEADERS, value: Timestamp
+        self, sac_time_header: SAC_REQUIRED_TIME_HEADERS, value: Timestamp
+    ) -> None: ...
+
+    @overload
+    def _set_sac_from_timestamp(
+        self, sac_time_header: SAC_OPTIONAL_TIME_HEADERS, value: Timestamp | None
+    ) -> None: ...
+
+    def _set_sac_from_timestamp(
+        self,
+        sac_time_header: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS,
+        value: Timestamp | None,
     ) -> None:
         """Set SAC times using Timestamp."""
 
+        if value is None:
+            if isinstance(sac_time_header, SAC_REQUIRED_TIME_HEADERS):
+                raise TypeError(f"SAC time header '{sac_time_header}' may not be None.")
+            setattr(self._parent, sac_time_header, None)
+            return
         seconds = (value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
 
@@ -131,15 +161,12 @@ class SacSeismogram(_SacNested, Seismogram):
         def begin_time(self) -> Timestamp:
             """Seismogram begin time."""
 
-            value = self._get_timestamp_from_sac(SAC_TIME_HEADERS.b)
-            if value is None:
-                raise TypeError("SAC file has no begin time 'b'.")
-            return value
+            return self._get_timestamp_from_sac(SAC_REQUIRED_TIME_HEADERS.b)
 
         @begin_time.setter
         @value_not_none
         def begin_time(self, value: Timestamp) -> None:
-            self._set_sac_from_timestamp(SAC_TIME_HEADERS.b, value)
+            self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
 
 
 @define(kw_only=True)
@@ -333,7 +360,7 @@ class SacEvent(_SacNested):
             is not possible if this is is the case.
         """
 
-        event_time = self._get_timestamp_from_sac(SAC_TIME_HEADERS.o)
+        event_time = self._get_timestamp_from_sac(SAC_OPTIONAL_TIME_HEADERS.o)
         if event_time is None:
             raise TypeError("SAC object event time 'o' is None.")
         return event_time
@@ -341,15 +368,20 @@ class SacEvent(_SacNested):
     @time.setter
     @value_not_none
     def time(self, value: Timestamp) -> None:
-        self._set_sac_from_timestamp(SAC_TIME_HEADERS.o, value)
+        self._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, value)
 
 
 class SacTimeConverter:
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
-    def __set_name__(self, _: _SacNested, name: SAC_TIME_HEADERS) -> None:
-        self._name = name
+    def __set_name__(self, _: _SacNested, name: str) -> None:
+        try:
+            self._name: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS = (
+                SAC_REQUIRED_TIME_HEADERS(name)
+            )
+        except ValueError:
+            self._name = SAC_OPTIONAL_TIME_HEADERS(name)
 
     @overload
     def __get__(self, instance: None, owner: None) -> Self: ...
@@ -364,12 +396,19 @@ class SacTimeConverter:
     ) -> Self | Timestamp | None:
         if instance is None:
             return self
+        if isinstance(self._name, SAC_REQUIRED_TIME_HEADERS):
+            return instance._get_timestamp_from_sac(self._name)
         return instance._get_timestamp_from_sac(self._name)
 
-    def __set__(self, obj: _SacNested, value: Timestamp) -> None:
+    def __set__(self, obj: _SacNested, value: Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read only.")
-        obj._set_sac_from_timestamp(self._name, value)
+        if isinstance(self._name, SAC_REQUIRED_TIME_HEADERS):
+            if value is None:
+                raise TypeError(f"SAC time header '{self._name}' may not be None.")
+            obj._set_sac_from_timestamp(self._name, value)
+        else:
+            obj._set_sac_from_timestamp(self._name, value)
 
 
 class SacTimestamps(_SacNested):
