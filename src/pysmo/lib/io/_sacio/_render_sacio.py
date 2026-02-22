@@ -1,4 +1,4 @@
-from .._sacio._lib import SACIO_DEFAULTS
+from ._lib import SACIO_DEFAULTS
 from jinja2 import Environment, FileSystemLoader
 import os
 import yaml
@@ -123,6 +123,13 @@ headers["evlo"]["validators"] = [
 # remove 'a' since it doesn't make sense here
 header_types.pop("a")
 
+required_time_headers = [
+    h for h in time_headers if headers.get(h, {}).get("required", False)
+]
+optional_time_headers = [
+    h for h in time_headers if not headers.get(h, {}).get("required", False)
+]
+
 environment = Environment(loader=FileSystemLoader(MYDIR))
 template = environment.get_template("sacio-template.py.j2")
 outfile = os.path.join(MYDIR, "_sacio_rendered.py")
@@ -134,6 +141,8 @@ content = template.render(
     enum_dict=enum_dict,
     properties=properties,
     time_headers=time_headers,
+    required_time_headers=required_time_headers,
+    optional_time_headers=optional_time_headers,
     sacio_defaults=SACIO_DEFAULTS,
 )
 

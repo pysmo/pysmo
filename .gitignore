@@ -32,3 +32,4 @@ site/
 .envrc
 /baseline/
 .claude/settings.local.json
+GEMINI.md

@@ -235,7 +235,13 @@ class TestSAC:
         with pytest.raises(AttributeError):
             sac.timestamps.e = now
         assert sac.timestamps.t0 is None
+        sac.timestamps.t0 = now
+        assert sac.timestamps.t0 is not None
+        sac.timestamps.t0 = None
+        assert sac.timestamps.t0 is None
         sac.timestamps.b = now
         assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
+        with pytest.raises(TypeError):
+            sac.timestamps.b = None
         with pytest.raises(TypeError):
             sac.timestamps.b = Timestamp.now()
