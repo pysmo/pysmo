@@ -11,6 +11,7 @@ make format        # Apply black formatting
 ```
 
 Run a single test file or specific test:
+
 ```bash
 uv run pytest tests/functions/test_seismogram.py
 uv run pytest tests/functions/test_seismogram.py::test_crop
@@ -22,26 +23,34 @@ uv run pytest -k "test_crop"
 Pysmo separates **types** (protocols), **storage** (concrete classes), and **processing** (functions/tools):
 
 ### Protocol layer (`src/pysmo/_types/`)
+
 `Seismogram`, `Station`, `Event`, `Location`, `LocationWithDepth` are Python `Protocol` classes — they define interfaces via structural subtyping. Any class implementing the right attributes is compatible, no inheritance required.
 
 ### Mini classes (also in `src/pysmo/_types/`)
+
 `MiniSeismogram`, `MiniStation`, etc. are minimal `attrs`-based reference implementations of each protocol. They use `@beartype` for runtime validation and are the default way to create pysmo objects programmatically.
 
 ### Concrete classes (`src/pysmo/classes/`)
+
 `SAC` is the main concrete class, wrapping a SAC file via `SacIO`. It exposes nested objects (`sac.seismogram`, `sac.station`, `sac.event`) that implement the protocols by mapping SAC header values. New storage formats should follow this nesting pattern.
 
 ### Functions (`src/pysmo/functions/`)
+
 Low-level building blocks operating on protocol types. Functions that modify seismograms follow a **clone pattern**: called without `clone` they mutate in place and return `None`; called with `clone=True` they return a `deepcopy`. Avoid `obj = fn(obj, clone=True)` — use in-place mutation instead.
 
 ### Tools (`src/pysmo/tools/`)
+
 Higher-level processing modules (signal filtering, noise analysis, ICCS cross-correlation, etc.) built on top of `pysmo.functions`.
 
 ### Time types
+
 All time values use **pandas** types:
+
 - `pandas.Timestamp` for absolute times — must always be UTC (validated by `datetime_is_utc`)
 - `pandas.Timedelta` for intervals (e.g. `delta`, durations)
 
 ### Constrained types (`src/pysmo/typing.py`)
+
 `pysmo.typing` provides `Annotated` type aliases with `beartype` validators: `PositiveTimedelta`, `PositiveNumber`, `UnitFloat`, etc. Use these for attribute/parameter annotations where value constraints are needed.
 
 ## Code Style and Standards
@@ -54,7 +63,7 @@ All time values use **pandas** types:
 - Use blank lines to separate functions and classes
 - Imports should be grouped: standard library, third-party, local
 - Use ellipsis (`...`) for code that is not implemented yet, rather than `pass`
-  or leaving it blank
+  or leaving it blank. Don't warn me that code using these is not doing anything.
 
 ### Code Formatting
 
