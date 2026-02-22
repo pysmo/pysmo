@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pysmo import Seismogram
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import (
@@ -371,48 +372,104 @@ class SacEvent(_SacNested):
         self._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, value)
 
 
-class SacTimeConverter:
+class RequiredSacTimestamp:
+    """Descriptor for SAC headers that MUST exist and cannot be None.
+
+    Args:
+        readonly (bool): If True, prevents modification of the header.
+    """
+
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
-    def __set_name__(self, _: _SacNested, name: str) -> None:
-        try:
-            self._name: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS = (
-                SAC_REQUIRED_TIME_HEADERS(name)
-            )
-        except ValueError:
-            self._name = SAC_OPTIONAL_TIME_HEADERS(name)
+    def __set_name__(self, owner: type["_SacNested"], name: str) -> None:
+        # Validates that this attribute name is a strictly required header
+        self._name = SAC_REQUIRED_TIME_HEADERS(name)
 
     @overload
-    def __get__(self, instance: None, owner: None) -> Self: ...
+    def __get__(self, instance: None, owner: type["_SacNested"]) -> Self: ...
 
     @overload
     def __get__(
-        self, instance: _SacNested, owner: type[object]
+        self, instance: "_SacNested", owner: type["_SacNested"]
+    ) -> Timestamp: ...
+
+    def __get__(
+        self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
+    ) -> Self | Timestamp:
+        if instance is None:
+            return self
+
+        seconds = getattr(instance._parent, self._name)
+
+        if seconds is None:
+            raise ValueError(
+                f"Required SAC header '{self._name}' is missing or None "
+                f"on {type(instance).__name__}."
+            )
+
+        return instance._ref_datetime + Timedelta(seconds=seconds)
+
+    def __set__(self, obj: "_SacNested", value: Timestamp) -> None:
+        if self.readonly:
+            raise AttributeError(f"SAC header '{self._name}' is read-only.")
+        if value is None:
+            raise TypeError(f"SAC time header '{self._name}' may not be None.")
+
+        seconds = (value - obj._ref_datetime).total_seconds()
+        setattr(obj._parent, self._name, seconds)
+
+
+class OptionalSacTimestamp:
+    """Descriptor for SAC headers that might be missing or set to None.
+
+    Args:
+        readonly (bool): If True, prevents modification of the header.
+    """
+
+    def __init__(self, readonly: bool = False) -> None:
+        self.readonly = readonly
+
+    def __set_name__(self, owner: type["_SacNested"], name: str) -> None:
+        # Validates that this attribute name is an optional header
+        self._name = SAC_OPTIONAL_TIME_HEADERS(name)
+
+    @overload
+    def __get__(self, instance: None, owner: type["_SacNested"]) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: "_SacNested", owner: type["_SacNested"]
     ) -> Timestamp | None: ...
 
     def __get__(
-        self, instance: _SacNested | None, owner: type[object] | None = None
+        self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
     ) -> Self | Timestamp | None:
         if instance is None:
             return self
-        if isinstance(self._name, SAC_REQUIRED_TIME_HEADERS):
-            return instance._get_timestamp_from_sac(self._name)
-        return instance._get_timestamp_from_sac(self._name)
 
-    def __set__(self, obj: _SacNested, value: Timestamp | None) -> None:
+        seconds = getattr(instance._parent, self._name)
+
+        # Handle standard Python None or traditional SAC null float
+        if seconds is None or seconds == -12345.0:
+            return None
+
+        return instance._ref_datetime + Timedelta(seconds=seconds)
+
+    def __set__(self, obj: "_SacNested", value: Timestamp | None) -> None:
         if self.readonly:
-            raise AttributeError(f"SAC header '{self._name}' is read only.")
-        if isinstance(self._name, SAC_REQUIRED_TIME_HEADERS):
-            if value is None:
-                raise TypeError(f"SAC time header '{self._name}' may not be None.")
-            obj._set_sac_from_timestamp(self._name, value)
+            raise AttributeError(f"SAC header '{self._name}' is read-only.")
+
+        if value is None:
+            # Set to None (or -12345.0 if your SacIO requires the SAC null value)
+            setattr(obj._parent, self._name, None)
         else:
-            obj._set_sac_from_timestamp(self._name, value)
+            seconds = (value - obj._ref_datetime).total_seconds()
+            setattr(obj._parent, self._name, seconds)
 
 
 class SacTimestamps(_SacNested):
-    """Helper class to access times stored in SAC headers as pandas.Timestamp objects.
+    """Helper class to access times stored in SAC headers as [`Timestamp`][pandas.Timestamp] objects.
 
     The `SacTimestamps` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
@@ -427,13 +484,16 @@ class SacTimestamps(_SacNested):
         ```python
         >>> from pysmo.classes import SAC
         >>> sac = SAC.from_file("example.sac")
+        >>>
         >>> # SAC header "B" as stored in a SAC file
         >>> sac.b
         -63.34000015258789
+        >>>
         >>> # the output above is the number of seconds relative
         >>> # to the reference time and date:
         >>> sac.kzdate , sac.kztime
         ('2005-03-01', '07:24:05.500')
+        >>>
         >>> # Accessing the same SAC header via a `SacTimestamps` object
         >>> # yields a corresponding Timestamp object with the absolute time:
         >>> sac.timestamps.b
@@ -446,61 +506,70 @@ class SacTimestamps(_SacNested):
         ```python
         >>> from pandas import Timedelta
         >>> sac = SAC.from_file("example.sac")
+        >>>
         >>> # Original value of the "B" SAC header:
         >>> sac.b
         -63.34000015258789
+        >>>
         >>> # Add 30 seconds to the absolute time:
         >>> sac.timestamps.b += Timedelta(seconds=30)
+        >>>
         >>> # The relative time also changes by the same amount:
         >>> sac.b
         -33.34
         >>>
+        >>> # Changing b to None is not allowed (it is a required time header):
+        >>> sac.timestamps.b = None
+        Traceback (most recent call last):
+        ...
+        TypeError: SAC time header 'b' may not be None.
+        >>>
         ```
     """
 
-    b: SacTimeConverter = SacTimeConverter()
+    b: RequiredSacTimestamp = RequiredSacTimestamp()
     """Beginning time of the independent variable."""
 
-    e: SacTimeConverter = SacTimeConverter(readonly=True)
+    e: RequiredSacTimestamp = RequiredSacTimestamp(readonly=True)
     """Ending time of the independent variable (read-only)."""
 
-    o: SacTimeConverter = SacTimeConverter()
+    o: OptionalSacTimestamp = OptionalSacTimestamp()
     """Event origin time."""
 
-    a: SacTimeConverter = SacTimeConverter()
+    a: OptionalSacTimestamp = OptionalSacTimestamp()
     """First arrival time."""
 
-    f: SacTimeConverter = SacTimeConverter()
+    f: OptionalSacTimestamp = OptionalSacTimestamp()
     """Fini or end of event time."""
 
-    t0: SacTimeConverter = SacTimeConverter()
+    t0: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 0."""
 
-    t1: SacTimeConverter = SacTimeConverter()
+    t1: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 1."""
 
-    t2: SacTimeConverter = SacTimeConverter()
+    t2: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 2."""
 
-    t3: SacTimeConverter = SacTimeConverter()
+    t3: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 3."""
 
-    t4: SacTimeConverter = SacTimeConverter()
+    t4: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 4."""
 
-    t5: SacTimeConverter = SacTimeConverter()
+    t5: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 5."""
 
-    t6: SacTimeConverter = SacTimeConverter()
+    t6: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 6."""
 
-    t7: SacTimeConverter = SacTimeConverter()
+    t7: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 7."""
 
-    t8: SacTimeConverter = SacTimeConverter()
+    t8: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 8."""
 
-    t9: SacTimeConverter = SacTimeConverter()
+    t9: OptionalSacTimestamp = OptionalSacTimestamp()
     """User defined time pick or marker 9."""
 
 
