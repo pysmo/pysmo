@@ -134,6 +134,27 @@ class SAC_TIME_HEADERS(StrEnum):
     t9 = auto()
 
 
+class SAC_REQUIRED_TIME_HEADERS(StrEnum):
+    b = auto()
+    e = auto()
+
+
+class SAC_OPTIONAL_TIME_HEADERS(StrEnum):
+    o = auto()
+    a = auto()
+    f = auto()
+    t0 = auto()
+    t1 = auto()
+    t2 = auto()
+    t3 = auto()
+    t4 = auto()
+    t5 = auto()
+    t6 = auto()
+    t7 = auto()
+    t8 = auto()
+    t9 = auto()
+
+
 SAC_ENUMS_DICT = dict(
     iftype=IFTYPE,
     idep=IDEP,
