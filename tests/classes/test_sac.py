@@ -242,6 +242,6 @@ class TestSAC:
         sac.timestamps.b = now
         assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
         with pytest.raises(TypeError):
-            sac.timestamps.b = None
+            sac.timestamps.b = None  # type: ignore
         with pytest.raises(TypeError):
             sac.timestamps.b = Timestamp.now()
