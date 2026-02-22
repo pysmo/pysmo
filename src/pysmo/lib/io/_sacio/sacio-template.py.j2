@@ -23,6 +23,18 @@ class SAC_TIME_HEADERS(StrEnum):
   {{ time_header }} = auto()
   {%- endfor %}
 
+
+class SAC_REQUIRED_TIME_HEADERS(StrEnum):
+  {%- for time_header in required_time_headers %}
+  {{ time_header }} = auto()
+  {%- endfor %}
+
+
+class SAC_OPTIONAL_TIME_HEADERS(StrEnum):
+  {%- for time_header in optional_time_headers %}
+  {{ time_header }} = auto()
+  {%- endfor %}
+
 SAC_ENUMS_DICT = dict(
   {%- for header, values in headers.items() %}
   {%- if values.is_enum %}
