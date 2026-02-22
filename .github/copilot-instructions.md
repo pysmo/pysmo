@@ -1,5 +1,49 @@
 # GitHub Copilot Instructions for Pysmo
 
+## Commands
+
+```bash
+make sync          # Install all dependencies (run first)
+make tests         # Run full test suite (includes mypy)
+make mypy          # Type checks only
+make lint          # black --check + ruff check
+make format        # Apply black formatting
+```
+
+Run a single test file or specific test:
+```bash
+uv run pytest tests/functions/test_seismogram.py
+uv run pytest tests/functions/test_seismogram.py::test_crop
+uv run pytest -k "test_crop"
+```
+
+## Architecture
+
+Pysmo separates **types** (protocols), **storage** (concrete classes), and **processing** (functions/tools):
+
+### Protocol layer (`src/pysmo/_types/`)
+`Seismogram`, `Station`, `Event`, `Location`, `LocationWithDepth` are Python `Protocol` classes — they define interfaces via structural subtyping. Any class implementing the right attributes is compatible, no inheritance required.
+
+### Mini classes (also in `src/pysmo/_types/`)
+`MiniSeismogram`, `MiniStation`, etc. are minimal `attrs`-based reference implementations of each protocol. They use `@beartype` for runtime validation and are the default way to create pysmo objects programmatically.
+
+### Concrete classes (`src/pysmo/classes/`)
+`SAC` is the main concrete class, wrapping a SAC file via `SacIO`. It exposes nested objects (`sac.seismogram`, `sac.station`, `sac.event`) that implement the protocols by mapping SAC header values. New storage formats should follow this nesting pattern.
+
+### Functions (`src/pysmo/functions/`)
+Low-level building blocks operating on protocol types. Functions that modify seismograms follow a **clone pattern**: called without `clone` they mutate in place and return `None`; called with `clone=True` they return a `deepcopy`. Avoid `obj = fn(obj, clone=True)` — use in-place mutation instead.
+
+### Tools (`src/pysmo/tools/`)
+Higher-level processing modules (signal filtering, noise analysis, ICCS cross-correlation, etc.) built on top of `pysmo.functions`.
+
+### Time types
+All time values use **pandas** types:
+- `pandas.Timestamp` for absolute times — must always be UTC (validated by `datetime_is_utc`)
+- `pandas.Timedelta` for intervals (e.g. `delta`, durations)
+
+### Constrained types (`src/pysmo/typing.py`)
+`pysmo.typing` provides `Annotated` type aliases with `beartype` validators: `PositiveTimedelta`, `PositiveNumber`, `UnitFloat`, etc. Use these for attribute/parameter annotations where value constraints are needed.
+
 ## Code Style and Standards
 
 ### PEP 8 Compliance
@@ -86,7 +130,8 @@
 - Tests should be in the `tests/` directory
 - Use descriptive test names: `test_function_does_expected_behaviour`
 - Try to mirror the directory structure of `src/pysmo/` in `tests/`
-- Sybil is used to test docstring examples - ensure all docstring examples are correct and executable
+- **Sybil** runs all docstring examples in `src/` and `docs/` as tests — every `Examples:` block in a docstring is executed. Ensure examples are correct and executable. Use the `copy_testfiles` fixture (already wired in `conftest.py`) when examples reference `"example.sac"`.
+- Snapshot tests use **syrupy** — call `snapshot.assert_match(value)`, with data rounded via `np.around(..., 6)` before comparison
 
 ### Commit Messages
 
@@ -113,9 +158,9 @@
 
 ### Dependencies
 
-- Minimum Python version: 3.12
-- Core dependencies: numpy, matplotlib, scipy, beartype
-- Keep dependencies up to date
+- Minimum Python version: 3.12, maximum 3.14
+- Core dependencies: numpy, matplotlib, scipy, beartype, attrs, pandas
+- Dependency management: `uv` with locked `uv.lock`; run `make sync` after pulling
 
 ### File Organisation
 
@@ -126,9 +171,8 @@
 
 ## Before Committing
 
-1. Run `black .` to format code
-2. Run `ruff check --fix .` to check and fix linting issues
-3. Run tests with `pytest`
-4. Verify type hints with `mypy`
-5. Check British English spelling
-6. Ensure docstrings follow Google style
+1. Run `make format` to apply black formatting
+2. Run `make lint` to check formatting and linting
+3. Run `make tests` to run the full test suite (includes mypy)
+4. Check British English spelling
+5. Ensure docstrings follow Google style
