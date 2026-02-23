@@ -1,3 +1,4 @@
+from ._registry import register_filter
 from pysmo import Seismogram
 from copy import deepcopy
 from typing import overload, Literal
@@ -27,6 +28,7 @@ def bandpass[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def bandpass[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,
@@ -98,6 +100,7 @@ def highpass[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def highpass[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,
@@ -159,6 +162,7 @@ def lowpass[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def lowpass[T: Seismogram](
     seismogram: T,
     freqmax: float = 0.5,
@@ -223,6 +227,7 @@ def bandstop[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def bandstop[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,

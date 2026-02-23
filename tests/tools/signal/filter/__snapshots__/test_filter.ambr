@@ -1,0 +1,9 @@
+# serializer version: 1
+# name: test_filter_bandpass_snapshot[mini_seismogram]
+  array([  1.403748,   6.923526,  17.691488, ..., 387.608947, 390.621775,
+         393.329736], shape=(180000,))
+# ---
+# name: test_filter_bandpass_snapshot[sac_seismogram]
+  array([  1.403748,   6.923526,  17.691488, ..., 387.608947, 390.621775,
+         393.329736], shape=(180000,))
+# ---
