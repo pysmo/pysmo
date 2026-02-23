@@ -19,7 +19,7 @@ def test_time2index(seismogram: Seismogram) -> None:
     from pysmo.functions import time2index
 
     assert time2index(seismogram, seismogram.begin_time) == 0
-    assert time2index(seismogram, seismogram.end_time) + 1 == len(seismogram)
+    assert time2index(seismogram, seismogram.end_time) + 1 == len(seismogram.data)
 
     time = seismogram.begin_time + 10.1 * seismogram.delta
     assert time2index(seismogram, time) == 10
@@ -184,9 +184,9 @@ def test_resample(seismogram: Seismogram) -> None:
         # Verify resampled data has finite values
         assert np.all(np.isfinite(seis.data)), "Resampled data should be finite"
         # Verify resampling reduced the number of samples approximately by factor of 2
-        expected_length = len(seismogram) // 2
+        expected_length = len(seismogram.data) // 2
         assert (
-            abs(len(seis) - expected_length) <= 2
+            abs(len(seis.data) - expected_length) <= 2
         ), "Length should be approximately halved"
 
     assert_seismogram_modification(
@@ -216,7 +216,7 @@ def test_crop(seismogram: Seismogram) -> None:
     from pysmo.functions import crop
 
     def check_no_crop(seis: Seismogram) -> None:
-        assert len(seis) == len(seismogram)
+        assert len(seis.data) == len(seismogram.data)
         assert seis.begin_time.timestamp() == pytest.approx(
             seismogram.begin_time.timestamp()
         )
@@ -270,7 +270,7 @@ def test_crop(seismogram: Seismogram) -> None:
         custom_assertions=check_cropped,
     )
 
-    if len(seismogram) > 100:
+    if len(seismogram.data) > 100:
         seis3 = deepcopy(seismogram)
         seis3.data = seis3.data[:100]
         new_begin_time = seis3.begin_time + seis3.delta
@@ -306,7 +306,7 @@ class TestTaper:
     def test_taper(self, seismogram: Seismogram) -> Figure:
         from pysmo.functions import taper
 
-        seismogram.data = np.ones(len(seismogram))
+        seismogram.data = np.ones(len(seismogram.data))
 
         with pytest.raises(BeartypeCallHintParamViolation):
             _ = taper(seismogram, "abc", clone=True)  # type: ignore

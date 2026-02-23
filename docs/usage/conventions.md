@@ -37,6 +37,11 @@ to the original parameter definitions (and ranges). For example,
 that lies between `0` and `0.5` (whereby `0.5` does the same thing as `1` in
 the SciPy version).
 
+Default values of parameters are treated the same way (i.e. pysmo sticks to the
+SciPy and NumPy defaults), so differences between results from calling a pysmo
+function and the equivalent function in another library or program (e.g.
+[SAC](https://ds.iris.edu/files/sac-manual/)) may be possible.
+
 ## Avoid None type
 
 Pysmo types are meant to be specific and narrowly defined. Unless absolutely
@@ -50,3 +55,10 @@ to set either of those attributes to [`None`][].
 It is generally better to use functions than methods, or at the very least the
 number of methods should be kept at a minimum. This is even more so when code
 re-usability becomes a factor. Hence pysmo types almost never contain methods.
+
+This extends to magic (dunder) methods as well. Pysmo types are intended to be
+data containers, so adding special behaviour via dunder methods would be
+surprising and potentially confusing. For example, if
+[`Seismogram`][pysmo.Seismogram] had a [`__len__`][object.__len__] method, it
+would be unclear whether `len(seismogram)` returns the number of samples or
+something else entirely — whereas `len(seismogram.data)` is unambiguous.

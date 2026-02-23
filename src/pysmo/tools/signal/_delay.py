@@ -179,7 +179,7 @@ def delay(
 
     _check_same_delta(seismogram1, seismogram2)
 
-    if max_shift is not None and len(seismogram1) != len(seismogram2):
+    if max_shift is not None and len(seismogram1.data) != len(seismogram2.data):
         raise ValueError(
             "Input seismograms must be of equal length when using `max_shift`."
         )
@@ -290,14 +290,14 @@ def multi_delay(
 
     # setup dimensions & FFT length
     n_traces = len(seismograms)
-    len_t = len(template)
+    len_t = len(template.data)
     len_s = max(len(s.data) for s in seismograms)
 
     # pad to avoid circular convolution artifacts
     # (length >= len_template + len_signal - 1)
     n_fft = next_fast_len(len_s + len_t - 1)
 
-    # pad and normalize template
+    # pad and normalise template
     t_data = template.data
     t_mean = np.mean(t_data)
     t_std = np.std(t_data)
@@ -306,7 +306,7 @@ def multi_delay(
     template_padded = np.zeros(n_fft, dtype=float)
     template_padded[:len_t] = (t_data - t_mean) / t_std
 
-    # normalize *before* padding to keep stats valid
+    # normalise *before* padding to keep stats valid
     seismogram_matrix = np.zeros((n_traces, n_fft), dtype=float)
     for i, s in enumerate(seismograms):
         data = s.data
@@ -421,7 +421,7 @@ def multi_multi_delay(
     # pad to avoid circular convolution artifacts
     n_fft = next_fast_len(2 * max_len - 1)
 
-    # normalize and pad all seismograms
+    # normalise and pad all seismograms
     data_matrix = np.zeros((n, n_fft), dtype=float)
     for i, s in enumerate(seismograms):
         data = s.data
