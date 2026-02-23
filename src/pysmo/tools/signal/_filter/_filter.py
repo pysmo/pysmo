@@ -62,14 +62,6 @@ def filter[T: Seismogram](
         >>>
         ```
     """
-    # filters = {name: globals()[name] for name in get_args(FilterName.__value__)}
-    # try:
-    #     filter_func = filters[filter_name]
-    # except KeyError:
-    #     raise ValueError(
-    #         f"Unknown filter '{filter_name}'. Must be one of: {', '.join(filters)}."
-    #     )
-    # return filter_func(seismogram, **filter_options, clone=clone)
 
     try:
         filter_func = _FILTER_REGISTRY[filter_name]
