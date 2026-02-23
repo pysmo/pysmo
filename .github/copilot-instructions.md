@@ -63,7 +63,10 @@ All time values use **pandas** types:
 - Use blank lines to separate functions and classes
 - Imports should be grouped: standard library, third-party, local
 - Use ellipsis (`...`) for code that is not implemented yet, rather than `pass`
-  or leaving it blank. Don't warn me that code using these is not doing anything.
+  or leaving it blank. Do not flag `...` as doing nothing, suggest replacing it
+  with `pass`, or warn that it has no effect — this is intentional project style.
+- Ellipsis (`...`) is also valid in type annotations (e.g. `Callable[..., int]`
+  or `tuple[int, ...]`). Do not flag or suggest changing these.
 
 ### Code Formatting
 

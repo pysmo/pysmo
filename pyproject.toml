@@ -66,6 +66,22 @@ default-groups = [
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.direnv",
+  "/.tox",
+  "/.vscode",
+  "/.idea",
+  "/.claude",
+  "/*.nix",
+  "/flake.lock",
+  "/blah.py",
+  "/foo.py",
+  "/bar.py",
+  "/.envrc",
+  "**/__pycache__",
+  "**/.ipynb_checkpoints",
+]
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysmo"]
 

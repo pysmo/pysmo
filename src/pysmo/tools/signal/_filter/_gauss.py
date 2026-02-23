@@ -1,3 +1,4 @@
+from ._registry import register_filter
 from pysmo import Seismogram
 from copy import deepcopy
 from typing import overload, Literal
@@ -16,6 +17,7 @@ def envelope[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def envelope[T: Seismogram](
     seismogram: T, Tn: float, alpha: float, clone: bool = False
 ) -> T | None:
@@ -60,6 +62,7 @@ def gauss[T: Seismogram](
 ) -> T: ...
 
 
+@register_filter
 def gauss[T: Seismogram](
     seismogram: T, Tn: float, alpha: float, clone: bool = False
 ) -> T | None:
