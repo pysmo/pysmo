@@ -161,7 +161,7 @@ def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> N
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
 
-    time = np.linspace(tmin, tmax, len(stack))
+    time = np.linspace(tmin, tmax, len(stack.data))
 
     mask = _make_mask(iccs, show_all)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
