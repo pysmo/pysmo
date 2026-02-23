@@ -270,13 +270,13 @@ def pad[T: Seismogram](
         >>> import numpy as np
         >>>
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> original_length = len(sac_seis)
+        >>> original_length = len(sac_seis.data)
         >>> sac_seis.data
         array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
         >>> new_begin_time = sac_seis.begin_time - Timedelta(seconds=10)
         >>> new_end_time = sac_seis.end_time + Timedelta(seconds=10)
         >>> pad(sac_seis, new_begin_time, new_end_time)
-        >>> np.isclose(len(sac_seis), original_length + 20 / sac_seis.delta.total_seconds())
+        >>> np.isclose(len(sac_seis.data), original_length + 20 / sac_seis.delta.total_seconds())
         np.True_
         >>> sac_seis.data
         array([0., 0., 0., ..., 0., 0., 0.], shape=(181000,))
@@ -294,7 +294,7 @@ def pad[T: Seismogram](
         seismogram = deepcopy(seismogram)
 
     pad_before = max(0, -start_index)
-    pad_after = max(0, end_index - (len(seismogram) - 1))
+    pad_after = max(0, end_index - (len(seismogram.data) - 1))
 
     if pad_before > 0 or pad_after > 0:
         seismogram.data = np.pad(
@@ -343,12 +343,12 @@ def resample[T: Seismogram](
         >>> from pysmo.functions import resample
         >>> from pysmo.classes import SAC
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> len(sac_seis)
+        >>> len(sac_seis.data)
         180000
         >>> original_delta = sac_seis.delta
         >>> new_delta = original_delta * 2
         >>> resample(sac_seis, new_delta)
-        >>> len(sac_seis)
+        >>> len(sac_seis.data)
         90000
         >>>
         ```
@@ -357,7 +357,7 @@ def resample[T: Seismogram](
         seismogram = deepcopy(seismogram)
 
     if delta != seismogram.delta:
-        npts = int(len(seismogram) * seismogram.delta / delta)
+        npts = int(len(seismogram.data) * seismogram.delta / delta)
         seismogram.data = scipy.signal.resample(seismogram.data, npts)
         seismogram.delta = delta
 
@@ -454,9 +454,9 @@ def taper[T: Seismogram](
     if isinstance(taper_width, Timedelta):
         nsamples = taper_width // seismogram.delta
     else:
-        nsamples = floor(len(seismogram) * taper_width)
+        nsamples = floor(len(seismogram.data) * taper_width)
 
-    if nsamples > len(seismogram):
+    if nsamples > len(seismogram.data):
         raise ValueError(
             "'taper_width' is too large. Total taper width may exceed the duration of the seismogram."
         )
@@ -518,12 +518,12 @@ def time2index(
         index = int(np.floor(index_float + 0.5))
 
     # Validation
-    if 0 <= index < len(seismogram) or allow_out_of_bounds:
+    if 0 <= index < len(seismogram.data) or allow_out_of_bounds:
         return index
 
     raise ValueError(
         f"Calculated index {index} is out of bounds for seismogram with "
-        f"{len(seismogram)} samples. (Target time: {time})"
+        f"{len(seismogram.data)} samples. (Target time: {time})"
     )
 
 

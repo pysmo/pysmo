@@ -7,7 +7,7 @@ tags:
 
 At the heart of pysmo are the pysmo types. These types are used to write
 additional components that are included in the pysmo package which can be used
-in other projects, particularly if they also use use data that are compatible
+in other projects, particularly if they also use data that are compatible
 with pysmo types.
 
 ## Types and Mini classes
