@@ -17,13 +17,10 @@ class SeasonSeismogram:
     delta: Timedelta = Timedelta(seconds=0.01)
     data: np.ndarray = field(default_factory=lambda: np.array([]))
 
-    def __len__(self) -> int:
-        return len(self.data)
-
     @property
     def end_time(self) -> Timestamp:
-        if len(self) == 0:
+        if len(self.data) == 0:
             return self.begin_time
-        return self.begin_time + self.delta * (len(self) - 1)
+        return self.begin_time + self.delta * (len(self.data) - 1)
 
     season: Season = Season.SUMMER  # (2)!

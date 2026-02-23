@@ -25,8 +25,8 @@ used in an ambient noise cross-correlation project. In this context, we don't
 need to store event information in our seismograms. In fact, we are probably
 more interested in knowing whether or not earthquake signals are present in
 the seismogram data. We would therefore want our class to have an attribute to
-store this particular piece of information. A simple class definition could
-look like this:
+store this particular piece of information. A concrete class definition could
+be as simple as this:
 
 ```python title="noise_seismogram.py"
 --8<-- "docs/snippets/tutorial/noise_seismogram.py"
@@ -37,18 +37,16 @@ look like this:
    `__eq__`, based on the class attributes. This makes it easier to create
    classes that are primarily used to store data.
 2. Instance attributes are defined simply by declaring them in the class body
-   with type annotations.
+   with type annotations. Note the use of [`pandas.Timestamp`][] here - it is
+   used throughout pysmo as the standard type for time information.
 3. Attributes can have default values too.
 4. Care must be given if default values are mutable types (like lists or
    dictionaries). In such cases, you need to use `field(default_factory=...)` to
    ensure that each instance of the class gets its own separate copy of the
    mutable object.
-5. A `__len__` method is a special method that lets us use the built-in
-   [`len()`][len] function, defined here as the number of samples in the data
-   array.
-6. We add a read-only property `end_time` that computes the end time of the
-   seismogram based on the start time, number of samples, and sampling rate.
-7. Finally, we add an attribute that lets us know if our seismogram contains
+5. We add a read-only property `end_time` that computes the end time of the
+   seismogram based on the start time, number of samples, and sampling interval.
+6. Finally, we add an attribute that lets us know if our seismogram contains
    earthquake signals or not.
 
 A real world example would likely have more attributes (such as station
@@ -59,20 +57,21 @@ interactive Python session and create an instance of the class:
 
 ```bash
 $ python -i noise_seismogram.py
->>> begin_time = datetime(2023, 1, 1, 0, 0, 0)
+>>> begin_time = Timestamp("2023-01-01", tz="UTC")
 >>> data = np.random.randn(1000)  # Simulated noise data
 >>> noise_seis = NoiseSeismogram(begin_time=begin_time, data=data)
 >>>
 ```
 
 !!! info "Key observations"
-
     - Creating a purpose-built class whose primary purpose is to store data is
       simple and straightforward with the [`dataclass`][dataclasses.dataclass]
       decorator.
-    - With the exception of the `__len__` method (which allows using
-      [`len`][len] on `NoiseSeismogram` instances), we have not defined any
-      methods in our class.
+    - By prioritising data storage only, we avoid any complexities that may
+      arise from trying to include methods in the class. Overloading a
+      class with both data and methods can lead to a maintenance nightmare,
+      while using functions instead offers a clear separation between data
+      storage and data processing.
     - All attributes of the class are non-optional. If they were, we would
       have typed them with e.g. `bool | None` instead of just `bool`.
       While this is not strictly a requirement, it does avoid having to deal
@@ -140,14 +139,13 @@ Success: no issues found in 1 source file
 ```
 
 !!! info "Key observations"
-
     - Writing functions for our bespoke class is also pretty straightforward.
     - Because we have correctly annotated both our class and our functions with
       type hints, we can easily check our code for errors with mypy.
-    - Our purpose-built class avoids optional attributes, which allows us to
-      avoid redundant checks in our functions. This makes our code simpler and
-      likely easier to read.
-    - Note that we are relying on checking our code before running it! If you
+    - Our purpose-built class avoids optional attributes (may not be
+      [`None`][]), which allows us to avoid redundant checks in our functions.
+      This makes our code simpler and likely easier to read.
+    - Note that we are relying on checking our code *before* running it! If you
       want checking at runtime, you may need to look into using a library like
       [beartype](https://beartype.readthedocs.io) or
       [pydantic](https://docs.pydantic.dev).
@@ -174,6 +172,30 @@ a bespoke class for this:
    take.
 2. Much like with `NoiseSeismogram`, we have just one project specific
    attribute (`season`).
+
+??? tip "Mixin classes"
+    In our two example classes, we write the `end_time` property in exactly the
+    same way for both classes. If we had a lot of classes that needed to have
+    the same implementation, we would be constantly repeating ourselves. To
+    avoid this, we could write a *mixin* class that can be included in our
+    class definitions:
+    <!-- skip: next -->
+    ```python
+    --8<-- "src/pysmo/_types/_seismogram.py:seismogram-mixin"
+    ```
+    This tiny class can be inherited by both `NoiseSeismogram` and
+    `SeasonSeismogram`, and we can skip writing the `end_time` property:
+    <!-- skip: next -->
+    ```python title="season_seismogram_short.py"
+    --8<-- "docs/snippets/tutorial/season_seismogram_short.py"
+    ```
+
+    1. `end_time` is inherited from `SeismogramEndtimeMixin`, so we don't need
+      to write a implementation anymore.
+
+    Note that there are complications that come along with class inheritance,
+    so it is best to keep your mixin classes simple, or even focused on a single
+    task (you can always add multiple mixins to your class if you need to).
 
 Next we write a script that uses this new class together with the `detrend()`
 function from earlier:
@@ -221,7 +243,6 @@ Success: no issues found in 1 source file
 ```
 
 !!! info "Key observations"
-
     - We have successfully reused the `detrend()` function in a different
       context.
     - However, it did require changing the type annotations of the function.
@@ -244,7 +265,7 @@ functions and classes. It is therefore conceivable that sometime in the future
 one of the classes may change in a way that breaks functions.
 
 This is not a new problem in programming, and is typically solved by defining
-interfaces that sit between the functions and the classes (or more generally
+*interfaces* that sit between the functions and the classes (or more generally
 between different parts of code). This means that we can write a function to be
 compatible with the interface rather than multiple different (seismogram)
 classes. Of course, the classes need to be written in a way that conforms to the
@@ -254,38 +275,19 @@ Pysmo provides such an interface for seismogram (and other) classes. These
 interfaces make use of Python's [`Protocol`][typing.Protocol] class. Below is
 the actual implementation of pysmo's [`Seismogram`][pysmo.Seismogram] interface:
 
-<!-- skip: next -->
-
 ```python
 --8<-- "src/pysmo/_types/_seismogram.py:seismogram-protocol"
 ```
 
 If you strip away the extra docstrings, you will notice that this looks
 remarkably similar to the common bits of the `NoiseSeismogram` and
-`SeasonSeismogram` classes we defined above. Important to mention at this point
-is that the `__len__` method and `end_time` property do not really need to be
-implemented here. Typically the `__len__` method would look more like this:
-
-```python
-def __len__(self) -> int: ...
-```
-
-That is because the purpose of [`Seismogram`][pysmo.Seismogram] is mainly to
-provide type information - it is actually impossible to create an instance from
-a [`Protocol`][typing.Protocol] class directly. However, it is possible to
-inherit from them, so we could rewrite the `SeasonSeismogram` as follows:
-
-```python title="season_seismogram_short.py"
---8<-- "docs/snippets/tutorial/season_seismogram_short.py"
-```
-
-1. `__len__` and `end_time` are inherited from `Seismogram`, so we don't need
-   to write an implementation anymore.
-
-The `NoiseSeismogram` class could be shortened in the same manner.
+`SeasonSeismogram` classes we defined above. The only real difference is that
+the `end_time` property is declared but not implemented here. That is because the purpose of
+[`Seismogram`][pysmo.Seismogram] is to provide type information only - it is
+actually impossible to create an instance from a [`Protocol`][typing.Protocol]
+class directly.
 
 !!! note
-
     Python [`Protocol`][typing.Protocol] classes are used almost exclusively in
     type annotations. We will therefore refer to the ones shipped with pysmo as
     *types* rather than protocols or interfaces.
@@ -307,7 +309,6 @@ loads of different seismogram classes, is now a breeze:
    `detrend` function. We simply specify `Seismogram` and are done.
 
 !!! info "Key observations"
-
     - The `detrend()` function now uses pysmo types in its annotations.
     - Because `NoiseSeismogram` and `SeasonSeismogram` are subclasses of
       `Seismogram`, type checkers will accept instances of `NoiseSeismogram`

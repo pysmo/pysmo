@@ -49,7 +49,7 @@ class TestMiniSeismogram:
         )
         assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta.value == Timedelta(seconds=1)
         assert miniseis.data.size == 0
-        assert len(miniseis) == 0
+        assert len(miniseis.data) == 0
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
@@ -62,23 +62,23 @@ class TestMiniSeismogram:
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
-            len(miniseis) - 1
+            len(miniseis.data) - 1
         )
         miniseis.begin_time = new_time_utc
         assert miniseis.begin_time == new_time_utc
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
-            len(miniseis) - 1
+            len(miniseis.data) - 1
         )
         miniseis.delta = Timedelta(seconds=0.1)
         assert miniseis.delta.total_seconds() == 0.1
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
-            len(miniseis) - 1
+            len(miniseis.data) - 1
         )
         with pytest.raises(TypeError):
             miniseis.begin_time = new_time_no_tz
 
         miniseis.data = np.array([])
-        assert len(miniseis) == 0
+        assert len(miniseis.data) == 0
         assert miniseis.begin_time == miniseis.end_time
 
     @pytest.mark.depends(name="test_change_attributes")
@@ -86,7 +86,7 @@ class TestMiniSeismogram:
         """check if it works in a functionfor Seismogram types."""
 
         def seis_func(seismogram: Seismogram) -> None:
-            _ = len(seismogram)
+            _ = len(seismogram.data)
             _ = np.mean(seismogram.data)
             _ = seismogram.delta * 1.1
             _ = seismogram.begin_time + Timedelta(seconds=12)

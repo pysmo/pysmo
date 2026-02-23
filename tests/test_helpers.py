@@ -214,8 +214,8 @@ def assert_seismogram_modification(
     assert (
         cloned_modified.delta == inplace_modified.delta
     ), "Clone and in-place modifications have different delta"
-    assert len(cloned_modified) == len(
-        inplace_modified
+    assert len(cloned_modified.data) == len(
+        inplace_modified.data
     ), "Clone and in-place modifications have different lengths"
 
     # Run custom assertions if provided

@@ -99,7 +99,7 @@ def _gauss(
 ) -> tuple[np.ndarray, np.ndarray]:
     Wn = 1 / float(Tn)
     Nyq = 0.5 / seismogram.delta.total_seconds()
-    npts = len(seismogram)
+    npts = len(seismogram.data)
     spec = np.fft.fft(seismogram.data)
     W = np.array(np.linspace(0, Nyq, npts))
     Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
