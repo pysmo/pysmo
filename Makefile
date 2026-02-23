@@ -11,7 +11,7 @@ endif
 
 help: ## List all commands.
 	@echo -e "\nThis makefile executes mostly uv commands. To view all uv commands available run 'uv help'."
-	@echo -e "\n\033[1mAvailable_COMMANDS\033[0m"
+	@echo -e "\n\033[1mCommands:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9 -]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 | "sort"}' $(MAKEFILE_LIST)
 
 check-uv: ## Check if uv is installed.
