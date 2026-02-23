@@ -59,7 +59,7 @@ def clone_to_mini[TMini: _AnyMini](
 ) -> TMini:
     """Create a new instance of a Mini class from a matching other one.
 
-    This function is creates a clone of an exising class by
+    This function creates a clone of an existing class by
     [copying][copy.copy] the attributes defined in `mini_cls` from the source
     to the target. Attributes only present in the source object are ignored,
     potentially resulting in a smaller and more performant object.

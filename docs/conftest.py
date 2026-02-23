@@ -8,6 +8,7 @@ collect_ignore = [
     "snippets/division_annotated.py",
     "snippets/duck.py",
     "snippets/tutorial/season_detrend_v1.py",
+    "snippets/tutorial/season_seismogram_short.py",
 ]
 pytest_collect_file = Sybil(
     parsers=[

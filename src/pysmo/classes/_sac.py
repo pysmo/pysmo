@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pysmo import Seismogram
+from pysmo._types._seismogram import SeismogramEndtimeMixin
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import (
     SAC_REQUIRED_TIME_HEADERS,
@@ -98,7 +98,7 @@ class _SacNested:
 
 
 @define(kw_only=True)
-class SacSeismogram(_SacNested, Seismogram):
+class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
     """Helper class for SAC seismogram attributes.
 
     The `SacSeismogram` class is used to map SAC attributes in a way that

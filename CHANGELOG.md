@@ -4,6 +4,11 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+- **(iccs)** Fix save cancel callback on buttons
+- Distinguish between required/non-required sac time headers
+
 ### 📚 Documentation
 
 - Remove unused mkdocs-macros-plugin
@@ -11,11 +16,13 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### 🔍 Other Changes
 
 - Install pandas
-- Initial plan
-- Update core types and simple files to use pandas Timestamp/Timedelta
-- Update functions and documentation to use pandas Timestamp/Timedelta
-- Update all test files to use pandas Timestamp and Timedelta
-- Update remaining src, tests, and snippets to use pandas Timestamp/Timedelta
+
+### 🔧 Refactoring
+
+- Migrate from stdlib datetime to pandas Timestamp/Timedelta ([#252](https://github.com/pysmo/pysmo/issues/252))
+- **(tools-iccs)** Make figures modular for easier re-use
+- Use 2 descriptors instead of 1 complicated one for sac timestamps
+- **(signal)** Add filter registry decorator ([#257](https://github.com/pysmo/pysmo/issues/257))
 
 ### 🚀 New Features
 

@@ -1,3 +1,4 @@
+import numpy as np
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
 from pysmo.typing import PositiveTimedelta
@@ -5,7 +6,6 @@ from typing import Protocol, runtime_checkable
 from attrs import define, field
 from pandas import Timestamp, Timedelta
 from beartype import beartype
-import numpy as np
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 
@@ -48,29 +48,36 @@ class Seismogram(Protocol):
     Should be a positive `Timedelta` instance.
     """
 
-    def __len__(self) -> int:
-        """The length of the Seismogram.
-
-        Returns:
-            Number of samples in the data array.
-        """
-        return len(self.data)
-
     @property
     def end_time(self) -> Timestamp:
         """Seismogram end time."""
-        if len(self) == 0:
-            return self.begin_time
-        return self.begin_time + self.delta * (len(self) - 1)
+        ...
 
 
 # --8<-- [end:seismogram-protocol]
+
+
+# --8<-- [start:seismogram-mixin]
+class SeismogramEndtimeMixin:
+    """Mixin class to add `end_time` property to a `Seismogram` object."""
+
+    @property
+    def end_time(self: Seismogram) -> Timestamp:
+        """Seismogram end time."""
+        if len(self.data) == 0:
+            return self.begin_time
+        return self.begin_time + self.delta * (len(self.data) - 1)
+
+
+# --8<-- [end:seismogram-mixin]
+
+
 # --8<-- [start:mini-seismogram]
 
 
 @beartype
 @define(kw_only=True, slots=True)
-class MiniSeismogram(Seismogram):
+class MiniSeismogram(SeismogramEndtimeMixin):
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
 
     The `MiniSeismogram` class provides a minimal implementation of class that

@@ -51,7 +51,7 @@ def time_array(seismogram: Seismogram) -> np.ndarray:
     """
     start = mdates.date2num(seismogram.begin_time)
     end = mdates.date2num(seismogram.end_time)
-    return np.linspace(start, end, len(seismogram))
+    return np.linspace(start, end, len(seismogram.data))
 
 
 def unix_time_array(seismogram: Seismogram) -> np.ndarray:
@@ -86,7 +86,7 @@ def unix_time_array(seismogram: Seismogram) -> np.ndarray:
     """
     start = seismogram.begin_time.timestamp()
     end = seismogram.end_time.timestamp()
-    return np.linspace(start, end, len(seismogram))
+    return np.linspace(start, end, len(seismogram.data))
 
 
 def plotseis(
