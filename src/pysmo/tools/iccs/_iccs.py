@@ -1,9 +1,11 @@
 """The ICCS class and functions used within the class."""
 
-from beartype import beartype
+import warnings
+import numpy as np
 from ._types import ICCSSeismogram, ConvergenceMethod
 from ._defaults import ICCS_DEFAULTS
 from pysmo import Seismogram, MiniSeismogram
+from pysmo._types._seismogram import SeismogramEndtimeMixin
 from pysmo.typing import (
     NonNegativeNumber,
     NonNegativeTimedelta,
@@ -19,6 +21,7 @@ from pysmo.functions import (
 )
 from pysmo.tools.signal import bandpass, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
+from beartype import beartype
 from datetime import timedelta
 from pandas import Timestamp, Timedelta
 from attrs import define, field, validators, Attribute
@@ -26,8 +29,6 @@ from typing import Any
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
 from numpy.linalg import norm
-import warnings
-import numpy as np
 
 __all__ = ["ICCS"]
 
@@ -59,7 +60,7 @@ def _validate_window_post(
 
 
 @define(slots=True)
-class _EphemeralSeismogram(Seismogram):
+class _EphemeralSeismogram(SeismogramEndtimeMixin):
     """A Seismogram class used internally in ICCS to store the prepared seismograms.
 
     This class is not intended for use outside of the ICCS class, and is not
@@ -163,7 +164,7 @@ class ICCS:
         >>> # create a seismogram with completely random data
         >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
         >>> np.random.seed(42)  # set this for consistent results during testing
-        >>> iccs_random.data = np.random.rand(len(iccs_random))
+        >>> iccs_random.data = np.random.rand(len(iccs_random.data))
         >>> seismograms.append(iccs_random)
         >>>
         ```
@@ -468,7 +469,7 @@ class ICCS:
             ephemeral_seismograms.append(ephemeral_seismogram)
 
         # If all seismograms have the same length, return them now.
-        if len(lengths := set(len(s) for s in ephemeral_seismograms)) == 1:
+        if len(lengths := set(len(s.data) for s in ephemeral_seismograms)) == 1:
             return ephemeral_seismograms
 
         # Shorten seismograms if necessary and return (floating-point precision
@@ -765,7 +766,7 @@ def _calc_convergence(
         return float(
             norm(current_stack.data - prev_stack.data, 1)
             / norm(current_stack.data, 2)
-            / len(current_stack)
+            / len(current_stack.data)
         )
     raise ValueError(f"Unknown convergence method: {method}.")
 

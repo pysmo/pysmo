@@ -24,7 +24,7 @@ class TestPlotseisFunctions:
         from matplotlib.dates import num2date
 
         times = time_array(seismogram)
-        assert len(times) == len(seismogram)
+        assert len(times) == len(seismogram.data)
         assert (
             Timestamp(num2date(times[0])).timestamp()
             == seismogram.begin_time.timestamp()
@@ -39,7 +39,7 @@ class TestPlotseisFunctions:
         from pysmo.tools.plotutils import unix_time_array
 
         unix_times = unix_time_array(seismogram)
-        assert len(unix_times) == len(seismogram)
+        assert len(unix_times) == len(seismogram.data)
         assert (
             pytest.approx(
                 Timestamp.fromtimestamp(unix_times[0], timezone.utc).timestamp()
