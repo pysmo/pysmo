@@ -40,7 +40,7 @@ class Station(Location, Protocol):
     3. Orientation of the sensor.
     """
 
-    elevation: float | None
+    elevation: int | float | None
     """Station elevation in metres."""
 
 
@@ -104,7 +104,8 @@ class MiniStation:
     longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
     """Station longitude from -180 to 180 degrees."""
 
-    elevation: float | None = field(
-        default=None, validator=validators.optional(validators.instance_of(float | int))
+    elevation: int | float | None = field(
+        default=None,
+        validator=validators.optional(validators.instance_of((int, float))),
     )
     """Station elevation."""
