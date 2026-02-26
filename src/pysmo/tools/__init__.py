@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """Topic-specific tools that operate on pysmo types.
 
 --8<-- [start:in-the-box]
@@ -9,10 +10,7 @@ functionality under its own submodule, imported via
 
 """
 
-from .._utils import export_module_names
 from .iccs import ICCSSeismogram, MiniICCSSeismogram
 
 type _ToolsProto = ICCSSeismogram
 type _ToolsMini = MiniICCSSeismogram
-
-export_module_names(globals(), __name__)

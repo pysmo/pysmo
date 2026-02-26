@@ -23,13 +23,13 @@ _is_non_negative_timedelta = Is[lambda x: x.total_seconds() >= 0]
 UnitFloat = Annotated[float, _is_unit]
 """Float between 0.0 and 1.0."""
 
-PositiveNumber = Annotated[float | int, _is_positive]
+PositiveNumber = Annotated[int | float, _is_positive]
 """Positive Numbers (Float or Int)."""
 
-NegativeNumber = Annotated[float | int, _is_negative]
+NegativeNumber = Annotated[int | float, _is_negative]
 """Negative Numbers (Float or Int)."""
 
-NonNegativeNumber = Annotated[float | int, _is_non_negative]
+NonNegativeNumber = Annotated[int | float, _is_non_negative]
 """Non-negative Numbers (Float or Int)."""
 
 PositiveTimedelta = Annotated[Timedelta, _is_positive_timedelta]

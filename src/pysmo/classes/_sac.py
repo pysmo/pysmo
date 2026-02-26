@@ -5,8 +5,8 @@ from pysmo.lib.io._sacio import (
     SAC_REQUIRED_TIME_HEADERS,
     SAC_OPTIONAL_TIME_HEADERS,
 )
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
-from pysmo.lib.decorators import value_not_none
+from pysmo.lib.defaults import SeismogramDefaults
+from beartype import beartype
 from pandas import Timestamp, Timedelta
 from typing import overload, Self, TYPE_CHECKING
 from attrs import define, field
@@ -44,10 +44,10 @@ class _SacNested:
             return Timestamp(self._parent.ref_datetime)
 
         warnings.warn(
-            f"SAC object has no reference time (kzdate/kztime), assuming {SEISMOGRAM_DEFAULTS.begin_time.value.isoformat()}",
+            f"SAC object has no reference time (kzdate/kztime), assuming {SeismogramDefaults.begin_time.isoformat()}",
             RuntimeWarning,
         )
-        return SEISMOGRAM_DEFAULTS.begin_time.value
+        return SeismogramDefaults.begin_time
 
     @overload
     def _get_timestamp_from_sac(
@@ -89,14 +89,13 @@ class _SacNested:
         """Set SAC times using Timestamp."""
 
         if value is None:
-            if isinstance(sac_time_header, SAC_REQUIRED_TIME_HEADERS):
-                raise TypeError(f"SAC time header '{sac_time_header}' may not be None.")
             setattr(self._parent, sac_time_header, None)
             return
         seconds = (value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
 
 
+@beartype
 @define(kw_only=True)
 class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
     """Helper class for SAC seismogram attributes.
@@ -165,11 +164,11 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
             return self._get_timestamp_from_sac(SAC_REQUIRED_TIME_HEADERS.b)
 
         @begin_time.setter
-        @value_not_none
         def begin_time(self, value: Timestamp) -> None:
             self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
 
 
+@beartype
 @define(kw_only=True)
 class SacStation(_SacNested):
     """Helper class for SAC station attributes.
@@ -202,7 +201,6 @@ class SacStation(_SacNested):
         return self._parent.kstnm
 
     @name.setter
-    @value_not_none
     def name(self, value: str) -> None:
         setattr(self._parent, "kstnm", value)
 
@@ -216,7 +214,6 @@ class SacStation(_SacNested):
         return self._parent.knetwk
 
     @network.setter
-    @value_not_none
     def network(self, value: str) -> None:
         setattr(self._parent, "knetwk", value)
 
@@ -229,7 +226,6 @@ class SacStation(_SacNested):
         return self._parent.khole
 
     @location.setter
-    @value_not_none
     def location(self, value: str) -> None:
         setattr(self._parent, "khole", value)
 
@@ -242,12 +238,11 @@ class SacStation(_SacNested):
         return self._parent.kcmpnm
 
     @channel.setter
-    @value_not_none
     def channel(self, value: str) -> None:
         setattr(self._parent, "kcmpnm", value)
 
     @property
-    def latitude(self) -> float:
+    def latitude(self) -> int | float:
         """Station latitude."""
 
         if self._parent.stla is None:
@@ -255,12 +250,11 @@ class SacStation(_SacNested):
         return self._parent.stla
 
     @latitude.setter
-    @value_not_none
-    def latitude(self, value: float) -> None:
+    def latitude(self, value: int | float) -> None:
         setattr(self._parent, "stla", value)
 
     @property
-    def longitude(self) -> float:
+    def longitude(self) -> int | float:
         """Station longitude."""
 
         if self._parent.stlo is None:
@@ -268,21 +262,21 @@ class SacStation(_SacNested):
         return self._parent.stlo
 
     @longitude.setter
-    @value_not_none
-    def longitude(self, value: float) -> None:
+    def longitude(self, value: int | float) -> None:
         setattr(self._parent, "stlo", value)
 
     @property
-    def elevation(self) -> float | None:
+    def elevation(self) -> int | float | None:
         """Station elevation in meters."""
 
         return self._parent.stel
 
     @elevation.setter
-    def elevation(self, value: float | None) -> None:
+    def elevation(self, value: int | float | None) -> None:
         setattr(self._parent, "stel", value)
 
 
+@beartype
 @define(kw_only=True)
 class SacEvent(_SacNested):
     """Helper class for SAC event attributes.
@@ -310,7 +304,7 @@ class SacEvent(_SacNested):
     """
 
     @property
-    def latitude(self) -> float:
+    def latitude(self) -> int | float:
         """Event Latitude."""
 
         if self._parent.evla is None:
@@ -318,12 +312,11 @@ class SacEvent(_SacNested):
         return self._parent.evla
 
     @latitude.setter
-    @value_not_none
-    def latitude(self, value: float) -> None:
+    def latitude(self, value: int | float) -> None:
         setattr(self._parent, "evla", value)
 
     @property
-    def longitude(self) -> float:
+    def longitude(self) -> int | float:
         """Event Longitude."""
 
         if self._parent.evlo is None:
@@ -331,12 +324,11 @@ class SacEvent(_SacNested):
         return self._parent.evlo
 
     @longitude.setter
-    @value_not_none
-    def longitude(self, value: float) -> None:
+    def longitude(self, value: int | float) -> None:
         setattr(self._parent, "evlo", value)
 
     @property
-    def depth(self) -> float:
+    def depth(self) -> int | float:
         """Event depth in meters."""
 
         if self._parent.evdp is None:
@@ -344,8 +336,7 @@ class SacEvent(_SacNested):
         return self._parent.evdp * 1000
 
     @depth.setter
-    @value_not_none
-    def depth(self, value: float) -> None:
+    def depth(self, value: int | float) -> None:
         setattr(self._parent, "evdp", value / 1000)
 
     @property
@@ -367,7 +358,6 @@ class SacEvent(_SacNested):
         return event_time
 
     @time.setter
-    @value_not_none
     def time(self, value: Timestamp) -> None:
         self._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, value)
 
@@ -410,12 +400,10 @@ class RequiredSacTimestamp:
 
         return instance._ref_datetime + Timedelta(seconds=seconds)
 
+    @beartype
     def __set__(self, obj: "_SacNested", value: Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
-        if value is None:
-            raise TypeError(f"SAC time header '{self._name}' may not be None.")
-
         seconds = (value - obj._ref_datetime).total_seconds()
         setattr(obj._parent, self._name, seconds)
 
@@ -456,6 +444,7 @@ class OptionalSacTimestamp:
 
         return instance._ref_datetime + Timedelta(seconds=seconds)
 
+    @beartype
     def __set__(self, obj: "_SacNested", value: Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
@@ -522,7 +511,7 @@ class SacTimestamps(_SacNested):
         >>> sac.timestamps.b = None
         Traceback (most recent call last):
         ...
-        TypeError: SAC time header 'b' may not be None.
+        beartype.roar.BeartypeCallHintParamViolation: ...
         >>>
         ```
     """
@@ -640,7 +629,7 @@ class SAC(SacIO):
         >>> sac.event.latitude = None
         Traceback (most recent call last):
         ...
-        TypeError: SacEvent.latitude may not be of None type.
+        beartype.roar.BeartypeCallHintParamViolation: ...
         >>>
         ```
 

@@ -23,6 +23,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(tools-iccs)** Make figures modular for easier re-use
 - Use 2 descriptors instead of 1 complicated one for sac timestamps
 - **(signal)** Add filter registry decorator ([#257](https://github.com/pysmo/pysmo/issues/257))
+- **(types)** [**breaking**] Remove __len__ method from Seismogram
 
 ### 🚀 New Features
 

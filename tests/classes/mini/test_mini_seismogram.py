@@ -3,7 +3,7 @@ import pytest
 from pandas import Timestamp, Timedelta
 from datetime import timezone
 from pysmo import Seismogram, MiniSeismogram
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SeismogramDefaults
 
 
 class TestMiniSeismogram:
@@ -19,35 +19,19 @@ class TestMiniSeismogram:
         """Test default attributes."""
 
         miniseis = MiniSeismogram()
-        assert miniseis.begin_time.tzinfo == SEISMOGRAM_DEFAULTS.begin_time.value.tzinfo
-        assert (
-            miniseis.begin_time.year
-            == SEISMOGRAM_DEFAULTS.begin_time.value.year
-            == 1970
-        )
-        assert (
-            miniseis.begin_time.month == SEISMOGRAM_DEFAULTS.begin_time.value.month == 1
-        )
-        assert miniseis.begin_time.day == SEISMOGRAM_DEFAULTS.begin_time.value.day == 1
-        assert (
-            miniseis.begin_time.hour == SEISMOGRAM_DEFAULTS.begin_time.value.hour == 0
-        )
-        assert (
-            miniseis.begin_time.minute
-            == SEISMOGRAM_DEFAULTS.begin_time.value.minute
-            == 0
-        )
-        assert (
-            miniseis.begin_time.second
-            == SEISMOGRAM_DEFAULTS.begin_time.value.second
-            == 0
-        )
+        assert miniseis.begin_time.tzinfo == SeismogramDefaults.begin_time.tzinfo
+        assert miniseis.begin_time.year == SeismogramDefaults.begin_time.year == 1970
+        assert miniseis.begin_time.month == SeismogramDefaults.begin_time.month == 1
+        assert miniseis.begin_time.day == SeismogramDefaults.begin_time.day == 1
+        assert miniseis.begin_time.hour == SeismogramDefaults.begin_time.hour == 0
+        assert miniseis.begin_time.minute == SeismogramDefaults.begin_time.minute == 0
+        assert miniseis.begin_time.second == SeismogramDefaults.begin_time.second == 0
         assert (
             miniseis.begin_time.microsecond
-            == SEISMOGRAM_DEFAULTS.begin_time.value.microsecond
+            == SeismogramDefaults.begin_time.microsecond
             == 0
         )
-        assert miniseis.delta == SEISMOGRAM_DEFAULTS.delta.value == Timedelta(seconds=1)
+        assert miniseis.delta == SeismogramDefaults.delta == Timedelta(seconds=1)
         assert miniseis.data.size == 0
         assert len(miniseis.data) == 0
 

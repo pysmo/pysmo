@@ -1,13 +1,21 @@
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SeismogramDefaults
 from dataclasses import dataclass
+from typing import Self
+
+__all__ = ["SacIODefaults"]
 
 
-@dataclass(frozen=True)
-class _SACIO_DEFAULTS:
+@dataclass(init=False)
+class SacIODefaults:
     """SacIO defaults."""
 
+    def __new__(cls) -> Self:
+        raise RuntimeError(
+            "SacIODefaults is not meant to be instantiated. Use SacIODefaults.<attribute> instead."
+        )
+
     b: float = 0
-    delta: float = SEISMOGRAM_DEFAULTS.delta.value.total_seconds()
+    delta: float = SeismogramDefaults.delta.total_seconds()
     nvhdr: int = 7
     iftype: str = "time"
     idep: str = "unkn"
@@ -18,6 +26,3 @@ class _SACIO_DEFAULTS:
     iris_timeout_seconds: int = 10
     iris_request_retries: int = 3
     iris_retry_delay_seconds: int = 20
-
-
-SACIO_DEFAULTS = _SACIO_DEFAULTS()
