@@ -1,3 +1,5 @@
+import numpy as np
+import math
 from pysmo import Seismogram
 from scipy.fft import rfft, irfft, next_fast_len
 from scipy.linalg import lstsq, inv
@@ -6,9 +8,7 @@ from scipy.stats.mstats import pearsonr as _pearsonr
 from collections.abc import Sequence
 from beartype import beartype
 from pandas import Timedelta
-import numpy as np
 from numpy.typing import NDArray
-import math
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 

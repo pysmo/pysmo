@@ -20,6 +20,7 @@
     in {
       default = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [
+          bashInteractive
           gnumake
           uv
           ruff

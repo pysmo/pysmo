@@ -1,9 +1,9 @@
+import matplotlib as mpl
+import numpy as np
 from ._types import ConvergenceMethod
 from dataclasses import dataclass, field
 from matplotlib.colors import Colormap
 from pandas import Timedelta
-import matplotlib as mpl
-import numpy as np
 
 
 @dataclass(frozen=True)
@@ -37,4 +37,4 @@ class _IccsDefaults:
     index_zero_multiplier: float = 0.9
 
 
-ICCS_DEFAULTS = _IccsDefaults()
+IccsDefaults = _IccsDefaults()

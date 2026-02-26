@@ -19,7 +19,6 @@ dependencies = [
     "matplotlib>=3.10.7",
     "pyproj>=3.7.2",
     "attrs>=25.4.0",
-    "attrs-strict>=1.0.1",
     "cattrs>=25.3.0",
     "scipy-stubs>=1.16.2.3",
     "scipy>=1.16.2",
@@ -84,6 +83,7 @@ exclude = [
 ]
 [tool.hatch.build.targets.wheel]
 packages = ["src/pysmo"]
+exclude = ["src/pysmo/conftest.py"]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -122,6 +122,7 @@ warn_unused_ignores = false
 source = ["src"]
 omit = [
   "src/pysmo/lib/io/_sacio/_render_sacio.py",
+  "src/pysmo/conftest.py",
   ]
 
 [tool.coverage.report]

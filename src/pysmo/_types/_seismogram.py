@@ -1,6 +1,6 @@
 import numpy as np
 from pysmo.lib.validators import datetime_is_utc
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.typing import PositiveTimedelta
 from typing import Protocol, runtime_checkable
 from attrs import define, field
@@ -99,11 +99,11 @@ class MiniSeismogram(SeismogramEndtimeMixin):
     """
 
     begin_time: Timestamp = field(
-        default=SEISMOGRAM_DEFAULTS.begin_time.value, validator=datetime_is_utc
+        default=SeismogramDefaults.begin_time, validator=datetime_is_utc
     )
     """Seismogram begin time."""
 
-    delta: PositiveTimedelta = SEISMOGRAM_DEFAULTS.delta.value
+    delta: PositiveTimedelta = SeismogramDefaults.delta
     """Seismogram sampling interval."""
 
     data: np.ndarray = field(factory=lambda: np.array([]))
