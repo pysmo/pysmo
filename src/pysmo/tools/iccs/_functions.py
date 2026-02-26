@@ -1,7 +1,7 @@
 """Functions for the ICCS class."""
 
 from ._iccs import ICCS
-from ._defaults import ICCS_DEFAULTS
+from ._defaults import IccsDefaults
 from collections.abc import Callable
 from typing import overload, Literal
 from pandas import Timedelta
@@ -16,12 +16,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 __all__ = [
-    "plot_stack",
     "plot_seismograms",
+    "plot_stack",
     "update_all_picks",
+    "update_min_ccnorm",
     "update_pick",
     "update_timewindow",
-    "update_min_ccnorm",
 ]
 
 
@@ -168,7 +168,7 @@ def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> N
     seismogram_data = [s.data for s, m in zip(seismograms, mask) if m]
 
     norm = PowerNorm(vmin=np.min(ccnorms), vmax=np.max(ccnorms), gamma=2)
-    colors = ICCS_DEFAULTS.stack_cmap(norm(ccnorms))
+    colors = IccsDefaults.stack_cmap(norm(ccnorms))
 
     for data, color in zip(seismogram_data, colors):
         ax.plot(time, data, linewidth=0.4, color=color)
@@ -187,7 +187,7 @@ def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> N
     fig = ax.get_figure()
     if fig:
         fig.colorbar(
-            ScalarMappable(norm=norm, cmap=ICCS_DEFAULTS.stack_cmap),
+            ScalarMappable(norm=norm, cmap=IccsDefaults.stack_cmap),
             ax=ax,
             label="|Correlation coefficient|",
         )
@@ -238,7 +238,7 @@ def _draw_common_image(
         extent=(tmin, tmax, 0, len(seismogram_matrix)),
         vmin=-1,
         vmax=1,
-        cmap=ICCS_DEFAULTS.img_cmap,
+        cmap=IccsDefaults.img_cmap,
         aspect="auto",
         interpolation="none",
     )
@@ -336,7 +336,7 @@ def _setup_ccnorm_picker(
     def calc_ccnorm(line: Line2D) -> float:
         index = round(line.get_ydata()[0], 0)  # type: ignore
         if index == 0:
-            return ICCS_DEFAULTS.index_zero_multiplier * current_ccnorms[0]
+            return IccsDefaults.index_zero_multiplier * current_ccnorms[0]
         return float(np.mean(current_ccnorms[index - 1 : index + 1]))
 
     def onclick(event: Event) -> None:
@@ -798,7 +798,6 @@ def update_min_ccnorm(
 
     def on_save(_: Event) -> None:
         iccs.min_ccnorm = pending_val[0]
-        iccs._clear_caches()
         plt.close()
 
     b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)

@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Pysmo protocol classes and their minimal implementations.
 
@@ -20,8 +21,6 @@ subpackages.
 
 from importlib.metadata import version
 from ._utils import export_module_names
-
-
 from ._types import (
     Seismogram,
     Station,
@@ -37,6 +36,11 @@ from ._types import (
 
 __version__ = version("pysmo")
 
+type _BaseProto = Seismogram | Station | Event | Location | LocationWithDepth
+type _BaseMini = (
+    MiniSeismogram | MiniStation | MiniEvent | MiniLocation | MiniLocationWithDepth
+)
+
 
 __all__ = [
     "Seismogram",
@@ -51,9 +55,5 @@ __all__ = [
     "MiniLocationWithDepth",
 ]
 
-type _BaseProto = Seismogram | Station | Event | Location | LocationWithDepth
-type _BaseMini = (
-    MiniSeismogram | MiniStation | MiniEvent | MiniLocation | MiniLocationWithDepth
-)
 
 export_module_names(globals(), __name__)

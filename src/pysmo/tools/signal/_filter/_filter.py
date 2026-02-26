@@ -15,7 +15,7 @@ def filter(
     seismogram: Seismogram,
     filter_name: FilterName,
     clone: Literal[False] = ...,
-    **filter_options: float | int | bool,
+    **filter_options: bool | int | float,
 ) -> None: ...
 
 
@@ -24,7 +24,7 @@ def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
     clone: Literal[True],
-    **filter_options: float | int | bool,
+    **filter_options: bool | int | float,
 ) -> T: ...
 
 
@@ -32,7 +32,7 @@ def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
     clone: bool = False,
-    **filter_options: float | int | bool,
+    **filter_options: bool | int | float,
 ) -> T | None:
     """
     Apply a specified filter to the input seismogram.

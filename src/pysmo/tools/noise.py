@@ -27,7 +27,7 @@ from pandas import Timestamp, Timedelta
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SeismogramDefaults
 
 __all__ = ["NoiseModel", "peterson", "generate_noise"]
 
@@ -36,13 +36,19 @@ __all__ = ["NoiseModel", "peterson", "generate_noise"]
 class NoiseModel:
     """Class to store seismic noise models.
 
-    Args:
+    Parameters:
         psd: Power spectral density of ground acceleration [dB].
         T: Period [seconds].
     """
 
-    psd: np.ndarray = field(default_factory=lambda: np.array([]))
-    T: np.ndarray = field(default_factory=lambda: np.array([]))
+    psd: np.ndarray = field(
+        default_factory=lambda: np.array([]),
+        metadata={"description": "Power spectral density of ground acceleration [dB]."},
+    )
+    T: np.ndarray = field(
+        default_factory=lambda: np.array([]),
+        metadata={"description": "Period [seconds]."},
+    )
 
     def __post_init__(self) -> None:
         if np.size(self.psd) != np.size(self.T):
@@ -186,8 +192,8 @@ def peterson(noise_level: float) -> NoiseModel:
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    delta: Timedelta = SEISMOGRAM_DEFAULTS.delta.value,
-    begin_time: Timestamp = SEISMOGRAM_DEFAULTS.begin_time.value,
+    delta: Timedelta = SeismogramDefaults.delta,
+    begin_time: Timestamp = SeismogramDefaults.begin_time,
     return_velocity: bool = False,
     seed: int | None = None,
 ) -> MiniSeismogram:

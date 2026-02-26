@@ -1,3 +1,7 @@
+import struct
+import httpx
+import time as _time
+import numpy as np
 from ._sacio_rendered import (
     SacIOBase,
     SAC_TIME_HEADERS,
@@ -6,22 +10,20 @@ from ._sacio_rendered import (
     SAC_HEADERS,
     SAC_FOOTERS,
 )
-from ._lib import SACIO_DEFAULTS
+from ._lib import SacIODefaults
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 from attrs import define
+from beartype import beartype
 from typing import Any, Self, Literal
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from zipfile import ZipFile
 from os import PathLike
 from pathlib import Path
-import struct
-import httpx
-import time as _time
-import numpy as np
 
 
+@beartype
 @define(kw_only=True)
 class SacIO(SacIOBase):
     """
@@ -95,35 +97,35 @@ class SacIO(SacIOBase):
     """
 
     @property
-    def depmin(self) -> float | None:
+    def depmin(self) -> int | float | None:
         """Minimum value of dependent variable."""
         if self.npts == 0:
             return None
         return np.min(self.data).item()
 
     @property
-    def depmax(self) -> float | None:
+    def depmax(self) -> int | float | None:
         """Maximum value of dependent variable."""
         if self.npts == 0:
             return None
         return np.max(self.data).item()
 
     @property
-    def depmen(self) -> float | None:
+    def depmen(self) -> int | float | None:
         """Mean value of dependent variable."""
         if self.npts == 0:
             return None
         return np.mean(self.data).item()
 
     @property
-    def e(self) -> float:
+    def e(self) -> int | float:
         """Ending value of the independent variable."""
         if self.npts == 0:
             return self.b
         return self.b + (self.npts - 1) * self.delta
 
     @property
-    def dist(self) -> float:
+    def dist(self) -> int | float:
         """Station to event distance (km)."""
         if self.stla and self.stlo and self.evla and self.evlo:
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
@@ -134,7 +136,7 @@ class SacIO(SacIOBase):
         raise TypeError("One or more coordinates are None.")
 
     @property
-    def az(self) -> float:
+    def az(self) -> int | float:
         """Event to station azimuth (degrees)."""
         if self.stla and self.stlo and self.evla and self.evlo:
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
@@ -143,7 +145,7 @@ class SacIO(SacIOBase):
         raise TypeError("One or more coordinates are None.")
 
     @property
-    def baz(self) -> float:
+    def baz(self) -> int | float:
         """Station to event azimuth (degrees)."""
         if self.stla and self.stlo and self.evla and self.evlo:
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
@@ -152,7 +154,7 @@ class SacIO(SacIOBase):
         raise TypeError("One or more coordinates are None.")
 
     @property
-    def gcarc(self) -> float:
+    def gcarc(self) -> int | float:
         """Station to event great circle arc length (degrees)."""
         if self.stla and self.stlo and self.evla and self.evlo:
             lat1, lon1 = np.deg2rad(self.stla), np.deg2rad(self.stlo)
@@ -166,28 +168,28 @@ class SacIO(SacIOBase):
         raise TypeError("One or more coordinates are None.")
 
     @property
-    def xminimum(self) -> float | None:
+    def xminimum(self) -> int | float | None:
         """Minimum value of X (Spectral files only)."""
         if self.nxsize == 0 or not self.nxsize:
             return None
         return np.min(self.x).item()
 
     @property
-    def xmaximum(self) -> float | None:
+    def xmaximum(self) -> int | float | None:
         """Maximum value of X (Spectral files only)."""
         if self.nxsize == 0 or not self.nxsize:
             return None
         return np.max(self.x).item()
 
     @property
-    def yminimum(self) -> float | None:
+    def yminimum(self) -> int | float | None:
         """Minimum value of Y (Spectral files only)."""
         if self.nysize == 0 or not self.nysize:
             return None
         return np.min(self.y).item()
 
     @property
-    def ymaximum(self) -> float | None:
+    def ymaximum(self) -> int | float | None:
         """Maximum value of Y (Spectral files only)."""
         if self.nysize == 0 or not self.nysize:
             return None
@@ -413,18 +415,18 @@ class SacIO(SacIOBase):
 
         transport = httpx.HTTPTransport(retries=3)
         client = httpx.Client(transport=transport)
-        for attempt in range(SACIO_DEFAULTS.iris_request_retries):
+        for attempt in range(SacIODefaults.iris_request_retries):
             response = client.get(
-                SACIO_DEFAULTS.iris_base_url,
+                SacIODefaults.iris_base_url,
                 params=kwargs,
                 follow_redirects=False,
-                timeout=SACIO_DEFAULTS.iris_timeout_seconds,
+                timeout=SacIODefaults.iris_timeout_seconds,
             )
             if (
                 response.status_code == 500
-                and attempt < SACIO_DEFAULTS.iris_request_retries - 1
+                and attempt < SacIODefaults.iris_request_retries - 1
             ):
-                _time.sleep(SACIO_DEFAULTS.iris_retry_delay_seconds)
+                _time.sleep(SacIODefaults.iris_retry_delay_seconds)
                 continue
             response.raise_for_status()
             break
@@ -551,7 +553,7 @@ class SacIO(SacIOBase):
                     if "object has no setter" in str(e):
                         pass
 
-    def change_all_times(self, dtime: float) -> None:
+    def change_all_times(self, dtime: int | float) -> None:
         """Change all time headers by the same amount.
 
         Args:
