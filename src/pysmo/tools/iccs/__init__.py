@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Iterative Cross-Correlation and Stack (ICCS).
 
@@ -141,10 +142,10 @@ from ._types import MiniICCSSeismogram, ICCSSeismogram
 from ._functions import (
     plot_seismograms,
     plot_stack,
-    update_pick,
-    update_timewindow,
     update_all_picks,
     update_min_ccnorm,
+    update_pick,
+    update_timewindow,
 )
 
 __all__ = [
@@ -153,10 +154,10 @@ __all__ = [
     "MiniICCSSeismogram",
     "plot_seismograms",
     "plot_stack",
-    "update_pick",
-    "update_timewindow",
     "update_all_picks",
     "update_min_ccnorm",
+    "update_pick",
+    "update_timewindow",
 ]
 
 export_module_names(globals(), __name__)

@@ -1,10 +1,11 @@
-from attrs_strict import AttributeTypeError
+from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
+from beartype.roar import BeartypeCallHintParamViolation
 import numpy as np
 import numpy.testing as npt
 from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
 from pysmo.lib.io import SacIO
-from pysmo.lib.defaults import SEISMOGRAM_DEFAULTS
+from pysmo.lib.defaults import SeismogramDefaults
 from pandas import Timestamp, Timedelta
 from datetime import timezone
 from pathlib import Path
@@ -30,12 +31,12 @@ class TestSAC:
         sac = SAC()
 
         with pytest.warns(RuntimeWarning) as record:
-            assert sac.seismogram.begin_time == SEISMOGRAM_DEFAULTS.begin_time.value
+            assert sac.seismogram.begin_time == SeismogramDefaults.begin_time
         assert (
             str(record[0].message)
             == "SAC object has no reference time (kzdate/kztime), assuming 1970-01-01T00:00:00+00:00"
         )
-        assert sac.seismogram.delta == SEISMOGRAM_DEFAULTS.delta.value
+        assert sac.seismogram.delta == SeismogramDefaults.delta
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 
         with pytest.raises(TypeError):
@@ -117,7 +118,13 @@ class TestSAC:
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
         for item in ["begin_time", "delta", "data"]:
-            with pytest.raises((TypeError, AttributeError, AttributeTypeError)):
+            with pytest.raises(
+                (
+                    TypeError,
+                    AttributeError,
+                    BeartypeCallHintParamViolation,
+                )
+            ):
                 setattr(sacseis, item, None)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
@@ -159,7 +166,7 @@ class TestSAC:
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
         for item in ["name", "latitude", "longitude"]:
-            with pytest.raises((TypeError, AttributeTypeError)):
+            with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
                 setattr(sacstation, item, None)
 
         # This is also true for getting None back from attributes.
@@ -216,7 +223,7 @@ class TestSAC:
         # Setting attributes that are not optional in the types
         # should also not be optional in the classes:
         for item in ["depth", "latitude", "longitude", "time"]:
-            with pytest.raises((TypeError, AttributeTypeError)):
+            with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
                 setattr(sacevent, item, None)
         sac.evdp = None
         with pytest.raises(TypeError):
@@ -241,7 +248,13 @@ class TestSAC:
         assert sac.timestamps.t0 is None
         sac.timestamps.b = now
         assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
-        with pytest.raises(TypeError):
+        with pytest.raises(BeartypeCallHintParamViolation):
             sac.timestamps.b = None  # type: ignore
         with pytest.raises(TypeError):
             sac.timestamps.b = Timestamp.now()
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_set_sac_from_timestamp_optional_none(self, sacfile: Path) -> None:
+        sac = SAC.from_file(sacfile)
+        sac.event._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, None)
+        assert getattr(sac.event._parent, SAC_OPTIONAL_TIME_HEADERS.o) is None

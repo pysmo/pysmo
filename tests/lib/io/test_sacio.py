@@ -1,4 +1,6 @@
-from attrs_strict import AttributeTypeError, UnionError
+"""Tests for pysmo.lib.io.SacIO."""
+
+from beartype.roar import BeartypeCallHintParamViolation
 from pysmo.lib.io import SacIO
 from pandas import Timestamp, Timedelta
 from datetime import timezone
@@ -10,13 +12,137 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 
+# ─────────────────────────── Header tables ─────────────────────────────────
+# Tests that set headers use fresh SacIO() instances (default iztype="unkn"),
+# avoiding any iztype conflicts for time headers.
+
+# (header, valid_float_value)
+_FLOAT_HEADERS: list[tuple[str, float]] = [
+    ("delta", 0.05),
+    ("odelta", 0.05),
+    ("b", 10.0),
+    ("o", 10.0),
+    ("a", 10.0),
+    *[(f"t{i}", float(i + 1)) for i in range(10)],
+    ("f", 100.0),
+    ("stla", 45.0),
+    ("stlo", 90.0),
+    ("stel", 100.0),
+    ("stdp", 50.0),
+    ("evla", -30.0),
+    ("evlo", -70.0),
+    ("evel", 0.0),
+    ("evdp", 10000.0),
+    ("mag", 5.5),
+    ("cmpaz", 90.0),
+    ("cmpinc", 45.0),
+    *[(f"user{i}", float(i)) for i in range(10)],
+    *[(f"resp{i}", float(i) * 1e-6) for i in range(10)],
+]
+
+# Optional float headers (float | None) — can be cleared to None
+_OPTIONAL_FLOAT_HEADERS: list[str] = [
+    "odelta",
+    "o",
+    "a",
+    *[f"t{i}" for i in range(10)],
+    "f",
+    "stla",
+    "stlo",
+    "stel",
+    "stdp",
+    "evla",
+    "evlo",
+    "evel",
+    "evdp",
+    "mag",
+    "cmpaz",
+    "cmpinc",
+    *[f"user{i}" for i in range(10)],
+    *[f"resp{i}" for i in range(10)],
+]
+
+# (header, valid_int_value)
+_INT_HEADERS: list[tuple[str, int]] = [
+    ("nzyear", 2020),
+    ("nzjday", 100),
+    ("nzhour", 12),
+    ("nzmin", 30),
+    ("nzsec", 45),
+    ("nzmsec", 500),
+    ("nvhdr", 6),
+    ("norid", 1),
+    ("nevid", 42),
+    ("nwfid", 7),
+]
+
+# (header, valid_str_value, max_len)
+_STR_HEADERS: list[tuple[str, str, int]] = [
+    ("kstnm", "ABC", 8),
+    ("kevnm", "test event", 16),
+    ("khole", "00", 8),
+    ("ko", "origin", 8),
+    ("ka", "P", 8),
+    *[(f"kt{i}", f"T{i}", 8) for i in range(10)],
+    ("kf", "fini", 8),
+    ("kuser0", "user0", 8),
+    ("kuser1", "user1", 8),
+    ("kuser2", "user2", 8),
+    ("kcmpnm", "BHZ", 8),
+    ("knetwk", "YJ", 8),
+    ("kdatrd", "20200101", 8),
+    ("kinst", "GPS", 8),
+    ("iinst", "GPS", 4),
+    ("istreg", "EU", 4),
+    ("ievreg", "WA", 4),
+]
+
+_BOOL_HEADERS: list[str] = ["leven", "lovrok", "lpspol"]
+
+# (header, valid_enum_string)
+_ENUM_HEADERS: list[tuple[str, str]] = [
+    ("iftype", "time"),
+    ("idep", "unkn"),
+    ("iztype", "unkn"),
+    ("ievtyp", "quake"),
+    ("iqual", "good"),
+    ("isynth", "rldta"),
+    ("imagtyp", "mb"),
+    ("imagsrc", "neic"),
+    ("ibody", "earth"),
+]
+
+# Read-only computed properties (no setter)
+_READONLY_ATTRS: list[str] = [
+    "npts",
+    "e",
+    "depmin",
+    "depmax",
+    "depmen",
+    "dist",
+    "az",
+    "baz",
+    "gcarc",
+    "nxsize",
+    "nysize",
+    "xminimum",
+    "xmaximum",
+    "yminimum",
+    "ymaximum",
+    "lcalda",
+    "kzdate",
+    "kztime",
+]
+
+
+# ─────────────────────────── Basic tests ───────────────────────────────────
+
 
 def test_create_instance() -> None:
     sac = SacIO()
     assert isinstance(sac, SacIO)
 
 
-# TODO: add all defaults
 @pytest.mark.depends(on=["test_create_instance"])
 def test_defaults() -> None:
     sac = SacIO()
@@ -41,26 +167,26 @@ def test_ref_datetime() -> None:
 def test_create_instance_from_file(sacfile: Path, sacfile_no_b: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert isinstance(sac, SacIO)
-    # reading invalid SAC file with undefined mandatory field should fail
     with pytest.raises(RuntimeError):
         SacIO.from_file(sacfile_no_b)
 
 
 @pytest.mark.depends(on=["test_create_instance"])
 def test_write_to_file(empty_file: Path) -> None:
-    # create an "empty" instance
     sac = SacIO()
     sac.write(empty_file)
     sac = SacIO.from_file(empty_file)
     assert isinstance(sac, SacIO)
 
-    # try again with some data
     random_data = np.random.rand(1000)
     sac = SacIO(b=21.1, data=random_data)
     sac.write(empty_file)
     sac = SacIO.from_file(empty_file)
     assert pytest.approx(sac.b) == 21.1
     npt.assert_allclose(sac.data, random_data)
+
+
+# ─────────────────────────── Read all headers ──────────────────────────────
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
@@ -91,9 +217,7 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.t8 is None
     assert sac.t9 is None
     assert sac.f is None
-    # kzdate is a derived header
     assert sac.kzdate == "2005-03-01"
-    # kztime is a derived header
     assert sac.kztime == "07:24:05.500"
     assert sac.iztype == "o"
     assert sac.kinst is None
@@ -162,14 +286,18 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.mag is None
     assert sac.imagtyp is None
     assert sac.imagsrc is None
-    # try reading non-existing header
+    assert sac.nzyear == 2005
+    assert sac.nzjday == 60
+    assert sac.nzhour == 7
+    assert sac.nzmin == 24
+    assert sac.nzsec == 5
+    assert sac.nzmsec == 500
     with pytest.raises(AttributeError):
         _ = sac.nonexistingheader  # type: ignore[attr-defined]
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_v6_v7(sacfile_v6: Path, sacfile_v7: Path) -> None:
-    """Read all SacIO headers from a test file."""
     sac6 = SacIO.from_file(sacfile_v6)
     sac7 = SacIO.from_file(sacfile_v7)
     assert sac6.nvhdr == 6
@@ -186,7 +314,6 @@ def test_sacfile_IB(sacfile_IB: Path) -> None:
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_data(sacfile: Path) -> None:
-    """Test reading data."""
     sac = SacIO.from_file(sacfile)
     assert all(
         sac.data[:10]
@@ -205,77 +332,172 @@ def test_read_data(sacfile: Path) -> None:
     )
 
 
-@pytest.mark.depends(on=["test_read_headers"])
-def test_change_headers(sacfile: Path) -> None:
-    """Test changing header values."""
+# ─────────────────────────── Write headers ─────────────────────────────────
 
-    sac = SacIO.from_file(sacfile)
-    sac2 = SacIO.from_file(sacfile)
 
-    iftype_valid = "time"
-    iftype_invalid = "asdfasdf"
+@pytest.mark.parametrize(
+    "header,value", _FLOAT_HEADERS, ids=[h for h, _ in _FLOAT_HEADERS]
+)
+def test_set_float_header(header: str, value: float) -> None:
+    sac = SacIO()
+    setattr(sac, header, value)
+    assert getattr(sac, header) == pytest.approx(value)
 
-    # set iftype to a valid value
-    sac.iftype = iftype_valid
-    assert sac.iftype == iftype_valid
 
-    # set iftype to an enum that doesn't exist
-    with pytest.raises(ValueError):
-        sac.iftype = iftype_invalid
+@pytest.mark.parametrize("header", _OPTIONAL_FLOAT_HEADERS)
+def test_clear_optional_float_header(header: str) -> None:
+    sac = SacIO()
+    setattr(sac, header, None)
+    assert getattr(sac, header) is None
 
-    # set iftype to an invalid value
-    with pytest.raises(ValueError):
-        sac.iftype = "unkn"
 
-    # Try setting a header that should only accept integers with something else
-    with pytest.raises(UnionError):
-        sac.nzmsec = 3.3  # type: ignore
+@pytest.mark.parametrize("header,value", _INT_HEADERS, ids=[h for h, _ in _INT_HEADERS])
+def test_set_int_header(header: str, value: int) -> None:
+    sac = SacIO()
+    setattr(sac, header, value)
+    assert getattr(sac, header) == value
 
-    # ... same for floats
+
+@pytest.mark.parametrize("header", ["nwfid"])
+def test_clear_optional_int_header(header: str) -> None:
+    sac = SacIO()
+    setattr(sac, header, None)
+    assert getattr(sac, header) is None
+
+
+@pytest.mark.parametrize(
+    "header,value,_", _STR_HEADERS, ids=[h for h, _, __ in _STR_HEADERS]
+)
+def test_set_str_header(header: str, value: str, _: int) -> None:
+    sac = SacIO()
+    setattr(sac, header, value)
+    assert getattr(sac, header) == value
+
+
+@pytest.mark.parametrize(
+    "header,_,__", _STR_HEADERS, ids=[h for h, _, __ in _STR_HEADERS]
+)
+def test_clear_optional_str_header(header: str, _: str, __: int) -> None:
+    sac = SacIO()
+    setattr(sac, header, None)
+    assert getattr(sac, header) is None
+
+
+@pytest.mark.parametrize("header", _BOOL_HEADERS)
+def test_set_bool_header(header: str) -> None:
+    sac = SacIO()
+    current = getattr(sac, header)
+    setattr(sac, header, not current)
+    assert getattr(sac, header) == (not current)
+
+
+@pytest.mark.parametrize(
+    "header,value", _ENUM_HEADERS, ids=[h for h, _ in _ENUM_HEADERS]
+)
+def test_set_enum_header(header: str, value: str) -> None:
+    sac = SacIO()
+    setattr(sac, header, value)
+    assert getattr(sac, header) == value
+
+
+# ─────────────────────────── Type validation ───────────────────────────────
+
+
+@pytest.mark.parametrize("header,_", _FLOAT_HEADERS, ids=[h for h, _ in _FLOAT_HEADERS])
+def test_float_header_type_error(header: str, _: float) -> None:
+    """Float headers with converters raise TypeError for non-numeric types."""
+    sac = SacIO()
     with pytest.raises(TypeError):
-        sac.delta = [3.3]  # type: ignore
+        setattr(sac, header, [1.0])
 
-    # ... same for strings
-    with pytest.raises(UnionError):
-        sac.kuser0 = True  # type: ignore
 
-    # ... same for boolean
-    with pytest.raises(AttributeTypeError):
-        sac.leven = "abc"  # type: ignore
+@pytest.mark.parametrize("header,_", _INT_HEADERS, ids=[h for h, _ in _INT_HEADERS])
+def test_int_header_type_error(header: str, _: int) -> None:
+    """Int headers reject floats (no implicit truncation)."""
+    sac = SacIO()
+    with pytest.raises(TypeError):
+        setattr(sac, header, 3.3)
 
-    # Try setting a string that is too long
+
+@pytest.mark.parametrize(
+    "header,_,__", _STR_HEADERS, ids=[h for h, _, __ in _STR_HEADERS]
+)
+def test_str_header_type_error(header: str, _: str, __: int) -> None:
+    sac = SacIO()
+    with pytest.raises(TypeError):
+        setattr(sac, header, 123)
+
+
+@pytest.mark.parametrize("header", _BOOL_HEADERS)
+def test_bool_header_type_error(header: str) -> None:
+    sac = SacIO()
+    with pytest.raises(TypeError):
+        setattr(sac, header, "abc")
+
+
+# ─────────────────────────── Value validation ──────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "header,over,under",
+    [
+        ("stla", 91.0, -91.0),
+        ("stlo", 181.0, -181.0),
+        ("evla", 91.0, -91.0),
+        ("evlo", 181.0, -181.0),
+    ],
+)
+def test_float_header_range_error(header: str, over: float, under: float) -> None:
+    sac = SacIO()
     with pytest.raises(ValueError):
-        sac.kuser0 = "too long string"
+        setattr(sac, header, over)
+    with pytest.raises(ValueError):
+        setattr(sac, header, under)
 
-    # Does changing header fields in one instance effect another?
-    delta_old = sac.delta
-    sac2.delta = 2 * delta_old
-    assert sac.delta == pytest.approx(delta_old)
-    assert sac2.delta == pytest.approx(2 * delta_old)
 
-    # has the end time changed by changing delta?
-    assert sac.e != sac2.e
+@pytest.mark.parametrize(
+    "header,_,max_len", _STR_HEADERS, ids=[h for h, _, __ in _STR_HEADERS]
+)
+def test_str_header_max_len(header: str, _: str, max_len: int) -> None:
+    sac = SacIO()
+    with pytest.raises(ValueError):
+        setattr(sac, header, "x" * (max_len + 1))
 
-    # try changing read only header
+
+@pytest.mark.parametrize("header,_", _ENUM_HEADERS, ids=[h for h, _ in _ENUM_HEADERS])
+def test_invalid_enum_value(header: str, _: str) -> None:
+    sac = SacIO()
+    with pytest.raises(ValueError):
+        setattr(sac, header, "not_a_valid_enum")
+
+
+# ─────────────────────── Constructor type checking ─────────────────────────
+
+
+def test_beartype_method_type_checking() -> None:
+    """Beartype enforces types on explicitly annotated SacIO methods."""
+    sac = SacIO()
+    with pytest.raises(BeartypeCallHintParamViolation):
+        sac.ref_datetime = "not_a_datetime"  # type: ignore
+    with pytest.raises(BeartypeCallHintParamViolation):
+        sac.change_all_times("ten")  # type: ignore
+
+
+# ─────────────────────────── Read-only attrs ───────────────────────────────
+
+
+@pytest.mark.parametrize("attr", _READONLY_ATTRS)
+def test_readonly_attr(sacfile: Path, attr: str) -> None:
+    sac = SacIO.from_file(sacfile)
     with pytest.raises(AttributeError):
-        sac.npts = 123  # type: ignore
-
-    # try changing o, which is also iztype
-    with pytest.raises(RuntimeError):
-        sac.o = 123
-
-    dtime = 10
-    sac.a = 70
-    sac2.a = 70
-    sac2.change_all_times(dtime)
-    assert sac.o == sac2.o - dtime  # type: ignore
-    assert sac.b == sac2.b - dtime
-    assert sac.a == sac2.a - dtime  # type: ignore
+        setattr(sac, attr, 0)
 
 
-@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
+# ─────────────────────────── Misc behaviour ────────────────────────────────
+
+
+@pytest.mark.depends(on=["test_read_headers"])
 def test_change_data(sacfile: Path) -> None:
-    """Test changing data."""
     sac = SacIO.from_file(sacfile)
     newdata = np.array([132, 232, 3465, 111])
     sac.data = newdata
@@ -283,6 +505,28 @@ def test_change_data(sacfile: Path) -> None:
     assert sac.depmin == min(newdata)
     assert sac.depmax == max(newdata)
     assert sac.depmen == sum(newdata) / sac.npts
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_iztype_prevents_zero_time_change(sacfile: Path) -> None:
+    """Cannot change the header nominated as zero-time to a non-zero value."""
+    sac = SacIO.from_file(sacfile)
+    assert sac.iztype == "o"
+    with pytest.raises(RuntimeError):
+        sac.o = 123.0
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_change_all_times(sacfile: Path) -> None:
+    sac = SacIO.from_file(sacfile)
+    sac2 = SacIO.from_file(sacfile)
+    dtime = 10
+    sac.a = 70.0
+    sac2.a = 70.0
+    sac2.change_all_times(dtime)
+    assert sac.o == sac2.o - dtime  # type: ignore
+    assert sac.b == sac2.b - dtime
+    assert sac.a == sac2.a - dtime  # type: ignore
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])
@@ -297,7 +541,7 @@ def test_pickling(sacfile: Path, empty_file: Path) -> None:
     assert sac.b == sac2.b
 
 
-@pytest.mark.depends(on=["test_read_headers", "test_read_data", "test_change_headers"])
+@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
 def test_deepcopy(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     sac2 = copy.deepcopy(sac)
@@ -338,9 +582,7 @@ def test_file_and_buffer(sacfile: Path) -> None:
     assert from_file.t8 == from_buffer.t8
     assert from_file.t9 == from_buffer.t9
     assert from_file.f == from_buffer.f
-    # kzdate is a derived header
     assert from_file.kzdate == from_buffer.kzdate
-    # kztime is a derived header
     assert from_file.kztime == from_buffer.kztime
     assert from_file.iztype == from_buffer.iztype
     assert from_file.kinst == from_buffer.kinst
@@ -409,6 +651,12 @@ def test_file_and_buffer(sacfile: Path) -> None:
     assert from_file.mag == from_buffer.mag
     assert from_file.imagtyp == from_buffer.imagtyp
     assert from_file.imagsrc == from_buffer.imagsrc
+    assert from_file.nzyear == from_buffer.nzyear
+    assert from_file.nzjday == from_buffer.nzjday
+    assert from_file.nzhour == from_buffer.nzhour
+    assert from_file.nzmin == from_buffer.nzmin
+    assert from_file.nzsec == from_buffer.nzsec
+    assert from_file.nzmsec == from_buffer.nzmsec
     assert all(from_file.data == from_buffer.data)
 
 
