@@ -1,4 +1,4 @@
-from ._lib import SACIO_DEFAULTS
+from _lib import SacIODefaults
 from jinja2 import Environment, FileSystemLoader
 import os
 import yaml
@@ -76,46 +76,50 @@ for header, header_dict in headers.items():
     elif header_type == "f":
         headers[header]["python_type"] = "float"
         headers[header]["converter"] = "float"
-        headers[header]["validators"] = ["type_validator()"]
         if header in time_headers:
-            headers[header]["validators"].append("validate_with_iztype")
+            headers[header]["validators"] = [
+                "validators.instance_of(float)",
+                "validate_with_iztype",
+            ]
+        else:
+            headers[header]["validators"] = ["validators.instance_of(float)"]
     elif header_type == "n":
         headers[header]["python_type"] = "int"
-        headers[header]["validators"] = ["type_validator()"]
+        headers[header]["validators"] = ["validators.instance_of(int)"]
     elif header_type == "i":
         headers[header]["python_type"] = "str"
         headers[header]["validators"] = [
-            "type_validator()",
+            "validators.instance_of(str)",
             f"validators.max_len({headers[header]['length']})",
         ]
     elif header_type == "k":
         headers[header]["python_type"] = "str"
         headers[header]["validators"] = [
-            "type_validator()",
+            "validators.instance_of(str)",
             f"validators.max_len({headers[header]['length']})",
         ]
     elif header_type == "l":
         headers[header]["python_type"] = "bool"
-        headers[header]["validators"] = ["type_validator()"]
+        headers[header]["validators"] = ["validators.instance_of(bool)"]
 
 # override default validators
 headers["stla"]["validators"] = [
-    "type_validator()",
+    "validators.instance_of(float)",
     "validators.ge(-90)",
     "validators.le(90)",
 ]
 headers["stlo"]["validators"] = [
-    "type_validator()",
+    "validators.instance_of(float)",
     "validators.ge(-180)",
     "validators.le(180)",
 ]
 headers["evla"]["validators"] = [
-    "type_validator()",
+    "validators.instance_of(float)",
     "validators.ge(-90)",
     "validators.le(90)",
 ]
 headers["evlo"]["validators"] = [
-    "type_validator()",
+    "validators.instance_of(float)",
     "validators.ge(-180)",
     "validators.le(180)",
 ]
@@ -132,7 +136,9 @@ optional_time_headers = [
 
 environment = Environment(loader=FileSystemLoader(MYDIR))
 template = environment.get_template("sacio-template.py.j2")
-outfile = os.path.join(MYDIR, "_sacio_rendered.py")
+outfile = os.path.join(
+    MYDIR, "..", "src", "pysmo", "lib", "io", "_sacio", "_sacio_rendered.py"
+)
 
 content = template.render(
     headers=headers,
@@ -143,7 +149,7 @@ content = template.render(
     time_headers=time_headers,
     required_time_headers=required_time_headers,
     optional_time_headers=optional_time_headers,
-    sacio_defaults=SACIO_DEFAULTS,
+    sacio_defaults=SacIODefaults,
 )
 
 content = format_file_contents(content, fast=False, mode=FileMode())

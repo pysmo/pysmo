@@ -3,7 +3,7 @@
 import warnings
 import numpy as np
 from ._types import ICCSSeismogram, ConvergenceMethod
-from ._defaults import ICCS_DEFAULTS
+from ._defaults import IccsDefaults
 from pysmo import Seismogram, MiniSeismogram
 from pysmo._types._seismogram import SeismogramEndtimeMixin
 from pysmo.typing import (
@@ -314,7 +314,7 @@ class ICCS:
     """
 
     window_pre: Timedelta = field(
-        default=ICCS_DEFAULTS.window_pre,
+        default=IccsDefaults.window_pre,
         validator=[
             validators.lt(Timedelta(seconds=0)),
             _validate_window_pre,
@@ -324,7 +324,7 @@ class ICCS:
     """Beginning of the time window relative to the pick."""
 
     window_post: Timedelta = field(
-        default=ICCS_DEFAULTS.window_post,
+        default=IccsDefaults.window_post,
         validator=[
             validators.gt(Timedelta(seconds=0)),
             _validate_window_post,
@@ -334,7 +334,7 @@ class ICCS:
     """End of the time window relative to the pick."""
 
     context_width: Timedelta = field(
-        default=ICCS_DEFAULTS.context_width,
+        default=IccsDefaults.context_width,
         validator=[validators.gt(Timedelta(seconds=0)), _clear_cache_on_update],
     )
     """Context padding to apply before and after the time window.
@@ -342,7 +342,7 @@ class ICCS:
     This padding is *not* used for the cross-correlation."""
 
     ramp_width: NonNegativeTimedelta | NonNegativeNumber = field(
-        default=ICCS_DEFAULTS.ramp_width, validator=_clear_cache_on_update
+        default=IccsDefaults.ramp_width, validator=_clear_cache_on_update
     )
     """Width of taper ramp up and down.
 
@@ -351,7 +351,7 @@ class ICCS:
     """
 
     bandpass_apply: bool = field(
-        default=ICCS_DEFAULTS.bandpass_apply, validator=_clear_cache_on_update
+        default=IccsDefaults.bandpass_apply, validator=_clear_cache_on_update
     )
     """Filter seismograms with a bandpass filter before running ICCS.
 
@@ -366,16 +366,16 @@ class ICCS:
     """
 
     bandpass_fmin: float = field(
-        default=ICCS_DEFAULTS.bandpass_fmin, validator=_clear_cache_on_update
+        default=IccsDefaults.bandpass_fmin, validator=_clear_cache_on_update
     )
     """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
 
     bandpass_fmax: float = field(
-        default=ICCS_DEFAULTS.bandpass_fmax, validator=_clear_cache_on_update
+        default=IccsDefaults.bandpass_fmax, validator=_clear_cache_on_update
     )
     """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
 
-    min_ccnorm: np.floating | float = ICCS_DEFAULTS.min_ccnorm
+    min_ccnorm: np.floating | float = IccsDefaults.min_ccnorm
     """Minimum normalised cross-correlation coefficient for seismograms.
 
     When the ICCS algorithm is [executed][pysmo.tools.iccs.ICCS.__call__],
@@ -621,9 +621,9 @@ class ICCS:
         self,
         autoflip: bool = False,
         autoselect: bool = False,
-        convergence_limit: float = ICCS_DEFAULTS.convergence_limit,
-        convergence_method: ConvergenceMethod = ICCS_DEFAULTS.convergence_method,
-        max_iter: int = ICCS_DEFAULTS.max_iter,
+        convergence_limit: float = IccsDefaults.convergence_limit,
+        convergence_method: ConvergenceMethod = IccsDefaults.convergence_method,
+        max_iter: int = IccsDefaults.max_iter,
         max_shift: Timedelta | None = None,
     ) -> np.ndarray:
         """Run the iccs algorithm.
