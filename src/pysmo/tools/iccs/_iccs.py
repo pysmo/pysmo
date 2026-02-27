@@ -176,7 +176,7 @@ class ICCS:
         ```python
         >>> from pysmo.tools.iccs import ICCS, plot_stack
         >>> iccs = ICCS(seismograms)
-        >>> plot_stack(iccs, context=False)
+        >>> fig, ax = plot_stack(iccs, context=False)
         >>>
         ```
 
@@ -209,7 +209,7 @@ class ICCS:
         >>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
         >>>                            # a list of the convergence value after each
         >>>                            # iteration.
-        >>> plot_stack(iccs, context=False)
+        >>> fig, ax = plot_stack(iccs, context=False)
         >>>
         ```
 
@@ -240,7 +240,7 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoselect=True)
-        >>> plot_stack(iccs, context=False)
+        >>> fig, ax = plot_stack(iccs, context=False)
         >>>
         ```
 
@@ -269,7 +269,7 @@ class ICCS:
 
         ```python
         >>> _ = iccs(autoflip=True)
-        >>> plot_stack(iccs, context=False)
+        >>> fig, ax = plot_stack(iccs, context=False)
         >>>
         ```
 
@@ -672,6 +672,26 @@ class ICCS:
                 break
 
         return np.array(convergence_list)
+
+    def update_all_picks(self, pickdelta: Timedelta) -> None:
+        """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
+
+        Args:
+            pickdelta: delta applied to all picks.
+
+        Raises:
+            ValueError: If the new t1 is outside the valid range.
+        """
+
+        if not self.validate_pick(pickdelta):
+            raise ValueError(
+                "New t1 is outside the valid range. Consider reducing the time window."
+            )
+
+        for seismogram in self.seismograms:
+            current_pick = seismogram.t1 or seismogram.t0
+            seismogram.t1 = current_pick + pickdelta
+        self._clear_caches()  # seismograms and stack need to be refreshed
 
 
 def _update_seismogram(
