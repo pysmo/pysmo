@@ -1,5 +1,18 @@
-"""Functions for the ICCS class."""
+"""Extra plotting functions for the ICCS module.
 
+These functions provide additional plotting capabilities for the ICCS module.
+They are generally not meant to be consumed directly.
+Instead, use the higher-level plotting functions (e.g., `plot_stack`, `update_pick`)
+available directly from the `pysmo.tools.iccs` namespace, which provide a more
+integrated and user-friendly experience.
+
+This module exposes lower-level drawing primitives (`draw_common_stack`,
+`draw_common_image`) for advanced users who wish to customize their plotting
+workflows.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
 from ._iccs import ICCS
 from ._defaults import IccsDefaults
 from collections.abc import Callable
@@ -12,39 +25,16 @@ from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import Event, MouseEvent
-import numpy as np
-import matplotlib.pyplot as plt
 
 __all__ = [
     "plot_seismograms",
     "plot_stack",
-    "update_all_picks",
     "update_min_ccnorm",
     "update_pick",
     "update_timewindow",
+    "draw_common_stack",
+    "draw_common_image",
 ]
-
-
-def update_all_picks(iccs: ICCS, pickdelta: Timedelta) -> None:
-    """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
-
-    Args:
-        iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
-        pickdelta: delta applied to all picks.
-
-    Raises:
-        ValueError: If the new t1 is outside the valid range.
-    """
-
-    if not iccs.validate_pick(pickdelta):
-        raise ValueError(
-            "New t1 is outside the valid range. Consider reducing the time window."
-        )
-
-    for seismogram in iccs.seismograms:
-        current_pick = seismogram.t1 or seismogram.t0
-        seismogram.t1 = current_pick + pickdelta
-    iccs._clear_caches()  # seismograms and stack need to be refreshed
 
 
 def _make_mask(iccs: ICCS, show_all: bool) -> list[bool]:
@@ -77,17 +67,15 @@ def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
 
 
 def _add_save_cancel_buttons(
-    fig: Figure, on_save: Callable[[Event], None]
+    fig: Figure,
+    on_save: Callable[[Event], None],
+    on_cancel: Callable[[Event], None],
 ) -> tuple[Button, Button]:
     """Add Save and Cancel buttons to an interactive figure.
 
     Returns:
         Tuple of (save_button, cancel_button). Must be stored to prevent garbage collection.
     """
-
-    def on_cancel(_: Event) -> None:
-        plt.close()
-
     ax_save = fig.add_axes((0.7, 0.05, 0.1, 0.075))
     ax_cancel = fig.add_axes((0.81, 0.05, 0.1, 0.075))
     b_save = Button(ax_save, "Save", color="darkgreen", hovercolor="green")
@@ -132,7 +120,7 @@ class _ScrollIndexTracker:
 # ==============================================================================
 
 
-def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> None:
+def draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> None:
     """Returns a basic stack plot for use in other plots.
 
     Args:
@@ -193,7 +181,7 @@ def _draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> N
         )
 
 
-def _draw_common_image(
+def draw_common_image(
     ax: Axes, iccs: ICCS, context: bool, show_all: bool
 ) -> np.ndarray:
     """Returns a basic image plot for use in other plots.
@@ -385,8 +373,8 @@ def plot_stack(
     iccs: ICCS,
     context: bool = True,
     show_all: bool = False,
-    return_fig: Literal[False] = False,
-) -> None: ...
+    return_fig: Literal[True] = True,
+) -> tuple[Figure, Axes]: ...
 
 
 @overload
@@ -395,12 +383,12 @@ def plot_stack(
     context: bool = True,
     show_all: bool = False,
     *,
-    return_fig: Literal[True],
-) -> tuple[Figure, Axes]: ...
+    return_fig: Literal[False],
+) -> None: ...
 
 
 def plot_stack(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
 ) -> tuple[Figure, Axes] | None:
     """Plot the ICCS stack.
 
@@ -430,18 +418,20 @@ def plot_stack(
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> plot_stack(iccs)
+        >>> fig, ax = plot_stack(iccs)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
         ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context.png#only-light){ loading=lazy }
-        ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context-dark.png#only-dark){ loading=lazy }
+        ![View the stack with context](../../../images/iccs/iccs_view_stack_context-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `context` argument to `False`:
 
         ```python
-        >>> plot_stack(iccs, context=False)
+        >>> fig, ax = plot_stack(iccs, context=False)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -449,7 +439,7 @@ def plot_stack(
         ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    _draw_common_stack(ax, iccs, context, show_all)
+    draw_common_stack(ax, iccs, context, show_all)
     if return_fig:
         return fig, ax
     plt.show()
@@ -461,8 +451,8 @@ def plot_seismograms(
     iccs: ICCS,
     context: bool = True,
     show_all: bool = False,
-    return_fig: Literal[False] = False,
-) -> None: ...
+    return_fig: Literal[True] = True,
+) -> tuple[Figure, Axes]: ...
 
 
 @overload
@@ -471,12 +461,12 @@ def plot_seismograms(
     context: bool = True,
     show_all: bool = False,
     *,
-    return_fig: Literal[True],
-) -> tuple[Figure, Axes]: ...
+    return_fig: Literal[False],
+) -> None: ...
 
 
 def plot_seismograms(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
 ) -> tuple[Figure, Axes] | None:
     """Plot the selected ICCS seismograms as an image.
 
@@ -504,7 +494,8 @@ def plot_seismograms(
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> plot_seismograms(iccs)
+        >>> fig, ax = plot_seismograms(iccs)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -515,7 +506,8 @@ def plot_seismograms(
         cross-correlations, set the `context` argument to `False`:
 
         ```python
-        >>> plot_seismograms(iccs, context=False)
+        >>> fig, ax = plot_seismograms(iccs, context=False)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -523,7 +515,7 @@ def plot_seismograms(
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    _draw_common_image(ax, iccs, context, show_all)
+    draw_common_image(ax, iccs, context, show_all)
     if return_fig:
         return fig, ax
     plt.show()
@@ -536,8 +528,8 @@ def update_pick(
     context: bool = True,
     show_all: bool = False,
     use_seismogram_image: bool = False,
-    return_fig: Literal[False] = False,
-) -> None: ...
+    return_fig: Literal[True] = True,
+) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
 
 
 @overload
@@ -547,8 +539,8 @@ def update_pick(
     show_all: bool = False,
     use_seismogram_image: bool = False,
     *,
-    return_fig: Literal[True],
-) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
+    return_fig: Literal[False],
+) -> None: ...
 
 
 def update_pick(
@@ -556,7 +548,7 @@ def update_pick(
     context: bool = True,
     show_all: bool = False,
     use_seismogram_image: bool = False,
-    return_fig: bool = False,
+    return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
     """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] and apply it to all seismograms.
 
@@ -586,7 +578,8 @@ def update_pick(
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> update_pick(iccs)
+        >>> fig, ax, widgets = update_pick(iccs)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -595,10 +588,10 @@ def update_pick(
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        _draw_common_image(ax, iccs, context, show_all)
+        draw_common_image(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        _draw_common_stack(ax, iccs, context, show_all)
+        draw_common_stack(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Update t1 for all seismograms.")
@@ -611,10 +604,15 @@ def update_pick(
     cursor, pick_line = _setup_phase_picker(ax, iccs, handle_valid_pick)
 
     def on_save(_: Event) -> None:
-        plt.close()
-        update_all_picks(iccs, Timedelta(seconds=pending_pick[0]))
+        iccs.update_all_picks(Timedelta(seconds=pending_pick[0]))
+        if not return_fig:
+            plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
+    def on_cancel(_: Event) -> None:
+        if not return_fig:
+            plt.close(fig)
+
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (cursor, pick_line, b_save, b_cancel)
@@ -628,8 +626,8 @@ def update_timewindow(
     context: bool = True,
     show_all: bool = False,
     use_seismogram_image: bool = False,
-    return_fig: Literal[False] = False,
-) -> None: ...
+    return_fig: Literal[True] = True,
+) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
 
 
 @overload
@@ -639,8 +637,8 @@ def update_timewindow(
     show_all: bool = False,
     use_seismogram_image: bool = False,
     *,
-    return_fig: Literal[True],
-) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
+    return_fig: Literal[False],
+) -> None: ...
 
 
 def update_timewindow(
@@ -648,7 +646,7 @@ def update_timewindow(
     context: bool = True,
     show_all: bool = False,
     use_seismogram_image: bool = False,
-    return_fig: bool = False,
+    return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
     """Pick new time window limits.
 
@@ -684,7 +682,8 @@ def update_timewindow(
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> update_timewindow(iccs)
+        >>> fig, ax, widgets = update_timewindow(iccs)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -693,10 +692,10 @@ def update_timewindow(
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        _draw_common_image(ax, iccs, context, show_all)
+        draw_common_image(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        _draw_common_stack(ax, iccs, context, show_all)
+        draw_common_stack(ax, iccs, context, show_all)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Pick a new time window.")
@@ -711,9 +710,14 @@ def update_timewindow(
     def on_save(_: Event) -> None:
         iccs.window_pre = Timedelta(seconds=pending_window[0])
         iccs.window_post = Timedelta(seconds=pending_window[1])
-        plt.close()
+        if not return_fig:
+            plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
+    def on_cancel(_: Event) -> None:
+        if not return_fig:
+            plt.close(fig)
+
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (span, b_save, b_cancel)
@@ -726,8 +730,10 @@ def update_min_ccnorm(
     iccs: ICCS,
     context: bool = True,
     show_all: bool = False,
-    return_fig: Literal[False] = False,
-) -> None: ...
+    return_fig: Literal[True] = True,
+) -> tuple[
+    Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]
+]: ...
 
 
 @overload
@@ -736,16 +742,18 @@ def update_min_ccnorm(
     context: bool = True,
     show_all: bool = False,
     *,
-    return_fig: Literal[True],
-) -> tuple[
-    Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]
-]: ...
+    return_fig: Literal[False],
+) -> None: ...
 
 
 def update_min_ccnorm(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = False
+    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
 ) -> (
-    tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]]
+    tuple[
+        Figure,
+        Axes,
+        tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker],
+    ]
     | None
 ):
     """Interactively pick a new [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm].
@@ -774,7 +782,8 @@ def update_min_ccnorm(
         >>> from pysmo.tools.iccs import ICCS, update_min_ccnorm
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs()
-        >>> update_min_ccnorm(iccs)
+        >>> fig, ax, widgets = update_min_ccnorm(iccs)
+        >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
@@ -782,7 +791,7 @@ def update_min_ccnorm(
         ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    matrix = _draw_common_image(ax, iccs, context, show_all)
+    matrix = draw_common_image(ax, iccs, context, show_all)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
 
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
@@ -798,9 +807,14 @@ def update_min_ccnorm(
 
     def on_save(_: Event) -> None:
         iccs.min_ccnorm = pending_val[0]
-        plt.close()
+        if not return_fig:
+            plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save)
+    def on_cancel(_: Event) -> None:
+        if not return_fig:
+            plt.close(fig)
+
+    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (cursor, pick_line, b_save, b_cancel, tracker)
