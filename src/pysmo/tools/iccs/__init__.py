@@ -139,10 +139,9 @@ visual inspection.
 from ..._utils import export_module_names
 from ._iccs import ICCS
 from ._types import MiniICCSSeismogram, ICCSSeismogram
-from ._functions import (
+from .plot import (
     plot_seismograms,
     plot_stack,
-    update_all_picks,
     update_min_ccnorm,
     update_pick,
     update_timewindow,
@@ -154,7 +153,6 @@ __all__ = [
     "MiniICCSSeismogram",
     "plot_seismograms",
     "plot_stack",
-    "update_all_picks",
     "update_min_ccnorm",
     "update_pick",
     "update_timewindow",
