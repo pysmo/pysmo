@@ -4,7 +4,8 @@ from pysmo._types._seismogram import SeismogramEndtimeMixin
 from pysmo.typing import PositiveTimedelta
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SeismogramDefaults
-from typing import Protocol, runtime_checkable
+from collections.abc import Hashable
+from typing import Protocol, Any, runtime_checkable
 from beartype import beartype
 from attrs import define, field, validators
 from pandas import Timestamp
@@ -38,9 +39,12 @@ class ICCSSeismogram(Seismogram, Protocol):
     select: bool
     """Use seismogram to create stack."""
 
+    extra: dict[Hashable, Any]
+    """Extra metadata that may be helpful to be stored alongside the seismogram."""
 
-@beartype
+
 @define(kw_only=True, slots=True)
+@beartype
 class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
     """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
 
@@ -94,3 +98,6 @@ class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
 
     select: bool = True
     """Use seismogram to create stack."""
+
+    extra: dict[Hashable, Any] = field(factory=dict)
+    """Extra metadata that may be helpful to be stored alongside the seismogram."""
