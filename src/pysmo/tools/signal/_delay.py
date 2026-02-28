@@ -147,7 +147,7 @@ def delay(
         >>> calculated_delay, _ = delay(seis1, seis2, total_delay=True, max_shift=signal_delay+timedelta(seconds=1))
         >>> # With `total_delay=True`, the calculated delay should be equal to
         >>> # the signal delay plus the begin time difference:
-        >>> calculated_delay == signal_delay + (seis1.begin_time - seis2.begin_time)
+        >>> calculated_delay == signal_delay + (seis2.begin_time - seis1.begin_time)
         True
         >>>
         ```
@@ -219,7 +219,7 @@ def delay(
     covr, _ = _pearsonr(data1, data2)
 
     if total_delay:
-        delay += seismogram1.begin_time - seismogram2.begin_time
+        delay += seismogram2.begin_time - seismogram1.begin_time
 
     return delay, covr
 
@@ -513,11 +513,11 @@ def mccc(
         True
         >>>
         >>> # Pairwise differences recover the known shifts
-        >>> # (times[i] - times[j] ≈ (shifts[j] - shifts[i]) * delta):
+        >>> # (times[i] - times[j] ≈ (shifts[i] - shifts[j]) * delta):
         >>> round((times[1] - times[0]).total_seconds())
-        -5
+        5
         >>> round((times[2] - times[0]).total_seconds())
-        10
+        -10
         >>>
         ```
 
@@ -553,8 +553,8 @@ def mccc(
             lag_seconds = delay_matrix_seconds[i, j]
 
             row = np.zeros(n_traces)
-            row[i] = 1.0
-            row[j] = -1.0
+            row[i] = -1.0
+            row[j] = 1.0
 
             rows.append(row)
             data_vec.append(lag_seconds)

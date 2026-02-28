@@ -37,19 +37,19 @@ __all__ = [
 ]
 
 
-def _make_mask(iccs: ICCS, show_all: bool) -> list[bool]:
+def _make_mask(iccs: ICCS, all_seismograms: bool) -> list[bool]:
     """Return a list of booleans for selecting the data to use in the plots.
 
     Args:
         iccs: Instance of the ICCS class.
-        show_all: If `True`, create mask for all seismograms instead of selected
+        all_seismograms: If `True`, create mask for all seismograms instead of selected
             ones only (effectively returns a list of True for all seismograms).
 
     Returns:
         List of booleans for selecting the data to use in the plots.
     """
 
-    if show_all:
+    if all_seismograms:
         return [True] * len(iccs.seismograms)
 
     return [s.select for s in iccs.seismograms]
@@ -120,7 +120,9 @@ class _ScrollIndexTracker:
 # ==============================================================================
 
 
-def draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> None:
+def draw_common_stack(
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
+) -> None:
     """Returns a basic stack plot for use in other plots.
 
     Args:
@@ -129,7 +131,7 @@ def draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> No
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
     """
 
@@ -151,7 +153,7 @@ def draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> No
 
     time = np.linspace(tmin, tmax, len(stack.data))
 
-    mask = _make_mask(iccs, show_all)
+    mask = _make_mask(iccs, all_seismograms)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
     seismogram_data = [s.data for s, m in zip(seismograms, mask) if m]
 
@@ -182,7 +184,7 @@ def draw_common_stack(ax: Axes, iccs: ICCS, context: bool, show_all: bool) -> No
 
 
 def draw_common_image(
-    ax: Axes, iccs: ICCS, context: bool, show_all: bool
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
 ) -> np.ndarray:
     """Returns a basic image plot for use in other plots.
 
@@ -192,7 +194,7 @@ def draw_common_image(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
 
     Returns:
@@ -200,7 +202,7 @@ def draw_common_image(
     """
 
     seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
-    mask = _make_mask(iccs, show_all)
+    mask = _make_mask(iccs, all_seismograms)
     ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
     seismogram_matrix = np.array(
         [s.data for s, selected in zip(seismograms, mask) if selected]
@@ -304,13 +306,13 @@ def _setup_timewindow_picker(
 def _setup_ccnorm_picker(
     ax: Axes,
     iccs: ICCS,
-    show_all: bool,
+    all_seismograms: bool,
     max_index: int,
     on_valid_pick: Callable[[float], None],
 ) -> tuple[Cursor, Line2D, _ScrollIndexTracker]:
     """Configures a Cursor and Pick Line with snapping logic for ccnorm selection."""
     current_ccnorms = sorted(
-        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or show_all
+        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or all_seismograms
     )
 
     start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
@@ -372,7 +374,7 @@ def _setup_ccnorm_picker(
 def plot_stack(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes]: ...
 
@@ -381,14 +383,17 @@ def plot_stack(
 def plot_stack(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
 
 
 def plot_stack(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
+    iccs: ICCS,
+    context: bool = True,
+    all_seismograms: bool = False,
+    return_fig: bool = True,
 ) -> tuple[Figure, Axes] | None:
     """Plot the ICCS stack.
 
@@ -397,7 +402,7 @@ def plot_stack(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
@@ -439,7 +444,7 @@ def plot_stack(
         ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    draw_common_stack(ax, iccs, context, show_all)
+    draw_common_stack(ax, iccs, context, all_seismograms)
     if return_fig:
         return fig, ax
     plt.show()
@@ -450,7 +455,7 @@ def plot_stack(
 def plot_seismograms(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes]: ...
 
@@ -459,14 +464,17 @@ def plot_seismograms(
 def plot_seismograms(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
 
 
 def plot_seismograms(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
+    iccs: ICCS,
+    context: bool = True,
+    all_seismograms: bool = False,
+    return_fig: bool = True,
 ) -> tuple[Figure, Axes] | None:
     """Plot the selected ICCS seismograms as an image.
 
@@ -475,7 +483,7 @@ def plot_seismograms(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
@@ -515,7 +523,7 @@ def plot_seismograms(
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    draw_common_image(ax, iccs, context, show_all)
+    draw_common_image(ax, iccs, context, all_seismograms)
     if return_fig:
         return fig, ax
     plt.show()
@@ -526,7 +534,7 @@ def plot_seismograms(
 def update_pick(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
@@ -536,7 +544,7 @@ def update_pick(
 def update_pick(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     *,
     return_fig: Literal[False],
@@ -546,7 +554,7 @@ def update_pick(
 def update_pick(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
@@ -560,7 +568,7 @@ def update_pick(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_seismogram_image: Use the
             [seismogram image][pysmo.tools.iccs.plot_seismograms]
@@ -588,10 +596,10 @@ def update_pick(
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        draw_common_image(ax, iccs, context, show_all)
+        draw_common_image(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        draw_common_stack(ax, iccs, context, show_all)
+        draw_common_stack(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Update t1 for all seismograms.")
@@ -624,7 +632,7 @@ def update_pick(
 def update_timewindow(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
@@ -634,7 +642,7 @@ def update_timewindow(
 def update_timewindow(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     *,
     return_fig: Literal[False],
@@ -644,7 +652,7 @@ def update_timewindow(
 def update_timewindow(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     use_seismogram_image: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
@@ -659,7 +667,7 @@ def update_timewindow(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_seismogram_image: Use the
             [seismogram image][pysmo.tools.iccs.plot_seismograms]
@@ -692,10 +700,10 @@ def update_timewindow(
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_seismogram_image:
-        draw_common_image(ax, iccs, context, show_all)
+        draw_common_image(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
-        draw_common_stack(ax, iccs, context, show_all)
+        draw_common_stack(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
 
     ax.set_title("Pick a new time window.")
@@ -729,7 +737,7 @@ def update_timewindow(
 def update_min_ccnorm(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[
     Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]
@@ -740,14 +748,17 @@ def update_min_ccnorm(
 def update_min_ccnorm(
     iccs: ICCS,
     context: bool = True,
-    show_all: bool = False,
+    all_seismograms: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
 
 
 def update_min_ccnorm(
-    iccs: ICCS, context: bool = True, show_all: bool = False, return_fig: bool = True
+    iccs: ICCS,
+    context: bool = True,
+    all_seismograms: bool = False,
+    return_fig: bool = True,
 ) -> (
     tuple[
         Figure,
@@ -768,7 +779,7 @@ def update_min_ccnorm(
         context: Determines which seismograms are used:
             - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
-        show_all: If `True`, all seismograms are shown in the plot instead of the
+        all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
@@ -791,7 +802,7 @@ def update_min_ccnorm(
         ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    matrix = draw_common_image(ax, iccs, context, show_all)
+    matrix = draw_common_image(ax, iccs, context, all_seismograms)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
 
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
@@ -802,7 +813,7 @@ def update_min_ccnorm(
         ax.set_title(f"Click save to set min_ccnorm to {new_val:.4f}")
 
     cursor, pick_line, tracker = _setup_ccnorm_picker(
-        ax, iccs, show_all, len(matrix) - 1, handle_valid_pick
+        ax, iccs, all_seismograms, len(matrix) - 1, handle_valid_pick
     )
 
     def on_save(_: Event) -> None:
