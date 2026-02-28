@@ -19,7 +19,7 @@ from pysmo.functions import (
     pad,
     window,
 )
-from pysmo.tools.signal import bandpass, multi_delay
+from pysmo.tools.signal import bandpass, multi_delay, mccc
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
 from beartype import beartype
 from datetime import timedelta
@@ -481,7 +481,7 @@ class ICCS:
 
     @property
     def cc_seismograms(self) -> list[_EphemeralSeismogram]:
-        """Returns the seismograms as used for the cross-correlation.
+        """Return the seismograms as used for the cross-correlation.
 
         These seismograms are derived from the input seismograms and used for
         the cross-correlation steps. Starting with the input seismograms, they
@@ -505,6 +505,11 @@ class ICCS:
         if self._cc_seismograms is None:
             self._cc_seismograms = self._prepare_seismograms(add_context=False)
         return self._cc_seismograms
+
+    @property
+    def selected_cc_seismograms(self) -> list[_EphemeralSeismogram]:
+        """Return a list of cc_seismograms with select=True."""
+        return [s for s in self.cc_seismograms if s.parent_seismogram.select]
 
     @property
     def context_seismograms(self) -> list[_EphemeralSeismogram]:
@@ -673,6 +678,46 @@ class ICCS:
 
         return np.array(convergence_list)
 
+    def run_mccc(
+        self,
+        all_seismograms: bool = False,
+        min_cc: float = IccsDefaults.mccc_min_cc,
+        damping: float = IccsDefaults.mccc_damp,
+    ) -> None:
+        """Refine picks with the MCCC algorithm.
+
+        This updates the picks of the seismograms with
+        [`mccc`][pysmo.tools.signal.mccc]. It can be executed at any point to
+        update picks. However, it will not autoselect or autoflip seismograms.
+        It is therefore recommended as final step to refine the results of
+        [`ICCS()`][pysmo.tools.iccs.ICCS.__call__].
+
+        Args:
+            all_seismograms: Whether to run MCCC on all seismograms or only on
+                those with `select` set to `True`. Default is `False` (only on
+                selected seismograms).
+            min_cc: Minimum correlation coefficient required to include a pair
+                in the inversion.
+            damping: Tikhonov regularization strength. Set to 0 to disable.
+        """
+        seismograms = (
+            self.cc_seismograms if all_seismograms else self.selected_cc_seismograms
+        )
+
+        delays, _errors, _rmse = mccc(seismograms, min_cc=min_cc, damping=damping)
+
+        for delay, cc_seismogram in zip(delays, seismograms):
+            _update_seismogram(
+                delay,
+                ccnorm=None,
+                seismogram=cc_seismogram.parent_seismogram,
+                autoflip=False,
+                autoselect=False,
+                min_ccnorm_for_autoselect=self.min_ccnorm,
+                current_window=(self.window_pre, self.window_post),
+            )
+        self._clear_caches()
+
     def update_all_picks(self, pickdelta: Timedelta) -> None:
         """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
 
@@ -696,7 +741,7 @@ class ICCS:
 
 def _update_seismogram(
     delay: Timedelta,
-    ccnorm: float,
+    ccnorm: float | None,
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
@@ -713,20 +758,21 @@ def _update_seismogram(
 
     Args:
         delay: Time shift from cross-correlation.
-        ccnorm: Normalised cross-correlation coefficient.
+        ccnorm: Normalised cross-correlation coefficient. If it is `None`,
+            no changes to `flip` and `select` will be made.
         seismogram: Seismogram to update.
         autoflip: Automatically toggle the ``flip`` attribute.
         autoselect: Automatically toggle the ``select`` attribute.
         min_ccnorm_for_autoselect: Threshold for ``autoselect``.
         current_window: Current ``(window_pre, window_post)`` tuple.
     """
+    if ccnorm is not None:
+        if autoflip and ccnorm < 0:
+            seismogram.flip = not seismogram.flip
+            ccnorm = abs(ccnorm)
 
-    if autoflip and ccnorm < 0:
-        seismogram.flip = not seismogram.flip
-        ccnorm = abs(ccnorm)
-
-    if autoselect:
-        seismogram.select = bool(ccnorm >= min_ccnorm_for_autoselect)
+        if autoselect:
+            seismogram.select = bool(ccnorm >= min_ccnorm_for_autoselect)
 
     updated_t1 = (seismogram.t1 or seismogram.t0) + delay
     limit_pre = seismogram.begin_time - current_window[0]
