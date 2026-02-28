@@ -32,6 +32,12 @@ class TestICCSBase:
         fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
+    @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+    def test_mccc_call(self) -> Figure:
+        self.iccs.run_mccc()
+        fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
+        return fig
+
 
 class TestICCSTaper(TestICCSBase):
     TAPER: float = 0.1
