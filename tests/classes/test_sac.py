@@ -1,5 +1,4 @@
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
-from beartype.roar import BeartypeCallHintParamViolation
 import numpy as np
 import numpy.testing as npt
 from pysmo import Seismogram, Station, Event
@@ -115,18 +114,6 @@ class TestSAC:
             len(sacseis.data) - 1
         )
 
-        # Setting attributes that are not optional in the types
-        # should also not be optional in the classes:
-        for item in ["begin_time", "delta", "data"]:
-            with pytest.raises(
-                (
-                    TypeError,
-                    AttributeError,
-                    BeartypeCallHintParamViolation,
-                )
-            ):
-                setattr(sacseis, item, None)
-
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_station(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
@@ -162,12 +149,6 @@ class TestSAC:
             sacstation.latitude = bad_latitude
         with pytest.raises(ValueError):
             sacstation.longitude = bad_longitude
-
-        # Setting attributes that are not optional in the types
-        # should also not be optional in the classes:
-        for item in ["name", "latitude", "longitude"]:
-            with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
-                setattr(sacstation, item, None)
 
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station
@@ -220,11 +201,7 @@ class TestSAC:
         with pytest.raises(ValueError):
             sacevent.longitude = -500
         #
-        # Setting attributes that are not optional in the types
-        # should also not be optional in the classes:
-        for item in ["depth", "latitude", "longitude", "time"]:
-            with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
-                setattr(sacevent, item, None)
+        #
         sac.evdp = None
         with pytest.raises(TypeError):
             sacevent.depth
@@ -248,7 +225,7 @@ class TestSAC:
         assert sac.timestamps.t0 is None
         sac.timestamps.b = now
         assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
-        with pytest.raises(BeartypeCallHintParamViolation):
+        with pytest.raises(TypeError):
             sac.timestamps.b = None  # type: ignore
         with pytest.raises(TypeError):
             sac.timestamps.b = Timestamp.now()

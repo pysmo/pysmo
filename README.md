@@ -44,11 +44,10 @@ subtyping). Any object that has the right attributes satisfies the protocol;
 no inheritance required. This means pysmo functions work with *your* classes
 out of the box, as long as they look like the right type.
 
-### Runtime validation with attrs and beartype
+### Runtime validation with attrs
 
 Pysmo's concrete "Mini" classes (e.g. `MiniSeismogram`) are built with
-[attrs](https://www.attrs.org) and validated at runtime by
-[beartype](https://beartype.readthedocs.io). Fields carry validators and
+[attrs](https://www.attrs.org). Fields carry validators and
 converters — a `datetime` without `tzinfo=UTC` or a negative sampling
 interval is rejected immediately, not silently propagated.
 
@@ -94,7 +93,7 @@ print_info(mini)  # works with MiniSeismogram too — same protocol
 |---|---|---|
 | Structural subtyping | `Protocol` + `@runtime_checkable` | `Seismogram`, `Station`, `Event` |
 | Validated data classes | `attrs` with field validators | `MiniStation(name="STA", latitude=48.2, ...)` |
-| Runtime type checking | `beartype` + `Annotated` types | `PositiveTimedelta`, `UnitFloat` |
+| Type safety | `Annotated` types | `PositiveTimedelta`, `UnitFloat` |
 | Generic functions | PEP 695 type parameters | `def crop[T: Seismogram](...) -> T` |
 | Format adapters | Descriptors + `__set_name__` | `SAC.seismogram`, `SAC.station` |
 

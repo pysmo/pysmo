@@ -45,8 +45,7 @@ might notice some differences:
   [`timedelta`][datetime.timedelta]. Instead it uses a custom
   [`PositiveTimedelta`][pysmo.typing.PositiveTimedelta] type which is more
   restrictive; after all, a negative sampling interval doesn't make any sense.
-  In combination with the [`beartype`][beartype.beartype] decorator this
-  ensures no invalid values are accepted at runtime.
+  This ensures no invalid values are accepted at runtime.
 - Some default values are provided. These will typically be replaced in
   real-world usage, but do allow for some convenience while quickly testing things.
 

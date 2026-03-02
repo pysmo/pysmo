@@ -6,26 +6,15 @@ Example script for pysmo.tools.noise
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
 from pysmo.tools.noise import generate_noise, peterson
+from pysmo.tools.signal import psd
 from pandas import Timedelta
-
-
-def calc_power(
-    data: np.ndarray, sampling_frequency: float, nperseg: int, nfft: int
-) -> tuple[np.ndarray, np.ndarray]:
-    """Calculuate power and drop first element (f=0Hz) to avoid dividing by 0"""
-    freqs, psd = signal.welch(
-        data, sampling_frequency, nperseg=nperseg, nfft=nfft, scaling="density"
-    )
-    return freqs[1:], psd[1:]
 
 
 def main() -> None:
     # Set parameters
     npts: int = 200000  # multiple of 4
     delta = Timedelta(seconds=0.1)
-    sampling_frequency = 1 / delta.total_seconds()
     nperseg = int(npts / 4)
     nfft = int(npts / 2)
     time_in_seconds = np.linspace(0, npts * delta.total_seconds(), npts)
@@ -42,16 +31,10 @@ def main() -> None:
         npts=npts, model=high_noise_model, delta=delta
     )
 
-    # Calculuate power spectral density
-    f_low, Pxx_dens_low = calc_power(
-        low_noise_seismogram.data, sampling_frequency, nperseg, nfft
-    )
-    f_mid, Pxx_dens_mid = calc_power(
-        mid_noise_seismogram.data, sampling_frequency, nperseg, nfft
-    )
-    f_high, Pxx_dens_high = calc_power(
-        high_noise_seismogram.data, sampling_frequency, nperseg, nfft
-    )
+    # Calculate power spectral density
+    f_low, Pxx_dens_low = psd(low_noise_seismogram, nperseg=nperseg, nfft=nfft)
+    f_mid, Pxx_dens_mid = psd(mid_noise_seismogram, nperseg=nperseg, nfft=nfft)
+    f_high, Pxx_dens_high = psd(high_noise_seismogram, nperseg=nperseg, nfft=nfft)
 
     _ = plt.figure(figsize=(13, 9), layout="tight")
 
@@ -102,7 +85,7 @@ def main() -> None:
         label="generated low noise",
     )
     plt.plot(
-        high_noise_model.T,
+        high_noise_model.T.total_seconds(),
         high_noise_model.psd,
         "k",
         linewidth=1,
@@ -110,7 +93,7 @@ def main() -> None:
         label="NHNM",
     )
     plt.plot(
-        mid_noise_model.T,
+        mid_noise_model.T.total_seconds(),
         mid_noise_model.psd,
         "k",
         linewidth=1,
@@ -118,7 +101,7 @@ def main() -> None:
         label="Interpolated noise model",
     )
     plt.plot(
-        low_noise_model.T,
+        low_noise_model.T.total_seconds(),
         low_noise_model.psd,
         "k",
         linewidth=1,
@@ -126,7 +109,9 @@ def main() -> None:
         label="NLNM",
     )
     plt.gca().set_xscale("log")
-    plt.xlim(low_noise_model.T[0], low_noise_model.T[-1])
+    plt.xlim(
+        low_noise_model.T.total_seconds()[0], low_noise_model.T.total_seconds()[-1]
+    )
     plt.xlabel("Period [s]")
     plt.ylabel("Power Spectral Density (dB/Hz)")
     plt.legend()
