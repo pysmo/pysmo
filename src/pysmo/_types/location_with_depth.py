@@ -1,4 +1,4 @@
-from ._location import Location
+from .location import Location
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
 
@@ -15,10 +15,10 @@ class LocationWithDepth(Location, Protocol):
 
 @define(kw_only=True, slots=True)
 class MiniLocationWithDepth:
-    """Minimal class for use with the [`MiniLocationWithDepth`][pysmo.MiniLocationWithDepth] type.
+    """Minimal class for use with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
 
     The `MiniLocationWithDepth` class provides a minimal implementation of class that
-    is compatible with the [`MiniLocationWithDepth`][pysmo.MiniLocationWithDepth] type.
+    is compatible with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
 
     Examples:
         ```python

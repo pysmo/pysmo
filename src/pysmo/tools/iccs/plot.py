@@ -212,6 +212,9 @@ def draw_common_image(
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
+    ax.axvline(tmin, color="lightgreen", linewidth=0.5, alpha=0.7)
+    ax.axvline(tmax, color="lightgreen", linewidth=0.5, alpha=0.7)
+
     if context:
         tmin -= iccs.context_width.total_seconds()
         tmax += iccs.context_width.total_seconds()
@@ -278,11 +281,15 @@ def _setup_timewindow_picker(
 ) -> SpanSelector:
     """Configures a SpanSelector with validation logic."""
     old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+    default_title_color = ax.title.get_color()
 
     def onselect(xmin: float, xmax: float) -> None:
         nonlocal old_extents
         if iccs.validate_time_window(Timedelta(seconds=xmin), Timedelta(seconds=xmax)):
             old_extents = xmin, xmax
+            ax.title.set_color(default_title_color)
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
             on_valid_selection(xmin, xmax)
         else:
             span.extents = old_extents
@@ -681,7 +688,7 @@ def update_timewindow(
 
     Info:
         The new time window may not be chosen such that the pick lies
-        outside the the window. The picker will therefore automatically correct
+        outside the window. The picker will therefore automatically correct
         itself for invalid window choices.
 
     Examples:

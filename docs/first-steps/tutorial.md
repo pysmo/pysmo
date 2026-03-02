@@ -49,7 +49,7 @@ be as simple as this:
 6. Finally, we add an attribute that lets us know if our seismogram contains
    earthquake signals or not.
 
-A real world example would likely have more attributes (such as station
+A real-world example would likely have more attributes (such as station
 coordinates), but to keep things simple we will stick to this minimal example.
 
 We are now ready to use this new class in our project. To test this run an
@@ -170,7 +170,7 @@ a bespoke class for this:
 
 1. [`StrEnum`][enum.StrEnum] are a great way to limit the values strings can
    take.
-2. Much like with `NoiseSeismogram`, we have just one project specific
+2. Much like with `NoiseSeismogram`, we have just one project-specific
    attribute (`season`).
 
 ??? tip "Mixin classes"
@@ -326,7 +326,7 @@ This tutorial doesn't actually show much "pysmo code". Instead it introduces
 core concepts of pysmo. These are:
 
 - Pysmo is *not* centred around a single seismogram class that is used as the
-  core of the library. Often these kinds of single purpose classes restrict
+  core of the library. Often these kinds of single-purpose classes restrict
   users to the use cases envisioned by the library authors, rather than being
   well suited for new applications.
 - Custom seismogram classes *are* suited for new applications. However, they
