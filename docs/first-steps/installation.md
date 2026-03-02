@@ -9,8 +9,8 @@ tags:
 ## Prerequisites
 
 Pysmo is built on top of standard [Python](https://www.python.org) and uses
-some popular third party modules (e.g. [`NumPy`][numpy], [`SciPy`][scipy]).
-In order to benefit from modern Python features and up to date modules, pysmo is
+some popular third-party modules (e.g. [`NumPy`][numpy], [`SciPy`][scipy]).
+In order to benefit from modern Python features and up-to-date modules, pysmo is
 developed on the latest stable Python versions. Automatic tests are typically
 run on the latest three stable Python releases on Linux, MacOS, and Windows.
 
@@ -38,7 +38,7 @@ installed using the [`pip`](https://pip.pypa.io/en/stable/) module:
 !!! tip
     It is possible to install the stable release alongside the development
     version. Please read the pysmo
-    [development documentation](../developing/developing.md) for instructions.
+    [development documentation](../development/index.md) for instructions.
 
 ## Upgrading
 

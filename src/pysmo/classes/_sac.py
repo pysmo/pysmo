@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pysmo._types._seismogram import SeismogramEndtimeMixin
+from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import (
     SAC_REQUIRED_TIME_HEADERS,
