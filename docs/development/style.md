@@ -25,7 +25,7 @@ def v(d: float, t: float) -> float:
 ```
 
 Instead, use meaningful variable and function names to write code that is
-easier to read and less error prone:
+easier to read and less error-prone:
 
 ```python title="self-documenting-code.py"
 def velocity(distance: float, time: float) -> float:
@@ -41,4 +41,5 @@ documentation source files are written in
 generated from docstrings in the source code via the
 [mkdocstrings](https://mkdocstrings.github.io) plugin. Please write docstrings
 using the
-[Google style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+[Google-style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
+format.

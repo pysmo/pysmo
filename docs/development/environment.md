@@ -77,7 +77,7 @@ steps:
 
 We use [uv](https://docs.astral.sh/uv/) to manage a consistent, isolated
 development environment. Uv creates a Python virtual environment and handles
-package installation, so you can develop and test pysmo without affecting any
+package installation, so you can develop and test pysmo without affecting your
 system-wide Python installation.
 
 !!! note

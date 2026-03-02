@@ -1,4 +1,4 @@
-from ._location_with_depth import LocationWithDepth
+from .location_with_depth import LocationWithDepth
 from pysmo.lib.validators import datetime_is_utc
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators

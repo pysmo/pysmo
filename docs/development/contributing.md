@@ -69,8 +69,8 @@ you have done the following:
 - Run a code linter and verify that all unit tests pass. The command
   [`make tests`](./environment.md#makefile) should complete without errors.
 - To keep a clean git history, please
-  [rebase](https://git-scm.com/docs/git-rebase) the pysmo master branch onto
-  your feature branch and squash your commits into a single, well-documented
+  [rebase](https://git-scm.com/docs/git-rebase) your feature branch onto the
+  pysmo master branch and squash your commits into a single, well-documented
   commit. This avoids entries like "fix typo" or "undo changes" in the git
   log. Do this before submitting your initial pull request.
 
