@@ -23,7 +23,6 @@ from pysmo.functions import (
 )
 from pysmo.tools.signal import bandpass, multi_delay, mccc
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
-from beartype import beartype
 from pandas import Timestamp, Timedelta
 from attrs import define, field, validators, setters, Attribute, validate
 from collections.abc import Sequence
@@ -138,7 +137,6 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
         self.data = self.parent_seismogram.data.copy()
 
 
-@beartype
 @define(slots=True)
 class ICCS:
     """Class to store a list of [`ICCSSeismograms`][pysmo.tools.iccs.ICCSSeismogram] and run the ICCS algorithm.

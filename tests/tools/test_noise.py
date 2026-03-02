@@ -1,6 +1,6 @@
 from dataclasses import FrozenInstanceError
 from scipy import signal  # type: ignore
-from pandas import Timedelta
+from pandas import Timedelta, to_timedelta
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
 import numpy as np
@@ -11,7 +11,7 @@ def test_NoiseModel() -> None:
     # create two random arrays for testing
     psd = np.random.rand(20)
     psd2 = np.random.rand(20)
-    T = np.random.rand(20)
+    T = to_timedelta(np.random.rand(20), unit="s")
 
     # length of the arrays needs to be equal
     with pytest.raises(ValueError):
@@ -26,22 +26,19 @@ def test_NoiseModel() -> None:
     with pytest.raises(ValueError):
         model.psd[3] *= 2
 
-    with pytest.raises(ValueError):
-        model.T[3] *= 2
-
 
 @pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
 def test_peterson():  # type: ignore
-    nlnm = noise.peterson(0)
-    nhnm = noise.peterson(1)
+    nlnm = noise.peterson(0.0)
+    nhnm = noise.peterson(1.0)
     nm_03 = noise.peterson(0.3)
     with pytest.raises(ValueError):
         noise.peterson(1.34)
     assert nlnm == noise.NLNM
     assert nhnm == noise.NHNM
     assert all(
-        nm_03.T
+        nm_03.T.total_seconds()
         == np.array(
             [
                 0.10,
@@ -80,9 +77,9 @@ def test_peterson():  # type: ignore
     )
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    ax.plot(nlnm.T, nlnm.psd)
-    ax.plot(nhnm.T, nhnm.psd)
-    ax.plot(nm_03.T, nm_03.psd)
+    ax.plot(nlnm.T.total_seconds(), nlnm.psd)
+    ax.plot(nhnm.T.total_seconds(), nhnm.psd)
+    ax.plot(nm_03.T.total_seconds(), nm_03.psd)
     ax.set_xscale("log")
     return fig
 
@@ -100,7 +97,8 @@ def test_generate_noise():  # type: ignore
 
     # velocity noise model from peterson paper
     nhnm_velo = noise.NoiseModel(
-        psd=nhnm.psd + 20 * np.log10(nhnm.T / 2 / np.pi), T=nhnm.T
+        psd=(nhnm.psd + 20 * np.log10(nhnm.T.total_seconds() / 2 / np.pi)).to_numpy(),
+        T=nhnm.T,
     )
 
     nhnm_data_acc = noise.generate_noise(
@@ -120,10 +118,10 @@ def test_generate_noise():  # type: ignore
     fig = plt.figure()
     ax1 = fig.add_subplot(2, 1, 1)
     ax1.plot(1 / freqs_acc, 10 * np.log10(power_acc))
-    ax1.plot(nhnm.T, nhnm.psd, "k")
+    ax1.plot(nhnm.T.total_seconds(), nhnm.psd, "k")
     ax1.set_xscale("log")
     ax2 = fig.add_subplot(2, 1, 2)
     ax2.plot(1 / freqs_vel, 10 * np.log10(power_vel))
-    ax2.plot(nhnm_velo.T, nhnm_velo.psd, "k")
+    ax2.plot(nhnm_velo.T.total_seconds(), nhnm_velo.psd, "k")
     ax2.set_xscale("log")
     return fig
