@@ -23,7 +23,7 @@ Examples:
 """
 
 import numpy as np
-from pandas import Timestamp, Timedelta
+from pandas import Timestamp, Timedelta, to_timedelta, TimedeltaIndex
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
@@ -38,26 +38,24 @@ class NoiseModel:
 
     Parameters:
         psd: Power spectral density of ground acceleration [dB].
-        T: Period [seconds].
+        T: Period.
     """
 
     psd: np.ndarray = field(
         default_factory=lambda: np.array([]),
         metadata={"description": "Power spectral density of ground acceleration [dB]."},
     )
-    T: np.ndarray = field(
-        default_factory=lambda: np.array([]),
-        metadata={"description": "Period [seconds]."},
+    T: TimedeltaIndex = field(
+        default_factory=lambda: TimedeltaIndex([]),
+        metadata={"description": "Period."},
     )
 
     def __post_init__(self) -> None:
         if np.size(self.psd) != np.size(self.T):
             raise ValueError(
-                "dB and T arrays are not of same size",
-                f"({np.size(self.psd)} != {np.size(self.T)}",
+                f"dB ({np.size(self.psd)}) and T ({np.size(self.T)}) arrays are not of same size"
             )
         self.psd.flags.writeable = False
-        self.T.flags.writeable = False
 
 
 NLNM = NoiseModel(
@@ -87,7 +85,7 @@ NLNM = NoiseModel(
             -103.1,
         ]
     ),
-    T=np.array(
+    T=to_timedelta(
         [
             0.10,
             0.17,
@@ -111,7 +109,8 @@ NLNM = NoiseModel(
             600.00,
             10**4,
             10**5,
-        ]
+        ],
+        unit="s",
     ),
 )
 
@@ -133,7 +132,7 @@ NHNM = NoiseModel(
             -48.5,
         ]
     ),
-    T=np.array(
+    T=to_timedelta(
         [
             0.10,
             0.22,
@@ -148,14 +147,15 @@ NHNM = NoiseModel(
             354.80,
             10**4,
             10**5,
-        ]
+        ],
+        unit="s",
     ),
 )
 
 
 def peterson(noise_level: float) -> NoiseModel:
     """Generate a noise model by interpolating between Peterson's[^1]
-    New Low Noise Model (NLNM) and New High Noice Model (NHNM).
+    New Low Noise Model (NLNM) and New High Noise Model (NHNM).
 
     [^1]: Peterson, Jon R. Observations and Modeling of Seismic Background
         Noise. Report, 93–322, 1993, https://doi.org/10.3133/ofr93322. USGS
@@ -182,11 +182,13 @@ def peterson(noise_level: float) -> NoiseModel:
     elif noise_level == 1:
         return NHNM
     else:
-        T_common = np.unique(np.concatenate((NLNM.T, NHNM.T)))
-        NLNM_interp = np.interp(T_common, NLNM.T, NLNM.psd)
-        NHNM_interp = np.interp(T_common, NHNM.T, NHNM.psd)
+        T_common = np.unique(
+            np.concatenate((NLNM.T.total_seconds(), NHNM.T.total_seconds()))
+        )
+        NLNM_interp = np.interp(T_common, NLNM.T.total_seconds(), NLNM.psd)
+        NHNM_interp = np.interp(T_common, NHNM.T.total_seconds(), NHNM.psd)
         dB = NLNM_interp + (NHNM_interp - NLNM_interp) * noise_level
-        return NoiseModel(psd=dB, T=T_common)
+        return NoiseModel(psd=dB, T=to_timedelta(T_common, unit="s"))
 
 
 def generate_noise(
@@ -225,7 +227,7 @@ def generate_noise(
 
     # interpolate psd and recreate amplitude spectrum with the first
     # term=0 (i.e. mean=0).
-    Pxx = np.interp(1 / freqs, model.T, model.psd)
+    Pxx = np.interp(1 / freqs, model.T.total_seconds(), model.psd)
     spectrum = np.append(
         np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / delta.total_seconds() * 2)
     )

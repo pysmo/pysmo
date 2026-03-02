@@ -101,8 +101,7 @@ tools like [mypy](https://mypy.readthedocs.io) or your IDE — not at runtime.
 This means Python will not stop you from passing the wrong type to a function,
 but a type checker will warn you before you ever run the code. If you need
 runtime validation, consider pairing pysmo with a library like
-[attrs](https://www.attrs.org),
-[beartype](https://beartype.readthedocs.io), or
+[attrs](https://www.attrs.org) or
 [pydantic](https://docs.pydantic.dev).
 
 !!! note

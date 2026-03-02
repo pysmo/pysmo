@@ -1,6 +1,5 @@
 """Tests for pysmo.lib.io.SacIO."""
 
-from beartype.roar import BeartypeCallHintParamViolation
 from pysmo.lib.io import SacIO
 from pandas import Timestamp, Timedelta
 from datetime import timezone
@@ -469,18 +468,6 @@ def test_invalid_enum_value(header: str, _: str) -> None:
     sac = SacIO()
     with pytest.raises(ValueError):
         setattr(sac, header, "not_a_valid_enum")
-
-
-# ─────────────────────── Constructor type checking ─────────────────────────
-
-
-def test_beartype_method_type_checking() -> None:
-    """Beartype enforces types on explicitly annotated SacIO methods."""
-    sac = SacIO()
-    with pytest.raises(BeartypeCallHintParamViolation):
-        sac.ref_datetime = "not_a_datetime"  # type: ignore
-    with pytest.raises(BeartypeCallHintParamViolation):
-        sac.change_all_times("ten")  # type: ignore
 
 
 # ─────────────────────────── Read-only attrs ───────────────────────────────
