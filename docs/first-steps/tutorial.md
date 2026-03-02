@@ -147,7 +147,6 @@ Success: no issues found in 1 source file
       This makes our code simpler and likely easier to read.
     - Note that we are relying on checking our code *before* running it! If you
       want checking at runtime, you may need to look into using a library like
-      [beartype](https://beartype.readthedocs.io) or
       [pydantic](https://docs.pydantic.dev).
 
 ## Reusing functions in other contexts

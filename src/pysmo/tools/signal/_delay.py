@@ -6,14 +6,12 @@ from scipy.linalg import lstsq, inv
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 from collections.abc import Sequence
-from beartype import beartype
 from pandas import Timedelta
 from numpy.typing import NDArray
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 
 
-@beartype
 def _check_same_delta(
     seismogram1: Seismogram, seismogram2: Seismogram | Sequence[Seismogram]
 ) -> None:
