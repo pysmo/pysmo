@@ -5,7 +5,6 @@ from pandas import Timedelta
 from copy import deepcopy
 from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
-from beartype.roar import BeartypeCallHintParamViolation
 from tests.test_helpers import assert_seismogram_modification
 from syrupy.assertion import SnapshotAssertion
 import matplotlib.pyplot as plt
@@ -308,9 +307,9 @@ class TestTaper:
 
         seismogram.data = np.ones(len(seismogram.data))
 
-        with pytest.raises(BeartypeCallHintParamViolation):
+        with pytest.raises(TypeError):
             _ = taper(seismogram, "abc", clone=True)  # type: ignore
-        with pytest.raises(BeartypeCallHintParamViolation):
+        with pytest.raises(ValueError):
             _ = taper(seismogram, 1.7, clone=True)
         fig = plt.figure()
         time = time_array(seismogram)

@@ -14,7 +14,6 @@ from ._lib import SacIODefaults
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 from attrs import define
-from beartype import beartype
 from typing import Any, Self, Literal
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -23,7 +22,6 @@ from os import PathLike
 from pathlib import Path
 
 
-@beartype
 @define(kw_only=True)
 class SacIO(SacIOBase):
     """
