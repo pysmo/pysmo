@@ -1,42 +1,36 @@
-"""Constrained type aliases used for runtime validation in pysmo.
+"""Constrained type aliases used in pysmo."""
 
-These are [`Annotated`][typing.Annotated] type aliases with
-[`beartype`][] validators that enforce value constraints (e.g.
-positivity, range). They are not the same as pysmo types (protocol
-classes); instead, they are used as type annotations within pysmo
-to ensure attribute values meet expected constraints.
-"""
-
+import pandas as pd
 from typing import Annotated
-from pandas import Timedelta
-from beartype.vale import Is
+from annotated_types import Interval, Gt, Lt, Ge
 
-# Reusable Validators
-_is_unit = Is[lambda x: 0.0 <= x <= 1.0]
-_is_positive = Is[lambda x: x > 0]
-_is_negative = Is[lambda x: x < 0]
-_is_non_negative = Is[lambda x: x >= 0]
-_is_positive_timedelta = Is[lambda x: x.total_seconds() > 0]
-_is_negative_timedelta = Is[lambda x: x.total_seconds() < 0]
-_is_non_negative_timedelta = Is[lambda x: x.total_seconds() >= 0]
+# ---------------------------------------------------------------------------
+# Numeric Type Aliases with Constraints
+# ---------------------------------------------------------------------------
 
-UnitFloat = Annotated[float, _is_unit]
-"""Float between 0.0 and 1.0."""
+type UnitFloat = Annotated[float | int, Interval(ge=0, le=1)]
+"""Float between 0.0 and 1.0, or int that is 0 or 1."""
 
-PositiveNumber = Annotated[int | float, _is_positive]
-"""Positive Numbers (Float or Int)."""
+type PositiveNumber = Annotated[int | float, Gt(0)]
+"""Positive Numbers (Float or Int) greater than 0."""
 
-NegativeNumber = Annotated[int | float, _is_negative]
-"""Negative Numbers (Float or Int)."""
+type NegativeNumber = Annotated[int | float, Lt(0)]
+"""Negative Numbers (Float or Int) less than 0."""
 
-NonNegativeNumber = Annotated[int | float, _is_non_negative]
-"""Non-negative Numbers (Float or Int)."""
+type NonNegativeNumber = Annotated[int | float, Ge(0)]
+"""Non-negative Numbers (Float or Int) greater than or equal to 0."""
 
-PositiveTimedelta = Annotated[Timedelta, _is_positive_timedelta]
+# ---------------------------------------------------------------------------
+# pandas Timedelta Type Aliases with Constraints
+# ---------------------------------------------------------------------------
+
+_ZERO_TD = pd.Timedelta(0)
+
+type PositiveTimedelta = Annotated[pd.Timedelta, Gt(_ZERO_TD)]
 """Positive Timedelta."""
 
-NegativeTimedelta = Annotated[Timedelta, _is_negative_timedelta]
+type NegativeTimedelta = Annotated[pd.Timedelta, Lt(_ZERO_TD)]
 """Negative Timedelta."""
 
-NonNegativeTimedelta = Annotated[Timedelta, _is_non_negative_timedelta]
+type NonNegativeTimedelta = Annotated[pd.Timedelta, Ge(_ZERO_TD)]
 """Non-negative Timedelta (includes 0 total_seconds)."""

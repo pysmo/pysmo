@@ -6,7 +6,6 @@ from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SeismogramDefaults
 from collections.abc import Hashable
 from typing import Protocol, Any, runtime_checkable
-from beartype import beartype
 from attrs import define, field, validators
 from pandas import Timestamp
 from enum import StrEnum, auto
@@ -44,7 +43,6 @@ class ICCSSeismogram(Seismogram, Protocol):
 
 
 @define(kw_only=True, slots=True)
-@beartype
 class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
     """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
 

@@ -9,7 +9,6 @@ from copy import deepcopy
 from pandas import Timestamp, Timedelta
 from math import floor
 from typing import Any, Literal, overload, TYPE_CHECKING
-from beartype import beartype
 import scipy.signal
 import numpy as np
 
@@ -320,7 +319,6 @@ def resample[T: Seismogram](
 ) -> T: ...
 
 
-@beartype
 def resample[T: Seismogram](
     seismogram: T, delta: PositiveTimedelta, clone: bool = False
 ) -> None | T:
@@ -385,7 +383,6 @@ def taper[T: Seismogram](
 ) -> T: ...
 
 
-@beartype
 def taper[T: Seismogram](
     seismogram: T,
     taper_width: NonNegativeTimedelta | UnitFloat,
@@ -476,7 +473,6 @@ def taper[T: Seismogram](
     return None
 
 
-@beartype
 def time2index(
     seismogram: Seismogram,
     time: Timestamp,
@@ -594,7 +590,6 @@ def window[T: Seismogram](
 ) -> T: ...
 
 
-@beartype
 def window[T: Seismogram](
     seismogram: T,
     window_begin_time: Timestamp,

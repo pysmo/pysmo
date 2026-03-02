@@ -6,7 +6,6 @@ from pysmo.lib.io._sacio import (
     SAC_OPTIONAL_TIME_HEADERS,
 )
 from pysmo.lib.defaults import SeismogramDefaults
-from beartype import beartype
 from pandas import Timestamp, Timedelta
 from typing import overload, Self, TYPE_CHECKING
 from attrs import define, field
@@ -95,7 +94,6 @@ class _SacNested:
         setattr(self._parent, sac_time_header, seconds)
 
 
-@beartype
 @define(kw_only=True)
 class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
     """Helper class for SAC seismogram attributes.
@@ -168,7 +166,6 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
             self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
 
 
-@beartype
 @define(kw_only=True)
 class SacStation(_SacNested):
     """Helper class for SAC station attributes.
@@ -276,7 +273,6 @@ class SacStation(_SacNested):
         setattr(self._parent, "stel", value)
 
 
-@beartype
 @define(kw_only=True)
 class SacEvent(_SacNested):
     """Helper class for SAC event attributes.
@@ -400,7 +396,6 @@ class RequiredSacTimestamp:
 
         return instance._ref_datetime + Timedelta(seconds=seconds)
 
-    @beartype
     def __set__(self, obj: "_SacNested", value: Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
@@ -444,7 +439,6 @@ class OptionalSacTimestamp:
 
         return instance._ref_datetime + Timedelta(seconds=seconds)
 
-    @beartype
     def __set__(self, obj: "_SacNested", value: Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
@@ -511,7 +505,7 @@ class SacTimestamps(_SacNested):
         >>> sac.timestamps.b = None
         Traceback (most recent call last):
         ...
-        beartype.roar.BeartypeCallHintParamViolation: ...
+        TypeError: ...
         >>>
         ```
     """
@@ -624,12 +618,6 @@ class SAC(SacIO):
         ```python
         >>> # No error: a SAC file doesn't have to contain event information:
         >>> sac.evla = None
-        >>>
-        >>> # Error: the sac.event object may not have attributes set to `None`:
-        >>> sac.event.latitude = None
-        Traceback (most recent call last):
-        ...
-        beartype.roar.BeartypeCallHintParamViolation: ...
         >>>
         ```
 

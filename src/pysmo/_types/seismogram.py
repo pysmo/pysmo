@@ -5,7 +5,6 @@ from pysmo.typing import PositiveTimedelta
 from typing import Protocol, runtime_checkable
 from attrs import define, field
 from pandas import Timestamp, Timedelta
-from beartype import beartype
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 
@@ -75,7 +74,6 @@ class SeismogramEndtimeMixin:
 # --8<-- [start:mini-seismogram]
 
 
-@beartype
 @define(kw_only=True, slots=True)
 class MiniSeismogram(SeismogramEndtimeMixin):
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
