@@ -16,23 +16,23 @@ chapter discusses this scenario.
 
 Before answering this question, remember that pysmo types are typically very
 simple. Most likely an individual type will contain way fewer attributes than
-any third party class. You must therefore decide which types you want to use
-with the class. Some may work out of the box, others may require some extra
+any third-party class. You must therefore decide which types you want to use
+with the class. Some may work out-of-the-box, others may require some extra
 work (e.g. because the attribute name or data format are different), and some
-will never work (perhaps because the necessary data aren't in the class to
+will never work (perhaps because the necessary data are not in the class to
 begin with).
 
 !!! warning
 
-    Keep in mind, that pysmo types merely define the interface, not the
+    Keep in mind that pysmo types merely define the interface, not the
     implementation. If the external class does something internally that
     differs from the expected behaviour (this could be something as simple as
-    using different units) you might end up with issues.
+    using different units), you might end up with issues.
 
 ### Yes
 
 If the external class has the same attributes (name and type) as a given pysmo
-type, then it should work out of the box. You can verify this using
+type, then it should work out-of-the-box. You can verify this using
 [`isinstance`][]:
 
 <!-- skip: start -->
@@ -171,10 +171,10 @@ These names do not match pysmo types, and several types (station location,
 event location, seismogram data) coexist within a single object.
 
 The [`SAC`][pysmo.classes.SAC] class solves this by inheriting from
-[`SacIO`][pysmo.lib.io.SacIO] and adding helper class attributes. While
+[`SacIO`][pysmo.lib.io.SacIO] and adding helper-class attributes. While
 [`SacIO`][pysmo.lib.io.SacIO] itself comprises roughly 800 lines of code,
-the adaptation layer in [`SAC`][pysmo.classes.SAC] is only around 200 -
-typically it is much less work to adapt an existing class than what went into
+the adaptation layer in [`SAC`][pysmo.classes.SAC] is only around 200.
+Typically, it is much less work to adapt an existing class than what went into
 building it in the first place:
 
 ```python

@@ -19,8 +19,8 @@ discussed below.
 ## Pysmo types as input
 
 The simplest way of using pysmo types is in functions that only use them to
-annotate inputs. In these instances we don't need to be concerned about how
-differences between different compatible classes affect other parts of your
+annotate inputs. In these instances, we don't need to be concerned about how
+differences between various compatible classes affect other parts of your
 code, as their "journeys" end here.
 
 For example, the following function takes any [`Seismogram`][pysmo.Seismogram]
@@ -56,12 +56,12 @@ type is. We can explore this with the following snippet:
 1. [`reveal_type`][typing.reveal_type] allows us to inspect the actual type of an object. It prints
   type information at runtime (what it actually is) or when using mypy (what
   can be inferred from type annotations).
-2. :bulb: Deep copying objects can be expensive if they contain large nested
+2. :bulb: Deep-copying objects can be expensive if they contain large nested
   items.
 
 Here, we create a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance from
 a SAC file and pass it to the `double_delta` function. Inside the function it
-gets [deepcopied][copy.deepcopy], modified and returned as the same type. We
+gets [deep-copied][copy.deepcopy], modified and returned as the same type. We
 can verify this by executing the script, whereby the highlighted lines in the
 code produce the following output:
 
@@ -200,7 +200,7 @@ at the declarations from *bottom to top* we read it as follows:
 !!! tip
 
     This may seem a bit overwhelming at first, but you will quickly find that
-    the patterns frequently repeat themselves, and that you can simply copy
-    paste a lot of the overloaded function declarations. Remember also that the
+    the patterns frequently repeat themselves, and that you can simply
+    copy-paste a lot of the overloaded function declarations. Remember also that the
     time invested here likely more than offsets the amount of time spent
     hunting down avoidable bugs in your code.

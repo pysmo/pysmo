@@ -80,9 +80,14 @@ portions are generated on the fly in two ways:
   broader window around the phase arrival, and without any tapering applied.
 
 Both share common processing steps, and are used to create a corresponding
-stack. As they are completely reproducable, they only exist for the lifetime
+stack. As they are completely reproducible, they only exist for the lifetime
 of the [`ICCS`][pysmo.tools.iccs.ICCS] instance that contains the input
-seismograms and parameters used in their creation.
+[`seismograms`][pysmo.tools.iccs.ICCS.seismograms] and parameters used in
+their creation. Changing any of the parameters will lead to automatic
+regeneration of the ephemeral seismograms, however, as mutations of a list
+cannot be detected, adding or removing seismograms from the list will _not_
+trigger regeneration. In that case, clearing the cache must be done manually by
+calling [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache].
 
 !!! tip
 

@@ -8,7 +8,7 @@ tags:
 
 Typing has become an increasingly important feature of modern Python. This has
 changed how we write code, helped prevent errors, and improved the experience
-working with modern editors. Pysmo brings these features to the field of
+of working with modern editors. Pysmo brings these features to the field of
 seismology.
 
 !!! tip
@@ -38,7 +38,7 @@ seismology.
 
 Anyone who has taken a course on programming (in any language) will most likely
 first have been taught about the different data types available. These typically
-consist of simple types like integers, floats, strings, as well as the more
+consist of simple types like integers, floats, and strings, as well as the more
 complicated arrays, dictionaries, etc. These types are typically very clearly
 defined and intuitive to use. For example, we don't need to think very hard
 whether or not it makes sense to pass the string "hello world" as input to a
@@ -51,7 +51,7 @@ quite easily reach a point where we no longer have that intuitive feeling about
 the data we are working with.
 
 When processing seismological data with Python, we naturally want to consider a
-seismogram to be a Python type of sorts. However, which data that type should
+seismogram to be a Python type of sorts. However, what data that type should
 include depends on the particular requirements of the processing that is
 performed with that seismogram data. Thus, if we define a seismogram type based
 on the needs of one particular application, it might not be suited for another.
@@ -71,8 +71,8 @@ cases!).
     but they often try to cater towards applications too. We can use
     [SAC](https://ds.iris.edu/files/sac-manual/manual/file_format.html) as an
     example for this; SAC is essentially an application with its own file
-    format. Additionally, SAC files are commonly used as input format for third
-    party applications. This is possible because SAC files allow storing a lot
+    format. Additionally, SAC files are commonly used as input format for third-party
+    applications. This is possible because SAC files allow storing a lot
     of metadata in their "headers". The approach does have a few drawbacks
     though:
 
@@ -131,7 +131,7 @@ up the coding process by offering autocomplete for the attributes:
 ### Error checking
 
 Should we for some reason make coding errors such as trying to access a
-non-existing attribute, the editor will give us a warning:
+non-existent attribute, the editor will give us a warning:
 
 ![Editor Error](../images/editor_error_dark.png#only-dark){ loading=lazy }
 ![Editor Error](../images/editor_error_light.png#only-light){ loading=lazy }

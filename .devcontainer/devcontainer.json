@@ -1,59 +1,44 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.236.0/containers/python-3
 {
-  "name": "Python 3",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      // Update 'VARIANT' to pick a Python version: 3, 3.10, 3.9, 3.8, 3.7, 3.6
-      // Append -bullseye or -buster to pin to an OS version.
-      // Use -bullseye variants on local on arm64/Apple Silicon.
-      "VARIANT": "3-bullseye",
-      // Options
-      "NODE_VERSION": "lts/*"
-    }
+  "name": "pysmo-dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  
+  // SELinux compatibility: Use the :Z flag on the workspace mount.
+  // This relabels the files for Podman/Fedora, while Docker/Codespaces will ignore it.
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,Z",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  "remoteUser": "vscode",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:1": {
+      "configureZshAsDefaultShell": true
+    },
+    // Add uv for dependency management (as required by pysmo)
+    "ghcr.io/devcontainers-contrib/features/uv:1": {}
   },
-  // Configure tool-specific properties.
+
   "customizations": {
-    // Configure properties specific to VS Code.
     "vscode": {
-      // Set *default* container specific settings.json values on container create.
-      "settings": {},
-      // Add the IDs of extensions you want installed when the container is created.
+      "settings": {
+        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff"
+      },
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter",
-        "ms-vscode.makefile-tools",
-        "streetsidesoftware.code-spell-checker",
-        "eamodio.gitlens"
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "tamasfe.even-better-toml",
+        "bungcip.better-toml",
+        "yzhang.markdown-all-in-one"
       ]
     }
   },
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [8000, 8888],
-  "portsAttributes": {
-    "8000": {"label": "Live-Docs"},
-    "8888": {"label": "Notebook"}
-  },
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "pip3 install --user -r requirements.txt",
-  "postCreateCommand": [
-    "poetry",
-    "install"
-  ],
-//  "postAttachCommand": "./.devcontainer/postAttachCommand.sh",
-  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  "remoteUser": "vscode",
-  "features": {
-	"ghcr.io/devcontainers/features/sshd:1": {},
-	"ghcr.io/devcontainers-contrib/features/poetry:2": {},
-  "ghcr.io/devcontainers-contrib/features/tox": {}
-  },
-  // "runArgs": [
-  //		"--userns=keep-id:uid=1000,gid=1000"
-  // ],
-  "containerUser": "vscode",
-  "updateRemoteUserUID": false
+
+  // Setup the project using the project's own Makefile
+  "postCreateCommand": "make sync"
 }
