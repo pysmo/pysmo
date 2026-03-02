@@ -85,7 +85,7 @@ still happily try running that function with strings as arguments). However,
 besides being a useful form of self-documentation, type hints become very
 powerful in combination with a modern source code editor, or third party tools
 like [mypy](https://mypy.readthedocs.io). Both will scan code and catch type
-errors in your code before it is executed, making it sort of "quasi statically
+errors in your code before it is executed, making it sort of "quasi-statically
 typed" (1).
 { .annotate }
 
@@ -99,7 +99,7 @@ it actually is. This is often referred to as *duck typing*. The same way that
 something can be considered a duck if it walks and talks like one, any object
 that has all the right attributes and methods expected e.g. by a function, can
 also be used as input for that function. The following example defines two
-classes for ducks and humans, and a function which runs error free when its
+classes for ducks and humans, and a function which runs error-free when its
 argument is duck-like (it can quack and waddle, rather than strictly being of
 type `Duck`):
 
@@ -149,7 +149,7 @@ in some instances this is actually desired behaviour.
 
 ??? example "Duck typing in the wild."
 
-    A real world example where duck typing is used in Python, is in the
+    A real-world example where duck typing is used in Python, is in the
     built-in [`#!py len()`][len] function:
 
     ```python
@@ -178,11 +178,11 @@ in some instances this is actually desired behaviour.
     [`__len__()`][object.__len__] attribute:
 
     ```python
-    >>> hasattr(my_string,'__len__')
+    >>> hasattr(my_string, '__len__')
     True
-    >>> hasattr(my_list,'__len__')
+    >>> hasattr(my_list, '__len__')
     True
-    >>> hasattr(my_int,'__len__')
+    >>> hasattr(my_int, '__len__')
     False
     >>>
     ```

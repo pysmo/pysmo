@@ -29,18 +29,18 @@ no need to inherit from a pysmo base class. In many cases, minor adjustments to
 an existing class are all that is needed for it to conform to a pysmo type.
 Crucially, these adjustments are purely additive, so they will not break any
 code that already uses the class. The diagram below illustrates this: a bespoke
-class and two third party classes all conform to the same pysmo type, making
+class and two third-party classes all conform to the same pysmo type, making
 them usable with any function that accepts that type. At the same time, the
-third party classes continue to work with their own existing functions.
+third-party classes continue to work with their own existing functions.
 
 ```mermaid
 flowchart TD
     C1@{ shape: das, label: "**Bespoke Class**" }
-    C2@{ shape: das, label: "**Third Party Class A**" }
-    C3@{ shape: das, label: "**Third Party Class B**" }
+    C2@{ shape: das, label: "**Third-party Class A**" }
+    C3@{ shape: das, label: "**Third-party Class B**" }
     PT@{ shape: stadium, label: "**Pysmo Type**" }
-    C2 ---> TF1@{ shape: rounded, label: "*third_party_func_a*(Third Party Class A)" }
-    C3 ---> TF2@{ shape: rounded, label: "*third_party_func_b*(Third Party Class B)" }
+    C2 ---> TF1@{ shape: rounded, label: "*third_party_func_a*(Third-party Class A)" }
+    C3 ---> TF2@{ shape: rounded, label: "*third_party_func_b*(Third-party Class B)" }
     C1 ---> PT
     C2 ---> PT
     C3 ---> PT
@@ -131,7 +131,7 @@ reports or feature requests, please open an
 
 ## How can I help?
 
-Pysmo is an open source project and welcomes contributions of all kinds —
+Pysmo is an open-source project and welcomes contributions of all kinds —
 whether that is asking questions, reporting bugs, or writing code. Head over to
 the [contributing guide](../development/contributing.md) to find out how you can
 get involved.

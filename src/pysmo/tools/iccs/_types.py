@@ -1,6 +1,6 @@
 import numpy as np
 from pysmo import Seismogram
-from pysmo._types._seismogram import SeismogramEndtimeMixin
+from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.typing import PositiveTimedelta
 from pysmo.lib.validators import datetime_is_utc
 from pysmo.lib.defaults import SeismogramDefaults

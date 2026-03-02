@@ -10,7 +10,7 @@ tags:
 
 ## SI units
 
-All too often mismatched units are to blame for outright errors, or at least
+All too often, mismatched units are to blame for outright errors or, at least,
 tedious extra work to get data into the correct format. Therefore, even if it
 goes against common usage patterns, units are assumed to be
 [SI](https://en.wikipedia.org/wiki/International_System_of_Units) everywhere.
@@ -32,8 +32,8 @@ objects.
 
 In places where [`scipy`][] or [`numpy`][] functions are used, pysmo will adhere
 to the original parameter definitions (and ranges). For example,
-[`scipy.signal.windows.tukey`][] takes a parameter `alpha` which ranges from
-`0` to `1` whereas similar "taper" functions in seismology often use an `alpha`
+[`scipy.signal.windows.tukey`][] takes a parameter `alpha`, which ranges from
+`0` to `1`, whereas similar "taper" functions in seismology often use an `alpha`
 that lies between `0` and `0.5` (whereby `0.5` does the same thing as `1` in
 the SciPy version).
 
@@ -54,7 +54,7 @@ to set either of those attributes to [`None`][].
 
 It is generally better to use functions than methods, or at the very least the
 number of methods should be kept at a minimum. This is even more so when code
-re-usability becomes a factor. Hence pysmo types almost never contain methods.
+reusability becomes a factor. Hence pysmo types almost never contain methods.
 
 This extends to magic (dunder) methods as well. Pysmo types are intended to be
 data containers, so adding special behaviour via dunder methods would be

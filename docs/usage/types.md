@@ -22,7 +22,7 @@ exist for custom types.
 !!! note
 
     For simplicity, we will assume classes only contain attributes in the
-    examples shown here. In a real world situation, classes (and types) may of
+    examples shown here. In a real-world situation, classes (and types) may of
     course contain methods too.
 
 ### Direct access
@@ -75,7 +75,7 @@ def f3(a: float, b: float, c: str, ..., z: datetime):
 2. Same for Tb and all other attributes.
 
 Though the function bodies are not shown, we can safely assume that if they are
-half decently written, they use all declared function parameters. Thus `f2`
+half-decently written, they use all declared function parameters. Thus `f2`
 uses only a fraction of the attributes, while `f3` uses all attributes declared in
 `SomeClass`. `f2` seems like a reasonable function then; it is simple, it is
 clear what data are processed in the function body, and it is decoupled from
@@ -113,7 +113,7 @@ flowchart TD
 ```
 
 Here, `TSomeClass` is not meant to be a "pysmo-like" type. Not much thought
-went into it other than "you never know if you use this some other
+went into it other than "you never know if you'll use this some other
 way one day". But you just might...
 
 ### Subset match
@@ -211,7 +211,7 @@ flowchart TD
 Discussing the different patterns above provides insight into some of the
 practical aspects of types. However, there are some more fundamental things to
 consider when defining types for pysmo. Essentially the idea is to take complex
-data, and divide them into sensible smaller pieces (whereby these pieces become
+data, and divide them into sensible, smaller pieces (whereby these pieces become
 the basis for pysmo types). The single most important thing to keep in mind
 while doing so, is that once defined these types should *never* change.
 

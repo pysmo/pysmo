@@ -1,4 +1,4 @@
-from ._location import Location
+from .location import Location
 from typing import Protocol, runtime_checkable
 from attrs import define, field, validators
 
