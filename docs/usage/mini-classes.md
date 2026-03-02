@@ -10,11 +10,11 @@ tags:
 
 # Mini Classes
 
-Because pysmo is built around its types rather than some all encompassing class,
+Because pysmo is built around its types rather than some all-encompassing class,
 it doesn't have a native class that can be used with the various functions and
 modules that come as part of this package. As shown in the
-[tutorial](../first-steps/tutorial.md), the idea is for you to use a tailor
-made class for a particular use case. However, should you find yourself needing
+[tutorial](../first-steps/tutorial.md), the idea is for you to use a tailor-made
+class for a particular use case. However, should you find yourself needing
 a class that has exactly the same attributes as a particular type, then pysmo
 has you covered with its "Mini" classes. These classes are minimal
 implementations of their respective types and are named accordingly (e.g.
@@ -47,8 +47,8 @@ might notice some differences:
   restrictive; after all, a negative sampling interval doesn't make any sense.
   In combination with the [`beartype`][beartype.beartype] decorator this
   ensures no invalid values are accepted at runtime.
-- Some default values are provided. These will typically be replaced in real
-  world usage, but do allow for some convenience while quickly testing things.
+- Some default values are provided. These will typically be replaced in
+  real-world usage, but do allow for some convenience while quickly testing things.
 
 ## Example workflow
 
