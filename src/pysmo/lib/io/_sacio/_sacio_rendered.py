@@ -3,9 +3,10 @@
 # 'sacheader.yml' and the 'sacio-template.py.j2' file.
 from ._lib import SacIODefaults
 from typing import Any
-from attrs import define, field, validators, converters, Attribute
+from attrs import define, field, validators, converters, Attribute, setters
 from enum import IntEnum, StrEnum, auto
 import numpy as np
+from pysmo.lib.validators import convert_to_ndarray
 
 
 class IFTYPE(IntEnum):
@@ -1319,14 +1320,23 @@ class SacIOBase:
     """Generic name of recording instrument."""
 
     data: np.ndarray = field(
-        factory=lambda: np.array([]), validator=validators.instance_of(np.ndarray)
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram data."""
     x: np.ndarray = field(
-        factory=lambda: np.array([]), validator=validators.instance_of(np.ndarray)
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     y: np.ndarray = field(
-        factory=lambda: np.array([]), validator=validators.instance_of(np.ndarray)
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     _zero_time_can_be_none_zero: bool = field(
         default=False, validator=validators.instance_of(bool)

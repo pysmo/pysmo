@@ -17,7 +17,7 @@ from ._iccs import ICCS
 from ._defaults import IccsDefaults
 from collections.abc import Callable
 from typing import overload, Literal
-from pandas import Timedelta
+import pandas as pd
 from matplotlib.colors import PowerNorm
 from matplotlib.cm import ScalarMappable
 from matplotlib.widgets import Cursor, Button, SpanSelector
@@ -58,10 +58,10 @@ def _make_mask(iccs: ICCS, all_seismograms: bool) -> list[bool]:
 def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
     """Return the taper ramp width in seconds.
 
-    If `ramp_width` is a Timedelta it is converted directly; if it is a
+    If `ramp_width` is a pd.Timedelta it is converted directly; if it is a
     float it is treated as a fraction of the total time window duration.
     """
-    if isinstance(iccs.ramp_width, Timedelta):
+    if isinstance(iccs.ramp_width, pd.Timedelta):
         return iccs.ramp_width.total_seconds()
     return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
 
@@ -254,7 +254,7 @@ def _setup_phase_picker(
         if (
             event.inaxes is ax
             and event.xdata is not None
-            and iccs.validate_pick(Timedelta(seconds=event.xdata))
+            and iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
         ):
             pick_line.set_xdata(np.array((event.xdata, event.xdata)))
             on_valid_pick(event.xdata)
@@ -266,7 +266,7 @@ def _setup_phase_picker(
         if not isinstance(event, MouseEvent):
             return
         if event.inaxes == ax and event.xdata is not None:
-            is_valid = iccs.validate_pick(Timedelta(seconds=event.xdata))
+            is_valid = iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
             cursor.linev.set_color("g" if is_valid else "r")
 
     if isinstance(ax.figure, Figure):
@@ -285,7 +285,9 @@ def _setup_timewindow_picker(
 
     def onselect(xmin: float, xmax: float) -> None:
         nonlocal old_extents
-        if iccs.validate_time_window(Timedelta(seconds=xmin), Timedelta(seconds=xmax)):
+        if iccs.validate_time_window(
+            pd.Timedelta(seconds=xmin), pd.Timedelta(seconds=xmax)
+        ):
             old_extents = xmin, xmax
             ax.title.set_color(default_title_color)
             if ax.figure:
@@ -619,7 +621,7 @@ def update_pick(
     cursor, pick_line = _setup_phase_picker(ax, iccs, handle_valid_pick)
 
     def on_save(_: Event) -> None:
-        iccs.update_all_picks(Timedelta(seconds=pending_pick[0]))
+        iccs.update_all_picks(pd.Timedelta(seconds=pending_pick[0]))
         if not return_fig:
             plt.close(fig)
 
@@ -723,8 +725,8 @@ def update_timewindow(
     span = _setup_timewindow_picker(ax, iccs, handle_valid_selection)
 
     def on_save(_: Event) -> None:
-        iccs.window_pre = Timedelta(seconds=pending_window[0])
-        iccs.window_post = Timedelta(seconds=pending_window[1])
+        iccs.window_pre = pd.Timedelta(seconds=pending_window[0])
+        iccs.window_post = pd.Timedelta(seconds=pending_window[1])
         if not return_fig:
             plt.close(fig)
 

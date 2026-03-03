@@ -32,34 +32,50 @@
 
 ---
 
-Pysmo leverages modern Python (3.12+) to bring type safety and clean
-abstractions to seismology code.
+Most seismology libraries hand you a single large object — waveform samples,
+station coordinates, and event parameters all bundled together. This is a
+common pattern, but it sidesteps a question worth asking: *what is a
+seismogram, actually?* Not a file format. A seismogram is a time series:
+samples, a sampling interval, and a start time. A station is a named
+geographic position. These are narrow, precise concepts, and modern Python
+gives us the vocabulary to express them exactly — `Protocol` classes,
+`Annotated` types, structural subtyping. Pysmo follows that structure: each
+type maps to a real scientific concept, concrete classes enforce correctness
+at construction, and file-format adapters expose only what a concept actually
+needs.
 
-### Protocol-based design
+When a function declares exactly which concept it needs, your editor knows too — autocomplete is precise, type errors
+surface before runtime, and a function signature is enough to understand what
+it consumes. Narrower types also dissolve a question that haunts any large
+bundled object: what counts as data, and what is metadata? The answer depends
+on what you are doing, not on the file format that happens to store it. The
+conventional response is to make fields optional: bundle everything into one
+object, set unused attributes to `None`, and let callers decide what matters.
+This sidesteps the design question but compounds the practical one — a station
+coordinate of `None` is no more meaningful than a `float` with the value
+`"abc"`, and the error surfaces far from where the bad assumption was made.
+When types reflect scientific concepts directly, the boundaries emerge from the
+science instead. Code written against narrow interfaces is reusable for the
+same reason: a function that accepts a protocol works with any conforming
+object — a file parser, a hand-written dataclass, or a lightweight instance
+created in a notebook — without modification.
 
-Pysmo defines its core types —
-[`Seismogram`](https://docs.pysmo.org), [`Station`](https://docs.pysmo.org),
-[`Event`](https://docs.pysmo.org) — as **Protocol classes** (structural
-subtyping). Any object that has the right attributes satisfies the protocol;
-no inheritance required. This means pysmo functions work with *your* classes
-out of the box, as long as they look like the right type.
-
-### Runtime validation with attrs
-
-Pysmo's concrete "Mini" classes (e.g. `MiniSeismogram`) are built with
-[attrs](https://www.attrs.org). Fields carry validators and
-converters — a `datetime` without `tzinfo=UTC` or a negative sampling
-interval is rejected immediately, not silently propagated.
-
-### Separation of storage and processing
-
-File formats bundle many fields together. Pysmo splits them into narrowly
-scoped protocol types so that processing code stays simple, testable, and
-reusable across projects. A `SAC` object exposes `.seismogram`, `.station`,
-and `.event` views — each satisfying the corresponding protocol — without
-coupling your analysis code to the SAC format.
+The same logic also narrows the gap between user code and library. Pysmo
+ships with a collection of processing tools — though that is not what it is
+fundamentally about. They exist because the same design applies: any function
+written against pysmo's protocols is compatible with every conforming object,
+and therefore useful beyond its original context. The tools can be used
+directly or as building blocks for something larger. Any well-written
+pysmo-compatible code is a reasonable candidate for inclusion in the library.
+Contributions are always welcome, though more often the consequence is
+simpler: code written for one project finds itself useful in the next.
 
 ## Quick Start
+
+Pysmo includes concrete classes and processing functions that put everything
+above into practice. Below, two of those classes are used alongside built-in
+functions and a simple user-defined one — the latter works with both without
+any modification, which is the point.
 
 ```python
 from pysmo import Seismogram, MiniSeismogram
@@ -78,44 +94,44 @@ resample(seis, seis.delta * 2)
 # Write a function that works with ANY Seismogram implementation
 def print_info(seismogram: Seismogram) -> None:
     print(f"Start: {seismogram.begin_time}")
-    print(f"Samples: {len(seismogram)}, dt: {seismogram.delta}")
+    print(f"dt: {seismogram.delta}")
 
-print_info(seis)  # works with SacSeismogram
+print_info(seis)  # works with SAC
 
 # ...or create a lightweight seismogram from scratch
 mini = MiniSeismogram(data=seis.data, delta=seis.delta, begin_time=seis.begin_time)
 print_info(mini)  # works with MiniSeismogram too — same protocol
 ```
 
-## Key Concepts
-
-| Concept | Python Feature | Pysmo Example |
-|---|---|---|
-| Structural subtyping | `Protocol` + `@runtime_checkable` | `Seismogram`, `Station`, `Event` |
-| Validated data classes | `attrs` with field validators | `MiniStation(name="STA", latitude=48.2, ...)` |
-| Type safety | `Annotated` types | `PositiveTimedelta`, `UnitFloat` |
-| Generic functions | PEP 695 type parameters | `def crop[T: Seismogram](...) -> T` |
-| Format adapters | Descriptors + `__set_name__` | `SAC.seismogram`, `SAC.station` |
-
-## Why Protocols?
-
-Traditional seismology libraries often require you to inherit from a base
-class or convert data into a library-specific format. Pysmo takes a different
-approach: functions accept any object that satisfies a protocol. You can use
-pysmo functions with your own classes — no subclassing, no format conversion,
-no vendor lock-in.
+The design shifts the question from what a class provides to what a function
+needs. Rather than being bound by what a library class exposes, you are free
+to define bespoke classes for a particular project, and they will work with
+any function whose protocol they satisfy.
 
 ```python
-# Your own class — no pysmo base class needed
+from dataclasses import dataclass
+import numpy as np
+import pandas as pd
+
 @dataclass
 class MySeismogram:
-    begin_time: datetime
-    delta: timedelta
     data: np.ndarray
-    def __len__(self) -> int:
-        return len(self.data)
+    delta: pd.Timedelta
+    begin_time: pd.Timestamp
+    my_attribute: str
 
-# pysmo functions just work
-from pysmo.functions import detrend
-detrend(MySeismogram(...))  # satisfies the Seismogram protocol
+    @property
+    def end_time(self) -> pd.Timestamp:
+        # read-only: derived from begin_time, delta, and data
+        return self.begin_time + self.delta * (len(self.data) - 1)
+
+my_seis = MySeismogram(
+    data=np.zeros(1000),
+    delta=pd.Timedelta(seconds=0.01),
+    begin_time=pd.Timestamp("2024-01-01", tz="UTC"),
+    my_attribute="hello world",
+)
+
+print_info(my_seis)   # same function as above — no changes needed
+detrend(my_seis)      # built-in functions work too
 ```

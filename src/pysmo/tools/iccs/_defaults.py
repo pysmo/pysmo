@@ -3,7 +3,7 @@ import numpy as np
 from ._types import ConvergenceMethod
 from dataclasses import dataclass, field
 from matplotlib.colors import Colormap
-from pandas import Timedelta
+import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -13,10 +13,10 @@ class _IccsDefaults:
     # ------------------------------------------------------------------------
     # ICCS attribute defaults
     # ------------------------------------------------------------------------
-    window_pre: Timedelta = Timedelta(seconds=-15)
-    window_post: Timedelta = Timedelta(seconds=15)
-    context_width: Timedelta = Timedelta(seconds=20)
-    ramp_width: Timedelta | float = 0.1
+    window_pre: pd.Timedelta = pd.Timedelta(seconds=-15)
+    window_post: pd.Timedelta = pd.Timedelta(seconds=15)
+    context_width: pd.Timedelta = pd.Timedelta(seconds=20)
+    ramp_width: pd.Timedelta | float = 0.1
     min_ccnorm: np.floating | float = 0.5
     bandpass_apply: bool = False
     bandpass_fmin: float = 0.05

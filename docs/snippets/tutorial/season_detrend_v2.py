@@ -1,12 +1,12 @@
 from season_seismogram import SeasonSeismogram, Season
 from functions_v3 import detrend
-from pandas import Timestamp
+import pandas as pd
 import numpy as np
 
 
 def main() -> None:
     # Create a sample SeasonSeismogram instance with random data
-    begin_time = Timestamp(2023, 1, 1, 0, 0, 0)
+    begin_time = pd.Timestamp(2023, 1, 1, 0, 0, 0)
     data = np.random.randn(1000)
     season_seismogram = SeasonSeismogram(
         begin_time=begin_time, data=data, season=Season.WINTER

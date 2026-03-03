@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pysmo.tools.noise import generate_noise, peterson
 from pysmo.tools.signal import psd
-from pandas import Timedelta
+import pandas as pd
 
 
 def main() -> None:
     # Set parameters
     npts: int = 200000  # multiple of 4
-    delta = Timedelta(seconds=0.1)
+    delta = pd.Timedelta(seconds=0.1)
     nperseg = int(npts / 4)
     nfft = int(npts / 2)
     time_in_seconds = np.linspace(0, npts * delta.total_seconds(), npts)

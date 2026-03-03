@@ -1,16 +1,15 @@
 from __future__ import annotations
-from pysmo._types.seismogram import SeismogramEndtimeMixin
-from pysmo.lib.io import SacIO
-from pysmo.lib.io._sacio import (
-    SAC_REQUIRED_TIME_HEADERS,
-    SAC_OPTIONAL_TIME_HEADERS,
-)
-from pysmo.lib.defaults import SeismogramDefaults
-from pandas import Timestamp, Timedelta
-from typing import overload, Self, TYPE_CHECKING
-from attrs import define, field
 import warnings
 import numpy as np
+import pandas as pd
+from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.typing import UtcTimestamp, PositiveTimedelta
+from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.io import SacIO
+from pysmo.lib.io._sacio import SAC_REQUIRED_TIME_HEADERS, SAC_OPTIONAL_TIME_HEADERS
+from pysmo.lib.defaults import SeismogramDefaults
+from typing import overload, Self, TYPE_CHECKING
+from attrs import define, field
 
 __all__ = [
     "SAC",
@@ -29,7 +28,7 @@ class _SacNested:
     """_parent (SacIO): Parent SacIO instance."""
 
     @property
-    def _ref_datetime(self) -> Timestamp:
+    def _ref_datetime(self) -> UtcTimestamp:
         """
         Returns:
             Reference time date in a SAC file.
@@ -39,8 +38,9 @@ class _SacNested:
             that it is equal to `SEISMOGRAM_DEFAULTS.begin_time`.
         """
 
+        # ref_datetime is the utc reference time in the SAC file
         if self._parent.ref_datetime is not None:
-            return Timestamp(self._parent.ref_datetime)
+            return convert_to_utc_timestamp(self._parent.ref_datetime)
 
         warnings.warn(
             f"SAC object has no reference time (kzdate/kztime), assuming {SeismogramDefaults.begin_time.isoformat()}",
@@ -51,16 +51,16 @@ class _SacNested:
     @overload
     def _get_timestamp_from_sac(
         self, sac_time_header: SAC_REQUIRED_TIME_HEADERS
-    ) -> Timestamp: ...
+    ) -> UtcTimestamp: ...
 
     @overload
     def _get_timestamp_from_sac(
         self, sac_time_header: SAC_OPTIONAL_TIME_HEADERS
-    ) -> Timestamp | None: ...
+    ) -> UtcTimestamp | None: ...
 
     def _get_timestamp_from_sac(
         self, sac_time_header: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS
-    ) -> Timestamp | None:
+    ) -> UtcTimestamp | None:
         """Convert SAC times to Timestamp."""
 
         seconds = getattr(self._parent, sac_time_header)
@@ -68,29 +68,31 @@ class _SacNested:
         if seconds is None:
             return None
 
-        return self._ref_datetime + Timedelta(seconds=seconds)
+        return self._ref_datetime + pd.Timedelta(seconds=seconds)
 
     @overload
     def _set_sac_from_timestamp(
-        self, sac_time_header: SAC_REQUIRED_TIME_HEADERS, value: Timestamp
+        self, sac_time_header: SAC_REQUIRED_TIME_HEADERS, value: pd.Timestamp
     ) -> None: ...
 
     @overload
     def _set_sac_from_timestamp(
-        self, sac_time_header: SAC_OPTIONAL_TIME_HEADERS, value: Timestamp | None
+        self, sac_time_header: SAC_OPTIONAL_TIME_HEADERS, value: pd.Timestamp | None
     ) -> None: ...
 
     def _set_sac_from_timestamp(
         self,
         sac_time_header: SAC_REQUIRED_TIME_HEADERS | SAC_OPTIONAL_TIME_HEADERS,
-        value: Timestamp | None,
+        value: pd.Timestamp | None,
     ) -> None:
         """Set SAC times using Timestamp."""
 
         if value is None:
             setattr(self._parent, sac_time_header, None)
             return
-        seconds = (value - self._ref_datetime).total_seconds()
+
+        aware_value = convert_to_utc_timestamp(value)
+        seconds = (aware_value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
 
 
@@ -131,8 +133,8 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
 
     if TYPE_CHECKING:
         data: np.ndarray = field(init=False)
-        delta: Timedelta = field(init=False)
-        begin_time: Timestamp = field(init=False)
+        delta: PositiveTimedelta = field(init=False)
+        begin_time: UtcTimestamp = field(init=False)
 
     else:
 
@@ -147,22 +149,22 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
             self._parent.data = value
 
         @property
-        def delta(self) -> Timedelta:
+        def delta(self) -> pd.Timedelta:
             """Sampling interval."""
-            return Timedelta(seconds=self._parent.delta)
+            return pd.Timedelta(seconds=self._parent.delta)
 
         @delta.setter
-        def delta(self, value: Timedelta) -> None:
+        def delta(self, value: pd.Timedelta) -> None:
             self._parent.delta = value.total_seconds()
 
         @property
-        def begin_time(self) -> Timestamp:
+        def begin_time(self) -> UtcTimestamp:
             """Seismogram begin time."""
 
             return self._get_timestamp_from_sac(SAC_REQUIRED_TIME_HEADERS.b)
 
         @begin_time.setter
-        def begin_time(self, value: Timestamp) -> None:
+        def begin_time(self, value: pd.Timestamp) -> None:
             self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
 
 
@@ -336,7 +338,7 @@ class SacEvent(_SacNested):
         setattr(self._parent, "evdp", value / 1000)
 
     @property
-    def time(self) -> Timestamp:
+    def time(self) -> UtcTimestamp:
         """Event origin time (UTC).
 
         Important:
@@ -354,7 +356,7 @@ class SacEvent(_SacNested):
         return event_time
 
     @time.setter
-    def time(self, value: Timestamp) -> None:
+    def time(self, value: pd.Timestamp) -> None:
         self._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, value)
 
 
@@ -378,11 +380,11 @@ class RequiredSacTimestamp:
     @overload
     def __get__(
         self, instance: "_SacNested", owner: type["_SacNested"]
-    ) -> Timestamp: ...
+    ) -> UtcTimestamp: ...
 
     def __get__(
         self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
-    ) -> Self | Timestamp:
+    ) -> Self | UtcTimestamp:
         if instance is None:
             return self
 
@@ -394,12 +396,14 @@ class RequiredSacTimestamp:
                 f"on {type(instance).__name__}."
             )
 
-        return instance._ref_datetime + Timedelta(seconds=seconds)
+        return instance._ref_datetime + pd.Timedelta(seconds=seconds)
 
-    def __set__(self, obj: "_SacNested", value: Timestamp) -> None:
+    def __set__(self, obj: "_SacNested", value: pd.Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
-        seconds = (value - obj._ref_datetime).total_seconds()
+
+        aware_value = convert_to_utc_timestamp(value)
+        seconds = (aware_value - obj._ref_datetime).total_seconds()
         setattr(obj._parent, self._name, seconds)
 
 
@@ -423,11 +427,11 @@ class OptionalSacTimestamp:
     @overload
     def __get__(
         self, instance: "_SacNested", owner: type["_SacNested"]
-    ) -> Timestamp | None: ...
+    ) -> UtcTimestamp | None: ...
 
     def __get__(
         self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
-    ) -> Self | Timestamp | None:
+    ) -> Self | UtcTimestamp | None:
         if instance is None:
             return self
 
@@ -437,9 +441,9 @@ class OptionalSacTimestamp:
         if seconds is None or seconds == -12345.0:
             return None
 
-        return instance._ref_datetime + Timedelta(seconds=seconds)
+        return instance._ref_datetime + pd.Timedelta(seconds=seconds)
 
-    def __set__(self, obj: "_SacNested", value: Timestamp | None) -> None:
+    def __set__(self, obj: "_SacNested", value: pd.Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
 
@@ -447,7 +451,8 @@ class OptionalSacTimestamp:
             # Set to None (or -12345.0 if your SacIO requires the SAC null value)
             setattr(obj._parent, self._name, None)
         else:
-            seconds = (value - obj._ref_datetime).total_seconds()
+            aware_value = convert_to_utc_timestamp(value)
+            seconds = (aware_value - obj._ref_datetime).total_seconds()
             setattr(obj._parent, self._name, seconds)
 
 
@@ -487,7 +492,7 @@ class SacTimestamps(_SacNested):
         Changing timestamp values:
 
         ```python
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> sac = SAC.from_file("example.sac")
         >>>
         >>> # Original value of the "B" SAC header:
@@ -495,7 +500,7 @@ class SacTimestamps(_SacNested):
         -63.34000015258789
         >>>
         >>> # Add 30 seconds to the absolute time:
-        >>> sac.timestamps.b += Timedelta(seconds=30)
+        >>> sac.timestamps.b += pd.Timedelta(seconds=30)
         >>>
         >>> # The relative time also changes by the same amount:
         >>> sac.b

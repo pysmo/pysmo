@@ -5,7 +5,7 @@ from pysmo import Seismogram, Station, Event
 from pysmo.classes import SAC
 from pysmo.lib.io import SacIO
 from pysmo.lib.defaults import SeismogramDefaults
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from datetime import timezone
 from pathlib import Path
 import pytest
@@ -67,7 +67,7 @@ class TestSAC:
             == pytest.approx(0.02, 0.001)
         )
         assert sacseis.begin_time.timestamp() == pytest.approx(
-            Timestamp(2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc).timestamp()
+            pd.Timestamp(2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc).timestamp()
         )
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
@@ -83,7 +83,7 @@ class TestSAC:
                 1000 * (sacio.nzmsec + int(sacio.b * 1000)) % 1000000, abs=1
             )
         assert sacseis.end_time.timestamp() == pytest.approx(
-            Timestamp(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
+            pd.Timestamp(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
         )
         assert (sacseis.end_time - sacseis.begin_time).total_seconds() == pytest.approx(
             sacio.delta * (sacio.npts - 1)
@@ -91,7 +91,7 @@ class TestSAC:
 
         # Change some values
         random_data = np.random.randn(100)
-        new_time1 = Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
+        new_time1 = pd.Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
             tzinfo=timezone.utc
         )
         sacseis.data = random_data
@@ -181,10 +181,10 @@ class TestSAC:
         if sacio.evdp is not None:
             assert sacevent.depth == sacio.evdp * 1000 == 26000
         if sac.o is not None:
-            assert sacevent.time == sac.seismogram.begin_time + Timedelta(
+            assert sacevent.time == sac.seismogram.begin_time + pd.Timedelta(
                 seconds=sac.o - sac.b
             )
-        newtime = sacevent.time + Timedelta(seconds=30)
+        newtime = sacevent.time + pd.Timedelta(seconds=30)
         with pytest.raises(RuntimeError):
             sacevent.time = newtime
         sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
@@ -215,7 +215,7 @@ class TestSAC:
         assert (sac.timestamps.e - sac.timestamps.b).total_seconds() == pytest.approx(
             sacio.e - sacio.b, 0.000001
         )
-        now = Timestamp.now(timezone.utc)
+        now = pd.Timestamp.now(timezone.utc)
         with pytest.raises(AttributeError):
             sac.timestamps.e = now
         assert sac.timestamps.t0 is None
@@ -227,8 +227,10 @@ class TestSAC:
         assert sac.timestamps.b.timestamp() == pytest.approx(now.timestamp())
         with pytest.raises(TypeError):
             sac.timestamps.b = None  # type: ignore
-        with pytest.raises(TypeError):
-            sac.timestamps.b = Timestamp.now()
+        # Naive timestamp should be converted to UTC automatically now
+        naive_now = pd.Timestamp.now()
+        sac.timestamps.b = naive_now
+        assert sac.timestamps.b.tzinfo == timezone.utc
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_set_sac_from_timestamp_optional_none(self, sacfile: Path) -> None:

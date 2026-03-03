@@ -1,5 +1,5 @@
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators
+from attrs import define, field, validators, setters
 
 __all__ = ["Location", "MiniLocation"]
 
@@ -40,10 +40,18 @@ class MiniLocation:
         ```
     """
 
-    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
+    latitude: float = field(
+        converter=float,
+        validator=[validators.ge(-90), validators.le(90)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Latitude from -90 to 90 degrees."""
 
-    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
+    longitude: float = field(
+        converter=float,
+        validator=[validators.gt(-180), validators.le(180)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Longitude from -180 to 180 degrees."""
 
 

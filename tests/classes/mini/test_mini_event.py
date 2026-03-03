@@ -1,4 +1,4 @@
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from datetime import timezone
 import pytest
 from pysmo import Event, MiniEvent
@@ -16,25 +16,26 @@ class TestMiniEvent:
             2.2,
         )
         depth = 1000
-        time_utc, time_no_tz = Timestamp.now(timezone.utc), Timestamp.now()
+        time_utc = pd.Timestamp.now(timezone.utc)
         minievent = MiniEvent(
             latitude=latitude, longitude=longitude, depth=depth, time=time_utc
         )
-        with pytest.raises(TypeError):
-            minievent = MiniEvent(
-                latitude=latitude, longitude=longitude, depth=depth, time=time_no_tz
-            )
         assert isinstance(minievent, MiniEvent)
         assert isinstance(minievent, Event)
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
-        latitude, longitude, depth, time = 1.1, 2.2, 1000, Timestamp.now(timezone.utc)
+        latitude, longitude, depth, time = (
+            1.1,
+            2.2,
+            1000,
+            pd.Timestamp.now(timezone.utc),
+        )
         new_latitude, new_longitude, new_depth, new_time = (
             -21.1,
             -22.2,
             500.2,
-            time + Timedelta(minutes=3),
+            time + pd.Timedelta(minutes=3),
         )
 
         minievent = MiniEvent(
@@ -57,6 +58,11 @@ class TestMiniEvent:
         minievent.time = new_time
         assert minievent.time == new_time
 
+        # Test time conversion on set
+        minievent.time = "2024-03-03T12:00:00"  # type: ignore
+        assert isinstance(minievent.time, pd.Timestamp)
+        assert minievent.time.tzinfo == timezone.utc
+
         with pytest.raises(ValueError):
             minievent.latitude = -100
         with pytest.raises(ValueError):
@@ -64,4 +70,10 @@ class TestMiniEvent:
         with pytest.raises(ValueError):
             minievent.longitude = -180
         with pytest.raises(ValueError):
-            minievent.latitude = 181
+            minievent.longitude = 181
+
+        # Test conversion on set
+        minievent.depth = "123.4"  # type: ignore
+        assert minievent.depth == 123.4
+        with pytest.raises(ValueError):
+            minievent.depth = "abc"  # type: ignore

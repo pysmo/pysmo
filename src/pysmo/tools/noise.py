@@ -23,7 +23,7 @@ Examples:
 """
 
 import numpy as np
-from pandas import Timestamp, Timedelta, to_timedelta, TimedeltaIndex
+import pandas as pd
 from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
 from pysmo import MiniSeismogram
@@ -45,8 +45,8 @@ class NoiseModel:
         default_factory=lambda: np.array([]),
         metadata={"description": "Power spectral density of ground acceleration [dB]."},
     )
-    T: TimedeltaIndex = field(
-        default_factory=lambda: TimedeltaIndex([]),
+    T: pd.TimedeltaIndex = field(
+        default_factory=lambda: pd.TimedeltaIndex([]),
         metadata={"description": "Period."},
     )
 
@@ -85,7 +85,7 @@ NLNM = NoiseModel(
             -103.1,
         ]
     ),
-    T=to_timedelta(
+    T=pd.to_timedelta(
         [
             0.10,
             0.17,
@@ -132,7 +132,7 @@ NHNM = NoiseModel(
             -48.5,
         ]
     ),
-    T=to_timedelta(
+    T=pd.to_timedelta(
         [
             0.10,
             0.22,
@@ -188,14 +188,14 @@ def peterson(noise_level: float) -> NoiseModel:
         NLNM_interp = np.interp(T_common, NLNM.T.total_seconds(), NLNM.psd)
         NHNM_interp = np.interp(T_common, NHNM.T.total_seconds(), NHNM.psd)
         dB = NLNM_interp + (NHNM_interp - NLNM_interp) * noise_level
-        return NoiseModel(psd=dB, T=to_timedelta(T_common, unit="s"))
+        return NoiseModel(psd=dB, T=pd.to_timedelta(T_common, unit="s"))
 
 
 def generate_noise(
     model: NoiseModel,
     npts: int,
-    delta: Timedelta = SeismogramDefaults.delta,
-    begin_time: Timestamp = SeismogramDefaults.begin_time,
+    delta: pd.Timedelta = SeismogramDefaults.delta,
+    begin_time: pd.Timestamp = SeismogramDefaults.begin_time,
     return_velocity: bool = False,
     seed: int | None = None,
 ) -> MiniSeismogram:

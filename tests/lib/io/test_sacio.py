@@ -1,7 +1,7 @@
 """Tests for pysmo.lib.io.SacIO."""
 
 from pysmo.lib.io import SacIO
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from datetime import timezone
 from pathlib import Path
 import copy
@@ -154,9 +154,9 @@ def test_ref_datetime() -> None:
     assert sac.kzdate is None
     assert sac.kztime is None
     assert sac.ref_datetime is None
-    now = Timestamp.now(timezone.utc)
+    now = pd.Timestamp.now(timezone.utc)
     sac.ref_datetime = now
-    now += Timedelta(microseconds=500)
+    now += pd.Timedelta(microseconds=500)
     assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(  # type: ignore
         timespec="milliseconds"
     )
