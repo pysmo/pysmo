@@ -1,6 +1,6 @@
 from .location import Location
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators
+from attrs import define, field, validators, setters, converters
 
 __all__ = ["Station", "MiniStation"]
 
@@ -70,13 +70,19 @@ class MiniStation:
         ```
     """
 
-    name: str = field(validator=[validators.min_len(1), validators.max_len(5)])
+    name: str = field(
+        validator=[validators.min_len(1), validators.max_len(5)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Station name.
 
     See [`Station.name`][pysmo.Station.name] for more details.
     """
 
-    network: str = field(validator=[validators.min_len(1), validators.max_len(2)])
+    network: str = field(
+        validator=[validators.min_len(1), validators.max_len(2)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Network name.
 
     See [`Station.network`][pysmo.Station.network] for more details.
@@ -86,26 +92,40 @@ class MiniStation:
         default="  ",
         validator=[validators.min_len(2), validators.max_len(2)],
         converter=_pad_string,
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Location ID.
 
     See [`Station.location`][pysmo.Station.location] for more details.
     """
 
-    channel: str = field(validator=[validators.min_len(3), validators.max_len(3)])
+    channel: str = field(
+        validator=[validators.min_len(3), validators.max_len(3)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Channel code.
  
     See [`Station.channel`][pysmo.Station.channel] for more details.
     """
 
-    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
+    latitude: float = field(
+        converter=float,
+        validator=[validators.ge(-90), validators.le(90)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Station latitude from -90 to 90 degrees."""
 
-    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
+    longitude: float = field(
+        converter=float,
+        validator=[validators.gt(-180), validators.le(180)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Station longitude from -180 to 180 degrees."""
 
-    elevation: int | float | None = field(
+    elevation: float | None = field(
         default=None,
-        validator=validators.optional(validators.instance_of((int, float))),
+        converter=converters.optional(float),
+        validator=validators.optional(validators.instance_of(float)),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Station elevation."""

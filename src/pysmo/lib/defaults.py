@@ -2,7 +2,7 @@
 Defaults for pysmo functions/classes.
 """
 
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from datetime import timezone
 from dataclasses import dataclass
 
@@ -11,10 +11,10 @@ from dataclasses import dataclass
 class _SeismogramDefaults:
     """Defaults for classes related to [`Seismogram`][pysmo.Seismogram]."""
 
-    begin_time: Timestamp = Timestamp.fromtimestamp(0, tz=timezone.utc)
+    begin_time: pd.Timestamp = pd.Timestamp.fromtimestamp(0, tz=timezone.utc)
     "Seismogram begin time."
 
-    delta: Timedelta = Timedelta(seconds=1)
+    delta: pd.Timedelta = pd.Timedelta(seconds=1)
     "Sampling interval."
 
 

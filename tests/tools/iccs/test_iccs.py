@@ -1,7 +1,9 @@
+import pytest
+import re
+import numpy as np
 from pysmo.tools.iccs._types import ConvergenceMethod
 from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
-from pandas import Timedelta
-import pytest
+import pandas as pd
 from matplotlib.figure import Figure
 
 
@@ -62,18 +64,20 @@ class TestICCSEmpty:
         iccs = ICCS()
         assert iccs.seismograms == []
         # Properties should return unconstrained values
-        assert iccs._max_td_pre == Timedelta(days=-365 * 100)
-        assert iccs._min_td_post == Timedelta(days=365 * 100)
-        assert iccs._min_delta == Timedelta(0)
+        assert iccs._max_td_pre == pd.Timedelta(days=-365 * 100)
+        assert iccs._min_td_post == pd.Timedelta(days=365 * 100)
+        assert iccs._min_delta == pd.Timedelta(0)
 
     def test_validate_empty(self) -> None:
         iccs = ICCS()
         # Any reasonable window should be valid when empty
         assert (
-            iccs.validate_time_window(Timedelta(seconds=-100), Timedelta(seconds=100))
+            iccs.validate_time_window(
+                pd.Timedelta(seconds=-100), pd.Timedelta(seconds=100)
+            )
             is True
         )
-        assert iccs.validate_pick(Timedelta(seconds=0)) is True
+        assert iccs.validate_pick(pd.Timedelta(seconds=0)) is True
 
     def test_prepare_empty(self) -> None:
         iccs = ICCS()
@@ -85,7 +89,7 @@ class TestICCSEmpty:
     ) -> None:
         iccs = ICCS()
         # Set an extremely large window that would normally be invalid
-        iccs.window_pre = Timedelta(seconds=-10000)
+        iccs.window_pre = pd.Timedelta(seconds=-10000)
 
         # Setting seismograms should now trigger validation and fail
         with pytest.raises(ValueError, match="window_pre is too low"):
@@ -98,8 +102,8 @@ class TestICCSParameters(TestICCSBase):
     def test_change_timewindow(self) -> None:
         assert self.iccs.window_pre.total_seconds() == -15
         with pytest.raises(ValueError):
-            self.iccs.window_pre = Timedelta(seconds=1)
-        self.iccs.window_pre += Timedelta(seconds=2.34)
+            self.iccs.window_pre = pd.Timedelta(seconds=1)
+        self.iccs.window_pre += pd.Timedelta(seconds=2.34)
         assert self.iccs.window_pre.total_seconds() == -12.66
 
     def test_invalid_window_pre(self) -> None:
@@ -107,14 +111,14 @@ class TestICCSParameters(TestICCSBase):
             s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms
         )
         with pytest.raises(ValueError):
-            self.iccs.window_pre -= Timedelta(seconds=1) + max_window_pre
+            self.iccs.window_pre -= pd.Timedelta(seconds=1) + max_window_pre
 
     def test_invalid_window_post(self) -> None:
         min_window_post = min(
             (s.t1 or s.t0) - s.end_time for s in self.iccs.seismograms
         )
         with pytest.raises(ValueError):
-            self.iccs.window_post += Timedelta(seconds=1) + min_window_post
+            self.iccs.window_post += pd.Timedelta(seconds=1) + min_window_post
 
     def test_validate_pick(self) -> None:
         from pysmo.tools.iccs._iccs import _calc_valid_pick_range
@@ -123,8 +127,8 @@ class TestICCSParameters(TestICCSBase):
 
         assert self.iccs.validate_pick(min_pick) is True
         assert self.iccs.validate_pick(max_pick) is True
-        assert self.iccs.validate_pick(min_pick - Timedelta(seconds=0.01)) is False
-        assert self.iccs.validate_pick(max_pick + Timedelta(seconds=0.01)) is False
+        assert self.iccs.validate_pick(min_pick - pd.Timedelta(seconds=0.01)) is False
+        assert self.iccs.validate_pick(max_pick + pd.Timedelta(seconds=0.01)) is False
 
     def test_validate_time_window(self) -> None:
         # With ramp=0 (TAPER=0.0), the valid window extends to exactly the seismogram edges.
@@ -147,14 +151,14 @@ class TestICCSParameters(TestICCSBase):
         # Just outside the pre-pick boundary.
         assert (
             self.iccs.validate_time_window(
-                max_td_pre - Timedelta(seconds=0.01), min_td_post
+                max_td_pre - pd.Timedelta(seconds=0.01), min_td_post
             )
             is False
         )
         # Just outside the post-pick boundary.
         assert (
             self.iccs.validate_time_window(
-                max_td_pre, min_td_post + Timedelta(seconds=0.01)
+                max_td_pre, min_td_post + pd.Timedelta(seconds=0.01)
             )
             is False
         )
@@ -227,7 +231,7 @@ class TestICCSParameters(TestICCSBase):
         # A window slightly beyond the constrained seismogram's edge must be rejected.
         assert (
             self.iccs.validate_time_window(
-                tight_window_pre - Timedelta(seconds=0.01), valid_window_post
+                tight_window_pre - pd.Timedelta(seconds=0.01), valid_window_post
             )
             is False
         )
@@ -278,3 +282,52 @@ class TestICCSParameters(TestICCSBase):
 
         most_constrained.select = True
         assert _calc_valid_pick_range(self.iccs) == range_all_selected
+
+    def test_iccs_attribute_validation(self) -> None:
+        """Test validation and cache clearing on ICCS attributes."""
+        # Test validation and conversion
+        self.iccs.bandpass_apply = "True"  # type: ignore
+        assert self.iccs.bandpass_apply is True
+        self.iccs.bandpass_fmin = "1.0"  # type: ignore
+        assert self.iccs.bandpass_fmin == 1.0
+        self.iccs.min_ccnorm = "0.5"  # type: ignore
+        assert self.iccs.min_ccnorm == 0.5
+
+        with pytest.raises(ValueError):
+            self.iccs.bandpass_fmin = "abc"  # type: ignore
+
+        # Test cache clearing
+        self.iccs.cc_seismograms  # Populate cache
+        assert self.iccs._cc_seismograms_cache is not None
+        self.iccs.min_ccnorm = 0.4
+        assert self.iccs._cc_seismograms_cache is None
+
+        self.iccs.bandpass_apply = False
+        self.iccs.cc_seismograms  # Populate cache
+        assert self.iccs._cc_seismograms_cache is not None
+        self.iccs.bandpass_apply = True
+        assert self.iccs._cc_seismograms_cache is None
+
+    def test_min_iccs_seismogram_validation(self) -> None:
+        """Test validation on MiniICCSSeismogram attributes."""
+        from pysmo.tools.iccs import MiniICCSSeismogram
+
+        seis = self.iccs.seismograms[0]
+        assert isinstance(seis, MiniICCSSeismogram)
+
+        # flip and select are converted to bool
+        seis.flip = "True"  # type: ignore
+        assert seis.flip is True
+        seis.select = ""  # type: ignore
+        assert seis.select is False
+
+        # data is converted to np.ndarray
+        seis.data = [1, 2, 3]  # type: ignore
+        assert isinstance(seis.data, np.ndarray)
+        assert np.array_equal(seis.data, np.array([1, 2, 3]))
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("'delta' must be > 0 days 00:00:00: -1 days +23:59:59"),
+        ):
+            seis.delta = pd.Timedelta(seconds=-1)

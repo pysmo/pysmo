@@ -50,7 +50,7 @@ class TestMiniStation:
         )
         ministation.network = "n2"
         assert ministation.network == "n2"
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             ministation.elevation = "abc"  # type: ignore
         ministation.elevation = 123
         assert ministation.elevation == 123
@@ -70,3 +70,25 @@ class TestMiniStation:
             ministation.longitude = -180
         with pytest.raises(ValueError):
             ministation.longitude = 181
+
+        # Test validation for other fields
+        with pytest.raises(ValueError):
+            ministation.name = ""
+        with pytest.raises(ValueError):
+            ministation.name = "ABCDEF"
+        with pytest.raises(ValueError):
+            ministation.network = ""
+        with pytest.raises(ValueError):
+            ministation.network = "ABC"
+        with pytest.raises(ValueError):
+            ministation.channel = "AB"
+        with pytest.raises(ValueError):
+            ministation.channel = "ABCD"
+
+        # Test location converter and validator
+        ministation.location = "0"
+        assert ministation.location == " 0"
+        ministation.location = "00"
+        assert ministation.location == "00"
+        with pytest.raises(ValueError):
+            ministation.location = "000"

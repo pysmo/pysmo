@@ -1,4 +1,3 @@
-from numpy import mean
 from numpy.random import uniform
 import numpy as np
 import random as rd
@@ -18,22 +17,22 @@ def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_average_datetimes() -> None:
     from pysmo.tools.utils import average_datetimes
-    from pandas import Timestamp, Timedelta
+    import pandas as pd
     from datetime import timezone
 
     with pytest.raises(ValueError):
         average_datetimes([])
-    now = Timestamp.now(timezone.utc)
+    now = pd.Timestamp.now(timezone.utc)
     assert average_datetimes([now]) == now
 
-    now_no_tz = Timestamp.now()
+    now_no_tz = pd.Timestamp.now()
     with pytest.raises(TypeError):
         average_datetimes([now, now_no_tz])
 
     random_seconds = uniform(low=-1000, high=1000, size=1000)
-    random_times = [now + Timedelta(seconds=i) for i in random_seconds]
+    random_times = [now + pd.Timedelta(seconds=i) for i in random_seconds]
     assert average_datetimes(random_times).timestamp() == pytest.approx(
-        (now + Timedelta(seconds=float(mean(random_seconds)))).timestamp()
+        (now + pd.Timedelta(seconds=float(np.mean(random_seconds)))).timestamp()
     )
 
 
