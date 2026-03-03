@@ -227,7 +227,7 @@ the [`Location`][pysmo.Location] type, which looks like this:
 <!-- skip: next -->
 
 ```python
---8<-- "src/pysmo/_types/_location.py:location-protocol"
+--8<-- "src/pysmo/_types/location.py:location-protocol"
 ```
 
 Because these types are meant to be very stable, we can do something that is
@@ -238,7 +238,7 @@ type via inheritance:
 <!-- skip: next -->
 
 ```python
---8<-- "src/pysmo/_types/_station.py:station-protocol"
+--8<-- "src/pysmo/_types/station.py:station-protocol"
 ```
 
 The result of this is that the [`Station`][pysmo.Station] type gets the
