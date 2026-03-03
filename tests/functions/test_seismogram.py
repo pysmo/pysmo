@@ -1,7 +1,7 @@
 from pysmo import Seismogram
 from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
-from pandas import Timedelta
+import pandas as pd
 from copy import deepcopy
 from pytest_cases import parametrize_with_cases
 from matplotlib.figure import Figure
@@ -30,9 +30,9 @@ def test_time2index(seismogram: Seismogram) -> None:
     assert time2index(seismogram, time, allow_out_of_bounds=True) == -11
 
     with pytest.raises(ValueError):
-        time2index(seismogram, seismogram.begin_time - Timedelta(seconds=1))
+        time2index(seismogram, seismogram.begin_time - pd.Timedelta(seconds=1))
     with pytest.raises(ValueError):
-        time2index(seismogram, seismogram.end_time + Timedelta(seconds=1))
+        time2index(seismogram, seismogram.end_time + pd.Timedelta(seconds=1))
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -115,7 +115,7 @@ def test_pad(seismogram: Seismogram) -> None:
         pad(
             seismogram,
             seismogram.begin_time,
-            seismogram.begin_time - Timedelta(seconds=1),
+            seismogram.begin_time - pd.Timedelta(seconds=1),
         )
 
 
@@ -343,7 +343,7 @@ class TestTaper:
 
 
 class TestWindow:
-    TAPER_WIDTH: Timedelta | float = Timedelta(seconds=500)
+    TAPER_WIDTH: pd.Timedelta | float = pd.Timedelta(seconds=500)
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_window(self, seismogram: Seismogram) -> None:
@@ -351,8 +351,8 @@ class TestWindow:
 
         taper_width = self.TAPER_WIDTH
 
-        window_begin_time = seismogram.begin_time + Timedelta(seconds=600)
-        window_end_time = window_begin_time + Timedelta(seconds=1000)
+        window_begin_time = seismogram.begin_time + pd.Timedelta(seconds=600)
+        window_end_time = window_begin_time + pd.Timedelta(seconds=1000)
         windowed_seis = window(
             seismogram,
             window_begin_time,
@@ -368,7 +368,7 @@ class TestWindow:
             seismogram.end_time.timestamp()
         )
 
-        if isinstance(taper_width, Timedelta):
+        if isinstance(taper_width, pd.Timedelta):
             taper_start = window_begin_time - taper_width
             taper_end = window_end_time + taper_width
         else:
@@ -391,4 +391,4 @@ class TestWindow:
 
 
 class TestWindowFloat(TestWindow):
-    TAPER_WIDTH: Timedelta | float = 0.1
+    TAPER_WIDTH: pd.Timedelta | float = 0.1

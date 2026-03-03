@@ -2,7 +2,8 @@
 
 import pandas as pd
 from typing import Annotated
-from annotated_types import Interval, Gt, Lt, Ge
+from annotated_types import Interval, Gt, Lt, Ge, Timezone
+from datetime import timezone
 
 # ---------------------------------------------------------------------------
 # Numeric Type Aliases with Constraints
@@ -21,7 +22,7 @@ type NonNegativeNumber = Annotated[int | float, Ge(0)]
 """Non-negative Numbers (Float or Int) greater than or equal to 0."""
 
 # ---------------------------------------------------------------------------
-# pandas Timedelta Type Aliases with Constraints
+# pandas Timedelta/Timestamp Type Aliases with Constraints
 # ---------------------------------------------------------------------------
 
 _ZERO_TD = pd.Timedelta(0)
@@ -34,3 +35,6 @@ type NegativeTimedelta = Annotated[pd.Timedelta, Lt(_ZERO_TD)]
 
 type NonNegativeTimedelta = Annotated[pd.Timedelta, Ge(_ZERO_TD)]
 """Non-negative Timedelta (includes 0 total_seconds)."""
+
+type UtcTimestamp = Annotated[pd.Timestamp, Timezone(tz=timezone.utc)]
+"""Timestamp with utc timezone information."""

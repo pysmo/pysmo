@@ -1,5 +1,7 @@
 from sybil import Sybil
 from sybil.parsers.markdown import PythonCodeBlockParser, SkipParser
+from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
+from sybil.evaluators.doctest import NUMBER
 
 from pysmo.conftest import copy_testfiles  # noqa: F401
 
@@ -12,7 +14,10 @@ collect_ignore = [
 ]
 pytest_collect_file = Sybil(
     parsers=[
-        PythonCodeBlockParser(future_imports=["print_function"]),
+        PythonCodeBlockParser(
+            future_imports=["print_function"],
+            doctest_optionflags=ELLIPSIS + NORMALIZE_WHITESPACE + NUMBER,
+        ),
         SkipParser(),
     ],
     pattern="*.md",

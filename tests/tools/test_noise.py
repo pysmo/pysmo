@@ -1,6 +1,6 @@
 from dataclasses import FrozenInstanceError
 from scipy import signal  # type: ignore
-from pandas import Timedelta, to_timedelta
+import pandas as pd
 import matplotlib.pyplot as plt  # type: ignore
 import pytest
 import numpy as np
@@ -11,7 +11,7 @@ def test_NoiseModel() -> None:
     # create two random arrays for testing
     psd = np.random.rand(20)
     psd2 = np.random.rand(20)
-    T = to_timedelta(np.random.rand(20), unit="s")
+    T = pd.to_timedelta(np.random.rand(20), unit="s")
 
     # length of the arrays needs to be equal
     with pytest.raises(ValueError):
@@ -91,7 +91,7 @@ def test_generate_noise():  # type: ignore
     nperseg = npts / 4
     nfft = npts / 2
     srate = 0.1
-    delta = Timedelta(seconds=srate)
+    delta = pd.Timedelta(seconds=srate)
     sfrec = 1 / srate
     nhnm = noise.NHNM
 

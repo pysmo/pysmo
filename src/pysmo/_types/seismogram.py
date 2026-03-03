@@ -1,10 +1,14 @@
 import numpy as np
-from pysmo.lib.validators import datetime_is_utc
+import pandas as pd
+from pysmo.lib.validators import (
+    convert_to_utc_timestamp,
+    convert_to_timedelta,
+    convert_to_ndarray,
+)
 from pysmo.lib.defaults import SeismogramDefaults
-from pysmo.typing import PositiveTimedelta
+from pysmo.typing import PositiveTimedelta, UtcTimestamp
 from typing import Protocol, runtime_checkable
-from attrs import define, field
-from pandas import Timestamp, Timedelta
+from attrs import define, field, validators, setters
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 
@@ -35,20 +39,20 @@ class Seismogram(Protocol):
         ```
     """
 
-    begin_time: Timestamp
+    begin_time: pd.Timestamp
     """Seismogram begin time."""
 
     data: np.ndarray
     """Seismogram data."""
 
-    delta: Timedelta
+    delta: pd.Timedelta
     """The sampling interval.
 
-    Should be a positive `Timedelta` instance.
+    Should be a positive `pd.Timedelta` instance.
     """
 
     @property
-    def end_time(self) -> Timestamp:
+    def end_time(self) -> pd.Timestamp:
         """Seismogram end time."""
         ...
 
@@ -61,7 +65,7 @@ class SeismogramEndtimeMixin:
     """Mixin class to add `end_time` property to a `Seismogram` object."""
 
     @property
-    def end_time(self: Seismogram) -> Timestamp:
+    def end_time(self: Seismogram) -> pd.Timestamp:
         """Seismogram end time."""
         if len(self.data) == 0:
             return self.begin_time
@@ -84,11 +88,11 @@ class MiniSeismogram(SeismogramEndtimeMixin):
     Examples:
         ```python
         >>> from pysmo import MiniSeismogram, Seismogram
-        >>> from pandas import Timestamp, Timedelta
+        >>> import pandas as pd
         >>> from datetime import timezone
         >>> import numpy as np
-        >>> now = Timestamp.now(timezone.utc)
-        >>> delta = Timedelta(seconds=0.1)
+        >>> now = pd.Timestamp.now(timezone.utc)
+        >>> delta = pd.Timedelta(seconds=0.1)
         >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
         >>> isinstance(seismogram, Seismogram)
         True
@@ -96,15 +100,30 @@ class MiniSeismogram(SeismogramEndtimeMixin):
         ```
     """
 
-    begin_time: Timestamp = field(
-        default=SeismogramDefaults.begin_time, validator=datetime_is_utc
+    begin_time: UtcTimestamp = field(
+        default=SeismogramDefaults.begin_time,
+        converter=convert_to_utc_timestamp,
+        on_setattr=setters.convert,
     )
     """Seismogram begin time."""
 
-    delta: PositiveTimedelta = SeismogramDefaults.delta
+    delta: PositiveTimedelta = field(
+        default=SeismogramDefaults.delta,
+        converter=convert_to_timedelta,
+        validator=[
+            validators.instance_of(pd.Timedelta),
+            validators.gt(pd.Timedelta(0)),
+        ],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Seismogram data."""
 
 
