@@ -21,9 +21,10 @@ from pysmo.functions import (
     pad,
     window,
 )
+from pysmo.lib.validators import convert_to_timedelta
 from pysmo.tools.signal import bandpass, multi_delay, mccc
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from attrs import define, field, validators, setters, Attribute, validate
 from collections.abc import Sequence
 from scipy.stats.mstats import pearsonr
@@ -33,8 +34,10 @@ __all__ = ["ICCS"]
 
 
 def _compute_ramp(
-    ramp_width: float | Timedelta, window_pre: Timedelta, window_post: Timedelta
-) -> Timedelta:
+    ramp_width: float | pd.Timedelta,
+    window_pre: pd.Timedelta,
+    window_post: pd.Timedelta,
+) -> pd.Timedelta:
     """Compute the taper ramp duration, matching `pysmo.functions.window` semantics.
 
     Args:
@@ -46,7 +49,7 @@ def _compute_ramp(
     Returns:
         Absolute ramp duration as a `pandas.Timedelta`.
     """
-    if isinstance(ramp_width, Timedelta):
+    if isinstance(ramp_width, pd.Timedelta):
         return ramp_width
     return ramp_width * (window_post - window_pre)
 
@@ -74,7 +77,7 @@ def _on_setattr_clear_cache[T](instance: "ICCS", attribute: Attribute, value: T)
 
 
 def _validate_window_pre(
-    instance: "ICCS", attribute: Attribute, value: Timedelta
+    instance: "ICCS", attribute: Attribute, value: pd.Timedelta
 ) -> None:
     """Ensure window_pre fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, value, instance.window_post)
@@ -83,7 +86,7 @@ def _validate_window_pre(
 
 
 def _validate_window_post(
-    instance: "ICCS", attribute: Attribute, value: Timedelta
+    instance: "ICCS", attribute: Attribute, value: pd.Timedelta
 ) -> None:
     """Ensure window_post fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, instance.window_pre, value)
@@ -97,7 +100,7 @@ def _validate_ramp_width(
     value: NonNegativeTimedelta | NonNegativeNumber,
 ) -> None:
     ramp = _compute_ramp(value, instance.window_pre, instance.window_post)
-    if ramp < Timedelta(0):
+    if ramp < pd.Timedelta(0):
         raise ValueError("ramp_width must be non-negative.")
     if not (
         ramp <= instance.window_pre - instance._max_td_pre
@@ -122,10 +125,10 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     parent_seismogram: ICCSSeismogram
     """Reference to the parent ICCSSeismogram from which this ephemeral seismogram is derived."""
 
-    begin_time: Timestamp = field(init=False)
+    begin_time: pd.Timestamp = field(init=False)
     """Seismogram begin time."""
 
-    delta: Timedelta = field(init=False)
+    delta: pd.Timedelta = field(init=False)
     """Seismogram sampling interval."""
 
     data: np.ndarray = field(init=False)
@@ -194,7 +197,7 @@ class ICCS:
         than they actually are:
 
         ```python
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> from copy import deepcopy
         >>> import numpy as np
         >>>
@@ -202,10 +205,10 @@ class ICCS:
         >>> seismograms[0].data *= -1
         >>>
         >>> # move the initial pick 2 seconds earlier in second seismogram
-        >>> seismograms[1].t0 += Timedelta(seconds=-2)
+        >>> seismograms[1].t0 += pd.Timedelta(seconds=-2)
         >>>
         >>> # move the initial pick 2 seconds later in third seismogram
-        >>> seismograms[2].t0 += Timedelta(seconds=2)
+        >>> seismograms[2].t0 += pd.Timedelta(seconds=2)
         >>>
         >>> # create a seismogram with completely random data
         >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
@@ -384,14 +387,14 @@ class ICCS:
 
     window_pre: NegativeTimedelta = field(
         default=IccsDefaults.window_pre,
-        validator=[validators.lt(Timedelta(0)), _validate_window_pre],
+        validator=[validators.lt(pd.Timedelta(0)), _validate_window_pre],
         on_setattr=setters.pipe(setters.validate, _on_setattr_clear_cache),
     )
     """Beginning of the time window relative to the pick."""
 
     window_post: PositiveTimedelta = field(
         default=IccsDefaults.window_post,
-        validator=[validators.gt(Timedelta(0)), _validate_window_post],
+        validator=[validators.gt(pd.Timedelta(0)), _validate_window_post],
         on_setattr=setters.pipe(setters.validate, _on_setattr_clear_cache),
     )
     """End of the time window relative to the pick."""
@@ -403,21 +406,32 @@ class ICCS:
     )
     """Width of taper ramp up and down.
 
-    Can be either a timedelta or a float - see [`pysmo.functions.window()`][pysmo.functions.window]
-    for details.
+    Warning:
+        Can be either a timedelta or a float, but they mean slightly different
+        things. A float is interpreted as a fraction of the window duration,
+        while a timedelta is an absolute duration. See the documentation of
+        of [`pysmo.functions.window()`][pysmo.functions.window] for details.
     """
 
     context_width: PositiveTimedelta = field(
         default=IccsDefaults.context_width,
-        validator=validators.gt(Timedelta(0)),
-        on_setattr=setters.pipe(setters.validate, _on_setattr_clear_cache),
+        converter=convert_to_timedelta,
+        validator=validators.gt(pd.Timedelta(0)),
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
     )
     """Context padding to apply before and after the time window.
 
     This padding is *not* used for the cross-correlation."""
 
     bandpass_apply: bool = field(
-        default=IccsDefaults.bandpass_apply, on_setattr=_on_setattr_clear_cache
+        default=IccsDefaults.bandpass_apply,
+        converter=bool,
+        validator=validators.instance_of(bool),
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
     )
     """Filter seismograms with a bandpass filter before running ICCS.
 
@@ -432,16 +446,33 @@ class ICCS:
     """
 
     bandpass_fmin: float = field(
-        default=IccsDefaults.bandpass_fmin, on_setattr=_on_setattr_clear_cache
+        default=IccsDefaults.bandpass_fmin,
+        converter=float,
+        validator=validators.instance_of(float),
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
     )
     """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
 
     bandpass_fmax: float = field(
-        default=IccsDefaults.bandpass_fmax, on_setattr=_on_setattr_clear_cache
+        default=IccsDefaults.bandpass_fmax,
+        converter=float,
+        validator=validators.instance_of(float),
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
     )
     """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
 
-    min_ccnorm: np.floating | float = IccsDefaults.min_ccnorm
+    min_ccnorm: float = field(
+        default=IccsDefaults.min_ccnorm,
+        converter=float,
+        validator=validators.instance_of(float),
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
+    )
     """Minimum normalised cross-correlation coefficient for seismograms.
 
     When the ICCS algorithm is [executed][pysmo.tools.iccs.ICCS.__call__],
@@ -469,11 +500,11 @@ class ICCS:
     """Cached stack of the prepared seismograms for cross-correlation."""
     _context_stack_cache: MiniSeismogram | None = field(default=None, init=False)
     """Cached stack of the prepared seismograms with context padding."""
-    _max_td_pre_cache: Timedelta | None = field(default=None, init=False)
+    _max_td_pre_cache: pd.Timedelta | None = field(default=None, init=False)
     """Cached maximum negative time delta between pick and seismogram begin_time."""
-    _min_td_post_cache: Timedelta | None = field(default=None, init=False)
+    _min_td_post_cache: pd.Timedelta | None = field(default=None, init=False)
     """Cached minimum positive time delta between pick and seismogram end_time."""
-    _valid_pick_range_cache: tuple[Timedelta, Timedelta] | None = field(
+    _valid_pick_range_cache: tuple[pd.Timedelta, pd.Timedelta] | None = field(
         default=None, init=False
     )
 
@@ -503,7 +534,7 @@ class ICCS:
         self._valid_pick_range_cache = None
 
     @property
-    def _ramp_width_timedelta(self) -> Timedelta:
+    def _ramp_width_timedelta(self) -> pd.Timedelta:
         """Ramp width as a `pandas.Timedelta`, computed from the current window.
 
         For a float `ramp_width`, the duration is computed as a fraction of the
@@ -513,14 +544,14 @@ class ICCS:
         return _compute_ramp(self.ramp_width, self.window_pre, self.window_post)
 
     @property
-    def _min_delta(self) -> Timedelta:
+    def _min_delta(self) -> pd.Timedelta:
         """Minimum sampling interval across all seismograms."""
         if not self.seismograms:
-            return Timedelta(0)
+            return pd.Timedelta(0)
         return min(s.delta for s in self.seismograms)
 
     @property
-    def _max_td_pre(self) -> Timedelta:
+    def _max_td_pre(self) -> pd.Timedelta:
         """Maximum negative time delta between pick and seismogram begin_time.
 
         This property is used to calculate valid values for updating picks and
@@ -531,7 +562,7 @@ class ICCS:
         - ramp_width <= window_pre - _max_td_pre
         """
         if not self.seismograms:
-            return Timedelta(days=-365 * 100)
+            return pd.Timedelta(days=-365 * 100)
 
         if self._max_td_pre_cache is None:
             self._max_td_pre_cache = max(
@@ -540,7 +571,7 @@ class ICCS:
         return self._max_td_pre_cache
 
     @property
-    def _min_td_post(self) -> Timedelta:
+    def _min_td_post(self) -> pd.Timedelta:
         """Minimum positive time delta between pick and seismogram end_time.
 
         This property is used to calculate valid values for updating picks and
@@ -551,7 +582,7 @@ class ICCS:
         - ramp_width <= _min_td_post - window_post
         """
         if not self.seismograms:
-            return Timedelta(days=365 * 100)
+            return pd.Timedelta(days=365 * 100)
 
         if self._min_td_post_cache is None:
             self._min_td_post_cache = min(
@@ -655,7 +686,7 @@ class ICCS:
             self._context_stack_cache = _create_stack(self.context_seismograms)
         return self._context_stack_cache
 
-    def validate_pick(self, pick: Timedelta) -> bool:
+    def validate_pick(self, pick: pd.Timedelta) -> bool:
         """Check whether a new pick is valid given all seismograms in the instance.
 
         The valid pick range is computed from every seismogram in
@@ -679,7 +710,7 @@ class ICCS:
         )
 
     def validate_time_window(
-        self, window_pre: Timedelta, window_post: Timedelta
+        self, window_pre: pd.Timedelta, window_post: pd.Timedelta
     ) -> bool:
         """Check if a new time window (relative to pick) is valid.
 
@@ -722,7 +753,7 @@ class ICCS:
         convergence_limit: float = IccsDefaults.convergence_limit,
         convergence_method: ConvergenceMethod = IccsDefaults.convergence_method,
         max_iter: int = IccsDefaults.max_iter,
-        max_shift: Timedelta | None = None,
+        max_shift: pd.Timedelta | None = None,
     ) -> np.ndarray:
         """Run the iccs algorithm.
 
@@ -811,7 +842,7 @@ class ICCS:
             )
         self.clear_cache()
 
-    def update_all_picks(self, pickdelta: Timedelta) -> None:
+    def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
         """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
 
         Args:
@@ -833,13 +864,13 @@ class ICCS:
 
 
 def _update_seismogram(
-    delay: Timedelta,
+    delay: pd.Timedelta,
     ccnorm: float | None,
     seismogram: ICCSSeismogram,
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: np.floating | float,
-    current_window: tuple[Timedelta, Timedelta],
+    current_window: tuple[pd.Timedelta, pd.Timedelta],
 ) -> None:
     """Update ICCSSeismogram attributes based on cross-correlation results.
 
@@ -1002,7 +1033,7 @@ def _calc_convergence(
     raise ValueError(f"Unknown convergence method: {method}.")
 
 
-def _calc_valid_pick_range(instance: ICCS) -> tuple[Timedelta, Timedelta]:
+def _calc_valid_pick_range(instance: ICCS) -> tuple[pd.Timedelta, pd.Timedelta]:
     """Calculate the valid shift range for updating the pick.
 
     The pick delta must ensure there is enough space on either end of every
@@ -1016,7 +1047,7 @@ def _calc_valid_pick_range(instance: ICCS) -> tuple[Timedelta, Timedelta]:
         A ``(min_pick_delta, max_pick_delta)`` tuple of valid shift bounds.
     """
     if not instance.seismograms:
-        return Timedelta(days=-365 * 100), Timedelta(days=365 * 100)
+        return pd.Timedelta(days=-365 * 100), pd.Timedelta(days=365 * 100)
 
     td_pre_values = []
     td_post_values = []

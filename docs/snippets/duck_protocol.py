@@ -1,13 +1,13 @@
-from typing import Protocol  # (1)!
+from typing import Protocol
 
 
-class Ducklike(Protocol):  # (2)!
-    def quack(self) -> str: ...  # (3)!
+class Ducklike(Protocol):  # (1)!
+    def quack(self) -> str: ...  # (2)!
 
     def waddle(self) -> str: ...
 
 
-class Duck:  # (4)!
+class Duck:  # (3)!
     def quack(self) -> str:
         return "quack, quack!"
 
@@ -15,7 +15,7 @@ class Duck:  # (4)!
         return "waddle, waddle!"
 
 
-class Human:  # (5)!
+class Human:  # (4)!
     def quack(self) -> str:
         return "quack, quack!"
 
@@ -26,15 +26,15 @@ class Human:  # (5)!
         return "shaking those hips!"
 
 
-class Robot:  # (6)!
+class Robot:  # (5)!
     def quack(self) -> bytes:
-        return bytes("beep, quack!", "UTF-8")
+        return bytes("beep, quack!", encoding="utf-8")
 
     def waddle(self) -> str:
         return "waddle, waddle!"
 
 
-def is_a_duck(thing: Ducklike) -> None:  # (7)!
+def is_a_duck(thing: Ducklike) -> None:  # (6)!
     try:
         thing.quack()
         thing.waddle()

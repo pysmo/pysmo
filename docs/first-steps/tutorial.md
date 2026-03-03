@@ -6,27 +6,19 @@ tags:
 
 # Tutorial
 
-In this tutorial, we will walk through a simple example of how pysmo can be
-used in a project. This will provide insight into:
+This tutorial uses a simplified ambient noise scenario as a vehicle for showing
+how pysmo fits into real code — not as a guide to ambient noise processing
+itself. Along the way it covers:
 
-- How to define a new seismogram class that is tailored to a specific use case
-  (and why you would want to do that).
-- How to use this new class together with pysmo.
-- Writing new code that is potentially reusable by other projects or classes.
+- Defining a custom seismogram class for a specific use case.
+- Writing functions that operate on it.
+- Using pysmo types to make those functions reusable.
 
 ## Custom seismogram class
 
-The purpose of a class in Python is generally to store state (i.e. data). As the
-exact type of data can vary between use cases, it is often useful to define a
-new class that is tailored to the specific scenario.
-
-We will assume that our use case here is to store seismogram data that is to be
-used in an ambient noise cross-correlation project. In this context, we don't
-need to store event information in our seismograms. In fact, we are probably
-more interested in knowing whether or not earthquake signals are present in
-the seismogram data. We would therefore want our class to have an attribute to
-store this particular piece of information. A concrete class definition could
-be as simple as this:
+Our scenario involves ambient noise data where we want to track whether
+earthquake signals are present, but have no need for event information. A
+dataclass fits this well:
 
 ```python title="noise_seismogram.py"
 --8<-- "docs/snippets/tutorial/noise_seismogram.py"
@@ -49,11 +41,8 @@ be as simple as this:
 6. Finally, we add an attribute that lets us know if our seismogram contains
    earthquake signals or not.
 
-A real-world example would likely have more attributes (such as station
-coordinates), but to keep things simple we will stick to this minimal example.
-
-We are now ready to use this new class in our project. To test this run an
-interactive Python session and create an instance of the class:
+A real project would have more attributes, but this is enough to demonstrate
+the pattern. Creating an instance:
 
 ```bash
 $ python -i noise_seismogram.py
@@ -64,54 +53,37 @@ $ python -i noise_seismogram.py
 ```
 
 !!! info "Key observations"
-    - Creating a purpose-built class whose primary purpose is to store data is
-      simple and straightforward with the [`dataclass`][dataclasses.dataclass]
-      decorator.
-    - By prioritising data storage only, we avoid any complexities that may
-      arise from trying to include methods in the class. Overloading a
-      class with both data and methods can lead to a maintenance nightmare,
-      while using functions instead offers a clear separation between data
-      storage and data processing.
-    - All attributes of the class are non-optional. If they were, we would
-      have typed them with e.g. `bool | None` instead of just `bool`.
-      While this is not strictly a requirement, it does avoid having to deal
-      with the possibility of multiple instances of the class having different
-      amounts of data (e.g. some instances having information in the
-      `contains_earthquake` attribute and some not). This simplifies things
-      later on, as we don't need to include checks for the presence of data in
-      our functions.
+    - The [`dataclass`][dataclasses.dataclass] decorator generates `__init__`,
+      `__repr__`, and `__eq__` automatically, keeping the class focused on what
+      it stores.
+    - Keeping methods out of the class and writing separate functions instead
+      maintains a clear separation between data storage and processing.
+    - All attributes are non-optional — no `bool | None`. Functions that use
+      this class can assume all fields are present and skip defensive `None`
+      checks.
 
 ## Functions that operate on the new class
 
-Now that we have our new class to store seismogram data, we likely want to do
-some form of processing on the data. In this example, we will write two
-functions:
+Two functions handle the processing:
 
-- `check_for_earthquakes()`: A function that checks if earthquake signals are
-  present in the seismogram data.
-- `detrend()`: A function that detrends the seismogram data.
+- `check_for_earthquakes()`: checks whether earthquake signals are present.
+- `detrend()`: detrends the seismogram data.
 
-A first version of these functions could look like this:
+A first version:
 
 ```python title="functions_v1.py" hl_lines="11"
 --8<-- "docs/snippets/tutorial/functions_v1.py"
 ```
 
-These functions are already pretty good. They are easy to understand and are
-properly annotated with type hints. We can verify this by checking the file
-with [mypy](https://mypy.readthedocs.io):
+The type hints are correct and mypy confirms it:
 
 ```bash
 $ python -m mypy functions_v1.py
 Success: no issues found in 1 source file
 ```
 
-Checking code with mypy is a great way to prevent errors from sneaking into
-your codebase. Most modern code editors have the same type of checking built
-in, so it is really easy to make use of type hints in this way. If we really
-commit to checking all our code while writing it, we can simplify the functions
-by stripping out the bits that are unreachable. Running mypy again, but with an
-extra flag we can see where this is the case:
+With type checking in place, mypy can also identify unreachable code.
+Running with `--warn-unreachable`:
 
 ```bash
 $ python -m mypy --warn-unreachable functions_v1.py
@@ -119,10 +91,8 @@ functions_v1.py:11: error: Statement is unreachable  [unreachable]
 Found 1 error in 1 file (checked 1 source file)
 ```
 
-We get this error because the `contains_earthquake` attribute is non-optional,
-so it can only be `True` or `False`. This means that the `else` branch of the
-function (highlighted in the code block above) is never used and can be
-removed:
+The `else` branch is unreachable because `contains_earthquake` is
+non-optional — it can only be `True` or `False`. Removing it:
 
 ```python title="functions_v2.py" hl_lines="8 9"
 --8<-- "docs/snippets/tutorial/functions_v2.py"
@@ -131,7 +101,7 @@ removed:
 1. At this point we know that `seismogram.contains_earthquake` can only be
    `False`, so we don't need an `elif` check anymore.
 
-Mypy is also happy with this version of the code:
+Mypy is happy with this version too:
 
 ```bash
 $ python -m mypy --warn-unreachable functions_v2.py
@@ -139,36 +109,26 @@ Success: no issues found in 1 source file
 ```
 
 !!! info "Key observations"
-    - Writing functions for our bespoke class is also pretty straightforward.
-    - Because we have correctly annotated both our class and our functions with
-      type hints, we can easily check our code for errors with mypy.
-    - Our purpose-built class avoids optional attributes (may not be
-      [`None`][]), which allows us to avoid redundant checks in our functions.
-      This makes our code simpler and likely easier to read.
-    - Note that we are relying on checking our code *before* running it! If you
-      want checking at runtime, you may need to look into using a library like
-      [pydantic](https://docs.pydantic.dev).
+    - Type hints on both the class and the functions let mypy verify their
+      interaction statically.
+    - Non-optional attributes remove the need for defensive [`None`][] checks
+      in functions, which also gives mypy enough information to spot dead code.
+    - Type checking catches errors before runtime. For validation at runtime,
+      consider a library like [pydantic](https://docs.pydantic.dev).
 
 ## Reusing functions in other contexts
 
-Comparing the two functions, `check_for_earthquakes()` and `detrend()`, we notice
-that only the former relies on the `contains_earthquake` attribute of our
-class. Recall that this attribute was the only one introduced for the specific
-use case of ambient noise cross-correlation. This means that the remaining
-attributes form a sort of "baseline" seismogram, that we are likely to
-encounter in other use cases as well. Put another way, we ought to be able to
-reuse the `detrend()` function in other contexts.
-
-To illustrate this, let's consider a different project, where we (for some
-reason) want to store the season together with seismogram data. Again we write
-a bespoke class for this:
+Comparing the two functions, only `check_for_earthquakes()` relies on
+`contains_earthquake` — the one attribute specific to this project. The
+remaining attributes form a common baseline, suggesting `detrend()` should
+work with other seismogram classes too. To test this, consider a second
+project that stores the season alongside seismogram data:
 
 ```python title="season_seismogram.py"
 --8<-- "docs/snippets/tutorial/season_seismogram.py"
 ```
 
-1. [`StrEnum`][enum.StrEnum] are a great way to limit the values strings can
-   take.
+1. [`StrEnum`][enum.StrEnum] limits the values a string attribute can take.
 2. Much like with `NoiseSeismogram`, we have just one project-specific
    attribute (`season`).
 
@@ -178,10 +138,12 @@ a bespoke class for this:
     the same implementation, we would be constantly repeating ourselves. To
     avoid this, we could write a *mixin* class that can be included in our
     class definitions:
+
     <!-- skip: next -->
     ```python
-    --8<-- "src/pysmo/_types/_seismogram.py:seismogram-mixin"
+    --8<-- "src/pysmo/_types/seismogram.py:seismogram-mixin"
     ```
+
     This tiny class can be inherited by both `NoiseSeismogram` and
     `SeasonSeismogram`, and we can skip writing the `end_time` property:
     <!-- skip: next -->
@@ -203,27 +165,24 @@ function from earlier:
 --8<-- "docs/snippets/tutorial/season_detrend_v1.py"
 ```
 
-This script will actually run without a hitch:
+This script runs correctly:
 
 ```bash
 $ python season_detrend_v1.py && echo "success\!"
 success!
 ```
 
-However, because we have a mismatch in our type annotations (`detrend()`
-expects a `NoiseSeismogram` but we are passing it a `SeasonSeismogram`), mypy
-will complain:
+But mypy flags a type mismatch — `detrend()` expects a `NoiseSeismogram` and
+is being passed a `SeasonSeismogram`:
 
 ```bash
 $ python -m mypy season_detrend_v1.py
 season_detrend_v1.py:16: error: Argument 1 to "detrend" has incompatible type "SeasonSeismogram"; expected "NoiseSeismogram"  [arg-type]
 ```
 
-The reason for this discrepancy is that type annotations prevent us from using
-non-existent attributes in our functions, but that doesn't mean we have to use
-*all* available attributes. In this case, the `detrend()` function only relies
-on the `data` attribute, which happens to exist in both `NoiseSeismogram` and
-`SeasonSeismogram`. In other words, we just got lucky this time.
+Type annotations prevent using non-existent attributes, but they don't
+require using *all* of them. `detrend()` only touches `data`, which both
+classes happen to share. We just got lucky this time.
 
 To fix this, we need to amend the type annotations of the `detrend()` function:
 
@@ -255,36 +214,25 @@ Success: no issues found in 1 source file
 
 ## Introducing pysmo
 
-If we are sold on the idea of writing custom seismogram classes for particular
-use cases, we end up with a bit of a maintenance nightmare if we have a lot of
-"shared" type functions. As shown by the `detrend()` function, whenever we want
-existing functions to work smoothly with a new class, we need to use it to
-annotate the function. Doing this also introduces a dependency between the
-functions and classes. It is therefore conceivable that sometime in the future
-one of the classes may change in a way that breaks functions.
-
-This is not a new problem in programming, and is typically solved by defining
-*interfaces* that sit between the functions and the classes (or more generally
-between different parts of code). This means that we can write a function to be
-compatible with the interface rather than multiple different (seismogram)
-classes. Of course, the classes need to be written in a way that conforms to the
-interface too.
+Writing custom classes for each project and updating shared functions every
+time a new class is introduced is difficult to maintain. Each new class
+requires touching function annotations, and changes to any class risk breaking
+the functions that depend on it. The standard solution is to define an
+*interface* between functions and classes: functions target the interface, and
+classes conform to it.
 
 Pysmo provides such an interface for seismogram (and other) classes. These
 interfaces make use of Python's [`Protocol`][typing.Protocol] class. Below is
 the actual implementation of pysmo's [`Seismogram`][pysmo.Seismogram] interface:
 
 ```python
---8<-- "src/pysmo/_types/_seismogram.py:seismogram-protocol"
+--8<-- "src/pysmo/_types/seismogram.py:seismogram-protocol"
 ```
 
-If you strip away the extra docstrings, you will notice that this looks
-remarkably similar to the common bits of the `NoiseSeismogram` and
-`SeasonSeismogram` classes we defined above. The only real difference is that
-the `end_time` property is declared but not implemented here. That is because the purpose of
-[`Seismogram`][pysmo.Seismogram] is to provide type information only - it is
-actually impossible to create an instance from a [`Protocol`][typing.Protocol]
-class directly.
+Strip away the docstrings and this looks much like the common structure of
+`NoiseSeismogram` and `SeasonSeismogram`. The key difference is that `end_time`
+is declared but not implemented — [`Protocol`][typing.Protocol] classes provide
+type information only and cannot be instantiated directly.
 
 !!! note
     Python [`Protocol`][typing.Protocol] classes are used almost exclusively in
@@ -296,16 +244,16 @@ subclasses of the protocol class. For our particular case, this means that
 instances of `NoiseSeismogram` and `SeasonSeismogram` are also instances of
 `Seismogram`.
 
-Using pysmo types to annotate our functions, even if they are to be used with
-loads of different seismogram classes, is now a breeze:
+Annotating `detrend()` with the `Seismogram` type rather than listing every
+class:
 
 ```python title="functions_v4.py" hl_lines="2 13"
 --8<-- "docs/snippets/tutorial/functions_v4.py"
 ```
 
 1. Instead of importing `SeasonSeismogram`, we now import `Seismogram`.
-2. We no longer need to list all the seismogram classes we want to use in the
-   `detrend` function. We simply specify `Seismogram` and are done.
+2. Any class that satisfies the `Seismogram` structure is now accepted —
+   no further changes to `detrend()` needed.
 
 !!! info "Key observations"
     - The `detrend()` function now uses pysmo types in its annotations.
@@ -321,21 +269,17 @@ loads of different seismogram classes, is now a breeze:
 
 ## Conclusion
 
-This tutorial doesn't actually show much "pysmo code". Instead it introduces
-core concepts of pysmo. These are:
+This tutorial introduced the core ideas behind pysmo rather than its API:
 
-- Pysmo is *not* centred around a single seismogram class that is used as the
-  core of the library. Often these kinds of single-purpose classes restrict
-  users to the use cases envisioned by the library authors, rather than being
-  well suited for new applications.
-- Custom seismogram classes *are* suited for new applications. However, they
-  introduce challenges when trying to write reusable code.
-- Pysmo provides a solution for this by focusing on what the different custom
-  classes have in common, and defining an interface that can be targeted when
-  writing code.
-- These interfaces are referred to as *pysmo types*. One of their most defining
-  characteristics is that they are very simple (very few attributes, and
-  methods are almost entirely avoided).
+- Pysmo is *not* centred around a single seismogram class. Monolithic classes
+  tend to reflect the use cases their authors had in mind, not the ones users
+  actually have.
+- Custom seismogram classes fit specific use cases well, but create friction
+  when writing reusable code.
+- Pysmo addresses this by defining interfaces — *pysmo types* — that capture
+  what different classes have in common. Functions target the interface; any
+  conforming class works.
+- Pysmo types are intentionally narrow: few attributes, almost no methods.
 
-Pysmo itself is guided by these same principles. Thus, modules packaged with
-pysmo are easily reusable in other projects.
+The same principles apply to the processing modules pysmo ships with, which
+is why they work just as well in your own code as in pysmo's.

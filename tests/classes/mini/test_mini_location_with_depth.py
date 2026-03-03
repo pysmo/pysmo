@@ -44,4 +44,10 @@ class TestMiniLocationWithDepth:
         with pytest.raises(ValueError):
             minihypocenter.longitude = -180
         with pytest.raises(ValueError):
-            minihypocenter.latitude = 181
+            minihypocenter.longitude = 181
+
+        # Test conversion on set
+        minihypocenter.depth = "123.4"  # type: ignore
+        assert minihypocenter.depth == 123.4
+        with pytest.raises(ValueError):
+            minihypocenter.depth = "abc"  # type: ignore
