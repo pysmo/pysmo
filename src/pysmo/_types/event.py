@@ -1,8 +1,9 @@
 from .location_with_depth import LocationWithDepth
-from pysmo.lib.validators import datetime_is_utc
+from pysmo.typing import UtcTimestamp
+from pysmo.lib.validators import convert_to_utc_timestamp
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators
-from pandas import Timestamp
+from attrs import define, field, validators, setters
+import pandas as pd
 
 __all__ = ["Event", "MiniEvent"]
 
@@ -11,7 +12,7 @@ __all__ = ["Event", "MiniEvent"]
 class Event(LocationWithDepth, Protocol):
     """Protocol class to define the `Event` type."""
 
-    time: Timestamp
+    time: pd.Timestamp
     """Event origin time."""
 
 
@@ -25,9 +26,9 @@ class MiniEvent:
     Examples:
         ```python
         >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location
-        >>> from pandas import Timestamp
+        >>> import pandas as pd
         >>> from datetime import timezone
-        >>> now = Timestamp.now(timezone.utc)
+        >>> now = pd.Timestamp.now(timezone.utc)
         >>> event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
         >>> isinstance(event, Event)
         True
@@ -39,14 +40,27 @@ class MiniEvent:
         ```
     """
 
-    time: Timestamp = field(validator=datetime_is_utc)
+    time: UtcTimestamp = field(
+        converter=convert_to_utc_timestamp,
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Event origin time."""
 
-    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
-    """Event atitude from -90 to 90 degrees."""
+    latitude: float = field(
+        converter=float,
+        validator=[validators.ge(-90), validators.le(90)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Event latitude from -90 to 90 degrees."""
 
-    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
+    longitude: float = field(
+        converter=float,
+        validator=[validators.gt(-180), validators.le(180)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Event longitude from -180 to 180 degrees."""
 
-    depth: float
+    depth: float = field(
+        converter=float, on_setattr=setters.pipe(setters.convert, setters.validate)
+    )
     """Event depth in metres."""

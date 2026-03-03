@@ -21,6 +21,25 @@ implementations of their respective types and are named accordingly (e.g.
 for the [`Seismogram`][pysmo.Seismogram] type there is a
 [`MiniSeismogram`][pysmo.MiniSeismogram] class).
 
+## Helpful and restrictive
+
+Mini classes are designed to be both helpful and restrictive. They use
+**converters** to be forgiving about the types of data you provide, but use
+**validators** to ensure those data make sense for seismological processing.
+
+For example, when setting a sampling interval
+([`delta`][pysmo.MiniSeismogram.delta]), you can provide a `float` (seconds), a
+`str` (e.g. "10ms"), or a standard Python `timedelta` object. The Mini class
+will automatically convert these into a canonical
+[`pandas.Timedelta`][pandas.Timedelta]. However, it will strictly reject a
+negative value, as a negative sampling interval is physically impossible.
+
+Similarly, the [`data`][pysmo.MiniSeismogram.data] attribute accepts lists or
+tuples and converts them to a [`numpy.ndarray`][numpy.ndarray] automatically.
+
+This "forgiving on input, strict on value" approach also applies when you
+modify attributes after the object has been created.
+
 ## MiniSeismogram
 
 To show what such a Mini class looks like we can look at the code for the
@@ -29,7 +48,7 @@ To show what such a Mini class looks like we can look at the code for the
 <!-- skip: next -->
 
 ```python
---8<-- "src/pysmo/_types/_seismogram.py:mini-seismogram"
+--8<-- "src/pysmo/_types/seismogram.py:mini-seismogram"
 ```
 
 At a first glance it looks similar to the examples in the
@@ -38,14 +57,10 @@ might notice some differences:
 
 - Instead of using the built-in [`dataclasses.dataclass`][] it uses
   [attrs.define][]. They look and work similarly, but we get the option to do
-  things like validating input (here we make sure the
-  [`begin_time`][pysmo.MiniSeismogram.begin_time] has the expected
-  [`tzinfo`][datetime.tzinfo]).
-- The [`delta`][pysmo.MiniSeismogram.delta] attribute isn't a simple
-  [`timedelta`][datetime.timedelta]. Instead it uses a custom
-  [`PositiveTimedelta`][pysmo.typing.PositiveTimedelta] type which is more
-  restrictive; after all, a negative sampling interval doesn't make any sense.
-  This ensures no invalid values are accepted at runtime.
+  the advanced validation and conversion mentioned above.
+- The [`begin_time`][pysmo.MiniSeismogram.begin_time] is automatically
+  converted to a [`pandas.Timestamp`][pandas.Timestamp] and localized to UTC
+  if no timezone is provided.
 - Some default values are provided. These will typically be replaced in
   real-world usage, but do allow for some convenience while quickly testing things.
 

@@ -37,3 +37,9 @@ class TestMiniLocation:
             minilocation.longitude = -180
         with pytest.raises(ValueError):
             minilocation.longitude = 181
+
+        # Test conversion on set
+        minilocation.latitude = "45.5"  # type: ignore
+        assert minilocation.latitude == 45.5
+        with pytest.raises(ValueError):
+            minilocation.latitude = "abc"  # type: ignore

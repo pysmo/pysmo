@@ -8,6 +8,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 - **(iccs)** Fix save cancel callback on buttons
 - Distinguish between required/non-required sac time headers
+- **(iccs)** Correct window limit validation and ramp-aware bounds checking
 
 ### 📚 Documentation
 
@@ -24,11 +25,16 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Use 2 descriptors instead of 1 complicated one for sac timestamps
 - **(signal)** Add filter registry decorator ([#257](https://github.com/pysmo/pysmo/issues/257))
 - **(types)** [**breaking**] Remove __len__ method from Seismogram
+- Reorganise utilities and improve tests
+- **(iccs)** Enhance plotting module and API
+- Use pandas Timedelta in noise tools, add psd function, and remove beartype
+- Add validators back to attrs classes
 
 ### 🚀 New Features
 
 - **(tools-signal)** Add multi-delay functions ([#249](https://github.com/pysmo/pysmo/issues/249))
 - **(tools-signal)** Add mccc function
+- **(iccs)** Add ICCS.run_mccc method, add ICCSSeismogram.extra attribute
 
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 

@@ -6,7 +6,7 @@ from pysmo.typing import (
     UnitFloat,
 )
 from copy import deepcopy
-from pandas import Timestamp, Timedelta
+import pandas as pd
 from math import floor
 from typing import Any, Literal, overload, TYPE_CHECKING
 import scipy.signal
@@ -33,18 +33,21 @@ type _WindowType = str | float | tuple[str, float] | tuple[str, float, float]
 @overload
 def crop(
     seismogram: Seismogram,
-    begin_time: Timestamp,
-    end_time: Timestamp,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
     clone: Literal[False] = ...,
 ) -> None: ...
 @overload
 def crop[T: Seismogram](
-    seismogram: T, begin_time: Timestamp, end_time: Timestamp, clone: Literal[True]
+    seismogram: T,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
+    clone: Literal[True],
 ) -> T: ...
 
 
 def crop[T: Seismogram](
-    seismogram: T, begin_time: Timestamp, end_time: Timestamp, clone: bool = False
+    seismogram: T, begin_time: pd.Timestamp, end_time: pd.Timestamp, clone: bool = False
 ) -> None | T:
     """Shorten a seismogram by providing new begin and end times.
 
@@ -69,10 +72,10 @@ def crop[T: Seismogram](
         ```python
         >>> from pysmo.functions import crop
         >>> from pysmo.classes import SAC
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> new_begin_time = sac_seis.begin_time + Timedelta(seconds=10)
-        >>> new_end_time = sac_seis.end_time - Timedelta(seconds=10)
+        >>> new_begin_time = sac_seis.begin_time + pd.Timedelta(seconds=10)
+        >>> new_end_time = sac_seis.end_time - pd.Timedelta(seconds=10)
         >>> crop(sac_seis, new_begin_time, new_end_time)
         >>>
         ```
@@ -143,15 +146,15 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
 @overload
 def normalize(
     seismogram: Seismogram,
-    t1: Timestamp | None = ...,
-    t2: Timestamp | None = ...,
+    t1: pd.Timestamp | None = ...,
+    t2: pd.Timestamp | None = ...,
     clone: Literal[False] = ...,
 ) -> None: ...
 @overload
 def normalize[T: Seismogram](
     seismogram: T,
-    t1: Timestamp | None = ...,
-    t2: Timestamp | None = ...,
+    t1: pd.Timestamp | None = ...,
+    t2: pd.Timestamp | None = ...,
     *,
     clone: Literal[True],
 ) -> T: ...
@@ -159,8 +162,8 @@ def normalize[T: Seismogram](
 
 def normalize[T: Seismogram](
     seismogram: T,
-    t1: Timestamp | None = None,
-    t2: Timestamp | None = None,
+    t1: pd.Timestamp | None = None,
+    t2: pd.Timestamp | None = None,
     clone: bool = False,
 ) -> None | T:
     """Normalize a seismogram with its absolute max value.
@@ -209,8 +212,8 @@ def normalize[T: Seismogram](
 @overload
 def pad[T: Seismogram](
     seismogram: T,
-    begin_time: Timestamp,
-    end_time: Timestamp,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     *,
     clone: Literal[True],
@@ -221,8 +224,8 @@ def pad[T: Seismogram](
 @overload
 def pad(
     seismogram: Seismogram,
-    begin_time: Timestamp,
-    end_time: Timestamp,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     clone: Literal[False] = False,
     **kwargs: Any,
@@ -231,8 +234,8 @@ def pad(
 
 def pad[T: Seismogram](
     seismogram: T,
-    begin_time: Timestamp,
-    end_time: Timestamp,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     clone: bool = False,
     **kwargs: Any,
@@ -265,15 +268,15 @@ def pad[T: Seismogram](
         ```python
         >>> from pysmo.functions import pad
         >>> from pysmo.classes import SAC
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> import numpy as np
         >>>
         >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> original_length = len(sac_seis.data)
         >>> sac_seis.data
         array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
-        >>> new_begin_time = sac_seis.begin_time - Timedelta(seconds=10)
-        >>> new_end_time = sac_seis.end_time + Timedelta(seconds=10)
+        >>> new_begin_time = sac_seis.begin_time - pd.Timedelta(seconds=10)
+        >>> new_end_time = sac_seis.end_time + pd.Timedelta(seconds=10)
         >>> pad(sac_seis, new_begin_time, new_end_time)
         >>> np.isclose(len(sac_seis.data), original_length + 20 / sac_seis.delta.total_seconds())
         np.True_
@@ -395,7 +398,7 @@ def taper[T: Seismogram](
     the data of a [`Seismogram`][pysmo.Seismogram] object. The taper width is
     understood as the portion of the seismogram affected by the taper window
     function. It can be provided as an absolute duration (non-negative
-    [`Timedelta`][pandas.Timedelta]), or as a fraction of seismogram length
+    [`pd.Timedelta`][pandas.Timedelta]), or as a fraction of seismogram length
     ([`float`][float] between `0` and `1`). Internally, absolute durations are
     converted to fractions by dividing by the total seismogram duration, and
     absolute durations should therefore not exceed the total seismogram
@@ -448,7 +451,7 @@ def taper[T: Seismogram](
     """
 
     nsamples: int
-    if isinstance(taper_width, Timedelta):
+    if isinstance(taper_width, pd.Timedelta):
         nsamples = taper_width // seismogram.delta
     else:
         nsamples = floor(len(seismogram.data) * taper_width)
@@ -475,7 +478,7 @@ def taper[T: Seismogram](
 
 def time2index(
     seismogram: Seismogram,
-    time: Timestamp,
+    time: pd.Timestamp,
     allow_out_of_bounds: bool = False,
 ) -> int:
     """
@@ -525,7 +528,7 @@ def time2index(
 
 # def time2index(
 #     seismogram: Seismogram,
-#     time: Timestamp,
+#     time: pd.Timestamp,
 #     allow_out_of_bounds: bool = False,
 # ) -> int:
 #     """Retuns data index corresponding to a given time.
@@ -568,8 +571,8 @@ def time2index(
 @overload
 def window(
     seismogram: Seismogram,
-    window_begin_time: Timestamp,
-    window_end_time: Timestamp,
+    window_begin_time: pd.Timestamp,
+    window_end_time: pd.Timestamp,
     ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     window_type: _WindowType = ...,
     same_shape: bool = False,
@@ -580,8 +583,8 @@ def window(
 @overload
 def window[T: Seismogram](
     seismogram: T,
-    window_begin_time: Timestamp,
-    window_end_time: Timestamp,
+    window_begin_time: pd.Timestamp,
+    window_end_time: pd.Timestamp,
     ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     window_type: _WindowType = ...,
     *,
@@ -592,8 +595,8 @@ def window[T: Seismogram](
 
 def window[T: Seismogram](
     seismogram: T,
-    window_begin_time: Timestamp,
-    window_end_time: Timestamp,
+    window_begin_time: pd.Timestamp,
+    window_end_time: pd.Timestamp,
     ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     window_type: _WindowType = "hann",
     same_shape: bool = False,
@@ -624,7 +627,7 @@ def window[T: Seismogram](
         ramp_width: Duration of the taper on *each side*.
 
             - If `float`: calculated as a fraction of the window length.
-            - If `Timedelta`: used as absolute duration.
+            - If `pd.Timedelta`: used as absolute duration.
 
             Note: Total duration = window length + (2 * `ramp_width`).
         window_type: Taper method to use (see [`taper`][pysmo.functions.taper]).
@@ -646,12 +649,12 @@ def window[T: Seismogram](
         >>> from pysmo.functions import window, detrend
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.plotutils import plotseis
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>>
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> ramp_width = Timedelta(seconds=250)
-        >>> window_begin_time = sac_seis.begin_time + Timedelta(seconds=500)
-        >>> window_end_time = window_begin_time + Timedelta(seconds=1000)
+        >>> ramp_width = pd.Timedelta(seconds=250)
+        >>> window_begin_time = sac_seis.begin_time + pd.Timedelta(seconds=500)
+        >>> window_end_time = window_begin_time + pd.Timedelta(seconds=1000)
         >>> windowed_seis = window(sac_seis, window_begin_time, window_end_time, ramp_width, same_shape=True, clone=True)
         >>> detrend(sac_seis)
         >>> fig = plotseis(sac_seis, windowed_seis)
@@ -682,7 +685,7 @@ def window[T: Seismogram](
 
     begin_time, end_time = seismogram.begin_time, seismogram.end_time
 
-    ramp_duration: Timedelta
+    ramp_duration: pd.Timedelta
     if isinstance(ramp_width, (float, int)):
         ramp_duration = ramp_width * (window_end_time - window_begin_time)
     else:

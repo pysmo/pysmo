@@ -12,7 +12,7 @@ from pysmo.tools.iccs.plot import (
     update_pick,
     update_timewindow,
 )
-from pandas import Timedelta
+import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import MouseButton, MouseEvent
 from matplotlib.figure import Figure
@@ -29,7 +29,7 @@ def test_update_pick(iccs_instance: ICCS) -> None:
     iccs = iccs_instance
     _ = iccs()
     org_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
-    pickdelta = Timedelta(seconds=1.23)
+    pickdelta = pd.Timedelta(seconds=1.23)
     iccs.update_all_picks(pickdelta)
     new_picks = [s.t1 for s in iccs.seismograms if s.t1 is not None]
     for org, new in zip(org_picks, new_picks):
@@ -44,9 +44,9 @@ def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
     iccs = iccs_instance
     min_t1, max_t1 = _calc_valid_pick_range(iccs)
     with pytest.raises(ValueError):
-        iccs.update_all_picks(max_t1 + Timedelta(seconds=1))
+        iccs.update_all_picks(max_t1 + pd.Timedelta(seconds=1))
     with pytest.raises(ValueError):
-        iccs.update_all_picks(min_t1 - Timedelta(seconds=1))
+        iccs.update_all_picks(min_t1 - pd.Timedelta(seconds=1))
 
 
 class TestPlotCommonBase:
@@ -254,8 +254,8 @@ def test_scroll_index_tracker(iccs_instance: ICCS) -> None:
 
 
 def test_taper_ramp_in_seconds_with_timedelta(iccs_instance: ICCS) -> None:
-    """Timedelta ramp_width is returned as absolute seconds."""
-    iccs_instance.ramp_width = Timedelta(seconds=3)
+    """pd.Timedelta ramp_width is returned as absolute seconds."""
+    iccs_instance.ramp_width = pd.Timedelta(seconds=3)
     assert _get_taper_ramp_in_seconds(iccs_instance) == pytest.approx(3.0)
 
 
@@ -277,7 +277,7 @@ def test_taper_ramp_in_seconds_with_float(iccs_instance: ICCS) -> None:
 
 def test_draw_common_stack_xlim_no_ramp(iccs_instance: ICCS) -> None:
     """x-axis limits equal window_pre / window_post when ramp_width is zero."""
-    iccs_instance.ramp_width = Timedelta(0)
+    iccs_instance.ramp_width = pd.Timedelta(0)
     fig, ax = plt.subplots()
     draw_common_stack(ax, iccs_instance, context=False, all_seismograms=False)
     xmin, xmax = ax.get_xlim()
@@ -288,7 +288,7 @@ def test_draw_common_stack_xlim_no_ramp(iccs_instance: ICCS) -> None:
 
 def test_draw_common_stack_xlim_with_ramp(iccs_instance: ICCS) -> None:
     """x-axis limits extend by ramp_width beyond the CC window when context=False."""
-    ramp = Timedelta(seconds=2)
+    ramp = pd.Timedelta(seconds=2)
     iccs_instance.ramp_width = ramp
     fig, ax = plt.subplots()
     draw_common_stack(ax, iccs_instance, context=False, all_seismograms=False)
@@ -320,7 +320,7 @@ def test_draw_common_stack_xlim_with_context(iccs_instance: ICCS) -> None:
 
 def test_draw_common_stack_window_markers(iccs_instance: ICCS) -> None:
     """axvspan and axvlines mark window_pre / window_post regardless of ramp."""
-    ramp = Timedelta(seconds=2)
+    ramp = pd.Timedelta(seconds=2)
     iccs_instance.ramp_width = ramp
     fig, ax = plt.subplots()
     draw_common_stack(ax, iccs_instance, context=False, all_seismograms=False)
@@ -434,7 +434,7 @@ def test_phase_picker_invalid_click_no_callback(iccs_instance: ICCS) -> None:
     _ = _setup_phase_picker(ax, iccs_instance, received.append)
 
     # A shift of 10 hours is definitely outside the valid range.
-    _fire_click(fig, ax, Timedelta(hours=10).total_seconds())
+    _fire_click(fig, ax, pd.Timedelta(hours=10).total_seconds())
 
     assert received == []
     plt.close(fig)
@@ -453,7 +453,7 @@ def test_phase_picker_mouse_move_cursor_colour(iccs_instance: ICCS) -> None:
     assert cursor.linev.get_color() == "g"
 
     # A 10-hour shift is always invalid
-    _fire_move(fig, ax, Timedelta(hours=10).total_seconds())
+    _fire_move(fig, ax, pd.Timedelta(hours=10).total_seconds())
     assert cursor.linev.get_color() == "r"
     plt.close(fig)
 
@@ -537,7 +537,7 @@ def test_update_pick_save_applies_pick(iccs_instance: ICCS) -> None:
 
     for orig, s in zip(original_picks, iccs_instance.seismograms):
         assert (s.t1 or s.t0) - orig == pytest.approx(
-            Timedelta(seconds=delta_s), abs=Timedelta(seconds=1e-6)
+            pd.Timedelta(seconds=delta_s), abs=pd.Timedelta(seconds=1e-6)
         )
     plt.close(fig)
 

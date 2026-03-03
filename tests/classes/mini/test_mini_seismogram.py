@@ -1,6 +1,7 @@
-import numpy as np
 import pytest
-from pandas import Timestamp, Timedelta
+import numpy as np
+import re
+import pandas as pd
 from datetime import timezone
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.lib.defaults import SeismogramDefaults
@@ -31,7 +32,7 @@ class TestMiniSeismogram:
             == SeismogramDefaults.begin_time.microsecond
             == 0
         )
-        assert miniseis.delta == SeismogramDefaults.delta == Timedelta(seconds=1)
+        assert miniseis.delta == SeismogramDefaults.delta == pd.Timedelta(seconds=1)
         assert miniseis.data.size == 0
         assert len(miniseis.data) == 0
 
@@ -39,8 +40,7 @@ class TestMiniSeismogram:
     def test_change_attributes(self) -> None:
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
-        new_time_no_tz = Timestamp.fromisoformat("2011-11-04T00:05:23.123")
-        new_time_utc = Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
+        new_time_utc = pd.Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
             tzinfo=timezone.utc
         )
         miniseis.data = random_data
@@ -53,13 +53,38 @@ class TestMiniSeismogram:
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis.data) - 1
         )
-        miniseis.delta = Timedelta(seconds=0.1)
+
+        # Test time conversion on set
+        miniseis.begin_time = "2024-03-03T12:00:00"  # type: ignore
+        assert isinstance(miniseis.begin_time, pd.Timestamp)
+        assert miniseis.begin_time.tzinfo == timezone.utc
+
+        miniseis.delta = pd.Timedelta(seconds=0.1)
         assert miniseis.delta.total_seconds() == 0.1
         assert miniseis.end_time - miniseis.begin_time == miniseis.delta * (
             len(miniseis.data) - 1
         )
-        with pytest.raises(TypeError):
-            miniseis.begin_time = new_time_no_tz
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("'delta' must be > 0 days 00:00:00: 0 days 00:00:00"),
+        ):
+            miniseis.delta = pd.Timedelta(seconds=0)
+        with pytest.raises(
+            ValueError,
+            match=re.escape("'delta' must be > 0 days 00:00:00: -1 days +23:59:59"),
+        ):
+            miniseis.delta = pd.Timedelta(seconds=-1)
+
+        # Float assignment to delta is converted to Timedelta
+        miniseis.delta = 0.5  # type: ignore
+        assert isinstance(miniseis.delta, pd.Timedelta)
+        assert miniseis.delta.total_seconds() == 0.5
+
+        # List assignment to data is converted to np.ndarray
+        miniseis.data = [1, 2, 3]  # type: ignore
+        assert isinstance(miniseis.data, np.ndarray)
+        assert np.array_equal(miniseis.data, np.array([1, 2, 3]))
 
         miniseis.data = np.array([])
         assert len(miniseis.data) == 0
@@ -73,8 +98,8 @@ class TestMiniSeismogram:
             _ = len(seismogram.data)
             _ = np.mean(seismogram.data)
             _ = seismogram.delta * 1.1
-            _ = seismogram.begin_time + Timedelta(seconds=12)
-            _ = seismogram.end_time + Timedelta(seconds=12)
+            _ = seismogram.begin_time + pd.Timedelta(seconds=12)
+            _ = seismogram.end_time + pd.Timedelta(seconds=12)
 
         miniseis = MiniSeismogram(data=np.random.rand(1000))
         seis_func(miniseis)

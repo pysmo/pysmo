@@ -1,16 +1,16 @@
 from dataclasses import dataclass, field
-from pandas import Timestamp, Timedelta
+import pandas as pd
 import numpy as np
 
 
 @dataclass  # (1)!
 class NoiseSeismogram:
-    begin_time: Timestamp  # (2)!
-    delta: Timedelta = Timedelta(seconds=0.01)  # (3)!
+    begin_time: pd.Timestamp  # (2)!
+    delta: pd.Timedelta = pd.Timedelta(seconds=0.01)  # (3)!
     data: np.ndarray = field(default_factory=lambda: np.array([]))  # (4)!
 
     @property
-    def end_time(self) -> Timestamp:  # (5)!
+    def end_time(self) -> pd.Timestamp:  # (5)!
         if len(self.data) == 0:
             return self.begin_time
         return self.begin_time + self.delta * (len(self.data) - 1)

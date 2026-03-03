@@ -1,6 +1,6 @@
 from pysmo import Seismogram
 from pytest_cases import parametrize_with_cases
-from pandas import Timestamp
+import pandas as pd
 from datetime import timezone
 import pytest
 import matplotlib  # type: ignore
@@ -26,11 +26,11 @@ class TestPlotseisFunctions:
         times = time_array(seismogram)
         assert len(times) == len(seismogram.data)
         assert (
-            Timestamp(num2date(times[0])).timestamp()
+            pd.Timestamp(num2date(times[0])).timestamp()
             == seismogram.begin_time.timestamp()
         )
         assert (
-            Timestamp(num2date(times[-1])).timestamp()
+            pd.Timestamp(num2date(times[-1])).timestamp()
             == seismogram.end_time.timestamp()
         )
 
@@ -42,11 +42,11 @@ class TestPlotseisFunctions:
         assert len(unix_times) == len(seismogram.data)
         assert (
             pytest.approx(
-                Timestamp.fromtimestamp(unix_times[0], timezone.utc).timestamp()
+                pd.Timestamp.fromtimestamp(unix_times[0], timezone.utc).timestamp()
             )
             == seismogram.begin_time.timestamp()
         )
         assert (
-            Timestamp.fromtimestamp(unix_times[-1], timezone.utc).timestamp()
+            pd.Timestamp.fromtimestamp(unix_times[-1], timezone.utc).timestamp()
             == seismogram.end_time.timestamp()
         )

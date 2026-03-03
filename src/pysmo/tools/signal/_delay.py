@@ -1,4 +1,6 @@
 import numpy as np
+import numpy.typing as npt
+import pandas as pd
 import math
 from pysmo import Seismogram
 from scipy.fft import rfft, irfft, next_fast_len
@@ -6,8 +8,6 @@ from scipy.linalg import lstsq, inv
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 from collections.abc import Sequence
-from pandas import Timedelta
-from numpy.typing import NDArray
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 
@@ -28,9 +28,9 @@ def delay(
     seismogram1: Seismogram,
     seismogram2: Seismogram,
     total_delay: bool = False,
-    max_shift: Timedelta | None = None,
+    max_shift: pd.Timedelta | None = None,
     abs_max: bool = False,
-) -> tuple[Timedelta, float]:
+) -> tuple[pd.Timedelta, float]:
     """
     Cross correlates two seismograms to determine signal delay.
 
@@ -224,7 +224,7 @@ def delay(
 
 def multi_delay(
     template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
-) -> tuple[list[Timedelta], list[float]]:
+) -> tuple[list[pd.Timedelta], list[float]]:
     """
     Calculates delays and correlation coefficients for a list of seismograms against a template.
 
@@ -343,7 +343,7 @@ def multi_delay(
 def multi_multi_delay(
     seismograms: Sequence[Seismogram],
     abs_max: bool = False,
-) -> tuple[NDArray[np.timedelta64], NDArray[np.floating]]:
+) -> tuple[npt.NDArray[np.timedelta64], npt.NDArray[np.floating]]:
     """
     Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
 
@@ -358,7 +358,7 @@ def multi_multi_delay(
 
     Note:
         Unlike most pysmo functions, this returns `numpy.timedelta64` values
-        rather than [`Timedelta`][pandas.Timedelta]. This avoids the overhead
+        rather than [`pd.Timedelta`][pandas.Timedelta]. This avoids the overhead
         of an object array and allows efficient vectorized arithmetic in
         downstream functions such as [`mccc`][pysmo.tools.signal.mccc].
         Convert individual elements with `pandas.Timedelta(delays[i, j])` if
@@ -382,7 +382,7 @@ def multi_multi_delay(
         ```python
         >>> from pysmo import MiniSeismogram
         >>> from pysmo.tools.signal import multi_multi_delay
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> import numpy as np
         >>>
         >>> data = np.sin(np.linspace(0, 8 * np.pi, 1000))
@@ -396,13 +396,13 @@ def multi_multi_delay(
         >>> delays.shape
         (3, 3)
         >>> # delay of seismogram 1 relative to seismogram 0:
-        >>> Timedelta(delays[0, 1]).total_seconds()
+        >>> pd.Timedelta(delays[0, 1]).total_seconds()
         5.0
         >>> # delay of seismogram 2 relative to seismogram 0:
-        >>> Timedelta(delays[0, 2]).total_seconds()
+        >>> pd.Timedelta(delays[0, 2]).total_seconds()
         -10.0
         >>> # antisymmetric: delays[i, j] == -delays[j, i]
-        >>> Timedelta(delays[1, 0]).total_seconds()
+        >>> pd.Timedelta(delays[1, 0]).total_seconds()
         -5.0
         >>>
         ```
@@ -460,7 +460,7 @@ def multi_multi_delay(
 
 def mccc(
     seismograms: Sequence[Seismogram], min_cc: float = 0.5, damping: float = 0.1
-) -> tuple[list[Timedelta], list[Timedelta], Timedelta]:
+) -> tuple[list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta]:
     """
     Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
 
@@ -527,7 +527,7 @@ def mccc(
         <https://doi.org/10.1785/BSSA0800010150>.
     """
     n_traces = len(seismograms)
-    zero_delta = Timedelta(0)
+    zero_delta = pd.Timedelta(0)
 
     if n_traces < 2:
         return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
@@ -595,8 +595,8 @@ def mccc(
     except np.linalg.LinAlgError:
         std_errors = np.zeros(n_traces)
 
-    times = [Timedelta(seconds=float(t)) for t in solution]
-    errors = [Timedelta(seconds=float(e)) for e in std_errors]
-    rmse = Timedelta(seconds=float(np.sqrt(sse / len(d))))
+    times = [pd.Timedelta(seconds=float(t)) for t in solution]
+    errors = [pd.Timedelta(seconds=float(e)) for e in std_errors]
+    rmse = pd.Timedelta(seconds=float(np.sqrt(sse / len(d))))
 
     return times, errors, rmse

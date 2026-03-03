@@ -1,13 +1,17 @@
 import numpy as np
+import pandas as pd
 from pysmo import Seismogram
 from pysmo._types.seismogram import SeismogramEndtimeMixin
-from pysmo.typing import PositiveTimedelta
-from pysmo.lib.validators import datetime_is_utc
+from pysmo.typing import PositiveTimedelta, UtcTimestamp
+from pysmo.lib.validators import (
+    convert_to_utc_timestamp,
+    convert_to_timedelta,
+    convert_to_ndarray,
+)
 from pysmo.lib.defaults import SeismogramDefaults
 from collections.abc import Hashable
 from typing import Protocol, Any, runtime_checkable
-from attrs import define, field, validators
-from pandas import Timestamp
+from attrs import define, field, validators, setters
 from enum import StrEnum, auto
 
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
@@ -26,10 +30,10 @@ class ICCSSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    t0: Timestamp
+    t0: pd.Timestamp
     """Initial pick."""
 
-    t1: Timestamp | None
+    t1: pd.Timestamp | None
     """Updated pick."""
 
     flip: bool
@@ -62,39 +66,66 @@ class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
         >>> from pysmo.tools.iccs import MiniICCSSeismogram
-        >>> from pandas import Timedelta
+        >>> import pandas as pd
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
         >>> # Use existing pick or set a new one 10 seconds after begin time
-        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + Timedelta(seconds=10)}
+        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + pd.Timedelta(seconds=10)}
         >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
         >>>
         ```
     """
 
-    begin_time: Timestamp = field(
-        default=SeismogramDefaults.begin_time, validator=datetime_is_utc
+    begin_time: UtcTimestamp = field(
+        default=SeismogramDefaults.begin_time,
+        converter=convert_to_utc_timestamp,
+        on_setattr=setters.convert,
     )
     """Seismogram begin time."""
 
-    delta: PositiveTimedelta = SeismogramDefaults.delta
+    delta: PositiveTimedelta = field(
+        default=SeismogramDefaults.delta,
+        converter=convert_to_timedelta,
+        validator=[
+            validators.instance_of(pd.Timedelta),
+            validators.gt(pd.Timedelta(0)),
+        ],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(factory=lambda: np.array([]))
+    data: np.ndarray = field(
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Seismogram data."""
 
-    t0: Timestamp = field(validator=datetime_is_utc)
+    t0: UtcTimestamp = field(
+        converter=convert_to_utc_timestamp, on_setattr=setters.convert
+    )
     """Initial pick."""
 
-    t1: Timestamp | None = field(
-        default=None, validator=validators.optional(datetime_is_utc)
+    t1: UtcTimestamp | None = field(
+        default=None, converter=convert_to_utc_timestamp, on_setattr=setters.convert
     )
     """Updated pick."""
 
-    flip: bool = False
+    flip: bool = field(
+        default=False,
+        converter=bool,
+        validator=validators.instance_of(bool),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Data in seismogram should be flipped for ICCS."""
 
-    select: bool = True
+    select: bool = field(
+        default=True,
+        converter=bool,
+        validator=validators.instance_of(bool),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Use seismogram to create stack."""
 
     extra: dict[Hashable, Any] = field(factory=dict)

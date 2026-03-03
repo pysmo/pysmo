@@ -1,6 +1,6 @@
 from .location import Location
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators
+from attrs import define, field, validators, setters
 
 __all__ = ["LocationWithDepth", "MiniLocationWithDepth"]
 
@@ -32,11 +32,21 @@ class MiniLocationWithDepth:
         ```
     """
 
-    latitude: float = field(validator=[validators.ge(-90), validators.le(90)])
+    latitude: float = field(
+        converter=float,
+        validator=[validators.ge(-90), validators.le(90)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Location latitude from -90 to 90 degrees."""
 
-    longitude: float = field(validator=[validators.gt(-180), validators.le(180)])
+    longitude: float = field(
+        converter=float,
+        validator=[validators.gt(-180), validators.le(180)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
     """Location longitude from -180 to 180 degrees."""
 
-    depth: float
+    depth: float = field(
+        converter=float, on_setattr=setters.pipe(setters.convert, setters.validate)
+    )
     """Location depth in metres."""
