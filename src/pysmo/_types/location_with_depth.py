@@ -1,6 +1,8 @@
-from .location import Location
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators, setters
+
+from attrs import define, field, setters, validators
+
+from .location import Location
 
 __all__ = ["LocationWithDepth", "MiniLocationWithDepth"]
 

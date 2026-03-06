@@ -2,9 +2,10 @@
 Functions for spectral analysis.
 """
 
-from pysmo import Seismogram
-from scipy import signal
 import numpy as np
+from scipy import signal
+
+from pysmo import Seismogram
 
 __all__ = ["psd"]
 

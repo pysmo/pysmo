@@ -1,15 +1,17 @@
 """Tests for pysmo.lib.io.SacIO."""
 
-from pysmo.lib.io import SacIO
-import pandas as pd
-from datetime import timezone
-from pathlib import Path
 import copy
 import pickle
 import time
-import pytest
+from datetime import timezone
+from pathlib import Path
+
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
+import pytest
+
+from pysmo.lib.io import SacIO
 
 # ─────────────────────────── Header tables ─────────────────────────────────
 # Tests that set headers use fresh SacIO() instances (default iztype="unkn"),

@@ -98,10 +98,12 @@ The helper automatically:
 - Optionally validates against syrupy snapshots for regression testing
 """
 
-from pysmo import Seismogram
 from copy import deepcopy
-from typing import Callable, Any
+from typing import Any, Callable
+
 import numpy as np
+
+from pysmo import Seismogram
 
 try:
     from syrupy.assertion import SnapshotAssertion
@@ -189,9 +191,9 @@ def assert_seismogram_modification(
     """
     # Test with clone=True - should return a new modified seismogram
     cloned_modified = modification_func(seismogram, *args, clone=True, **kwargs)
-    assert (
-        cloned_modified is not None
-    ), "Function with clone=True should return a Seismogram"
+    assert cloned_modified is not None, (
+        "Function with clone=True should return a Seismogram"
+    )
 
     # Test with clone=False (in-place) - should modify and return None or the seismogram
     inplace_copy = deepcopy(seismogram)
@@ -208,15 +210,15 @@ def assert_seismogram_modification(
     )
 
     # Verify time attributes match
-    assert (
-        cloned_modified.begin_time == inplace_modified.begin_time
-    ), "Clone and in-place modifications have different begin_time"
-    assert (
-        cloned_modified.delta == inplace_modified.delta
-    ), "Clone and in-place modifications have different delta"
-    assert len(cloned_modified.data) == len(
-        inplace_modified.data
-    ), "Clone and in-place modifications have different lengths"
+    assert cloned_modified.begin_time == inplace_modified.begin_time, (
+        "Clone and in-place modifications have different begin_time"
+    )
+    assert cloned_modified.delta == inplace_modified.delta, (
+        "Clone and in-place modifications have different delta"
+    )
+    assert len(cloned_modified.data) == len(inplace_modified.data), (
+        "Clone and in-place modifications have different lengths"
+    )
 
     # Run custom assertions if provided
     if custom_assertions is not None:

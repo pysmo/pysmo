@@ -4,13 +4,14 @@ This module tests the bandpass, highpass, lowpass, and bandstop filter functions
 Each function is tested for both clone modes, parameter validation, and zerophase modes.
 """
 
-from tests.test_helpers import assert_seismogram_modification
-from pysmo.tools.signal._filter._butter import bandpass, highpass, lowpass, bandstop
-from pysmo import Seismogram, MiniSeismogram
+import numpy as np
+import pytest
 from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
-import pytest
-import numpy as np
+
+from pysmo import MiniSeismogram, Seismogram
+from pysmo.tools.signal._filter._butter import bandpass, bandstop, highpass, lowpass
+from tests.test_helpers import assert_seismogram_modification
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")

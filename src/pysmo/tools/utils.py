@@ -1,9 +1,10 @@
 """Pysmo's little helpers."""
 
 from collections.abc import Sequence
-import pandas as pd
 from uuid import UUID
+
 import numpy as np
+import pandas as pd
 
 
 def average_datetimes(datetimes: Sequence[pd.Timestamp]) -> pd.Timestamp:

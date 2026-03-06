@@ -1,5 +1,7 @@
-from pysmo import Seismogram
 from typing import Literal, overload
+
+from pysmo import Seismogram
+
 from ._registry import _FILTER_REGISTRY
 
 # NOTE: update this when new filters are added and decorated with @register_filter

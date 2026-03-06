@@ -1,34 +1,37 @@
 """The ICCS class and functions used within the class."""
 
 import warnings
+from collections.abc import Sequence
+
 import numpy as np
-from ._types import ICCSSeismogram, ConvergenceMethod
-from ._defaults import IccsDefaults
-from pysmo import Seismogram, MiniSeismogram
+import pandas as pd
+from attrs import Attribute, define, field, setters, validate, validators
+from numpy.linalg import norm
+from scipy.stats.mstats import pearsonr
+
+from pysmo import MiniSeismogram, Seismogram
 from pysmo._types.seismogram import SeismogramEndtimeMixin
-from pysmo.typing import (
-    NonNegativeNumber,
-    NonNegativeTimedelta,
-    NegativeTimedelta,
-    PositiveTimedelta,
-)
 from pysmo.functions import (
+    clone_to_mini,
     crop,
     detrend,
     normalize,
-    clone_to_mini,
-    resample,
     pad,
+    resample,
     window,
 )
 from pysmo.lib.validators import convert_to_timedelta
-from pysmo.tools.signal import bandpass, multi_delay, mccc
+from pysmo.tools.signal import bandpass, mccc, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
-import pandas as pd
-from attrs import define, field, validators, setters, Attribute, validate
-from collections.abc import Sequence
-from scipy.stats.mstats import pearsonr
-from numpy.linalg import norm
+from pysmo.typing import (
+    NegativeTimedelta,
+    NonNegativeNumber,
+    NonNegativeTimedelta,
+    PositiveTimedelta,
+)
+
+from ._defaults import IccsDefaults
+from ._types import ConvergenceMethod, ICCSSeismogram
 
 __all__ = ["ICCS"]
 

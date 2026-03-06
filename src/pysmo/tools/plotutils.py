@@ -5,11 +5,12 @@ Pysmo provides functions that perform common operations on the types of data tha
 match pysmo's types.
 """
 
-from pysmo import Seismogram
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure
+import matplotlib.pyplot as plt
 import numpy as np
+
+from pysmo import Seismogram
 
 __all__ = [
     "time_array",

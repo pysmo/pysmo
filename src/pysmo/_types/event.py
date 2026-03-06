@@ -1,9 +1,12 @@
-from .location_with_depth import LocationWithDepth
-from pysmo.typing import UtcTimestamp
-from pysmo.lib.validators import convert_to_utc_timestamp
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators, setters
+
 import pandas as pd
+from attrs import define, field, setters, validators
+
+from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.typing import UtcTimestamp
+
+from .location_with_depth import LocationWithDepth
 
 __all__ = ["Event", "MiniEvent"]
 

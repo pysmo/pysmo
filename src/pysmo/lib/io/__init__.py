@@ -6,8 +6,8 @@ the higher-level classes in [`pysmo.classes`][] and should generally not
 be used directly.
 """
 
-from ._sacio import SacIO
 from ..._utils import export_module_names
+from ._sacio import SacIO
 
 __all__ = [
     "SacIO",

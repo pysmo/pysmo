@@ -1,5 +1,6 @@
-from pysmo import Location
 import pytest
+
+from pysmo import Location
 
 
 def test_azdist(

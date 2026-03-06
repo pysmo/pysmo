@@ -1,9 +1,11 @@
+from datetime import timezone
+
+import numpy.testing as npt
+import pandas as pd
+import pytest
+
 from pysmo import MiniSeismogram, MiniStation
 from pysmo.classes import SAC
-import pandas as pd
-from datetime import timezone
-import numpy.testing as npt
-import pytest
 
 
 class TestUtilsFunctions:
@@ -32,7 +34,7 @@ class TestUtilsFunctions:
             mini_clone = clone_to_mini(MiniStation, mini_seismogram)  # type: ignore
 
     def test_copy_from_mini(self, sac_instance: SAC) -> None:
-        from pysmo.functions import copy_from_mini, clone_to_mini
+        from pysmo.functions import clone_to_mini, copy_from_mini
 
         mini_station = clone_to_mini(MiniStation, sac_instance.station)
         assert mini_station.latitude == sac_instance.station.latitude

@@ -1,5 +1,6 @@
-from pysmo import Station, MiniStation
 import pytest
+
+from pysmo import MiniStation, Station
 
 
 class TestMiniStation:
