@@ -1,10 +1,12 @@
-import pytest
 import re
+
 import numpy as np
-from pysmo.tools.iccs._types import ConvergenceMethod
-from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
 import pandas as pd
+import pytest
 from matplotlib.figure import Figure
+
+from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
+from pysmo.tools.iccs._types import ConvergenceMethod
 
 
 class TestICCSBase:

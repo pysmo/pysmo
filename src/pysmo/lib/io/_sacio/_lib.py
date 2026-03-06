@@ -1,6 +1,7 @@
-from pysmo.lib.defaults import SeismogramDefaults
 from dataclasses import dataclass
 from typing import Self
+
+from pysmo.lib.defaults import SeismogramDefaults
 
 __all__ = ["SacIODefaults"]
 

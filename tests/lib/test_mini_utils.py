@@ -1,11 +1,11 @@
 from pysmo import (
+    Event,
     Location,
+    LocationWithDepth,
+    MiniEvent,
     MiniLocation,
     MiniLocationWithDepth,
-    MiniEvent,
     MiniStation,
-    LocationWithDepth,
-    Event,
 )
 
 

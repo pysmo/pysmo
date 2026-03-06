@@ -1,10 +1,12 @@
 from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+
+import pytest
+
 from pysmo import MiniSeismogram
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
-from typing import Any
-from pathlib import Path
-import pytest
 
 
 @pytest.fixture()

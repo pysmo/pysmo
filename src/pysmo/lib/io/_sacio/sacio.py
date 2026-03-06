@@ -1,25 +1,28 @@
 import struct
-import httpx
 import time as _time
-import numpy as np
-from ._sacio_rendered import (
-    SacIOBase,
-    SAC_TIME_HEADERS,
-    HEADER_TYPES,
-    SAC_ENUMS_DICT,
-    SAC_HEADERS,
-    SAC_FOOTERS,
-)
-from ._lib import SacIODefaults
-from pysmo import MiniLocation
-from pysmo.tools.azdist import azimuth, backazimuth, distance
-from attrs import define
-from typing import Any, Self, Literal
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from zipfile import ZipFile
 from os import PathLike
 from pathlib import Path
+from typing import Any, Literal, Self
+from zipfile import ZipFile
+
+import httpx
+import numpy as np
+from attrs import define
+
+from pysmo import MiniLocation
+from pysmo.tools.azdist import azimuth, backazimuth, distance
+
+from ._lib import SacIODefaults
+from ._sacio_rendered import (
+    HEADER_TYPES,
+    SAC_ENUMS_DICT,
+    SAC_FOOTERS,
+    SAC_HEADERS,
+    SAC_TIME_HEADERS,
+    SacIOBase,
+)
 
 
 @define(kw_only=True)

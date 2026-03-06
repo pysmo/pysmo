@@ -1,4 +1,5 @@
 from typing import get_args
+
 from pysmo.tools.signal import filter
 from pysmo.tools.signal._filter._filter import FilterName
 from pysmo.tools.signal._filter._registry import _FILTER_REGISTRY

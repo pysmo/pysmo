@@ -1,14 +1,16 @@
+from typing import Protocol, runtime_checkable
+
 import numpy as np
 import pandas as pd
-from pysmo.lib.validators import (
-    convert_to_utc_timestamp,
-    convert_to_timedelta,
-    convert_to_ndarray,
-)
+from attrs import define, field, setters, validators
+
 from pysmo.lib.defaults import SeismogramDefaults
+from pysmo.lib.validators import (
+    convert_to_ndarray,
+    convert_to_timedelta,
+    convert_to_utc_timestamp,
+)
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
-from typing import Protocol, runtime_checkable
-from attrs import define, field, validators, setters
 
 __all__ = ["Seismogram", "MiniSeismogram"]
 

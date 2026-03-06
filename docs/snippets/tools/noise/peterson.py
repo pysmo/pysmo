@@ -4,11 +4,12 @@ Example script for pysmo.tools.noise
 
 #!/usr/bin/env python
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from pysmo.tools.noise import generate_noise, peterson
 from pysmo.tools.signal import psd
-import pandas as pd
 
 
 def main() -> None:
