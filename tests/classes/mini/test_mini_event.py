@@ -1,6 +1,8 @@
-import pandas as pd
 from datetime import timezone
+
+import pandas as pd
 import pytest
+
 from pysmo import Event, MiniEvent
 
 

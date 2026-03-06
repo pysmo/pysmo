@@ -32,7 +32,7 @@ Documentation = "https://docs.pysmo.org"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=25.9.0",
+    "black>=26.1.0",
     "jinja2>=3.1.6",
     "pyyaml>=6.0.3",
     "types-pyyaml>=6.0.12.20250915",
@@ -141,18 +141,15 @@ exclude_also = [
     "plt.savefig(.*)",
     ]
 
-[tool.black]
-target-version = [
-  "py312",
-  "py313",
-  "py314",
+[tool.ruff]
+exclude =[
+  "docs/snippets/tutorial/season_seismogram_short.py",
+  "src/pysmo/lib/io/_sacio/_sacio_rendered.py"
 ]
 
-[tool.ruff]
-line-length = 88
-exclude =[
-  "docs/snippets/tutorial/season_seismogram_short.py"
-]
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/pysmo/lib/io/_sacio/_sacio_rendered.py" = ["E741"]

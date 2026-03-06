@@ -1,13 +1,15 @@
+import math
+from collections.abc import Sequence
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import math
-from pysmo import Seismogram
-from scipy.fft import rfft, irfft, next_fast_len
-from scipy.linalg import lstsq, inv
+from scipy.fft import irfft, next_fast_len, rfft
+from scipy.linalg import inv, lstsq
 from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
-from collections.abc import Sequence
+
+from pysmo import Seismogram
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 

@@ -1,5 +1,6 @@
-from pysmo import Seismogram
 import pandas as pd
+
+from pysmo import Seismogram
 
 
 def double_delta_td(seismogram: Seismogram) -> pd.Timedelta:

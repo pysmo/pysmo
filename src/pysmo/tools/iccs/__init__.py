@@ -143,7 +143,7 @@ visual inspection.
 
 from ..._utils import export_module_names
 from ._iccs import ICCS
-from ._types import MiniICCSSeismogram, ICCSSeismogram
+from ._types import ICCSSeismogram, MiniICCSSeismogram
 from .plot import (
     plot_seismograms,
     plot_stack,

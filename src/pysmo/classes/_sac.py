@@ -1,15 +1,18 @@
 from __future__ import annotations
+
 import warnings
+from typing import TYPE_CHECKING, Self, overload
+
 import numpy as np
 import pandas as pd
-from pysmo._types.seismogram import SeismogramEndtimeMixin
-from pysmo.typing import UtcTimestamp, PositiveTimedelta
-from pysmo.lib.validators import convert_to_utc_timestamp
-from pysmo.lib.io import SacIO
-from pysmo.lib.io._sacio import SAC_REQUIRED_TIME_HEADERS, SAC_OPTIONAL_TIME_HEADERS
-from pysmo.lib.defaults import SeismogramDefaults
-from typing import overload, Self, TYPE_CHECKING
 from attrs import define, field
+
+from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.lib.defaults import SeismogramDefaults
+from pysmo.lib.io import SacIO
+from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS, SAC_REQUIRED_TIME_HEADERS
+from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
 __all__ = [
     "SAC",

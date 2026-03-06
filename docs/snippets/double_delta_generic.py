@@ -1,8 +1,9 @@
+from copy import deepcopy
+from pathlib import Path
+from typing import reveal_type
+
 from pysmo import Seismogram
 from pysmo.classes import SAC
-from pathlib import Path
-from copy import deepcopy
-from typing import reveal_type
 
 
 def double_delta_generic[T: Seismogram](seismogram: T) -> T:  # (1)!

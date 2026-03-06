@@ -1,9 +1,11 @@
-from pysmo import Seismogram
-from pytest_cases import parametrize_with_cases
-import pandas as pd
 from datetime import timezone
-import pytest
+
 import matplotlib  # type: ignore
+import pandas as pd
+import pytest
+from pytest_cases import parametrize_with_cases
+
+from pysmo import Seismogram
 
 matplotlib.use("Agg")
 
@@ -20,8 +22,9 @@ def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignor
 class TestPlotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
-        from pysmo.tools.plotutils import time_array
         from matplotlib.dates import num2date
+
+        from pysmo.tools.plotutils import time_array
 
         times = time_array(seismogram)
         assert len(times) == len(seismogram.data)

@@ -1,18 +1,20 @@
+from collections.abc import Hashable
+from enum import StrEnum, auto
+from typing import Any, Protocol, runtime_checkable
+
 import numpy as np
 import pandas as pd
+from attrs import define, field, setters, validators
+
 from pysmo import Seismogram
 from pysmo._types.seismogram import SeismogramEndtimeMixin
-from pysmo.typing import PositiveTimedelta, UtcTimestamp
-from pysmo.lib.validators import (
-    convert_to_utc_timestamp,
-    convert_to_timedelta,
-    convert_to_ndarray,
-)
 from pysmo.lib.defaults import SeismogramDefaults
-from collections.abc import Hashable
-from typing import Protocol, Any, runtime_checkable
-from attrs import define, field, validators, setters
-from enum import StrEnum, auto
+from pysmo.lib.validators import (
+    convert_to_ndarray,
+    convert_to_timedelta,
+    convert_to_utc_timestamp,
+)
+from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
 __all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
 

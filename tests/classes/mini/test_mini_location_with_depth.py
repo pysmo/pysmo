@@ -1,5 +1,6 @@
-from pysmo import LocationWithDepth, MiniLocationWithDepth
 import pytest
+
+from pysmo import LocationWithDepth, MiniLocationWithDepth
 
 
 class TestMiniLocationWithDepth:

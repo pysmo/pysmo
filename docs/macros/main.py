@@ -1,5 +1,5 @@
-from dataclasses import fields
 import importlib
+from dataclasses import fields
 
 
 def define_env(env):  # type: ignore

@@ -1,14 +1,16 @@
-from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
-import numpy as np
-import numpy.testing as npt
-from pysmo import Seismogram, Station, Event
-from pysmo.classes import SAC
-from pysmo.lib.io import SacIO
-from pysmo.lib.defaults import SeismogramDefaults
-import pandas as pd
 from datetime import timezone
 from pathlib import Path
+
+import numpy as np
+import numpy.testing as npt
+import pandas as pd
 import pytest
+
+from pysmo import Event, Seismogram, Station
+from pysmo.classes import SAC
+from pysmo.lib.defaults import SeismogramDefaults
+from pysmo.lib.io import SacIO
+from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
 
 
 class TestSAC:

@@ -22,10 +22,12 @@ Examples:
         ```
 """
 
+from dataclasses import dataclass, field
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass, field
 from scipy.integrate import cumulative_trapezoid
+
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SeismogramDefaults
 
