@@ -1,7 +1,8 @@
 """Common distance and azimuth calculations using [`pyproj.Geod`][pyproj.Geod]."""
 
-from pysmo import Location
 from pyproj import Geod
+
+from pysmo import Location
 
 __all__ = ["azimuth", "backazimuth", "distance"]
 

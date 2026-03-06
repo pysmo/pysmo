@@ -1,7 +1,7 @@
-from season_seismogram import SeasonSeismogram, Season
-from functions_v2 import detrend
-import pandas as pd
 import numpy as np
+import pandas as pd
+from functions_v2 import detrend
+from season_seismogram import Season, SeasonSeismogram
 
 
 def main() -> None:

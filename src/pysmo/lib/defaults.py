@@ -2,9 +2,10 @@
 Defaults for pysmo functions/classes.
 """
 
-import pandas as pd
-from datetime import timezone
 from dataclasses import dataclass
+from datetime import timezone
+
+import pandas as pd
 
 
 @dataclass(frozen=True)

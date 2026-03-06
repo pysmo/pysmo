@@ -1,13 +1,14 @@
-from tests.test_helpers import assert_seismogram_modification
-from pysmo.tools.signal import gauss, envelope
-from pysmo.tools.plotutils import plotseis
-from pysmo import Seismogram
+import matplotlib
+import matplotlib.figure
+import numpy as np
+import pytest
 from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
-import pytest
-import matplotlib.figure
-import matplotlib
-import numpy as np
+
+from pysmo import Seismogram
+from pysmo.tools.plotutils import plotseis
+from pysmo.tools.signal import envelope, gauss
+from tests.test_helpers import assert_seismogram_modification
 
 matplotlib.use("Agg")
 

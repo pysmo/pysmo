@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
-from attrs import define, field, validators, setters
+
+from attrs import define, field, setters, validators
 
 __all__ = ["Location", "MiniLocation"]
 

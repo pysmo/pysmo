@@ -1,22 +1,24 @@
-from sybil import Sybil
-from sybil.parsers.codeblock import PythonCodeBlockParser
-from sybil.parsers.doctest import DocTestParser
-from sybil.evaluators.doctest import NUMBER
+import os
+import platform
+import random as rd
+import tempfile
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
+from getpass import getuser
+from pathlib import Path
 from shutil import copyfile, copytree
 from typing import Any, Generator
-from pathlib import Path
+
+import matplotlib
+import pandas as pd
+import pytest
+from sybil import Sybil
+from sybil.evaluators.doctest import NUMBER
+from sybil.parsers.codeblock import PythonCodeBlockParser
+from sybil.parsers.doctest import DocTestParser
+
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniICCSSeismogram
-import pandas as pd
-from getpass import getuser
-import random as rd
-import pytest
-import os
-import matplotlib
-import tempfile
-import platform
 
 
 @pytest.fixture()

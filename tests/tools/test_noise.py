@@ -1,9 +1,11 @@
 from dataclasses import FrozenInstanceError
-from scipy import signal  # type: ignore
-import pandas as pd
+
 import matplotlib.pyplot as plt  # type: ignore
-import pytest
 import numpy as np
+import pandas as pd
+import pytest
+from scipy import signal  # type: ignore
+
 import pysmo.tools.noise as noise
 
 

@@ -1,12 +1,13 @@
 """Functions for 'Mini' classes."""
 
-from attrs import fields, NOTHING
-from cattrs import unstructure
 from copy import copy
 from typing import TYPE_CHECKING, cast
 
+from attrs import NOTHING, fields
+from cattrs import unstructure
+
 if TYPE_CHECKING:
-    from pysmo.lib.mini_utils import _AnyProto, _AnyMini
+    from pysmo.lib.mini_utils import _AnyMini, _AnyProto
 
 __all__ = [
     "copy_from_mini",

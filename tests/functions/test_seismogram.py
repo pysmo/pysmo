@@ -1,16 +1,18 @@
+from copy import deepcopy
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pytest
+from matplotlib.figure import Figure
+from pytest_cases import parametrize_with_cases
+from syrupy.assertion import SnapshotAssertion
+
 from pysmo import Seismogram
 from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
-import pandas as pd
-from copy import deepcopy
-from pytest_cases import parametrize_with_cases
-from matplotlib.figure import Figure
 from tests.test_helpers import assert_seismogram_modification
-from syrupy.assertion import SnapshotAssertion
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import pytest
-import numpy as np
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -184,9 +186,9 @@ def test_resample(seismogram: Seismogram) -> None:
         assert np.all(np.isfinite(seis.data)), "Resampled data should be finite"
         # Verify resampling reduced the number of samples approximately by factor of 2
         expected_length = len(seismogram.data) // 2
-        assert (
-            abs(len(seis.data) - expected_length) <= 2
-        ), "Length should be approximately halved"
+        assert abs(len(seis.data) - expected_length) <= 2, (
+            "Length should be approximately halved"
+        )
 
     assert_seismogram_modification(
         seismogram, resample, new_delta, custom_assertions=check_resampled
@@ -347,7 +349,7 @@ class TestWindow:
 
     @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_window(self, seismogram: Seismogram) -> None:
-        from pysmo.functions import window, time2index
+        from pysmo.functions import time2index, window
 
         taper_width = self.TAPER_WIDTH
 

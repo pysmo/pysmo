@@ -2,10 +2,11 @@
 Validators and converters for pysmo classes using [`attrs`][attrs].
 """
 
-import pandas as pd
-import numpy as np
-from datetime import timezone, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import overload
+
+import numpy as np
+import pandas as pd
 
 
 @overload

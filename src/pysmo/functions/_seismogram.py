@@ -1,19 +1,21 @@
+from copy import deepcopy
+from math import floor
+from typing import TYPE_CHECKING, Any, Literal, overload
+
+import numpy as np
+import pandas as pd
+import scipy.signal
+
 from pysmo import Seismogram
 from pysmo.typing import (
-    PositiveTimedelta,
-    NonNegativeTimedelta,
     NonNegativeNumber,
+    NonNegativeTimedelta,
+    PositiveTimedelta,
     UnitFloat,
 )
-from copy import deepcopy
-import pandas as pd
-from math import floor
-from typing import Any, Literal, overload, TYPE_CHECKING
-import scipy.signal
-import numpy as np
 
 if TYPE_CHECKING:
-    from numpy.lib._arraypad_impl import _ModeKind, _ModeFunc
+    from numpy.lib._arraypad_impl import _ModeFunc, _ModeKind
 
 __all__ = [
     "crop",

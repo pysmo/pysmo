@@ -1,11 +1,13 @@
-from pysmo.tools.signal import delay, multi_delay, multi_multi_delay, mccc
-from pysmo import Seismogram, MiniSeismogram
-from pysmo.functions import detrend, clone_to_mini
-from pytest_cases import parametrize_with_cases
-import pytest
+import random
+
 import numpy as np
 import pandas as pd
-import random
+import pytest
+from pytest_cases import parametrize_with_cases
+
+from pysmo import MiniSeismogram, Seismogram
+from pysmo.functions import clone_to_mini, detrend
+from pysmo.tools.signal import delay, mccc, multi_delay, multi_multi_delay
 
 
 def test_delay_basic() -> None:

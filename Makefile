@@ -34,15 +34,17 @@ clean: ## Remove existing builds.
 docs: check-uv sync changelog ## Build html docs.
 	uv run zensical build --clean
 
-format: check-uv ## Format python code with black.
-	uv run black .
+format: check-uv ## Sort imports AND format code.
+	uv run ruff check --fix .
+	uv run ruff format .
 
-format-check: check-uv ## See what running 'make format' would change instead of actually running it.
-	uv run black . --diff --color
+format-check: check-uv ## See what 'make format' would change.
+	uv run ruff check  --diff .
+	uv run ruff format --diff .
 
-lint: check-uv ## Check formatting with black and lint code with ruff.
-	uv run black . --check --diff --color
-	uv run ruff check .
+lint: check-uv ## Run all linting checks.
+	uv run ruff check  .
+	uv run ruff format --check .
 
 live-docs: check-uv sync ## Live build html docs. They are served on http://localhost:8000
 	uv run zensical serve
