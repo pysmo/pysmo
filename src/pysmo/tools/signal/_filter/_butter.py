@@ -1,8 +1,11 @@
-from ._registry import register_filter
-from pysmo import Seismogram
 from copy import deepcopy
-from typing import overload, Literal
+from typing import Literal, overload
+
 from scipy.signal import iirfilter, sosfilt, sosfiltfilt
+
+from pysmo import Seismogram
+
+from ._registry import register_filter
 
 
 @overload

@@ -1,7 +1,8 @@
-from typing import Dict
-from pathlib import Path
-import pytest
 import shutil
+from pathlib import Path
+from typing import Dict
+
+import pytest
 
 
 @pytest.fixture()

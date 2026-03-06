@@ -20,19 +20,20 @@ subpackages.
 """
 
 from importlib.metadata import version
-from ._utils import export_module_names
+
 from ._types import (
-    Seismogram,
-    Station,
     Event,
     Location,
     LocationWithDepth,
-    MiniSeismogram,
-    MiniStation,
     MiniEvent,
     MiniLocation,
     MiniLocationWithDepth,
+    MiniSeismogram,
+    MiniStation,
+    Seismogram,
+    Station,
 )
+from ._utils import export_module_names
 
 __version__ = version("pysmo")
 

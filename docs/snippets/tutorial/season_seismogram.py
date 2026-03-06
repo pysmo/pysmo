@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-import pandas as pd
 from enum import StrEnum
+
 import numpy as np
+import pandas as pd
 
 
 class Season(StrEnum):  # (1)!

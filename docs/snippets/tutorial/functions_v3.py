@@ -1,6 +1,6 @@
+import scipy
 from noise_seismogram import NoiseSeismogram
 from season_seismogram import SeasonSeismogram  # (1)!
-import scipy
 
 
 def check_for_earthquakes(seismogram: NoiseSeismogram) -> None:
