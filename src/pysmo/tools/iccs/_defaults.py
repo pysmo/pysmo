@@ -1,9 +1,11 @@
+from dataclasses import dataclass, field
+
 import matplotlib as mpl
 import numpy as np
-from ._types import ConvergenceMethod
-from dataclasses import dataclass, field
-from matplotlib.colors import Colormap
 import pandas as pd
+from matplotlib.colors import Colormap
+
+from ._types import ConvergenceMethod
 
 
 @dataclass(frozen=True)

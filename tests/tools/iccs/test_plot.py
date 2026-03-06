@@ -1,27 +1,26 @@
 from typing import Literal
-from pysmo.tools.iccs import ICCS
-from pysmo.tools.iccs.plot import (
-    _ScrollIndexTracker,
-    _get_taper_ramp_in_seconds,
-    draw_common_image,
-    draw_common_stack,
-    _setup_ccnorm_picker,
-    _setup_phase_picker,
-    _setup_timewindow_picker,
-    update_min_ccnorm,
-    update_pick,
-    update_timewindow,
-)
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import pytest
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import MouseButton, MouseEvent
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.widgets import Button, Cursor, SpanSelector
-import matplotlib.pyplot as plt
-import numpy as np
-import pytest
+
+from pysmo.tools.iccs import ICCS
+from pysmo.tools.iccs.plot import (
+    _get_taper_ramp_in_seconds,
+    _ScrollIndexTracker,
+    draw_common_image,
+    draw_common_stack,
+    update_min_ccnorm,
+    update_pick,
+    update_timewindow,
+)
 
 
 def test_update_pick(iccs_instance: ICCS) -> None:
@@ -134,12 +133,11 @@ def test_draw_seismograms_returns_matrix(iccs_instance: ICCS) -> None:
 
 
 def test_setup_phase_picker_returns_types(iccs_instance: ICCS) -> None:
-    """Verify setup_phase_picker returns (Cursor, Line2D) with pick line at x=0."""
+    """Verify update_pick creates a Cursor and pick Line2D at x=0."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    cursor, pick_line = _setup_phase_picker(ax, iccs_instance, lambda x: None)
+    fig, ax, (cursor, pick_line, b_save, b_cancel) = update_pick(
+        iccs_instance, return_fig=True
+    )
 
     assert isinstance(cursor, Cursor)
     assert isinstance(pick_line, Line2D)
@@ -149,33 +147,21 @@ def test_setup_phase_picker_returns_types(iccs_instance: ICCS) -> None:
 
 
 def test_setup_phase_picker_callback(iccs_instance: ICCS) -> None:
-    """Simulate a valid click and verify callback is called with correct xdata."""
+    """A valid click must update the axes title via the pick callback."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    received: list[float] = []
-    _ = _setup_phase_picker(ax, iccs_instance, received.append)
+    fig, ax, (_, _, _, _) = update_pick(iccs_instance, return_fig=True)
 
     # Simulate a click at x=0 (always valid since it's the current pick)
-    event = MouseEvent("button_press_event", fig.canvas, 0, 0, button=MouseButton.LEFT)
-    event.inaxes = ax
-    event.xdata = 0.0
-    event.ydata = 0.0
-    fig.canvas.callbacks.process("button_press_event", event)
+    _fire_click(fig, ax, 0.0)
 
-    assert len(received) == 1
-    assert received[0] == 0.0
+    assert "0.000" in ax.get_title()
     plt.close(fig)
 
 
 def test_setup_timewindow_picker_returns_type(iccs_instance: ICCS) -> None:
-    """Verify setup_timewindow_picker returns a SpanSelector."""
+    """Verify update_timewindow creates a SpanSelector with correct initial extents."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    span = _setup_timewindow_picker(ax, iccs_instance, lambda xmin, xmax: None)
+    fig, ax, (span, _, _) = update_timewindow(iccs_instance, return_fig=True)
 
     assert isinstance(span, SpanSelector)
     # Initial extents should match current window
@@ -185,36 +171,24 @@ def test_setup_timewindow_picker_returns_type(iccs_instance: ICCS) -> None:
 
 
 def test_setup_timewindow_picker_callback(iccs_instance: ICCS) -> None:
-    """Simulate a valid selection and verify callback is called."""
+    """A valid selection must update the axes title via the selection callback."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
+    fig, ax, (span, _, _) = update_timewindow(iccs_instance, return_fig=True)
 
-    received: list[tuple[float, float]] = []
-
-    def on_select(xmin: float, xmax: float) -> None:
-        received.append((xmin, xmax))
-
-    span = _setup_timewindow_picker(ax, iccs_instance, on_select)
-
-    # Simulate a valid selection within the current window bounds
     pre = iccs_instance.window_pre.total_seconds()
     post = iccs_instance.window_post.total_seconds()
     span.onselect(pre, post)
 
-    assert len(received) == 1
-    assert received[0] == pytest.approx((pre, post))
+    assert f"{pre:.3f}" in ax.get_title()
+    assert f"{post:.3f}" in ax.get_title()
     plt.close(fig)
 
 
 def test_setup_ccnorm_picker_returns_types(iccs_instance: ICCS) -> None:
-    """Verify setup_ccnorm_picker returns (Cursor, Line2D, ScrollIndexTracker)."""
+    """Verify update_min_ccnorm creates a Cursor, Line2D, and ScrollIndexTracker."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    matrix = draw_common_image(ax, iccs_instance, context=True, all_seismograms=False)
-
-    cursor, pick_line, tracker = _setup_ccnorm_picker(
-        ax, iccs_instance, False, len(matrix) - 1, lambda x: None
+    fig, _, (cursor, pick_line, _, _, tracker) = update_min_ccnorm(
+        iccs_instance, return_fig=True
     )
 
     assert isinstance(cursor, Cursor)
@@ -376,7 +350,7 @@ def test_draw_common_image_window_boundary_lines(iccs_instance: ICCS) -> None:
 
 
 # ======================================================================
-# Tests for Event handling in _setup_phase_picker
+# Tests for pick event handling in update_pick
 # ======================================================================
 
 
@@ -425,28 +399,22 @@ def _click_button(button: "Button") -> None:
 
 
 def test_phase_picker_invalid_click_no_callback(iccs_instance: ICCS) -> None:
-    """A click outside the valid pick range must not invoke the callback."""
+    """A click outside the valid pick range must not update the title."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
+    fig, ax, (_, _, _, _) = update_pick(iccs_instance, return_fig=True)
 
-    received: list[float] = []
-    _ = _setup_phase_picker(ax, iccs_instance, received.append)
-
+    original_title = ax.get_title()
     # A shift of 10 hours is definitely outside the valid range.
     _fire_click(fig, ax, pd.Timedelta(hours=10).total_seconds())
 
-    assert received == []
+    assert ax.get_title() == original_title
     plt.close(fig)
 
 
 def test_phase_picker_mouse_move_cursor_colour(iccs_instance: ICCS) -> None:
     """Cursor line turns green for valid positions and red for invalid ones."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    cursor, _ = _setup_phase_picker(ax, iccs_instance, lambda x: None)
+    fig, ax, (cursor, _, _, _) = update_pick(iccs_instance, return_fig=True)
 
     # x=0 is at the current pick — always valid
     _fire_move(fig, ax, 0.0)
@@ -459,7 +427,7 @@ def test_phase_picker_mouse_move_cursor_colour(iccs_instance: ICCS) -> None:
 
 
 # ======================================================================
-# Tests for Event handling in _setup_timewindow_picker
+# Tests for time-window selection handling in update_timewindow
 # ======================================================================
 
 
@@ -468,12 +436,8 @@ def test_timewindow_picker_invalid_selection_resets_extents(
 ) -> None:
     """An invalid selection must reset the SpanSelector to the previous extents."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    received: list[tuple[float, float]] = []
-    span = _setup_timewindow_picker(
-        ax, iccs_instance, lambda a, b: received.append((a, b))
+    fig, ax, (span, b_save, b_cancel) = update_timewindow(
+        iccs_instance, return_fig=True
     )
 
     original_extents = span.extents
@@ -484,7 +448,7 @@ def test_timewindow_picker_invalid_selection_resets_extents(
     span.onselect(post, pre)  # reversed → invalid
 
     assert span.extents == pytest.approx(original_extents)
-    assert received == []
+    assert ax.get_title() == "Invalid window choice."
     plt.close(fig)
 
 
@@ -493,23 +457,18 @@ def test_timewindow_picker_valid_then_invalid_keeps_last_valid(
 ) -> None:
     """After a valid then invalid selection, extents settle at the last valid ones."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_stack(ax, iccs_instance, context=True, all_seismograms=False)
-
-    received: list[tuple[float, float]] = []
-    span = _setup_timewindow_picker(
-        ax, iccs_instance, lambda a, b: received.append((a, b))
+    fig, ax, (span, b_save, b_cancel) = update_timewindow(
+        iccs_instance, return_fig=True
     )
 
     # First, a valid narrower window
     pre = iccs_instance.window_pre.total_seconds() / 2
     post = iccs_instance.window_post.total_seconds() / 2
     span.onselect(pre, post)
-    assert len(received) == 1
+    assert f"{pre:.3f}" in ax.get_title()
 
     # Then an invalid selection (reversed)
     span.onselect(post, pre)
-    assert len(received) == 1  # no new callback
     assert span.extents == pytest.approx((pre, post))
     plt.close(fig)
 
@@ -669,39 +628,27 @@ def test_scroll_tracker_scroll_up_clamps_at_max(iccs_instance: ICCS) -> None:
 
 
 # ======================================================================
-# Tests for _setup_ccnorm_picker
+# Tests for ccnorm picker event handling in update_min_ccnorm
 # ======================================================================
 
 
 def test_ccnorm_picker_click_invokes_callback(iccs_instance: ICCS) -> None:
-    """A click inside the axes must invoke the on_valid_pick callback."""
+    """A click inside the axes must update the title via the callback."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
-
-    received: list[float] = []
-    n_seismograms = len(iccs_instance.seismograms)
-    _, _, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, received.append
-    )
+    fig, ax, (_, _, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
 
     # Click at y=0 (bottom row)
     _fire_click_y(fig, ax, 0.0)
-    assert len(received) == 1
+    assert "min_ccnorm" in ax.get_title()
     plt.close(fig)
 
 
 def test_ccnorm_picker_click_outside_axes_no_callback(iccs_instance: ICCS) -> None:
-    """A click outside the axes must not invoke the callback."""
+    """A click outside the axes must not update the title."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
+    fig, ax, (_, _, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
 
-    received: list[float] = []
-    n_seismograms = len(iccs_instance.seismograms)
-    _, _, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, received.append
-    )
+    original_title = ax.get_title()
 
     # Fire a click event with inaxes=None (outside all axes)
     event = MouseEvent("button_press_event", fig.canvas, 0, 0, button=MouseButton.LEFT)
@@ -710,20 +657,14 @@ def test_ccnorm_picker_click_outside_axes_no_callback(iccs_instance: ICCS) -> No
     event.ydata = 1.0
     fig.canvas.callbacks.process("button_press_event", event)
 
-    assert received == []
+    assert ax.get_title() == original_title
     plt.close(fig)
 
 
 def test_ccnorm_picker_click_snaps_to_integer_row(iccs_instance: ICCS) -> None:
     """Clicking between rows must snap the pick line to the nearest integer row."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
-
-    n_seismograms = len(iccs_instance.seismograms)
-    _, pick_line, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, lambda v: None
-    )
+    fig, ax, (_, pick_line, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
 
     _fire_click_y(fig, ax, 1.7)
     assert np.asarray(pick_line.get_ydata())[0] == pytest.approx(2.0)
@@ -736,15 +677,10 @@ def test_ccnorm_picker_click_snaps_to_integer_row(iccs_instance: ICCS) -> None:
 def test_ccnorm_picker_click_clamped_to_max_index(iccs_instance: ICCS) -> None:
     """A click above max_index must snap to max_index."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
+    fig, ax, (_, pick_line, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
 
-    n_seismograms = len(iccs_instance.seismograms)
-    max_index = n_seismograms - 1
-    _, pick_line, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, max_index, lambda v: None
-    )
-
+    n_selected = sum(1 for s in iccs_instance.seismograms if s.select)
+    max_index = n_selected - 1
     _fire_click_y(fig, ax, max_index + 10.0)
     assert np.asarray(pick_line.get_ydata())[0] == pytest.approx(float(max_index))
     plt.close(fig)
@@ -753,18 +689,9 @@ def test_ccnorm_picker_click_clamped_to_max_index(iccs_instance: ICCS) -> None:
 def test_ccnorm_picker_mouse_move_updates_cursor_line(iccs_instance: ICCS) -> None:
     """Mouse movement inside axes must update the dashed cursor line position."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
-
-    n_seismograms = len(iccs_instance.seismograms)
-    lines_before = list(ax.lines)
-    _, _, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, lambda v: None
-    )
-    # _setup_ccnorm_picker adds pick_line and pick_line_cursor before the Cursor widget.
-    new_lines = [line for line in ax.lines if line not in lines_before]
-    # new_lines[0] = solid pick_line, new_lines[1] = dashed pick_line_cursor
-    pick_line_cursor = new_lines[1]
+    fig, ax, (_, pick_line, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
+    # pick_line_cursor is added immediately after pick_line
+    pick_line_cursor = ax.lines[ax.lines.index(pick_line) + 1]
 
     _fire_move_y(fig, ax, 2.0)
     assert pick_line_cursor.get_visible() is True
@@ -775,16 +702,8 @@ def test_ccnorm_picker_mouse_move_updates_cursor_line(iccs_instance: ICCS) -> No
 def test_ccnorm_picker_mouse_move_outside_hides_cursor(iccs_instance: ICCS) -> None:
     """Moving the mouse outside the axes must hide the dashed cursor line."""
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
-
-    n_seismograms = len(iccs_instance.seismograms)
-    lines_before = list(ax.lines)
-    _, _, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, lambda v: None
-    )
-    new_lines = [line for line in ax.lines if line not in lines_before]
-    pick_line_cursor = new_lines[1]
+    fig, ax, (_, pick_line, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
+    pick_line_cursor = ax.lines[ax.lines.index(pick_line) + 1]
 
     # First move inside to make it visible.
     _fire_move_y(fig, ax, 1.0)
@@ -801,22 +720,15 @@ def test_ccnorm_picker_index_zero_uses_multiplier(iccs_instance: ICCS) -> None:
     from pysmo.tools.iccs._defaults import IccsDefaults
 
     iccs_instance()
-    fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=False, all_seismograms=False)
-
-    received: list[float] = []
-    n_seismograms = len(iccs_instance.seismograms)
-    _, _, _ = _setup_ccnorm_picker(
-        ax, iccs_instance, False, n_seismograms - 1, received.append
-    )
-
-    _fire_click_y(fig, ax, 0.0)
-
     sorted_ccnorms = sorted(
-        v for v, s in zip(iccs_instance.ccnorms, iccs_instance.seismograms)
+        v for v, s in zip(iccs_instance.ccnorms, iccs_instance.seismograms) if s.select
     )
     expected = IccsDefaults.index_zero_multiplier * sorted_ccnorms[0]
-    assert received[0] == pytest.approx(expected)
+
+    fig, ax, (_, _, _, _, _) = update_min_ccnorm(iccs_instance, return_fig=True)
+    _fire_click_y(fig, ax, 0.0)
+
+    assert f"{expected:.4f}" in ax.get_title()
     plt.close(fig)
 
 
@@ -828,7 +740,7 @@ def test_ccnorm_picker_index_zero_uses_multiplier(iccs_instance: ICCS) -> None:
 def test_update_min_ccnorm_save_applies_value(iccs_instance: ICCS) -> None:
     """Clicking Save in update_min_ccnorm updates iccs.min_ccnorm."""
     iccs_instance()
-    fig, ax, (cursor, pick_line, b_save, b_cancel, tracker) = update_min_ccnorm(
+    fig, ax, (_, pick_line, b_save, _, _) = update_min_ccnorm(
         iccs_instance, return_fig=True
     )
 
@@ -852,9 +764,7 @@ def test_update_min_ccnorm_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
     iccs_instance()
     original_min_ccnorm = iccs_instance.min_ccnorm
 
-    fig, ax, (cursor, pick_line, b_save, b_cancel, tracker) = update_min_ccnorm(
-        iccs_instance, return_fig=True
-    )
+    fig, ax, (_, _, _, b_cancel, _) = update_min_ccnorm(iccs_instance, return_fig=True)
 
     # Click to change the pending value, then cancel.
     _fire_click_y(fig, ax, 1.0)

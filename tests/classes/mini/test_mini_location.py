@@ -1,5 +1,6 @@
 import pytest
-from pysmo import MiniLocation, Location
+
+from pysmo import Location, MiniLocation
 
 
 class TestMiniLocation:

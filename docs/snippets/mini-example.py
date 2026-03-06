@@ -1,6 +1,6 @@
 from pysmo import MiniSeismogram
-from pysmo.functions import clone_to_mini, copy_from_mini, resample
 from pysmo.classes import SAC
+from pysmo.functions import clone_to_mini, copy_from_mini, resample
 
 # Read SAC file and clone it to a MiniSeismogram
 sac = SAC.from_file("testfile.sac")

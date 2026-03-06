@@ -1,9 +1,11 @@
-import pytest
-import numpy as np
 import re
-import pandas as pd
 from datetime import timezone
-from pysmo import Seismogram, MiniSeismogram
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from pysmo import MiniSeismogram, Seismogram
 from pysmo.lib.defaults import SeismogramDefaults
 
 

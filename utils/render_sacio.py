@@ -1,8 +1,9 @@
-from _lib import SacIODefaults
-from jinja2 import Environment, FileSystemLoader
 import os
+
 import yaml
+from _lib import SacIODefaults
 from black import FileMode, format_file_contents
+from jinja2 import Environment, FileSystemLoader
 
 MYDIR = os.path.dirname(__file__)
 

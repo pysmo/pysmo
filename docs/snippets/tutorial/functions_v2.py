@@ -1,5 +1,5 @@
-from noise_seismogram import NoiseSeismogram
 import scipy
+from noise_seismogram import NoiseSeismogram
 
 
 def check_for_earthquakes(seismogram: NoiseSeismogram) -> None:

@@ -1,4 +1,4 @@
-from pysmo import Seismogram, MiniSeismogram
+from pysmo import MiniSeismogram, Seismogram
 from pysmo.functions import clone_to_mini
 
 

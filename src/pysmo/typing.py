@@ -1,9 +1,10 @@
 """Constrained type aliases used in pysmo."""
 
-import pandas as pd
-from typing import Annotated
-from annotated_types import Interval, Gt, Lt, Ge, Timezone
 from datetime import timezone
+from typing import Annotated
+
+import pandas as pd
+from annotated_types import Ge, Gt, Interval, Lt, Timezone
 
 # ---------------------------------------------------------------------------
 # Numeric Type Aliases with Constraints

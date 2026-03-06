@@ -11,20 +11,22 @@ This module exposes lower-level drawing primitives (`draw_common_stack`,
 workflows.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from ._iccs import ICCS
-from ._defaults import IccsDefaults
 from collections.abc import Callable
-from typing import overload, Literal
+from typing import Literal, overload
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from matplotlib.colors import PowerNorm
-from matplotlib.cm import ScalarMappable
-from matplotlib.widgets import Cursor, Button, SpanSelector
-from matplotlib.figure import Figure
-from matplotlib.lines import Line2D
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import Event, MouseEvent
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import PowerNorm
+from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.widgets import Button, Cursor, SpanSelector
+
+from ._defaults import IccsDefaults
+from ._iccs import ICCS
 
 __all__ = [
     "plot_seismograms",
@@ -237,141 +239,6 @@ def draw_common_image(
     )
 
     return seismogram_matrix
-
-
-def _setup_phase_picker(
-    ax: Axes, iccs: ICCS, on_valid_pick: Callable[[float], None]
-) -> tuple[Cursor, Line2D]:
-    """Configures a Cursor and Pick Line with validation logic."""
-    pick_line = ax.axvline(0, color="g", linewidth=2)
-    cursor = Cursor(
-        ax, useblit=True, color="g", linewidth=2, horizOn=False, linestyle="--"
-    )
-
-    def onclick(event: Event) -> None:
-        if not isinstance(event, MouseEvent):
-            return
-        if (
-            event.inaxes is ax
-            and event.xdata is not None
-            and iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
-        ):
-            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
-            on_valid_pick(event.xdata)
-            if ax.figure:
-                ax.figure.canvas.draw()
-                ax.figure.canvas.flush_events()
-
-    def on_mouse_move(event: Event) -> None:
-        if not isinstance(event, MouseEvent):
-            return
-        if event.inaxes == ax and event.xdata is not None:
-            is_valid = iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
-            cursor.linev.set_color("g" if is_valid else "r")
-
-    if isinstance(ax.figure, Figure):
-        ax.figure.canvas.mpl_connect("button_press_event", onclick)
-        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
-
-    return cursor, pick_line
-
-
-def _setup_timewindow_picker(
-    ax: Axes, iccs: ICCS, on_valid_selection: Callable[[float, float], None]
-) -> SpanSelector:
-    """Configures a SpanSelector with validation logic."""
-    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
-    default_title_color = ax.title.get_color()
-
-    def onselect(xmin: float, xmax: float) -> None:
-        nonlocal old_extents
-        if iccs.validate_time_window(
-            pd.Timedelta(seconds=xmin), pd.Timedelta(seconds=xmax)
-        ):
-            old_extents = xmin, xmax
-            ax.title.set_color(default_title_color)
-            if ax.figure:
-                ax.figure.canvas.draw_idle()
-            on_valid_selection(xmin, xmax)
-        else:
-            span.extents = old_extents
-            ax.set_title("Invalid window choice.", color="red")
-            if ax.figure:
-                ax.figure.canvas.draw_idle()
-
-    span = SpanSelector(
-        ax,
-        onselect,
-        "horizontal",
-        useblit=True,
-        props=dict(alpha=0.5, facecolor="tab:blue"),
-        interactive=True,
-        drag_from_anywhere=True,
-    )
-    span.extents = old_extents
-    return span
-
-
-def _setup_ccnorm_picker(
-    ax: Axes,
-    iccs: ICCS,
-    all_seismograms: bool,
-    max_index: int,
-    on_valid_pick: Callable[[float], None],
-) -> tuple[Cursor, Line2D, _ScrollIndexTracker]:
-    """Configures a Cursor and Pick Line with snapping logic for ccnorm selection."""
-    current_ccnorms = sorted(
-        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or all_seismograms
-    )
-
-    start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
-
-    pick_line = ax.axhline(start_index, color="g", linewidth=2)
-    pick_line_cursor = ax.axhline(start_index, color="g", linewidth=2, linestyle="--")
-
-    def snap_ydata(ydata: float) -> int:
-        return max(0, round(min(ydata, max_index)))
-
-    def calc_ccnorm(line: Line2D) -> float:
-        index = round(line.get_ydata()[0], 0)  # type: ignore
-        if index == 0:
-            return IccsDefaults.index_zero_multiplier * current_ccnorms[0]
-        return float(np.mean(current_ccnorms[index - 1 : index + 1]))
-
-    def onclick(event: Event) -> None:
-        if not isinstance(event, MouseEvent):
-            return
-        if event.inaxes is ax and event.ydata is not None:
-            ydata = snap_ydata(event.ydata)
-            pick_line.set_ydata((ydata, ydata))
-            pick_line.set_visible(True)
-            on_valid_pick(calc_ccnorm(pick_line))
-            if ax.figure:
-                ax.figure.canvas.draw_idle()
-
-    def on_mouse_move(event: Event) -> None:
-        if not isinstance(event, MouseEvent):
-            return
-        if event.inaxes is ax and event.ydata is not None:
-            ydata = snap_ydata(event.ydata)
-            pick_line_cursor.set_ydata((ydata, ydata))
-            pick_line_cursor.set_visible(True)
-        else:
-            pick_line_cursor.set_visible(False)
-        if ax.figure:
-            ax.figure.canvas.draw_idle()
-
-    cursor = Cursor(ax, useblit=True, vertOn=False, horizOn=False)
-
-    if isinstance(ax.figure, Figure):
-        tracker = _ScrollIndexTracker(ax, ax.figure)
-        ax.figure.canvas.mpl_connect("scroll_event", tracker.on_scroll)
-        ax.figure.canvas.mpl_connect("button_press_event", onclick)
-        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
-    else:
-        tracker = _ScrollIndexTracker(ax, Figure())
-
-    return cursor, pick_line, tracker
 
 
 # ==============================================================================
@@ -618,7 +485,35 @@ def update_pick(
         pending_pick[0] = xdata
         ax.set_title(f"Click save to adjust t1 by {xdata:.3f} seconds.")
 
-    cursor, pick_line = _setup_phase_picker(ax, iccs, handle_valid_pick)
+    pick_line = ax.axvline(0, color="g", linewidth=2)
+    cursor = Cursor(
+        ax, useblit=True, color="g", linewidth=2, horizOn=False, linestyle="--"
+    )
+
+    def onclick(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if (
+            event.inaxes is ax
+            and event.xdata is not None
+            and iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
+        ):
+            pick_line.set_xdata(np.array((event.xdata, event.xdata)))
+            handle_valid_pick(event.xdata)
+            if ax.figure:
+                ax.figure.canvas.draw()
+                ax.figure.canvas.flush_events()
+
+    def on_mouse_move(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes == ax and event.xdata is not None:
+            is_valid = iccs.validate_pick(pd.Timedelta(seconds=event.xdata))
+            cursor.linev.set_color("g" if is_valid else "r")
+
+    if isinstance(ax.figure, Figure):
+        ax.figure.canvas.mpl_connect("button_press_event", onclick)
+        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
 
     def on_save(_: Event) -> None:
         iccs.update_all_picks(pd.Timedelta(seconds=pending_pick[0]))
@@ -722,7 +617,35 @@ def update_timewindow(
         pending_window[0], pending_window[1] = xmin, xmax
         ax.set_title(f"Click save to set window at {xmin:.3f} to {xmax:.3f} seconds.")
 
-    span = _setup_timewindow_picker(ax, iccs, handle_valid_selection)
+    old_extents = (iccs.window_pre.total_seconds(), iccs.window_post.total_seconds())
+    default_title_color = ax.title.get_color()
+
+    def onselect(xmin: float, xmax: float) -> None:
+        nonlocal old_extents
+        if iccs.validate_time_window(
+            pd.Timedelta(seconds=xmin), pd.Timedelta(seconds=xmax)
+        ):
+            old_extents = xmin, xmax
+            ax.title.set_color(default_title_color)
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
+            handle_valid_selection(xmin, xmax)
+        else:
+            span.extents = old_extents
+            ax.set_title("Invalid window choice.", color="red")
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
+
+    span = SpanSelector(
+        ax,
+        onselect,
+        "horizontal",
+        useblit=True,
+        props=dict(alpha=0.5, facecolor="tab:blue"),
+        interactive=True,
+        drag_from_anywhere=True,
+    )
+    span.extents = old_extents
 
     def on_save(_: Event) -> None:
         iccs.window_pre = pd.Timedelta(seconds=pending_window[0])
@@ -821,9 +744,56 @@ def update_min_ccnorm(
         pending_val[0] = new_val
         ax.set_title(f"Click save to set min_ccnorm to {new_val:.4f}")
 
-    cursor, pick_line, tracker = _setup_ccnorm_picker(
-        ax, iccs, all_seismograms, len(matrix) - 1, handle_valid_pick
+    current_ccnorms = sorted(
+        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or all_seismograms
     )
+    start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
+    max_index = len(matrix) - 1
+
+    pick_line = ax.axhline(start_index, color="g", linewidth=2)
+    pick_line_cursor = ax.axhline(start_index, color="g", linewidth=2, linestyle="--")
+
+    def snap_ydata(ydata: float) -> int:
+        return max(0, round(min(ydata, max_index)))
+
+    def calc_ccnorm(line: Line2D) -> float:
+        index = round(line.get_ydata()[0], 0)  # type: ignore
+        if index == 0:
+            return IccsDefaults.index_zero_multiplier * current_ccnorms[0]
+        return float(np.mean(current_ccnorms[index - 1 : index + 1]))
+
+    def onclick(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_ydata(event.ydata)
+            pick_line.set_ydata((ydata, ydata))
+            pick_line.set_visible(True)
+            handle_valid_pick(calc_ccnorm(pick_line))
+            if ax.figure:
+                ax.figure.canvas.draw_idle()
+
+    def on_mouse_move(event: Event) -> None:
+        if not isinstance(event, MouseEvent):
+            return
+        if event.inaxes is ax and event.ydata is not None:
+            ydata = snap_ydata(event.ydata)
+            pick_line_cursor.set_ydata((ydata, ydata))
+            pick_line_cursor.set_visible(True)
+        else:
+            pick_line_cursor.set_visible(False)
+        if ax.figure:
+            ax.figure.canvas.draw_idle()
+
+    cursor = Cursor(ax, useblit=True, vertOn=False, horizOn=False)
+
+    if isinstance(ax.figure, Figure):
+        tracker = _ScrollIndexTracker(ax, ax.figure)
+        ax.figure.canvas.mpl_connect("scroll_event", tracker.on_scroll)
+        ax.figure.canvas.mpl_connect("button_press_event", onclick)
+        ax.figure.canvas.mpl_connect("motion_notify_event", on_mouse_move)
+    else:
+        tracker = _ScrollIndexTracker(ax, Figure())
 
     def on_save(_: Event) -> None:
         iccs.min_ccnorm = pending_val[0]

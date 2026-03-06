@@ -1,9 +1,10 @@
 """Mini utils."""
 
+import types
+from typing import TypeAliasType, cast, get_args
+
 from pysmo import _BaseMini, _BaseProto
 from pysmo.tools import _ToolsMini, _ToolsProto
-from typing import TypeAliasType, get_args, cast
-import types
 
 __all__ = ["proto2mini", "matching_pysmo_types"]
 

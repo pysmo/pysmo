@@ -1,4 +1,5 @@
-from typing import Any, Callable, Protocol, overload, Literal
+from typing import Any, Callable, Literal, Protocol, overload
+
 from pysmo import Seismogram
 
 

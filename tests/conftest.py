@@ -1,15 +1,17 @@
+import shutil
+from pathlib import Path
+
+import pytest
+
 from pysmo import (
-    Seismogram,
-    MiniSeismogram,
-    Station,
-    MiniStation,
     LocationWithDepth,
     MiniLocationWithDepth,
+    MiniSeismogram,
+    MiniStation,
+    Seismogram,
+    Station,
 )
 from pysmo.classes import SAC, SacSeismogram, SacStation
-from pathlib import Path
-import pytest
-import shutil
 
 TESTDATA = dict(
     orgfile=Path(__file__).parent / "assets/testfile.sac",

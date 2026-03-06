@@ -1,7 +1,8 @@
-from numpy.random import uniform
-import numpy as np
 import random as rd
+
+import numpy as np
 import pytest
+from numpy.random import uniform
 
 
 @pytest.fixture()
@@ -16,9 +17,11 @@ def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_average_datetimes() -> None:
-    from pysmo.tools.utils import average_datetimes
-    import pandas as pd
     from datetime import timezone
+
+    import pandas as pd
+
+    from pysmo.tools.utils import average_datetimes
 
     with pytest.raises(ValueError):
         average_datetimes([])
@@ -37,8 +40,9 @@ def test_average_datetimes() -> None:
 
 
 def test_uuid_shortener(mock_uuid4, snapshot) -> None:  # type: ignore
-    from pysmo.tools.utils import uuid_shortener
     import uuid
+
+    from pysmo.tools.utils import uuid_shortener
 
     uuids = [uuid.uuid4() for _ in range(1000)]
 
@@ -71,8 +75,9 @@ def test_pearson_matrix_vector_perfect_correlation() -> None:
 
 
 def test_pearson_matrix_vector_against_scipy() -> None:
-    from pysmo.tools.utils import pearson_matrix_vector
     from scipy.stats import pearsonr
+
+    from pysmo.tools.utils import pearson_matrix_vector
 
     rng = np.random.default_rng(42)
     vector = rng.standard_normal(200)
