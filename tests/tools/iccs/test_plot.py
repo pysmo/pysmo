@@ -15,7 +15,7 @@ from pysmo.tools.iccs import ICCS
 from pysmo.tools.iccs.plot import (
     _get_taper_ramp_in_seconds,
     _ScrollIndexTracker,
-    draw_common_image,
+    draw_common_matrix_image,
     draw_common_stack,
     update_min_ccnorm,
     update_pick,
@@ -74,7 +74,7 @@ class TestPlotCommonBase:
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_plot_common_image_initial(self, iccs_instance: ICCS) -> Figure:
         fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-        draw_common_image(
+        draw_common_matrix_image(
             ax, iccs_instance, context=self.PADDED, all_seismograms=self.ALL
         )
 
@@ -85,7 +85,7 @@ class TestPlotCommonBase:
         iccs_instance()
 
         fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-        draw_common_image(
+        draw_common_matrix_image(
             ax, iccs_instance, context=self.PADDED, all_seismograms=self.ALL
         )
 
@@ -125,7 +125,9 @@ def test_draw_seismograms_returns_matrix(iccs_instance: ICCS) -> None:
     """Verify draw_seismograms returns an ndarray with correct shape."""
     iccs_instance()
     fig, ax = plt.subplots()
-    result = draw_common_image(ax, iccs_instance, context=True, all_seismograms=False)
+    result = draw_common_matrix_image(
+        ax, iccs_instance, context=True, all_seismograms=False
+    )
     assert isinstance(result, np.ndarray)
     n_selected = sum(1 for s in iccs_instance.seismograms if s.select)
     assert result.shape[0] == n_selected
@@ -201,7 +203,7 @@ def test_scroll_index_tracker(iccs_instance: ICCS) -> None:
     """Verify ScrollIndexTracker initial state and scroll behaviour."""
     iccs_instance()
     fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=True, all_seismograms=False)
+    draw_common_matrix_image(ax, iccs_instance, context=True, all_seismograms=False)
 
     tracker = _ScrollIndexTracker(ax, fig)
     initial = tracker.scroll_index
@@ -311,10 +313,10 @@ def test_draw_common_stack_window_markers(iccs_instance: ICCS) -> None:
     plt.close(fig)
 
 
-def test_draw_common_image_xlim_with_context(iccs_instance: ICCS) -> None:
+def test_draw_common_matrix_image_xlim_with_context(iccs_instance: ICCS) -> None:
     """Image x-extent covers window + context_width on each side when context=True."""
     fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=True, all_seismograms=False)
+    draw_common_matrix_image(ax, iccs_instance, context=True, all_seismograms=False)
     # imshow extent is encoded in the AxesImage
     img = ax.images[0]
     img_xmin, img_xmax = img.get_extent()[:2]
@@ -329,10 +331,10 @@ def test_draw_common_image_xlim_with_context(iccs_instance: ICCS) -> None:
     plt.close(fig)
 
 
-def test_draw_common_image_window_boundary_lines(iccs_instance: ICCS) -> None:
-    """draw_common_image draws axvlines at window_pre and window_post."""
+def test_draw_common_matrix_image_window_boundary_lines(iccs_instance: ICCS) -> None:
+    """draw_common_matrix_image draws axvlines at window_pre and window_post."""
     fig, ax = plt.subplots()
-    draw_common_image(ax, iccs_instance, context=True, all_seismograms=False)
+    draw_common_matrix_image(ax, iccs_instance, context=True, all_seismograms=False)
     # Collect x-positions of vertical lines
     vline_xs = []
     for line in ax.lines:
