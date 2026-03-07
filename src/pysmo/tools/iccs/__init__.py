@@ -145,7 +145,7 @@ from ..._utils import export_module_names
 from ._iccs import ICCS
 from ._types import ICCSSeismogram, MiniICCSSeismogram
 from .plot import (
-    plot_seismograms,
+    plot_matrix_image,
     plot_stack,
     update_min_ccnorm,
     update_pick,
@@ -156,7 +156,7 @@ __all__ = [
     "ICCS",
     "ICCSSeismogram",
     "MiniICCSSeismogram",
-    "plot_seismograms",
+    "plot_matrix_image",
     "plot_stack",
     "update_min_ccnorm",
     "update_pick",
