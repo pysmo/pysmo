@@ -15,7 +15,7 @@
       filters:
         - "!^_"
         - "^__"
-        - "!^plot_seismograms$"
+        - "!^plot_matrix_image$"
         - "!^plot_stack$"
         - "!^update_min_ccnorm$"
         - "!^update_pick$"

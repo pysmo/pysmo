@@ -7,7 +7,7 @@ available directly from the `pysmo.tools.iccs` namespace, which provide a more
 integrated and user-friendly experience.
 
 This module exposes lower-level drawing primitives (`draw_common_stack`,
-`draw_common_image`) for advanced users who wish to customize their plotting
+`draw_common_matrix_image`) for advanced users who wish to customise their plotting
 workflows.
 """
 
@@ -29,13 +29,13 @@ from ._defaults import IccsDefaults
 from ._iccs import ICCS
 
 __all__ = [
-    "plot_seismograms",
+    "plot_matrix_image",
     "plot_stack",
     "update_min_ccnorm",
     "update_pick",
     "update_timewindow",
     "draw_common_stack",
-    "draw_common_image",
+    "draw_common_matrix_image",
 ]
 
 
@@ -185,10 +185,10 @@ def draw_common_stack(
         )
 
 
-def draw_common_image(
+def draw_common_matrix_image(
     ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
 ) -> np.ndarray:
-    """Returns a basic image plot for use in other plots.
+    """Returns a basic matrix image plot for use in other plots.
 
     Args:
         ax: Axes to plot on.
@@ -328,7 +328,7 @@ def plot_stack(
 
 
 @overload
-def plot_seismograms(
+def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
@@ -337,7 +337,7 @@ def plot_seismograms(
 
 
 @overload
-def plot_seismograms(
+def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
@@ -346,13 +346,13 @@ def plot_seismograms(
 ) -> None: ...
 
 
-def plot_seismograms(
+def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes] | None:
-    """Plot the selected ICCS seismograms as an image.
+    """Plot the selected ICCS seismograms as a matrix image.
 
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
@@ -366,7 +366,7 @@ def plot_seismograms(
             shown.
 
     Returns:
-        Figure of the selected seismograms as an image if `return_fig` is `True`.
+        Figure of the selected seismograms as a matrix image if `return_fig` is `True`.
 
     Examples:
         The default plotting mode is to pad the seismograms beyond the time
@@ -374,11 +374,11 @@ def plot_seismograms(
         for narrow time windows.
 
         ```python
-        >>> from pysmo.tools.iccs import ICCS, plot_seismograms
+        >>> from pysmo.tools.iccs import ICCS, plot_matrix_image
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs(autoselect=True, autoflip=True)
         >>>
-        >>> fig, ax = plot_seismograms(iccs)
+        >>> fig, ax = plot_matrix_image(iccs)
         >>> # fig.show() # or integrate into your own application
         >>>
         ```
@@ -390,7 +390,7 @@ def plot_seismograms(
         cross-correlations, set the `context` argument to `False`:
 
         ```python
-        >>> fig, ax = plot_seismograms(iccs, context=False)
+        >>> fig, ax = plot_matrix_image(iccs, context=False)
         >>> # fig.show() # or integrate into your own application
         >>>
         ```
@@ -399,7 +399,7 @@ def plot_seismograms(
         ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    draw_common_image(ax, iccs, context, all_seismograms)
+    draw_common_matrix_image(ax, iccs, context, all_seismograms)
     if return_fig:
         return fig, ax
     plt.show()
@@ -411,7 +411,7 @@ def update_pick(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
 
@@ -421,7 +421,7 @@ def update_pick(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -431,7 +431,7 @@ def update_pick(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
     """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] and apply it to all seismograms.
@@ -446,9 +446,9 @@ def update_pick(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        use_seismogram_image: Use the
-            [seismogram image][pysmo.tools.iccs.plot_seismograms]
-            instead of the [stack][pysmo.tools.iccs.plot_stack]).
+        use_matrix_image: Use the
+            [matrix image][pysmo.tools.iccs.plot_matrix_image]
+            instead of the [stack][pysmo.tools.iccs.plot_stack].
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -471,8 +471,8 @@ def update_pick(
         ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    if use_seismogram_image:
-        draw_common_image(ax, iccs, context, all_seismograms)
+    if use_matrix_image:
+        draw_common_matrix_image(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
         draw_common_stack(ax, iccs, context, all_seismograms)
@@ -537,7 +537,7 @@ def update_timewindow(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
 
@@ -547,7 +547,7 @@ def update_timewindow(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -557,7 +557,7 @@ def update_timewindow(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
-    use_seismogram_image: bool = False,
+    use_matrix_image: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
     """Pick new time window limits.
@@ -573,9 +573,9 @@ def update_timewindow(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
-        use_seismogram_image: Use the
-            [seismogram image][pysmo.tools.iccs.plot_seismograms]
-            instead of the [stack][pysmo.tools.iccs.plot_stack]).
+        use_matrix_image: Use the
+            [matrix image][pysmo.tools.iccs.plot_matrix_image]
+            instead of the [stack][pysmo.tools.iccs.plot_stack].
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -603,8 +603,8 @@ def update_timewindow(
         ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    if use_seismogram_image:
-        draw_common_image(ax, iccs, context, all_seismograms)
+    if use_matrix_image:
+        draw_common_matrix_image(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
     else:
         draw_common_stack(ax, iccs, context, all_seismograms)
@@ -734,7 +734,7 @@ def update_min_ccnorm(
         ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    matrix = draw_common_image(ax, iccs, context, all_seismograms)
+    matrix = draw_common_matrix_image(ax, iccs, context, all_seismograms)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
 
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
