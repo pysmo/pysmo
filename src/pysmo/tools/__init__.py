@@ -10,7 +10,7 @@ functionality under its own submodule, imported via
 
 """
 
-from .iccs import ICCSSeismogram, MiniICCSSeismogram
+from .iccs import IccsSeismogram, MiniIccsSeismogram
 
-type _ToolsProto = ICCSSeismogram
-type _ToolsMini = MiniICCSSeismogram
+type _ToolsProto = IccsSeismogram
+type _ToolsMini = MiniIccsSeismogram

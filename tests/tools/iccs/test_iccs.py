@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from matplotlib.figure import Figure
 
-from pysmo.tools.iccs import ICCS, ICCSSeismogram, plot_stack
+from pysmo.tools.iccs import ICCS, IccsResult, IccsSeismogram, McccResult, plot_stack
 from pysmo.tools.iccs._types import ConvergenceMethod
 
 
@@ -17,7 +17,7 @@ class TestICCSBase:
     CONTEXT_FIG: bool = False
 
     @pytest.fixture(autouse=True, scope="function")
-    def _iccs(self, iccs_seismograms: list[ICCSSeismogram]) -> None:
+    def _iccs(self, iccs_seismograms: list[IccsSeismogram]) -> None:
         self.iccs = ICCS(iccs_seismograms)
         self.iccs.ramp_width = self.TAPER
 
@@ -28,17 +28,28 @@ class TestICCSBase:
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_iccs_call(self) -> Figure:
-        self.iccs(
+        result = self.iccs(
             autoflip=self.AUTOFLIP,
             autoselect=self.AUTOSELECT,
             convergence_method=self.METHOD,
         )
+        assert isinstance(result, IccsResult)
+        assert isinstance(result.convergence, np.ndarray)
+        assert isinstance(result.converged, bool)
         fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
     @pytest.mark.mpl_image_compare(remove_text=True, style="default")
     def test_mccc_call(self) -> Figure:
-        self.iccs.run_mccc()
+        results = self.iccs.run_mccc()
+        assert isinstance(results, McccResult)
+        assert isinstance(results.picks, list)
+        assert isinstance(results.picks[0], pd.Timestamp)
+        assert isinstance(results.errors, list)
+        assert isinstance(results.errors[0], pd.Timedelta)
+        assert isinstance(results.rmse, pd.Timedelta)
+        assert isinstance(results.cc_means, list)
+        assert isinstance(results.cc_errs, list)
         fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
@@ -87,7 +98,7 @@ class TestICCSEmpty:
         assert iccs.context_seismograms == []
 
     def test_revalidation_on_set_seismograms(
-        self, iccs_seismograms: list[ICCSSeismogram]
+        self, iccs_seismograms: list[IccsSeismogram]
     ) -> None:
         iccs = ICCS()
         # Set an extremely large window that would normally be invalid
@@ -311,11 +322,11 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs._cc_seismograms_cache is None
 
     def test_min_iccs_seismogram_validation(self) -> None:
-        """Test validation on MiniICCSSeismogram attributes."""
-        from pysmo.tools.iccs import MiniICCSSeismogram
+        """Test validation on MiniIccsSeismogram attributes."""
+        from pysmo.tools.iccs import MiniIccsSeismogram
 
         seis = self.iccs.seismograms[0]
-        assert isinstance(seis, MiniICCSSeismogram)
+        assert isinstance(seis, MiniIccsSeismogram)
 
         # flip and select are converted to bool
         seis.flip = "True"  # type: ignore

@@ -31,7 +31,7 @@ from pysmo.typing import (
 )
 
 from ._defaults import IccsDefaults
-from ._types import ConvergenceMethod, ICCSSeismogram
+from ._types import ConvergenceMethod, IccsResult, IccsSeismogram, McccResult
 
 __all__ = ["ICCS"]
 
@@ -125,8 +125,8 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     directly by users.
     """
 
-    parent_seismogram: ICCSSeismogram
-    """Reference to the parent ICCSSeismogram from which this ephemeral seismogram is derived."""
+    parent_seismogram: IccsSeismogram
+    """Reference to the parent IccsSeismogram from which this ephemeral seismogram is derived."""
 
     begin_time: pd.Timestamp = field(init=False)
     """Seismogram begin time."""
@@ -145,7 +145,7 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
 
 @define(slots=True)
 class ICCS:
-    """Class to store a list of [`ICCSSeismograms`][pysmo.tools.iccs.ICCSSeismogram] and run the ICCS algorithm.
+    """Class to store a list of [`IccsSeismograms`][pysmo.tools.iccs.IccsSeismogram] and run the ICCS algorithm.
 
     The [`ICCS`][pysmo.tools.iccs.ICCS] class serves as a container to store a
     list of seismograms (typically recordings of the same event at different
@@ -174,13 +174,13 @@ class ICCS:
         We begin with a set of SAC files of the same event, recorded at different
         stations. All files have a preliminary phase arrival estimate saved in the
         `T0` SAC header, so we can use these files to create instances of the
-        [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] class for use
+        [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] class for use
         with the [`ICCS`][pysmo.tools.iccs.ICCS] class:
 
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
-        >>> from pysmo.tools.iccs import MiniICCSSeismogram
+        >>> from pysmo.tools.iccs import MiniIccsSeismogram
         >>> from pathlib import Path
         >>>
         >>> sacfiles = sorted(Path("iccs-example/").glob("*.bhz"))
@@ -189,7 +189,7 @@ class ICCS:
         >>> for sacfile in sacfiles:
         ...     sac = SAC.from_file(sacfile)
         ...     update = {"t0": sac.timestamps.t0}
-        ...     iccs_seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)
+        ...     iccs_seismogram = clone_to_mini(MiniIccsSeismogram, sac.seismogram, update=update)
         ...     seismograms.append(iccs_seismogram)
         ...
         >>>
@@ -214,7 +214,7 @@ class ICCS:
         >>> seismograms[2].t0 += pd.Timedelta(seconds=2)
         >>>
         >>> # create a seismogram with completely random data
-        >>> iccs_random: MiniICCSSeismogram = deepcopy(seismograms[-1])
+        >>> iccs_random: MiniIccsSeismogram = deepcopy(seismograms[-1])
         >>> np.random.seed(42)  # set this for consistent results during testing
         >>> iccs_random.data = np.random.rand(len(iccs_random.data))
         >>> seismograms.append(iccs_random)
@@ -353,8 +353,8 @@ class ICCS:
         respectively, and then run the ICCS algorithm again.
     """
 
-    seismograms: Sequence[ICCSSeismogram] = field(
-        factory=list[ICCSSeismogram], on_setattr=_on_setattr_clear_cache
+    seismograms: Sequence[IccsSeismogram] = field(
+        factory=list[IccsSeismogram], on_setattr=_on_setattr_clear_cache
     )
     """Input seismograms.
 
@@ -368,17 +368,17 @@ class ICCS:
 
     Warning:
         Assigning a new list to this attribute clears the cache automatically.
-        *Mutating* the list in place (e.g. with ``append``, ``remove``, or
-        direct index assignment) bypasses the setter and does **not** clear the
-        cache. Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache] manually
-        after any such in-place mutation.
+        *Mutating* the list in place (e.g. with `append`, `remove`, or direct
+        index assignment) bypasses the setter and does **not** clear the cache.
+        Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache] manually after
+        any such in-place mutation.
 
     Tip:
         When a seismogram is of sufficiently poor quality that it should play no
         further role in the analysis, consider *removing* it from this list rather
         than simply setting its
-        [`select`][pysmo.tools.iccs.ICCSSeismogram.select] attribute to
-        ``False``. A deselected seismogram is excluded from the stack and
+        [`select`][pysmo.tools.iccs.IccsSeismogram.select] attribute to
+        `False`. A deselected seismogram is excluded from the stack and
         correlation output, but its pick and data span still constrain the valid
         ranges for [`window_pre`][pysmo.tools.iccs.ICCS.window_pre],
         [`window_post`][pysmo.tools.iccs.ICCS.window_post], and pick updates —
@@ -481,7 +481,7 @@ class ICCS:
     When the ICCS algorithm is [executed][pysmo.tools.iccs.ICCS.__call__],
     the cross-correlation coefficient for each seismogram is calculated after
     each iteration. If `autoselect` is set to `True`, the
-    [`select`][pysmo.tools.iccs.ICCSSeismogram.select] attribute of seismograms
+    [`select`][pysmo.tools.iccs.IccsSeismogram.select] attribute of seismograms
     with with correlation coefficients below this value is set to `False`, and
     they are no longer used for the [`stack`][pysmo.tools.iccs.ICCS.stack].
     """
@@ -523,8 +523,8 @@ class ICCS:
         [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] is *reassigned*.
 
         Call this method manually after any in-place mutation of
-        [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] (e.g. ``append``,
-        ``remove``, or index assignment) to ensure all ephemeral seismograms and
+        [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] (e.g. `append`,
+        `remove`, or index assignment) to ensure all ephemeral seismograms and
         derived results are regenerated from the updated input.
         """
         self._cc_seismograms_cache = None
@@ -541,7 +541,7 @@ class ICCS:
         """Ramp width as a `pandas.Timedelta`, computed from the current window.
 
         For a float `ramp_width`, the duration is computed as a fraction of the
-        window duration ``(window_post - window_pre)``, consistent with the
+        window duration `(window_post - window_pre)`, consistent with the
         behaviour of `pysmo.functions.window`.
         """
         return _compute_ramp(self.ramp_width, self.window_pre, self.window_post)
@@ -569,7 +569,8 @@ class ICCS:
 
         if self._max_td_pre_cache is None:
             self._max_td_pre_cache = max(
-                s.begin_time - (s.t1 or s.t0) for s in self.seismograms
+                s.begin_time - (s.t0 if pd.isnull(s.t1) else s.t1)
+                for s in self.seismograms
             )
         return self._max_td_pre_cache
 
@@ -589,7 +590,8 @@ class ICCS:
 
         if self._min_td_post_cache is None:
             self._min_td_post_cache = min(
-                s.end_time - (s.t1 or s.t0) for s in self.seismograms
+                s.end_time - (s.t0 if pd.isnull(s.t1) else s.t1)
+                for s in self.seismograms
             )
         return self._min_td_post_cache
 
@@ -666,10 +668,10 @@ class ICCS:
         """Returns the stacked [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]).
 
         The stack is calculated as the average of all seismograms with the
-        attribute [`select`][pysmo.tools.iccs.ICCSSeismogram.select] set to
+        attribute [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to
         [`True`][True]. The [`begin_time`][pysmo.MiniSeismogram.begin_time] of
         the returned stack is the average of the [`begin_time`]
-        [pysmo.tools.iccs.ICCSSeismogram.begin_time] of the input seismograms.
+        [pysmo.tools.iccs.IccsSeismogram.begin_time] of the input seismograms.
 
         Returns:
             Stacked input seismograms.
@@ -694,7 +696,7 @@ class ICCS:
 
         The valid pick range is computed from every seismogram in
         [`seismograms`][pysmo.tools.iccs.ICCS.seismograms], including those with
-        [`select`][pysmo.tools.iccs.ICCSSeismogram.select] set to
+        [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to
         [`False`][False]. A pick is considered valid if it lies within this
         global range; selection only affects stacking, not the validity bounds.
 
@@ -719,9 +721,9 @@ class ICCS:
 
         Validates that the proposed window fits within every seismogram,
         accounting for the taper ramp. The ramp duration is computed from
-        the proposed ``window_pre`` and ``window_post`` values, consistent
+        the proposed `window_pre` and `window_post` values, consistent
         with how `pysmo.functions.window` computes it for float
-        ``ramp_width``.
+        `ramp_width`.
 
         Args:
             window_pre: Proposed window start time (negative, relative to pick).
@@ -742,7 +744,7 @@ class ICCS:
 
         ramp = _compute_ramp(self.ramp_width, window_pre, window_post)
         for s in self.seismograms:
-            pick = s.t1 or s.t0
+            pick = s.t0 if pd.isnull(s.t1) else s.t1
             if window_pre < s.begin_time - pick + ramp:
                 return False
             if window_post > s.end_time - pick - ramp:
@@ -757,11 +759,11 @@ class ICCS:
         convergence_method: ConvergenceMethod = IccsDefaults.convergence_method,
         max_iter: int = IccsDefaults.max_iter,
         max_shift: pd.Timedelta | None = None,
-    ) -> np.ndarray:
+    ) -> IccsResult:
         """Run the iccs algorithm.
 
         Args:
-            autoflip: Automatically toggle [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip] attribute of seismograms.
+            autoflip: Automatically toggle [`flip`][pysmo.tools.iccs.IccsSeismogram.flip] attribute of seismograms.
             autoselect: Automatically set `select` attribute to `False` for poor quality seismograms.
             convergence_limit: Convergence limit at which the algorithm stops.
             convergence_method: Method to calculate convergence criterion.
@@ -769,7 +771,8 @@ class ICCS:
             max_shift: Maximum shift in seconds (see [`delay()`][pysmo.tools.signal.delay]).
 
         Returns:
-            convergence: Array of convergence criterion values.
+            An [`IccsResult`][pysmo.tools.iccs.IccsResult] containing the
+            convergence history and whether the convergence limit was reached.
         """
         convergence_list = []
 
@@ -803,14 +806,15 @@ class ICCS:
             if convergence <= convergence_limit:
                 break
 
-        return np.array(convergence_list)
+        converged = bool(convergence_list and convergence_list[-1] <= convergence_limit)
+        return IccsResult(convergence=np.array(convergence_list), converged=converged)
 
     def run_mccc(
         self,
         all_seismograms: bool = False,
         min_cc: float = IccsDefaults.mccc_min_cc,
         damping: float = IccsDefaults.mccc_damp,
-    ) -> None:
+    ) -> McccResult:
         """Refine picks with the MCCC algorithm.
 
         This updates the picks of the seismograms with
@@ -826,27 +830,43 @@ class ICCS:
             min_cc: Minimum correlation coefficient required to include a pair
                 in the inversion.
             damping: Tikhonov regularization strength. Set to 0 to disable.
+
+        Returns:
+            A [`McccResult`][pysmo.tools.iccs.McccResult] containing the
+            updated picks and MCCC diagnostic values.
         """
         seismograms = (
             self.cc_seismograms if all_seismograms else self.selected_cc_seismograms
         )
 
-        delays, _errors, _rmse = mccc(seismograms, min_cc=min_cc, damping=damping)
+        delays, errors, rmse, cc_means, cc_errs = mccc(
+            seismograms, min_cc=min_cc, damping=damping
+        )
 
-        for delay, cc_seismogram in zip(delays, seismograms):
+        picks: list[pd.Timestamp] = []
+
+        for delay, cc_seis in zip(delays, seismograms):
+            seis = cc_seis.parent_seismogram
             _update_seismogram(
                 delay,
                 ccnorm=None,
-                seismogram=cc_seismogram.parent_seismogram,
+                seismogram=seis,
                 autoflip=False,
                 autoselect=False,
                 min_ccnorm_for_autoselect=self.min_ccnorm,
                 current_window=(self.window_pre, self.window_post),
             )
+            # After update (or attempted update), retrieve the pick.
+            # Fallback to t0 if t1 is None (e.g. if update failed and was None).
+            picks.append(seis.t0 if pd.isnull(seis.t1) else seis.t1)
+
         self.clear_cache()
+        return McccResult(
+            picks=picks, errors=errors, rmse=rmse, cc_means=cc_means, cc_errs=cc_errs
+        )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
-        """Update [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] in all seismograms by the same amount.
+        """Update [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] in all seismograms by the same amount.
 
         Args:
             pickdelta: delta applied to all picks.
@@ -861,7 +881,7 @@ class ICCS:
             )
 
         for seismogram in self.seismograms:
-            current_pick = seismogram.t1 or seismogram.t0
+            current_pick = seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1
             seismogram.t1 = current_pick + pickdelta
         self.clear_cache()  # seismograms and stack need to be refreshed
 
@@ -869,18 +889,18 @@ class ICCS:
 def _update_seismogram(
     delay: pd.Timedelta,
     ccnorm: float | None,
-    seismogram: ICCSSeismogram,
+    seismogram: IccsSeismogram,
     autoflip: bool,
     autoselect: bool,
     min_ccnorm_for_autoselect: np.floating | float,
     current_window: tuple[pd.Timedelta, pd.Timedelta],
 ) -> None:
-    """Update ICCSSeismogram attributes based on cross-correlation results.
+    """Update IccsSeismogram attributes based on cross-correlation results.
 
-    Optionally toggles ``flip`` (if ``autoflip`` is True and the correlation
-    coefficient is negative) and ``select`` (if ``autoselect`` is True and
+    Optionally toggles `flip` (if `autoflip` is True and the correlation
+    coefficient is negative) and `select` (if `autoselect` is True and
     the absolute correlation coefficient is below the threshold). The pick
-    ``t1`` is updated unless the new value would fall outside the seismogram
+    `t1` is updated unless the new value would fall outside the seismogram
     limits.
 
     Args:
@@ -888,10 +908,10 @@ def _update_seismogram(
         ccnorm: Normalised cross-correlation coefficient. If it is `None`,
             no changes to `flip` and `select` will be made.
         seismogram: Seismogram to update.
-        autoflip: Automatically toggle the ``flip`` attribute.
-        autoselect: Automatically toggle the ``select`` attribute.
-        min_ccnorm_for_autoselect: Threshold for ``autoselect``.
-        current_window: Current ``(window_pre, window_post)`` tuple.
+        autoflip: Automatically toggle the `flip` attribute.
+        autoselect: Automatically toggle the `select` attribute.
+        min_ccnorm_for_autoselect: Threshold for `autoselect`.
+        current_window: Current `(window_pre, window_post)` tuple.
     """
     if ccnorm is not None:
         if autoflip and ccnorm < 0:
@@ -901,7 +921,7 @@ def _update_seismogram(
         if autoselect:
             seismogram.select = bool(ccnorm >= min_ccnorm_for_autoselect)
 
-    updated_t1 = (seismogram.t1 or seismogram.t0) + delay
+    updated_t1 = (seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1) + delay
     limit_pre = seismogram.begin_time - current_window[0]
     limit_post = seismogram.end_time - current_window[1]
 
@@ -927,7 +947,7 @@ def _prepare_seismograms(
     min_delta = instance._min_delta
 
     for seismogram in instance.seismograms:
-        pick = seismogram.t1 or seismogram.t0
+        pick = seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1
         window_start = pick + instance.window_pre
         window_end = pick + instance.window_post
 
@@ -1041,13 +1061,13 @@ def _calc_valid_pick_range(instance: ICCS) -> tuple[pd.Timedelta, pd.Timedelta]:
 
     The pick delta must ensure there is enough space on either end of every
     seismogram (selected or not) to accommodate the time window and ramp,
-    because ``_prepare_seismograms`` processes all seismograms.
+    because `_prepare_seismograms` processes all seismograms.
 
     Args:
         instance: The `ICCS` instance to compute the valid range for.
 
     Returns:
-        A ``(min_pick_delta, max_pick_delta)`` tuple of valid shift bounds.
+        A `(min_pick_delta, max_pick_delta)` tuple of valid shift bounds.
     """
     if not instance.seismograms:
         return pd.Timedelta(days=-365 * 100), pd.Timedelta(days=365 * 100)
@@ -1055,7 +1075,7 @@ def _calc_valid_pick_range(instance: ICCS) -> tuple[pd.Timedelta, pd.Timedelta]:
     td_pre_values = []
     td_post_values = []
     for s in instance.seismograms:
-        pick = s.t1 or s.t0
+        pick = s.t0 if pd.isnull(s.t1) else s.t1
         td_pre_values.append(s.begin_time - pick - instance.window_pre)
         td_post_values.append(s.end_time - pick - instance.window_post)
 
