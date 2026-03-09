@@ -268,7 +268,7 @@ of additional input parameters, therefore becoming tedious to write and use.
 
 This is why some of the components in the pysmo package (e.g.
 [`pysmo.tools.iccs`][pysmo.tools.iccs]) use their own types
-([`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram]) rather than the basic
+([`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram]) rather than the basic
 pysmo types. Crucially, these types inherit from the basic pysmo types, and
 therefore can still be used the same way as e.g. a basic
 [`Seismogram`][pysmo.Seismogram].
@@ -279,7 +279,7 @@ therefore can still be used the same way as e.g. a basic
     [mini class](mini-classes.md).
     Thus, if you are working with a class that matches e.g. the
     [`Seismogram`][pysmo.Seismogram] type, but not the
-    [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type, you can create a
-    [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] object using
+    [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] type, you can create a
+    [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] object using
     the [`clone_to_mini()`][pysmo.functions.clone_to_mini] function by adding
     the missing attributes via the `update` argument.
