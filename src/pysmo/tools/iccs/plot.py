@@ -434,7 +434,7 @@ def update_pick(
     use_matrix_image: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
-    """Manually pick [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1] and apply it to all seismograms.
+    """Manually pick [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] and apply it to all seismograms.
 
     This function launches an interactive figure to manually pick a new phase
     arrival, and then apply it to all seismograms.

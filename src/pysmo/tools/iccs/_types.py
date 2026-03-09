@@ -16,7 +16,42 @@ from pysmo.lib.validators import (
 )
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
-__all__ = ["ICCSSeismogram", "MiniICCSSeismogram"]
+__all__ = ["IccsResult", "IccsSeismogram", "McccResult", "MiniIccsSeismogram"]
+
+
+@define(frozen=True, slots=True)
+class IccsResult:
+    """Result returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__]."""
+
+    convergence: np.ndarray
+    """Convergence criterion value after each iteration."""
+
+    converged: bool
+    """Whether the convergence limit was reached before `max_iter` iterations."""
+
+
+@define(frozen=True, slots=True)
+class McccResult:
+    """Result returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc].
+
+    These results include all seismograms if `run_mccc()` is called with
+    `all_seismograms=True`, only the selected ones otherwise.
+    """
+
+    picks: list[pd.Timestamp]
+    """Final absolute arrival times for each seismogram."""
+
+    errors: list[pd.Timedelta]
+    """Per-seismogram timing precision (standard error from covariance matrix)."""
+
+    rmse: pd.Timedelta
+    """Root-mean-square error of the inversion fit across the whole array."""
+
+    cc_means: list[float]
+    """Per-seismogram mean cross-correlation coefficient (waveform quality)."""
+
+    cc_errs: list[float]
+    """Per-seismogram standard deviation of cross-correlation coefficients (waveform consistency)."""
 
 
 class ConvergenceMethod(StrEnum):
@@ -25,10 +60,10 @@ class ConvergenceMethod(StrEnum):
 
 
 @runtime_checkable
-class ICCSSeismogram(Seismogram, Protocol):
-    """Protocol class to define the `ICCSSeismogram` type.
+class IccsSeismogram(Seismogram, Protocol):
+    """Protocol class to define the `IccsSeismogram` type.
 
-    The `ICCSSeismogram` type extends the [`Seismogram`][pysmo.Seismogram] type
+    The `IccsSeismogram` type extends the [`Seismogram`][pysmo.Seismogram] type
     with the addition of parameters that are required for ICCS.
     """
 
@@ -49,17 +84,17 @@ class ICCSSeismogram(Seismogram, Protocol):
 
 
 @define(kw_only=True, slots=True)
-class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
-    """Minimal implementation of the [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] type.
+class MiniIccsSeismogram(SeismogramEndtimeMixin, IccsSeismogram):
+    """Minimal implementation of the [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] type.
 
-    The [`MiniICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] class provides
+    The [`MiniIccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] class provides
     a minimal implementation of a class that is compatible with the
-    [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] protocol.
+    [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] protocol.
 
     Examples:
-        Because [`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram] inherits
+        Because [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] inherits
         from [`Seismogram`][pysmo.Seismogram], we can easily create
-        [`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram] instances
+        [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] instances
         from existing seismograms using the
         [`clone_to_mini()`][pysmo.functions.clone_to_mini] function, whereby
         the `update` parameter is used to provide the extra information needed:
@@ -67,13 +102,13 @@ class MiniICCSSeismogram(SeismogramEndtimeMixin, ICCSSeismogram):
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.functions import clone_to_mini
-        >>> from pysmo.tools.iccs import MiniICCSSeismogram
+        >>> from pysmo.tools.iccs import MiniIccsSeismogram
         >>> import pandas as pd
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
         >>> # Use existing pick or set a new one 10 seconds after begin time
-        >>> update = {"t0": sac.timestamps.t0 or sac_seis.begin_time + pd.Timedelta(seconds=10)}
-        >>> mini_iccs_seis = clone_to_mini(MiniICCSSeismogram, sac_seis, update=update)
+        >>> update = {"t0": sac_seis.begin_time + pd.Timedelta(seconds=10) if pd.isnull(sac.timestamps.t0) else sac.timestamps.t0}
+        >>> mini_iccs_seis = clone_to_mini(MiniIccsSeismogram, sac_seis, update=update)
         >>>
         ```
     """

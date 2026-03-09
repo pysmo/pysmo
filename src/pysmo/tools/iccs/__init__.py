@@ -34,27 +34,27 @@ calculated rather than hand picked).
 
 The [`iccs`][pysmo.tools.iccs] module requires that seismograms contain extra
 attributes specific to the ICCS method. Hence it provides a protocol class
-([`ICCSSeismogram`][pysmo.tools.iccs.ICCSSeismogram]) and corresponding Mini
-class ([`MiniICCSSeismogram`][pysmo.tools.iccs.MiniICCSSeismogram]). In
+([`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram]) and corresponding Mini
+class ([`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram]). In
 addition to the common attributes of a [`Seismogram`][pysmo.Seismogram] in
 pysmo, the following parameters are required:
 
 | Attribute                                          | Description |
 | -------------------------------------------------- | ----------- |
-| [`t0`][pysmo.tools.iccs.ICCSSeismogram.t0]         | Initial pick (typically \
+| [`t0`][pysmo.tools.iccs.IccsSeismogram.t0]         | Initial pick (typically \
     computed). Serves as input only when `t1` is not set. |
-| [`t1`][pysmo.tools.iccs.ICCSSeismogram.t1]         | Improved pick. \
+| [`t1`][pysmo.tools.iccs.IccsSeismogram.t1]         | Improved pick. \
     Serves as both input (if not [`None`][None]) and output (always) when \
     [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm. It should \
     be set to [`None`][None] initially. |
-| [`select`][pysmo.tools.iccs.ICCSSeismogram.select] | Determines if a  \
+| [`select`][pysmo.tools.iccs.IccsSeismogram.select] | Determines if a  \
     seismogram is used for the stack, and should therefore be [`True`][True] \
     initially. It is set to [`False`][False] for poor quality seismograms \
     automatically during a run if `autoselect` is [`True`][True]. Note that \
     this flag does _not_ exclude a seismogram from being cross-correlated with \
     the stack. Recovery is therefore possible and previously de-selected \
     seismograms may be selected again for the next iteration. |
-| [`flip`][pysmo.tools.iccs.ICCSSeismogram.flip]     | Determines if the \
+| [`flip`][pysmo.tools.iccs.IccsSeismogram.flip]     | Determines if the \
     seismogram data should be flipped (i.e. data are multiplied with -1) when \
     using it in the stack and cross-correlation. Can be automatically toggled \
     when `autoflip` is [`True`][True] during a \
@@ -103,22 +103,22 @@ for parameters and default values):
 
 ```mermaid
 flowchart TD
-Start(["ICCSSeismograms with initial parameters."])
-Stack0["Generate windowed seismograms and create stack from them."]
-C["Cross-correlate windowed seismograms with stack to obtain updated picks and normalised correlation coefficients."]
-FlipQ{"Is **autoflip**
-True?"}
-Flip["Toggle **flip** attribute of seismograms with negative correlation coefficients."]
-QualQ{"Is **autoselect**
-True?"}
-Qual1["Toggle **select** attribute of seismograms based on correlation coefficient."]
-Stack1["Recompute windowed seismograms and stack with updated parameters."]
-H{"Convergence
-criteria met?"}
-I{"Maximum
+Start(["`IccsSeismograms with initial parameters.`"])
+Stack0["`Generate windowed seismograms and create stack from them.`"]
+C["`Cross-correlate windowed seismograms with stack to obtain updated picks and normalised correlation coefficients.`"]
+FlipQ{"`Is **autoflip**
+True?`"}
+Flip["`Toggle **flip** attribute of seismograms with negative correlation coefficients.`"]
+QualQ{"`Is **autoselect**
+True?`"}
+Qual1["`Toggle **select** attribute of seismograms based on correlation coefficient.`"]
+Stack1["`Recompute windowed seismograms and stack with updated parameters.`"]
+H{"`Convergence
+criteria met?`"}
+I{"`Maximum
 iterations
-reached?"}
-End(["ICCSSeismograms with updated **t1**, **flip**, and **select** parameters."])
+reached?`"}
+End(["`IccsSeismograms with updated **t1**, **flip**, and **select** parameters.`"])
 Start --> Stack0 --> C --> FlipQ -->|No| QualQ -->|No| Stack1 --> H -->|No| I -->|No| C
 FlipQ -->|Yes| Flip --> QualQ
 QualQ -->|Yes| Qual1 -->  Stack1
@@ -143,7 +143,7 @@ visual inspection.
 
 from ..._utils import export_module_names
 from ._iccs import ICCS
-from ._types import ICCSSeismogram, MiniICCSSeismogram
+from ._types import IccsResult, IccsSeismogram, McccResult, MiniIccsSeismogram
 from .plot import (
     plot_matrix_image,
     plot_stack,
@@ -154,8 +154,10 @@ from .plot import (
 
 __all__ = [
     "ICCS",
-    "ICCSSeismogram",
-    "MiniICCSSeismogram",
+    "IccsSeismogram",
+    "IccsResult",
+    "McccResult",
+    "MiniIccsSeismogram",
     "plot_matrix_image",
     "plot_stack",
     "update_min_ccnorm",
