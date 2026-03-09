@@ -18,7 +18,7 @@ from sybil.parsers.doctest import DocTestParser
 
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
-from pysmo.tools.iccs import MiniICCSSeismogram
+from pysmo.tools.iccs import MiniIccsSeismogram
 
 
 @pytest.fixture()
@@ -67,7 +67,7 @@ def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
 
 
 @pytest.fixture()
-def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
+def iccs_seismograms() -> Generator[list[MiniIccsSeismogram], Any, None]:
     asset_iccsdir = Path(__file__).parent.parent.parent / "tests/tools/iccs/assets/"
     sacfiles = sorted(asset_iccsdir.glob("*.bhz"))
 
@@ -76,7 +76,7 @@ def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
         sac = SAC.from_file(sacfile)
         update = {"t0": sac.timestamps.t0}
         iccs_seismogram = clone_to_mini(
-            MiniICCSSeismogram, sac.seismogram, update=update
+            MiniIccsSeismogram, sac.seismogram, update=update
         )
         iccs_seismograms.append(iccs_seismogram)
 
