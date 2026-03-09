@@ -462,7 +462,9 @@ def multi_multi_delay(
 
 def mccc(
     seismograms: Sequence[Seismogram], min_cc: float = 0.5, damping: float = 0.1
-) -> tuple[list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta]:
+) -> tuple[
+    list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta, list[float], list[float]
+]:
     """
     Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
 
@@ -487,10 +489,25 @@ def mccc(
         times: List of relative arrival times.
         errors: List of standard errors.
         rmse: Root-mean-square error of the fit.
+        cc_means: Mean correlation coefficient for each seismogram.
+        cc_errs: Standard deviation of correlation coefficients for each seismogram.
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the
             others (raised by `multi_multi_delay`).
+
+    Notes:
+        The returned statistics provide key diagnostic information:
+        - **Cycle Skip**: High `errors` combined with high `cc_means` and low
+          `cc_errs` suggests a cycle skip (the waveform matches perfectly but
+          on the wrong peak).
+        - **Noisy Seismogram**: Low `cc_means` combined with high `errors` and
+          `cc_errs` indicates poor data quality or significant site-response
+          distortion.
+        - **Array Coherence**: The `rmse` measures the overall fit. High `rmse`
+          even with high `cc_means` suggests the array is too large or sparse
+          for a single coherent arrival time (e.g., crossing a major tectonic
+          boundary).
 
     Examples:
         Create seismograms with known shifts and recover them with `mccc`:
@@ -506,7 +523,7 @@ def mccc(
         >>> seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
         >>>
         >>> # Run MCCC inversion:
-        >>> times, errors, rmse = mccc(seismograms)
+        >>> times, errors, rmse, cc, cc_err = mccc(seismograms)
         >>>
         >>> # The relative times sum to approximately zero:
         >>> abs(sum(t.total_seconds() for t in times)) < 1e-5
@@ -532,9 +549,21 @@ def mccc(
     zero_delta = pd.Timedelta(0)
 
     if n_traces < 2:
-        return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
+        return (
+            [zero_delta] * n_traces,
+            [zero_delta] * n_traces,
+            zero_delta,
+            [1.0] * n_traces,
+            [0.0] * n_traces,
+        )
 
     delay_matrix, coeff_matrix = multi_multi_delay(seismograms)
+
+    # Calculate cc_means and cc_errs (standard deviation of CCs) excluding diagonal
+    mask = ~np.eye(n_traces, dtype=bool)
+    cc_off_diag = coeff_matrix[mask].reshape(n_traces, n_traces - 1)
+    cc_means = np.mean(cc_off_diag, axis=1).tolist()
+    cc_errs = np.std(cc_off_diag, axis=1, ddof=0).tolist()
 
     # Convert numpy.timedelta64 array to float seconds for linear algebra
     delay_matrix_seconds = delay_matrix / np.timedelta64(1, "s")
@@ -561,7 +590,13 @@ def mccc(
             weights.append(cc**2)
 
     if not rows:
-        return [zero_delta] * n_traces, [zero_delta] * n_traces, zero_delta
+        return (
+            [zero_delta] * n_traces,
+            [zero_delta] * n_traces,
+            zero_delta,
+            cc_means,
+            cc_errs,
+        )
 
     g = np.array(rows)
     d = np.array(data_vec)
@@ -601,4 +636,4 @@ def mccc(
     errors = [pd.Timedelta(seconds=float(e)) for e in std_errors]
     rmse = pd.Timedelta(seconds=float(np.sqrt(sse / len(d))))
 
-    return times, errors, rmse
+    return times, errors, rmse, cc_means, cc_errs

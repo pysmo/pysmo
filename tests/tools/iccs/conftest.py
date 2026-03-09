@@ -7,18 +7,18 @@ import pytest
 
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini, resample
-from pysmo.tools.iccs import ICCS, MiniICCSSeismogram
+from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
 
 
 @pytest.fixture()
-def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
-    seismograms: list[MiniICCSSeismogram] = []
+def iccs_seismograms() -> Generator[list[MiniIccsSeismogram], Any, None]:
+    seismograms: list[MiniIccsSeismogram] = []
     iccs_files = sorted((Path(__file__).parent / "assets/").glob("*.bhz"))
 
     for sacfile in iccs_files:
         sac = SAC.from_file(sacfile)
         update = {"t0": sac.timestamps.t0}
-        seismogram = clone_to_mini(MiniICCSSeismogram, sac.seismogram, update=update)
+        seismogram = clone_to_mini(MiniIccsSeismogram, sac.seismogram, update=update)
         seismograms.append(seismogram)
 
     seismograms[0].data *= -1
@@ -30,7 +30,7 @@ def iccs_seismograms() -> Generator[list[MiniICCSSeismogram], Any, None]:
 
 @pytest.fixture()
 def iccs_instance(
-    iccs_seismograms: list[MiniICCSSeismogram],
+    iccs_seismograms: list[MiniIccsSeismogram],
 ) -> Generator[ICCS, Any, None]:
     iccs = ICCS(iccs_seismograms)
     yield iccs
