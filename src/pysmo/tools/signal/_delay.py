@@ -79,7 +79,7 @@ def delay(
 
     Returns:
         delay: Time delay of the second seismogram with respect to the first.
-        ccnorm: Normalised cross correlation value of the overlapping
+        cc: Normalised cross-correlation value of the overlapping
             seismograms *after* shifting (uses
             [`scipy.stats.mstats.pearsonr`][scipy.stats.mstats.pearsonr] for
             the calculation). This value ranges from -1 to 1, with 1 indicating
@@ -157,22 +157,22 @@ def delay(
 
         ```python
         >>> seis2.data *= -1
-        >>> calculated_delay, ccnorm = delay(seis1, seis2)
+        >>> calculated_delay, cc = delay(seis1, seis2)
         >>> # Without `abs_max=True`, the calculated delay is no longer equal
         >>> # to the true signal delay (as expected):
         >>> calculated_delay == signal_delay
         False
-        >>> # The normalised cross correlation value is also not very high
-        >>> ccnorm
+        >>> # The normalised cross-correlation value is also not very high
+        >>> cc
         np.float64(0.4267205)
         >>>
-        >>> calculated_delay, ccnorm = delay(seis1, seis2, abs_max=True)
+        >>> calculated_delay, cc = delay(seis1, seis2, abs_max=True)
         >>> # with `abs_max=True`, the signal delay is again retrieved:
         >>> calculated_delay == signal_delay
         True
         >>> # And, as the signals are completely opposite, the normalised
-        >>> # cross correlation value is -1:
-        >>> np.testing.assert_approx_equal(ccnorm, -1)
+        >>> # cross-correlation value is -1:
+        >>> np.testing.assert_approx_equal(cc, -1)
         >>>
         ```
     """
@@ -216,12 +216,12 @@ def delay(
     else:
         data2 = data2[: len(data1)]
 
-    covr, _ = _pearsonr(data1, data2)
+    cc, _ = _pearsonr(data1, data2)
 
     if total_delay:
         delay += seismogram2.begin_time - seismogram1.begin_time
 
-    return delay, covr
+    return delay, cc
 
 
 def multi_delay(
@@ -242,7 +242,7 @@ def multi_delay(
 
     Returns:
         delays: Delays of each input seismogram relative to template.
-        coeffs: Correlation coefficients at maximum correlation for each seismogram.
+        ccs: Correlation coefficients at maximum correlation for each seismogram.
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the template.
@@ -265,7 +265,7 @@ def multi_delay(
         >>> seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
         >>>
         >>> # Calculate delays for all seismograms at once:
-        >>> delays, coeffs = multi_delay(template, seismograms)
+        >>> delays, ccs = multi_delay(template, seismograms)
         >>> [d.total_seconds() for d in delays]
         [0.0, 10.0, -5.0]
         >>>
@@ -275,10 +275,10 @@ def multi_delay(
 
         ```python
         >>> flipped = MiniSeismogram(data=-np.roll(data, 10))
-        >>> delays, coeffs = multi_delay(template, [flipped], abs_max=True)
+        >>> delays, ccs = multi_delay(template, [flipped], abs_max=True)
         >>> delays[0].total_seconds()
         10.0
-        >>> coeffs[0] < 0
+        >>> ccs[0] < 0
         True
         >>>
         ```
@@ -337,14 +337,14 @@ def multi_delay(
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
     delta = template.delta
     delays = [int(lag) * delta for lag in signed_lags]
-    coeffs: list[float] = cc_matrix[np.arange(n_traces), max_indices].tolist()
+    ccs: list[float] = cc_matrix[np.arange(n_traces), max_indices].tolist()
 
-    return delays, coeffs
+    return delays, ccs
 
 
 def multi_multi_delay(
     seismograms: Sequence[Seismogram],
-    abs_max: bool = False,
+    abs_max: bool,
 ) -> tuple[npt.NDArray[np.timedelta64], npt.NDArray[np.floating]]:
     """
     Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
@@ -373,7 +373,7 @@ def multi_multi_delay(
     Returns:
         delays: 2D array of shape `(N, N)` with delay times as
             `numpy.timedelta64` values, where `N = len(seismograms)`.
-        coeffs: 2D array of shape `(N, N)` with correlation coefficients.
+        cc_matrix: 2D array of shape `(N, N)` with correlation coefficients.
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the others.
@@ -394,7 +394,7 @@ def multi_multi_delay(
         ...     MiniSeismogram(data=np.roll(data, -10)),
         ... ]
         >>>
-        >>> delays, coeffs = multi_multi_delay(seismograms)
+        >>> delays, cc_matrix = multi_multi_delay(seismograms, abs_max=False)
         >>> delays.shape
         (3, 3)
         >>> # delay of seismogram 1 relative to seismogram 0:
@@ -455,13 +455,16 @@ def multi_multi_delay(
 
     # extract coefficients at max indices
     i_idx, j_idx = np.meshgrid(np.arange(n), np.arange(n), indexing="ij")
-    coeffs = cc_matrix[i_idx, j_idx, max_indices]
+    ccs = cc_matrix[i_idx, j_idx, max_indices]
 
-    return delays, coeffs
+    return delays, ccs
 
 
 def mccc(
-    seismograms: Sequence[Seismogram], min_cc: float = 0.5, damping: float = 0.1
+    seismograms: Sequence[Seismogram],
+    min_cc: float = 0.5,
+    damping: float = 0.1,
+    abs_max: bool = False,
 ) -> tuple[
     list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta, list[float], list[float]
 ]:
@@ -484,13 +487,15 @@ def mccc(
         min_cc: Minimum correlation coefficient required to include a pair
             in the inversion.
         damping: Tikhonov regularization strength. Set to 0 to disable.
+        abs_max: If `True`, uses absolute max correlation (polarity insensitive)
+            for the pairwise delays.
 
     Returns:
         times: List of relative arrival times.
         errors: List of standard errors.
         rmse: Root-mean-square error of the fit.
         cc_means: Mean correlation coefficient for each seismogram.
-        cc_errs: Standard deviation of correlation coefficients for each seismogram.
+        cc_stds: Standard deviation of correlation coefficients for each seismogram.
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the
@@ -499,10 +504,10 @@ def mccc(
     Notes:
         The returned statistics provide key diagnostic information:
         - **Cycle Skip**: High `errors` combined with high `cc_means` and low
-          `cc_errs` suggests a cycle skip (the waveform matches perfectly but
+          `cc_stds` suggests a cycle skip (the waveform matches perfectly but
           on the wrong peak).
         - **Noisy Seismogram**: Low `cc_means` combined with high `errors` and
-          `cc_errs` indicates poor data quality or significant site-response
+          `cc_stds` indicates poor data quality or significant site-response
           distortion.
         - **Array Coherence**: The `rmse` measures the overall fit. High `rmse`
           even with high `cc_means` suggests the array is too large or sparse
@@ -523,7 +528,7 @@ def mccc(
         >>> seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
         >>>
         >>> # Run MCCC inversion:
-        >>> times, errors, rmse, cc, cc_err = mccc(seismograms)
+        >>> times, errors, rmse, cc, cc_std = mccc(seismograms)
         >>>
         >>> # The relative times sum to approximately zero:
         >>> abs(sum(t.total_seconds() for t in times)) < 1e-5
@@ -535,6 +540,24 @@ def mccc(
         5
         >>> round((times[2] - times[0]).total_seconds())
         -10
+        >>>
+        ```
+
+        Use `abs_max=True` to recover shifts for polarity-flipped signals:
+
+        ```python
+        >>> # Create a set of seismograms where one has inverted polarity:
+        >>> seismograms[1].data *= -1
+        >>>
+        >>> # Run MCCC with abs_max=True:
+        >>> times, errors, rmse, cc, cc_std = mccc(seismograms, abs_max=True)
+        >>>
+        >>> # Shifts are still correctly recovered:
+        >>> round((times[1] - times[0]).total_seconds())
+        5
+        >>> # The correlation coefficient for the flipped signal is negative:
+        >>> cc[1] < -0.9
+        True
         >>>
         ```
 
@@ -557,13 +580,13 @@ def mccc(
             [0.0] * n_traces,
         )
 
-    delay_matrix, coeff_matrix = multi_multi_delay(seismograms)
+    delay_matrix, cc_matrix = multi_multi_delay(seismograms, abs_max=abs_max)
 
-    # Calculate cc_means and cc_errs (standard deviation of CCs) excluding diagonal
+    # Calculate cc_means and cc_stds (standard deviation of CCs) excluding diagonal
     mask = ~np.eye(n_traces, dtype=bool)
-    cc_off_diag = coeff_matrix[mask].reshape(n_traces, n_traces - 1)
+    cc_off_diag = cc_matrix[mask].reshape(n_traces, n_traces - 1)
     cc_means = np.mean(cc_off_diag, axis=1).tolist()
-    cc_errs = np.std(cc_off_diag, axis=1, ddof=0).tolist()
+    cc_stds = np.std(cc_off_diag, axis=1, ddof=0).tolist()
 
     # Convert numpy.timedelta64 array to float seconds for linear algebra
     delay_matrix_seconds = delay_matrix / np.timedelta64(1, "s")
@@ -575,8 +598,10 @@ def mccc(
 
     for i in range(n_traces):
         for j in range(i + 1, n_traces):
-            cc = coeff_matrix[i, j]
-            if cc < min_cc:
+            cc = cc_matrix[i, j]
+            # When abs_max is True, we care about the absolute correlation strength
+            cc_to_check = abs(cc) if abs_max else cc
+            if cc_to_check < min_cc:
                 continue
 
             lag_seconds = delay_matrix_seconds[i, j]
@@ -595,7 +620,7 @@ def mccc(
             [zero_delta] * n_traces,
             zero_delta,
             cc_means,
-            cc_errs,
+            cc_stds,
         )
 
     g = np.array(rows)
@@ -636,4 +661,4 @@ def mccc(
     errors = [pd.Timedelta(seconds=float(e)) for e in std_errors]
     rmse = pd.Timedelta(seconds=float(np.sqrt(sse / len(d))))
 
-    return times, errors, rmse, cc_means, cc_errs
+    return times, errors, rmse, cc_means, cc_stds
