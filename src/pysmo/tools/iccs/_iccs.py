@@ -235,21 +235,19 @@ class ICCS:
         <!-- invisible-code-block: python
         ```
         >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
         >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_stack_initial-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_initial.png", transparent=True)
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_stack_initial-dark.png", transparent=True)
+        ...     plt.style.use("default")
         >>>
         ```
         -->
 
-        ![Initial stack](../../../images/tools/iccs/iccs_stack_initial.png#only-light){ loading=lazy }
-        ![Initial stack](../../../images/tools/iccs/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
+        ![Initial stack](../../../images/sybil/iccs_stack_initial.png#only-light){ loading=lazy }
+        ![Initial stack](../../../images/sybil/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
         The phase emergence is not visible in the stack, and the (absolute)
         correlation coefficients of the seismograms are not very high. This
@@ -267,22 +265,19 @@ class ICCS:
 
         <!-- invisible-code-block: python
         ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
         >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_first_run.png", transparent=True)
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
+        ...     plt.style.use("default")
         >>>
         ```
         -->
 
-        ![Stack after first run](../../../images/tools/iccs/iccs_stack_first_run.png#only-light){ loading=lazy }
-        ![Stack after first run](../../../images/tools/iccs/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
+        ![Stack after first run](../../../images/sybil/iccs_stack_first_run.png#only-light){ loading=lazy }
+        ![Stack after first run](../../../images/sybil/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
 
         Despite the random noise seismogram, the phase arrival is now visible in
         the stack. Seismograms with low correlation coefficients can automatically
@@ -298,22 +293,19 @@ class ICCS:
 
         <!-- invisible-code-block: python
         ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
         >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_stack_autoselect-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoselect.png", transparent=True)
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_stack_autoselect-dark.png", transparent=True)
+        ...     plt.style.use("default")
         >>>
         ```
         -->
 
-        ![Stack after run with autoselect](../../../images/tools/iccs/iccs_stack_autoselect.png#only-light){ loading=lazy }
-        ![Stack after run with autoselect](../../../images/tools/iccs/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
+        ![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect.png#only-light){ loading=lazy }
+        ![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
 
 
         Seismograms that fit better with their polarity reversed can be flipped
@@ -327,29 +319,26 @@ class ICCS:
 
         <!-- invisible-code-block: python
         ```
-        >>> import matplotlib.pyplot as plt
-        >>> plt.close("all")
         >>> if savedir:
-        ...     plt.style.use("dark_background")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
-        ...     fig.savefig(savedir / "iccs_stack_autoflip-dark.png", transparent=True)
-        ...
-        ...     plt.style.use("default")
-        ...     fig, _ = plot_stack(iccs, context=False, return_fig=True)
         ...     fig.savefig(savedir / "iccs_stack_autoflip.png", transparent=True)
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_stack_autoflip-dark.png", transparent=True)
+        ...     plt.style.use("default")
         >>>
         ```
         -->
 
-        ![Stack after run with autoflip](../../../images/tools/iccs/iccs_stack_autoflip.png#only-light){ loading=lazy }
-        ![Stack after run with autoflip](../../../images/tools/iccs/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
+        ![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip.png#only-light){ loading=lazy }
+        ![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
 
 
         To further improve results, you can interactively update the picks,
         time window, and minimum correlation coefficient using
         [`update_pick`][pysmo.tools.iccs.update_pick],
         [`update_timewindow`][pysmo.tools.iccs.update_timewindow], and
-        [`update_min_ccnorm`][pysmo.tools.iccs.update_min_ccnorm],
+        [`update_min_cc`][pysmo.tools.iccs.update_min_cc],
         respectively, and then run the ICCS algorithm again.
     """
 
@@ -468,8 +457,8 @@ class ICCS:
     )
     """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
 
-    min_ccnorm: float = field(
-        default=IccsDefaults.min_ccnorm,
+    min_cc: float = field(
+        default=IccsDefaults.min_cc,
         converter=float,
         validator=validators.instance_of(float),
         on_setattr=setters.pipe(
@@ -482,7 +471,7 @@ class ICCS:
     the cross-correlation coefficient for each seismogram is calculated after
     each iteration. If `autoselect` is set to `True`, the
     [`select`][pysmo.tools.iccs.IccsSeismogram.select] attribute of seismograms
-    with with correlation coefficients below this value is set to `False`, and
+    with correlation coefficients below this value is set to `False`, and
     they are no longer used for the [`stack`][pysmo.tools.iccs.ICCS.stack].
     """
 
@@ -497,7 +486,7 @@ class ICCS:
         default=None, init=False
     )
     """Cached list of the prepared seismograms with context padding."""
-    _ccnorms_cache: np.ndarray | None = field(default=None, init=False)
+    _ccs_cache: np.ndarray | None = field(default=None, init=False)
     """Cached array of the normalised cross-correlation coefficients."""
     _cc_stack_cache: MiniSeismogram | None = field(default=None, init=False)
     """Cached stack of the prepared seismograms for cross-correlation."""
@@ -529,7 +518,7 @@ class ICCS:
         """
         self._cc_seismograms_cache = None
         self._context_seismograms_cache = None
-        self._ccnorms_cache = None
+        self._ccs_cache = None
         self._cc_stack_cache = None
         self._context_stack_cache = None
         self._max_td_pre_cache = None
@@ -655,13 +644,13 @@ class ICCS:
         return self._context_seismograms_cache
 
     @property
-    def ccnorms(self) -> np.ndarray:
+    def ccs(self) -> np.ndarray:
         """Returns an array of the normalised cross-correlation coefficients."""
 
-        if self._ccnorms_cache is None:
+        if self._ccs_cache is None:
             matrix = np.array([s.data for s in self.cc_seismograms])
-            self._ccnorms_cache = pearson_matrix_vector(matrix, self.stack.data)
-        return self._ccnorms_cache
+            self._ccs_cache = pearson_matrix_vector(matrix, self.stack.data)
+        return self._ccs_cache
 
     @property
     def stack(self) -> MiniSeismogram:
@@ -781,21 +770,17 @@ class ICCS:
             prev_stack = clone_to_mini(MiniSeismogram, self.stack)
 
             # Get delays and correlation coefficients for all seismograms in one go
-            delays, ccnorms = multi_delay(
-                self.stack, self.cc_seismograms, abs_max=autoflip
-            )
+            delays, ccs = multi_delay(self.stack, self.cc_seismograms, abs_max=autoflip)
 
             # Update seismograms based on results and settings.
-            for delay, ccnorm, cc_seismogram in zip(
-                delays, ccnorms, self.cc_seismograms
-            ):
+            for delay, cc, cc_seismogram in zip(delays, ccs, self.cc_seismograms):
                 _update_seismogram(
                     delay,
-                    ccnorm,
+                    cc,
                     cc_seismogram.parent_seismogram,
                     autoflip,
                     autoselect,
-                    self.min_ccnorm,
+                    self.min_cc,
                     (self.window_pre, self.window_post),
                 )
 
@@ -814,6 +799,7 @@ class ICCS:
         all_seismograms: bool = False,
         min_cc: float = IccsDefaults.mccc_min_cc,
         damping: float = IccsDefaults.mccc_damp,
+        abs_max: bool = False,
     ) -> McccResult:
         """Refine picks with the MCCC algorithm.
 
@@ -830,6 +816,8 @@ class ICCS:
             min_cc: Minimum correlation coefficient required to include a pair
                 in the inversion.
             damping: Tikhonov regularization strength. Set to 0 to disable.
+            abs_max: If `True`, uses absolute max correlation (polarity insensitive)
+                for the pairwise delays.
 
         Returns:
             A [`McccResult`][pysmo.tools.iccs.McccResult] containing the
@@ -839,8 +827,8 @@ class ICCS:
             self.cc_seismograms if all_seismograms else self.selected_cc_seismograms
         )
 
-        delays, errors, rmse, cc_means, cc_errs = mccc(
-            seismograms, min_cc=min_cc, damping=damping
+        delays, errors, rmse, cc_means, cc_stds = mccc(
+            seismograms, min_cc=min_cc, damping=damping, abs_max=abs_max
         )
 
         picks: list[pd.Timestamp] = []
@@ -849,11 +837,11 @@ class ICCS:
             seis = cc_seis.parent_seismogram
             _update_seismogram(
                 delay,
-                ccnorm=None,
+                cc=None,
                 seismogram=seis,
                 autoflip=False,
                 autoselect=False,
-                min_ccnorm_for_autoselect=self.min_ccnorm,
+                min_cc_for_autoselect=self.min_cc,
                 current_window=(self.window_pre, self.window_post),
             )
             # After update (or attempted update), retrieve the pick.
@@ -862,7 +850,7 @@ class ICCS:
 
         self.clear_cache()
         return McccResult(
-            picks=picks, errors=errors, rmse=rmse, cc_means=cc_means, cc_errs=cc_errs
+            picks=picks, errors=errors, rmse=rmse, cc_means=cc_means, cc_stds=cc_stds
         )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
@@ -888,11 +876,11 @@ class ICCS:
 
 def _update_seismogram(
     delay: pd.Timedelta,
-    ccnorm: float | None,
+    cc: float | None,
     seismogram: IccsSeismogram,
     autoflip: bool,
     autoselect: bool,
-    min_ccnorm_for_autoselect: np.floating | float,
+    min_cc_for_autoselect: np.floating | float,
     current_window: tuple[pd.Timedelta, pd.Timedelta],
 ) -> None:
     """Update IccsSeismogram attributes based on cross-correlation results.
@@ -905,21 +893,21 @@ def _update_seismogram(
 
     Args:
         delay: Time shift from cross-correlation.
-        ccnorm: Normalised cross-correlation coefficient. If it is `None`,
+        cc: Normalised cross-correlation coefficient. If it is `None`,
             no changes to `flip` and `select` will be made.
         seismogram: Seismogram to update.
         autoflip: Automatically toggle the `flip` attribute.
         autoselect: Automatically toggle the `select` attribute.
-        min_ccnorm_for_autoselect: Threshold for `autoselect`.
+        min_cc_for_autoselect: Threshold for `autoselect`.
         current_window: Current `(window_pre, window_post)` tuple.
     """
-    if ccnorm is not None:
-        if autoflip and ccnorm < 0:
+    if cc is not None:
+        if autoflip and cc < 0:
             seismogram.flip = not seismogram.flip
-            ccnorm = abs(ccnorm)
+            cc = abs(cc)
 
         if autoselect:
-            seismogram.select = bool(ccnorm >= min_ccnorm_for_autoselect)
+            seismogram.select = bool(cc >= min_cc_for_autoselect)
 
     updated_t1 = (seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1) + delay
     limit_pre = seismogram.begin_time - current_window[0]
