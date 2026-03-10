@@ -147,7 +147,7 @@ from ._types import IccsResult, IccsSeismogram, McccResult, MiniIccsSeismogram
 from .plot import (
     plot_matrix_image,
     plot_stack,
-    update_min_ccnorm,
+    update_min_cc,
     update_pick,
     update_timewindow,
 )
@@ -160,7 +160,7 @@ __all__ = [
     "MiniIccsSeismogram",
     "plot_matrix_image",
     "plot_stack",
-    "update_min_ccnorm",
+    "update_min_cc",
     "update_pick",
     "update_timewindow",
 ]

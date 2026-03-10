@@ -7,24 +7,24 @@ requires-python = ">=3.12,<3.15"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 classifiers = [
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
-    "Operating System :: OS Independent",
-    "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Operating System :: OS Independent",
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
 dependencies = [
-    "httpx>=0.28.1",
-    "numpy>=2.3.4",
-    "matplotlib>=3.10.7",
-    "pyproj>=3.7.2",
-    "attrs>=25.4.0",
-    "cattrs>=25.3.0",
-    "scipy-stubs>=1.16.2.3",
-    "scipy>=1.16.2",
-    "pandas-stubs>=3.0.0.260204",
-    "pandas>=3.0.1",
-    "annotated-types>=0.7.0",
+  "httpx>=0.28.1",
+  "numpy>=2.3.4",
+  "matplotlib>=3.10.7",
+  "pyproj>=3.7.2",
+  "attrs>=25.4.0",
+  "cattrs>=25.3.0",
+  "scipy-stubs>=1.16.2.3",
+  "scipy>=1.16.2",
+  "pandas-stubs>=3.0.0.260204",
+  "pandas>=3.0.1",
+  "annotated-types>=0.7.0",
 ]
 
 [project.urls]
@@ -32,35 +32,27 @@ Documentation = "https://docs.pysmo.org"
 
 [dependency-groups]
 dev = [
-    "black>=26.1.0",
-    "jinja2>=3.1.6",
-    "pyyaml>=6.0.3",
-    "types-pyyaml>=6.0.12.20250915",
+  "black>=26.1.0",
+  "jinja2>=3.1.6",
+  "pyyaml>=6.0.3",
+  "types-pyyaml>=6.0.12.20250915",
 ]
 test = [
-    "pytest>=8.4.2",
-    "pytest-mpl>=0.17.0",
-    "pytest-cov>=6.3.0",
-    "pytest-mypy>=1.0.1",
-    "pytest-depends>=1.0.1",
-    "pytest-sugar>=1.1.1",
-    "pytest-cases>=3.9.1",
-    "sybil[pytest]>=9.2.0",
-    "syrupy>=4.9.1",
-    "ruff>=0.11.13",
+  "pytest>=8.4.2",
+  "pytest-mpl>=0.17.0",
+  "pytest-cov>=6.3.0",
+  "pytest-mypy>=1.0.1",
+  "pytest-depends>=1.0.1",
+  "pytest-sugar>=1.1.1",
+  "pytest-cases>=3.9.1",
+  "sybil[pytest]>=9.2.0",
+  "syrupy>=4.9.1",
+  "ruff>=0.11.13",
 ]
-docs = [
-    "zensical>=0.0.10",
-    "mkdocstrings-python>=2.0.1",
-    "git-cliff>=2.12.0",
-]
+docs = ["zensical>=0.0.10", "mkdocstrings-python>=2.0.1", "git-cliff>=2.12.0"]
 
 [tool.uv]
-default-groups = [
-    "dev",
-    "test",
-    "docs",
-]
+default-groups = ["dev", "test", "docs"]
 
 [tool.hatch.version]
 source = "vcs"
@@ -90,14 +82,8 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests",
-    "src",
-    "docs"
-]
-filterwarnings = [
-  "ignore::UserWarning"
-]
+testpaths = ["tests", "src", "docs"]
+filterwarnings = ["ignore::UserWarning"]
 mpl-generate-summary = "html"
 mpl-use-full-test-name = true
 addopts = "-p no:doctest"
@@ -108,11 +94,7 @@ namespace_packages = true
 disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-exclude = [
-  'division\.py$',
-  'division_annotated\.py$',
-  'duck\.py$',
-]
+exclude = ['division\.py$', 'division_annotated\.py$', 'duck\.py$']
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -120,31 +102,28 @@ warn_unused_ignores = false
 
 [tool.coverage.run]
 source = ["src"]
-omit = [
-  "src/pysmo/lib/io/_sacio/_render_sacio.py",
-  "src/pysmo/conftest.py",
-  ]
+omit = ["src/pysmo/lib/io/_sacio/_render_sacio.py", "src/pysmo/conftest.py"]
 
 [tool.coverage.report]
 exclude_also = [
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-    "plt.show()",
-    "plt.savefig(.*)",
-    ]
+  "def __repr__",
+  "if self.debug:",
+  "if settings.DEBUG",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if 0:",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+  "class .*\\bProtocol\\):",
+  "@(abc\\.)?abstractmethod",
+  "plt.show()",
+  "plt.savefig(.*)",
+]
 
 [tool.ruff]
-exclude =[
+exclude = [
   "docs/snippets/tutorial/season_seismogram_short.py",
-  "src/pysmo/lib/io/_sacio/_sacio_rendered.py"
+  "src/pysmo/lib/io/_sacio/_sacio_rendered.py",
 ]
 
 [tool.ruff.lint]

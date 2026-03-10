@@ -50,7 +50,7 @@ class McccResult:
     cc_means: list[float]
     """Per-seismogram mean cross-correlation coefficient (waveform quality)."""
 
-    cc_errs: list[float]
+    cc_stds: list[float]
     """Per-seismogram standard deviation of cross-correlation coefficients (waveform consistency)."""
 
 

@@ -31,7 +31,7 @@ from ._iccs import ICCS
 __all__ = [
     "plot_matrix_image",
     "plot_stack",
-    "update_min_ccnorm",
+    "update_min_cc",
     "update_pick",
     "update_timewindow",
     "draw_common_stack",
@@ -89,7 +89,7 @@ def _add_save_cancel_buttons(
 
 
 class _ScrollIndexTracker:
-    """Helper class to track scrolling for the min_ccnorm picker."""
+    """Helper class to track scrolling for the min_cc picker."""
 
     def __init__(self, ax: Axes, fig: Figure) -> None:
         self.scroll_index = ax.get_ylim()[1]
@@ -156,11 +156,11 @@ def draw_common_stack(
     time = np.linspace(tmin, tmax, len(stack.data))
 
     mask = _make_mask(iccs, all_seismograms)
-    ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
+    ccs = np.abs(np.compress(mask, iccs.ccs))
     seismogram_data = [s.data for s, m in zip(seismograms, mask) if m]
 
-    norm = PowerNorm(vmin=np.min(ccnorms), vmax=np.max(ccnorms), gamma=2)
-    colors = IccsDefaults.stack_cmap(norm(ccnorms))
+    norm = PowerNorm(vmin=np.min(ccs), vmax=np.max(ccs), gamma=2)
+    colors = IccsDefaults.stack_cmap(norm(ccs))
 
     for data, color in zip(seismogram_data, colors):
         ax.plot(time, data, linewidth=0.4, color=color)
@@ -205,12 +205,12 @@ def draw_common_matrix_image(
 
     seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
     mask = _make_mask(iccs, all_seismograms)
-    ccnorms = np.abs(np.compress(mask, iccs.ccnorms))
+    ccs = np.abs(np.compress(mask, iccs.ccs))
     seismogram_matrix = np.array(
         [s.data for s, selected in zip(seismograms, mask) if selected]
     )
 
-    seismogram_matrix = seismogram_matrix[np.argsort(ccnorms)[::-1]]
+    seismogram_matrix = seismogram_matrix[np.argsort(ccs)[::-1]]
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
@@ -304,8 +304,21 @@ def plot_stack(
         >>>
         ```
 
-        ![View the stack with context](../../../images/tools/iccs/iccs_view_stack_context.png#only-light){ loading=lazy }
-        ![View the stack with context](../../../images/iccs/iccs_view_stack_context-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> import matplotlib.pyplot as plt
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_context_stack.png", transparent=True)
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs)
+        ...     fig.savefig(savedir / "iccs_context_stack-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![View the context stack](../../../images/sybil/iccs_context_stack.png#only-light){ loading=lazy }
+        ![View the context stack](../../../images/sybil/iccs_context_stack-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `context` argument to `False`:
@@ -316,8 +329,22 @@ def plot_stack(
         >>>
         ```
 
-        ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack.png#only-light){ loading=lazy }
-        ![View the stack with taper](../../../images/tools/iccs/iccs_view_stack-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_cc_stack.png", transparent=True)
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_stack(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_cc_stack-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![View the cc stack](../../../images/sybil/iccs_cc_stack.png#only-light){ loading=lazy }
+        ![View the cc stack](../../../images/sybil/iccs_cc_stack-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
     draw_common_stack(ax, iccs, context, all_seismograms)
@@ -383,10 +410,22 @@ def plot_matrix_image(
         >>>
         ```
 
-        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context.png#only-light){ loading=lazy }
-        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms_context-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_context_image.png", transparent=True)
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_matrix_image(iccs)
+        ...     fig.savefig(savedir / "iccs_context_image-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
 
-        To view the seismograms exactly as they are used in the
+        ![Matrix image of context seismograms](../../../images/sybil/iccs_context_image.png#only-light){ loading=lazy }
+        ![Matrix image of context seismograms](../../../images/sybil/iccs_context_image-dark.png#only-dark){ loading=lazy }
+
+        To view the matrix image composed of seismograms as used in the
         cross-correlations, set the `context` argument to `False`:
 
         ```python
@@ -395,8 +434,22 @@ def plot_matrix_image(
         >>>
         ```
 
-        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms.png#only-light){ loading=lazy }
-        ![View the seismograms with context](../../../images/tools/iccs/iccs_plot_seismograms-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_cc_image.png", transparent=True)
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax = plot_matrix_image(iccs, context=False)
+        ...     fig.savefig(savedir / "iccs_cc_image-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image.png#only-light){ loading=lazy }
+        ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
     draw_common_matrix_image(ax, iccs, context, all_seismograms)
@@ -467,8 +520,22 @@ def update_pick(
         >>>
         ```
 
-        ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick.png#only-light){ loading=lazy }
-        ![Picking a new T1](../../../images/tools/iccs/iccs_update_pick-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_update_pick.png", transparent=True)
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax, widgets = update_pick(iccs)
+        ...     fig.savefig(savedir / "iccs_update_pick-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![Picking a new T1](../../../images/sybil/iccs_update_pick.png#only-light){ loading=lazy }
+        ![Picking a new T1](../../../images/sybil/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_matrix_image:
@@ -599,8 +666,22 @@ def update_timewindow(
         >>>
         ```
 
-        ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow.png#only-light){ loading=lazy }
-        ![Picking a new time window](../../../images/tools/iccs/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_update_timewindow.png", transparent=True)
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax, widgets = update_timewindow(iccs)
+        ...     fig.savefig(savedir / "iccs_update_timewindow-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![Picking a new time window](../../../images/sybil/iccs_update_timewindow.png#only-light){ loading=lazy }
+        ![Picking a new time window](../../../images/sybil/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     if use_matrix_image:
@@ -666,7 +747,7 @@ def update_timewindow(
 
 
 @overload
-def update_min_ccnorm(
+def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
@@ -677,7 +758,7 @@ def update_min_ccnorm(
 
 
 @overload
-def update_min_ccnorm(
+def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
@@ -686,7 +767,7 @@ def update_min_ccnorm(
 ) -> None: ...
 
 
-def update_min_ccnorm(
+def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
@@ -699,10 +780,10 @@ def update_min_ccnorm(
     ]
     | None
 ):
-    """Interactively pick a new [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm].
+    """Interactively pick a new [`min_cc`][pysmo.tools.iccs.ICCS.min_cc].
 
     This function launches an interactive figure to manually pick a new
-    [`min_ccnorm`][pysmo.tools.iccs.ICCS.min_ccnorm], which is used when
+    [`min_cc`][pysmo.tools.iccs.ICCS.min_cc], which is used when
     [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm with
     `autoselect` set to `True`.
 
@@ -722,32 +803,46 @@ def update_min_ccnorm(
 
     Examples:
         ```python
-        >>> from pysmo.tools.iccs import ICCS, update_min_ccnorm
+        >>> from pysmo.tools.iccs import ICCS, update_min_cc
         >>> iccs = ICCS(iccs_seismograms)
         >>> _ = iccs()
-        >>> fig, ax, widgets = update_min_ccnorm(iccs)
+        >>> fig, ax, widgets = update_min_cc(iccs)
         >>> # fig.show() # or integrate into your own application
         >>>
         ```
 
-        ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm.png#only-light){ loading=lazy }
-        ![Picking a new time window in stack](../../../images/tools/iccs/iccs_update_min_ccnorm-dark.png#only-dark){ loading=lazy }
+        <!-- invisible-code-block: python
+        ```
+        >>> if savedir:
+        ...     fig.savefig(savedir / "iccs_update_min_cc.png", transparent=True)
+        ...     import matplotlib.pyplot as plt
+        ...     plt.close("all")
+        ...     plt.style.use("dark_background")
+        ...     fig, ax, widgets = update_min_cc(iccs)
+        ...     fig.savefig(savedir / "iccs_update_min_cc-dark.png", transparent=True)
+        ...     plt.style.use("default")
+        >>>
+        ```
+        -->
+
+        ![Picking a new min_cc in matrix image](../../../images/sybil/iccs_update_min_cc.png#only-light){ loading=lazy }
+        ![Picking a new min_cc in matrix image](../../../images/sybil/iccs_update_min_cc-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     matrix = draw_common_matrix_image(ax, iccs, context, all_seismograms)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
 
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
-    pending_val = [iccs.min_ccnorm]
+    pending_val = [iccs.min_cc]
 
     def handle_valid_pick(new_val: float) -> None:
         pending_val[0] = new_val
-        ax.set_title(f"Click save to set min_ccnorm to {new_val:.4f}")
+        ax.set_title(f"Click save to set min_cc to {new_val:.4f}")
 
-    current_ccnorms = sorted(
-        i for i, s in zip(iccs.ccnorms, iccs.seismograms) if s.select or all_seismograms
+    current_ccs = sorted(
+        i for i, s in zip(iccs.ccs, iccs.seismograms) if s.select or all_seismograms
     )
-    start_index = int(np.searchsorted(current_ccnorms, iccs.min_ccnorm))
+    start_index = int(np.searchsorted(current_ccs, iccs.min_cc))
     max_index = len(matrix) - 1
 
     pick_line = ax.axhline(start_index, color="g", linewidth=2)
@@ -756,11 +851,11 @@ def update_min_ccnorm(
     def snap_ydata(ydata: float) -> int:
         return max(0, round(min(ydata, max_index)))
 
-    def calc_ccnorm(line: Line2D) -> float:
+    def calc_cc(line: Line2D) -> float:
         index = round(line.get_ydata()[0], 0)  # type: ignore
         if index == 0:
-            return IccsDefaults.index_zero_multiplier * current_ccnorms[0]
-        return float(np.mean(current_ccnorms[index - 1 : index + 1]))
+            return IccsDefaults.index_zero_multiplier * current_ccs[0]
+        return float(np.mean(current_ccs[index - 1 : index + 1]))
 
     def onclick(event: Event) -> None:
         if not isinstance(event, MouseEvent):
@@ -769,7 +864,7 @@ def update_min_ccnorm(
             ydata = snap_ydata(event.ydata)
             pick_line.set_ydata((ydata, ydata))
             pick_line.set_visible(True)
-            handle_valid_pick(calc_ccnorm(pick_line))
+            handle_valid_pick(calc_cc(pick_line))
             if ax.figure:
                 ax.figure.canvas.draw_idle()
 
@@ -796,7 +891,7 @@ def update_min_ccnorm(
         tracker = _ScrollIndexTracker(ax, Figure())
 
     def on_save(_: Event) -> None:
-        iccs.min_ccnorm = pending_val[0]
+        iccs.min_cc = pending_val[0]
         if not return_fig:
             plt.close(fig)
 

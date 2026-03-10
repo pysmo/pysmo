@@ -20,6 +20,3 @@ junit.xml
 site/
 .envrc
 /baseline/
-.claude/settings.local.json
-CLAUDE.md
-GEMINI.md

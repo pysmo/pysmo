@@ -49,7 +49,7 @@ class TestICCSBase:
         assert isinstance(results.errors[0], pd.Timedelta)
         assert isinstance(results.rmse, pd.Timedelta)
         assert isinstance(results.cc_means, list)
-        assert isinstance(results.cc_errs, list)
+        assert isinstance(results.cc_stds, list)
         fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
@@ -303,8 +303,8 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs.bandpass_apply is True
         self.iccs.bandpass_fmin = "1.0"  # type: ignore
         assert self.iccs.bandpass_fmin == 1.0
-        self.iccs.min_ccnorm = "0.5"  # type: ignore
-        assert self.iccs.min_ccnorm == 0.5
+        self.iccs.min_cc = "0.5"  # type: ignore
+        assert self.iccs.min_cc == 0.5
 
         with pytest.raises(ValueError):
             self.iccs.bandpass_fmin = "abc"  # type: ignore
@@ -312,7 +312,7 @@ class TestICCSParameters(TestICCSBase):
         # Test cache clearing
         self.iccs.cc_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
-        self.iccs.min_ccnorm = 0.4
+        self.iccs.min_cc = 0.4
         assert self.iccs._cc_seismograms_cache is None
 
         self.iccs.bandpass_apply = False
@@ -344,3 +344,18 @@ class TestICCSParameters(TestICCSBase):
             match=re.escape("'delta' must be > 0 days 00:00:00: -1 days +23:59:59"),
         ):
             seis.delta = pd.Timedelta(seconds=-1)
+
+    def test_run_mccc_abs_max(self) -> None:
+        """Test run_mccc with abs_max=True."""
+        # Flip only one seismogram
+        self.iccs.seismograms[0].data *= -1
+        self.iccs.clear_cache()
+
+        # Without abs_max=True, it should have lower absolute CC
+        result_no_abs = self.iccs.run_mccc(abs_max=False)
+
+        # With abs_max=True, it should have higher absolute CC
+        result = self.iccs.run_mccc(abs_max=True)
+        assert np.mean(np.abs(result.cc_means)) > np.mean(
+            np.abs(result_no_abs.cc_means)
+        )

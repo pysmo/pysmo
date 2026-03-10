@@ -138,9 +138,9 @@ def test_multi_delay_empty_list() -> None:
     returning empty arrays for both delays and correlation coefficients.
     """
     template = MiniSeismogram(data=np.array([1.0, 2.0, 3.0, 2.0, 1.0]))
-    delays, coeffs = multi_delay(template, [])
+    delays, ccs = multi_delay(template, [])
     assert len(delays) == 0
-    assert len(coeffs) == 0
+    assert len(ccs) == 0
 
 
 def test_multi_delay_single_identical() -> None:
@@ -153,9 +153,9 @@ def test_multi_delay_single_identical() -> None:
     data = np.sin(np.linspace(0, 4 * np.pi, 500))
     template = MiniSeismogram(data=data.copy())
     seis = MiniSeismogram(data=data.copy())
-    delays, coeffs = multi_delay(template, [seis])
+    delays, ccs = multi_delay(template, [seis])
     assert delays[0].total_seconds() == pytest.approx(0, abs=1e-6)
-    assert coeffs[0] == pytest.approx(1, abs=0.05)
+    assert ccs[0] == pytest.approx(1, abs=0.05)
 
 
 def test_multi_delay_known_shift() -> None:
@@ -169,10 +169,10 @@ def test_multi_delay_known_shift() -> None:
     template = MiniSeismogram(data=data.copy())
     nroll = 10
     seis = MiniSeismogram(data=np.roll(data, nroll))
-    delays, coeffs = multi_delay(template, [seis])
+    delays, ccs = multi_delay(template, [seis])
     expected_delay = nroll * template.delta
     assert delays[0] == expected_delay
-    assert coeffs[0] == pytest.approx(1, abs=0.05)
+    assert ccs[0] == pytest.approx(1, abs=0.05)
 
 
 def test_multi_delay_multiple_seismograms() -> None:
@@ -188,14 +188,14 @@ def test_multi_delay_multiple_seismograms() -> None:
     shifts = [0, 5, -8, 15]
     seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
 
-    delays, coeffs = multi_delay(template, seismograms)
+    delays, ccs = multi_delay(template, seismograms)
 
     assert len(delays) == len(shifts)
-    assert len(coeffs) == len(shifts)
+    assert len(ccs) == len(shifts)
     for i, shift in enumerate(shifts):
         expected_delay = shift * template.delta
         assert delays[i] == expected_delay
-        assert coeffs[i] == pytest.approx(1, abs=0.05)
+        assert ccs[i] == pytest.approx(1, abs=0.05)
 
 
 def test_multi_delay_abs_max() -> None:
@@ -209,10 +209,10 @@ def test_multi_delay_abs_max() -> None:
     template = MiniSeismogram(data=data.copy())
     nroll = 12
     seis = MiniSeismogram(data=-np.roll(data, nroll))
-    delays, coeffs = multi_delay(template, [seis], abs_max=True)
+    delays, ccs = multi_delay(template, [seis], abs_max=True)
     expected_delay = nroll * template.delta
     assert delays[0] == expected_delay
-    assert coeffs[0] < 0
+    assert ccs[0] < 0
 
 
 def test_multi_delay_different_delta_raises() -> None:
@@ -241,13 +241,13 @@ def test_multi_delay_different_lengths() -> None:
     seis_short = MiniSeismogram(data=data[:800].copy())
     seis_long = MiniSeismogram(data=data.copy())
 
-    delays, coeffs = multi_delay(template, [seis_short, seis_long])
+    delays, ccs = multi_delay(template, [seis_short, seis_long])
 
     assert len(delays) == 2
-    assert len(coeffs) == 2
+    assert len(ccs) == 2
     # The identical-length copy should have zero delay
     assert delays[1].total_seconds() == pytest.approx(0, abs=1e-6)
-    assert coeffs[1] == pytest.approx(1, abs=0.05)
+    assert ccs[1] == pytest.approx(1, abs=0.05)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -270,12 +270,12 @@ def test_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
         seis.data = np.roll(template.data, shift)
         seismograms.append(seis)
 
-    delays, coeffs = multi_delay(template, seismograms)
+    delays, ccs = multi_delay(template, seismograms)
 
     for i, shift in enumerate(shifts):
         expected_delay = shift * template.delta
         assert delays[i] == expected_delay
-        assert coeffs[i] == pytest.approx(1, abs=0.05)
+        assert ccs[i] == pytest.approx(1, abs=0.05)
 
 
 # --- multi_multi_delay tests ---
@@ -288,9 +288,9 @@ def test_multi_multi_delay_empty_list() -> None:
     Verifies that the function returns empty 0x0 matrices when no seismograms
     are provided.
     """
-    delays, coeffs = multi_multi_delay([])
+    delays, ccs = multi_multi_delay([], abs_max=False)
     assert delays.shape == (0, 0)
-    assert coeffs.shape == (0, 0)
+    assert ccs.shape == (0, 0)
 
 
 def test_multi_multi_delay_single_seismogram() -> None:
@@ -301,9 +301,9 @@ def test_multi_multi_delay_single_seismogram() -> None:
     provided, as there are no pairs to compare.
     """
     seis = MiniSeismogram(data=np.sin(np.linspace(0, 4 * np.pi, 500)))
-    delays, coeffs = multi_multi_delay([seis])
+    delays, ccs = multi_multi_delay([seis], abs_max=False)
     assert delays.shape == (1, 1)
-    assert coeffs.shape == (1, 1)
+    assert ccs.shape == (1, 1)
 
 
 def test_multi_multi_delay_diagonal_zero() -> None:
@@ -318,10 +318,10 @@ def test_multi_multi_delay_diagonal_zero() -> None:
         MiniSeismogram(data=data.copy()),
         MiniSeismogram(data=np.roll(data, 10)),
     ]
-    delays, coeffs = multi_multi_delay(seismograms)
+    delays, ccs = multi_multi_delay(seismograms, abs_max=False)
     for i in range(len(seismograms)):
         assert delays[i, i] == pytest.approx(0, abs=1e-6)
-        assert coeffs[i, i] == pytest.approx(1, abs=0.05)
+        assert ccs[i, i] == pytest.approx(1, abs=0.05)
 
 
 def test_multi_multi_delay_known_shifts() -> None:
@@ -335,17 +335,17 @@ def test_multi_multi_delay_known_shifts() -> None:
     shifts = [0, 5, -10]
     seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
 
-    delays, coeffs = multi_multi_delay(seismograms)
+    delays, ccs = multi_multi_delay(seismograms, abs_max=False)
 
     n = len(shifts)
     assert delays.shape == (n, n)
-    assert coeffs.shape == (n, n)
+    assert ccs.shape == (n, n)
     delta = seismograms[0].delta
     for i in range(n):
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * delta
             assert delays[i, j] == expected_delay
-            assert coeffs[i, j] == pytest.approx(1, abs=0.05)
+            assert ccs[i, j] == pytest.approx(1, abs=0.05)
 
 
 def test_multi_multi_delay_antisymmetric() -> None:
@@ -359,7 +359,7 @@ def test_multi_multi_delay_antisymmetric() -> None:
     shifts = [0, 7, -4, 15]
     seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
 
-    delays, _ = multi_multi_delay(seismograms)
+    delays, _ = multi_multi_delay(seismograms, abs_max=False)
 
     n = len(shifts)
     for i in range(n):
@@ -380,10 +380,10 @@ def test_multi_multi_delay_abs_max() -> None:
         MiniSeismogram(data=data.copy()),
         MiniSeismogram(data=-np.roll(data, nroll)),
     ]
-    delays, coeffs = multi_multi_delay(seismograms, abs_max=True)
+    delays, ccs = multi_multi_delay(seismograms, abs_max=True)
     expected_delay = nroll * seismograms[0].delta
     assert delays[0, 1] == expected_delay
-    assert coeffs[0, 1] < 0
+    assert ccs[0, 1] < 0
 
 
 def test_multi_multi_delay_different_delta_raises() -> None:
@@ -397,7 +397,7 @@ def test_multi_multi_delay_different_delta_raises() -> None:
     seis2 = MiniSeismogram(data=np.array([1.0, 2.0, 3.0]))
     seis2.delta = seis1.delta * 2
     with pytest.raises(ValueError):
-        multi_multi_delay([seis1, seis2])
+        multi_multi_delay([seis1, seis2], abs_max=False)
 
 
 def test_multi_multi_delay_consistent_with_multi_delay() -> None:
@@ -412,13 +412,13 @@ def test_multi_multi_delay_consistent_with_multi_delay() -> None:
     shifts = [0, 7, -4, 15]
     seismograms = [MiniSeismogram(data=np.roll(data, s)) for s in shifts]
 
-    delays_2d, coeffs_2d = multi_multi_delay(seismograms)
+    delays_2d, ccs_2d = multi_multi_delay(seismograms, abs_max=False)
 
     for i in range(len(seismograms)):
-        delays_1d, coeffs_1d = multi_delay(seismograms[i], seismograms)
+        delays_1d, ccs_1d = multi_delay(seismograms[i], seismograms)
         for j in range(len(seismograms)):
             assert delays_2d[i, j] == delays_1d[j]
-            assert coeffs_2d[i, j] == pytest.approx(coeffs_1d[j], abs=0.05)
+            assert ccs_2d[i, j] == pytest.approx(ccs_1d[j], abs=0.05)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
@@ -440,7 +440,7 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
         s.data = np.roll(base.data, shift)
         seismograms.append(s)
 
-    delays, coeffs = multi_multi_delay(seismograms)
+    delays, ccs = multi_multi_delay(seismograms, abs_max=False)
 
     n = len(shifts)
     assert delays.shape == (n, n)
@@ -448,7 +448,7 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
         for j in range(n):
             expected_delay = (shifts[j] - shifts[i]) * base.delta
             assert delays[i, j] == expected_delay
-            assert coeffs[i, j] == pytest.approx(1, abs=0.05)
+            assert ccs[i, j] == pytest.approx(1, abs=0.05)
 
 
 # --- mccc tests ---
@@ -462,13 +462,13 @@ def test_mccc_single_seismogram() -> None:
     RMSE for a single input, as there are no other signals to compare against.
     """
     seis = MiniSeismogram(data=np.sin(np.linspace(0, 4 * np.pi, 500)))
-    times, errors, rmse, cc_means, cc_errs = mccc([seis])
+    times, errors, rmse, cc_means, cc_stds = mccc([seis])
     assert len(times) == 1
     assert times[0].total_seconds() == 0
     assert errors[0].total_seconds() == 0
     assert rmse.total_seconds() == 0
     assert cc_means == [1.0]
-    assert cc_errs == [0.0]
+    assert cc_stds == [0.0]
 
 
 def test_mccc_empty_list() -> None:
@@ -478,12 +478,12 @@ def test_mccc_empty_list() -> None:
     Verifies that the function handles empty input gracefully by returning
     empty lists and zero RMSE.
     """
-    times, errors, rmse, cc_means, cc_errs = mccc([])
+    times, errors, rmse, cc_means, cc_stds = mccc([])
     assert len(times) == 0
     assert len(errors) == 0
     assert rmse.total_seconds() == 0
     assert len(cc_means) == 0
-    assert len(cc_errs) == 0
+    assert len(cc_stds) == 0
 
 
 def test_mccc_known_shifts() -> None:
@@ -539,13 +539,13 @@ def test_mccc_two_identical() -> None:
         MiniSeismogram(data=data.copy()),
     ]
 
-    times, errors, rmse, cc_means, cc_errs = mccc(seismograms)
+    times, errors, rmse, cc_means, cc_stds = mccc(seismograms)
 
     assert times[0].total_seconds() == pytest.approx(0, abs=1e-6)
     assert times[1].total_seconds() == pytest.approx(0, abs=1e-6)
     assert rmse.total_seconds() == pytest.approx(0, abs=1e-6)
     assert cc_means == pytest.approx([1.0, 1.0], abs=0.05)
-    assert cc_errs == pytest.approx([0.0, 0.0], abs=1e-6)
+    assert cc_stds == pytest.approx([0.0, 0.0], abs=1e-6)
 
 
 def test_mccc_min_cc_filters_pairs() -> None:
@@ -587,11 +587,52 @@ def test_mccc_errors_are_nonnegative() -> None:
         assert e.total_seconds() >= 0
 
 
+def test_mccc_abs_max() -> None:
+    """
+    Test `mccc` with polarity-flipped signals using `abs_max=True`.
+
+    Verifies that the relative arrival times are correctly recovered even when
+    one of the seismograms has inverted polarity, provided `abs_max=True` is
+    passed to `mccc`.
+    """
+    # Use a simple pulse
+    data = np.zeros(1000)
+    data[495:505] = 1.0
+    shifts = [0, 50, -30]
+    # Flip the second seismogram
+    seismograms = [
+        MiniSeismogram(data=np.roll(data, shifts[0])),
+        MiniSeismogram(data=-np.roll(data, shifts[1])),
+        MiniSeismogram(data=np.roll(data, shifts[2])),
+    ]
+
+    # Without abs_max=True, CC for flipped trace should be lower because it's excluded from inversion
+    # or has very low weights if CC is near 0 elsewhere.
+    _, _, _, cc_means_no_abs, _ = mccc(seismograms, abs_max=False)
+
+    # With abs_max=True, it should have high absolute CC and recover shifts
+    times, _, _, cc_means, _ = mccc(seismograms, abs_max=True)
+
+    # Verify that Trace 1 (the flipped one) has high negative correlation
+    assert cc_means[1] < -0.9
+    # And it should be much better than without abs_max (where it was likely ignored)
+    assert abs(cc_means[1]) > abs(cc_means_no_abs[1])
+
+    delta = seismograms[0].delta
+    # If trace i is rolled by shifts[i], it arrives at shifts[i]*delta.
+    # Relative time differences should match.
+    for i in [0, 1, 2]:
+        for j in [0, 1, 2]:
+            expected_seconds = (shifts[i] - shifts[j]) * delta.total_seconds()
+            actual_seconds = (times[i] - times[j]).total_seconds()
+            assert actual_seconds == pytest.approx(expected_seconds, abs=0.5)
+
+
 def test_mccc_statistics() -> None:
     """
     Test the correlation statistics returned by `mccc`.
 
-    Verifies that `cc_means` and `cc_errs` correctly reflect the signal
+    Verifies that `cc_means` and `cc_stds` correctly reflect the signal
     quality and coherence within the array.
     """
     data = np.sin(np.linspace(0, 8 * np.pi, 1000))
@@ -603,7 +644,7 @@ def test_mccc_statistics() -> None:
         MiniSeismogram(data=rng.normal(0, 1, len(data))),
     ]
 
-    _times, _errors, _rmse, cc_means, cc_errs = mccc(seismograms)
+    _times, _errors, _rmse, cc_means, cc_stds = mccc(seismograms)
 
     # Station 1 and 2 should have mean CC ~0.5 (1.0 with each other, ~0 with station 3)
     # Station 3 should have mean CC ~0 (correlated with nothing)
@@ -614,8 +655,8 @@ def test_mccc_statistics() -> None:
     # Standard deviation of CCs:
     # Station 1: [1.0, 0.0] -> mean 0.5, std 0.5
     # Station 3: [0.0, 0.0] -> mean 0.0, std 0.0
-    assert cc_errs[0] == pytest.approx(0.5, abs=0.1)
-    assert cc_errs[2] == pytest.approx(0.0, abs=0.1)
+    assert cc_stds[0] == pytest.approx(0.5, abs=0.1)
+    assert cc_stds[2] == pytest.approx(0.0, abs=0.1)
 
 
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
