@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 import matplotlib as mpl
-import numpy as np
 import pandas as pd
 from matplotlib.colors import Colormap
 
@@ -19,7 +18,7 @@ class _IccsDefaults:
     window_post: pd.Timedelta = pd.Timedelta(seconds=15)
     context_width: pd.Timedelta = pd.Timedelta(seconds=20)
     ramp_width: pd.Timedelta | float = 0.1
-    min_ccnorm: np.floating | float = 0.5
+    min_cc: float = 0.5
     bandpass_apply: bool = False
     bandpass_fmin: float = 0.05
     bandpass_fmax: float = 2

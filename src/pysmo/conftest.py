@@ -1,9 +1,6 @@
 import os
-import platform
 import random as rd
-import tempfile
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
-from getpass import getuser
 from pathlib import Path
 from shutil import copyfile, copytree
 from typing import Any, Generator
@@ -20,16 +17,13 @@ from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
 from pysmo.tools.iccs import MiniIccsSeismogram
 
+DOCS_IMAGE_DIR = Path(__file__).parent.parent.parent / "docs/images/sybil"
 
-@pytest.fixture()
+
+@pytest.fixture(scope="module")
 def savedir() -> Path | None:
     if os.getenv("PYSMO_SAVE_FIGS", "false").lower() == "true":
-        path = (
-            Path("/tmp" if platform.system() == "Darwin" else tempfile.gettempdir())
-            / f"pysmo_test_figs_of_{getuser()}"
-        )
-        path.mkdir(parents=True, exist_ok=True)
-        return path
+        return DOCS_IMAGE_DIR
     return None
 
 
