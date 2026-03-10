@@ -17,6 +17,6 @@
         - "^__"
         - "!^plot_matrix_image$"
         - "!^plot_stack$"
-        - "!^update_min_ccnorm$"
+        - "!^update_min_cc$"
         - "!^update_pick$"
         - "!^update_timewindow$"
