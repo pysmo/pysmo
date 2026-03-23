@@ -798,8 +798,7 @@ def test_update_bandpass_matrix_image_returns_types(iccs_instance: ICCS) -> None
     """update_bandpass with use_matrix_image=True returns correct types."""
     iccs_instance()
     result = update_bandpass(iccs_instance, use_matrix_image=True, return_fig=True)
-    fig, ax, widgets = result
-    check, slider_fmin, slider_fmax, b_save, b_cancel = widgets
+    fig, ax, _ = result
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
     plt.close(fig)
