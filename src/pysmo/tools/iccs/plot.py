@@ -1049,7 +1049,7 @@ def update_bandpass(
         magnitude = 10 ** (sig_figs - 1 - int(np.floor(np.log10(f))))
         return round(f * magnitude) / magnitude
 
-    nyquist = 0.5 / iccs._min_delta.total_seconds()
+    nyquist = 0.5 / iccs.max_delta.total_seconds()
     _freq_eps = nyquist * 1e-4  # open-bound approximation matching bandpass constraints
     _log_min = np.log(_freq_eps)
     # Use a slightly tighter upper bound near Nyquist to keep inter-slider

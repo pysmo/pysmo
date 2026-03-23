@@ -84,7 +84,7 @@ def _validate_window_pre(
 ) -> None:
     """Ensure window_pre fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, value, instance.window_post)
-    if not (value >= instance._max_td_pre + ramp):
+    if not (value >= instance.max_td_pre + ramp):
         raise ValueError("window_pre is too low for one or more seismograms.")
 
 
@@ -93,8 +93,44 @@ def _validate_window_post(
 ) -> None:
     """Ensure window_post fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, instance.window_pre, value)
-    if not (value <= instance._min_td_post - ramp):
+    if not (value <= instance.min_td_post - ramp):
         raise ValueError("window_post is too high for one or more seismograms.")
+
+
+def _validate_bandpass_fmin(
+    instance: "ICCS", attribute: Attribute, value: float
+) -> None:
+    """Ensure bandpass_fmin is positive and below bandpass_fmax."""
+    if value <= 0:
+        raise ValueError("bandpass_fmin must be positive.")
+    if value >= instance.bandpass_fmax:
+        raise ValueError("bandpass_fmin must be less than bandpass_fmax.")
+
+
+def _validate_bandpass_fmax(
+    instance: "ICCS", attribute: Attribute, value: float
+) -> None:
+    """Ensure bandpass_fmax is above bandpass_fmin and below the Nyquist frequency."""
+    if value <= instance.bandpass_fmin:
+        raise ValueError("bandpass_fmax must be greater than bandpass_fmin.")
+    if instance.bandpass_apply and instance.seismograms:
+        nyquist = 0.5 / instance.max_delta.total_seconds()
+        if value >= nyquist:
+            raise ValueError(
+                f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
+            )
+
+
+def _validate_bandpass_apply(
+    instance: "ICCS", attribute: Attribute, value: bool
+) -> None:
+    """Ensure Nyquist constraint is met when enabling the bandpass filter."""
+    if value and instance.seismograms:
+        nyquist = 0.5 / instance.max_delta.total_seconds()
+        if instance.bandpass_fmax >= nyquist:
+            raise ValueError(
+                f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
+            )
 
 
 def _validate_ramp_width(
@@ -106,8 +142,8 @@ def _validate_ramp_width(
     if ramp < pd.Timedelta(0):
         raise ValueError("ramp_width must be non-negative.")
     if not (
-        ramp <= instance.window_pre - instance._max_td_pre
-        and ramp <= instance._min_td_post - instance.window_post
+        ramp <= instance.window_pre - instance.max_td_pre
+        and ramp <= instance.min_td_post - instance.window_post
     ):
         raise ValueError("ramp_width is too high for one or more seismograms.")
 
@@ -420,7 +456,7 @@ class ICCS:
     bandpass_apply: bool = field(
         default=IccsDefaults.bandpass_apply,
         converter=bool,
-        validator=validators.instance_of(bool),
+        validator=[validators.instance_of(bool), _validate_bandpass_apply],
         on_setattr=setters.pipe(
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
@@ -440,22 +476,34 @@ class ICCS:
     bandpass_fmin: float = field(
         default=IccsDefaults.bandpass_fmin,
         converter=float,
-        validator=validators.instance_of(float),
+        validator=[validators.instance_of(float), _validate_bandpass_fmin],
         on_setattr=setters.pipe(
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
     )
-    """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
+    """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
+
+    The filter is applied to each seismogram at its original sampling rate, before
+    any resampling to a common grid. Valid frequencies are therefore bounded by the
+    Nyquist frequency of the most coarsely sampled seismogram, i.e.
+    `0.5 / max_delta.total_seconds()`.
+    """
 
     bandpass_fmax: float = field(
         default=IccsDefaults.bandpass_fmax,
         converter=float,
-        validator=validators.instance_of(float),
+        validator=[validators.instance_of(float), _validate_bandpass_fmax],
         on_setattr=setters.pipe(
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
     )
-    """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`."""
+    """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
+
+    The filter is applied to each seismogram at its original sampling rate, before
+    any resampling to a common grid. Valid frequencies are therefore bounded by the
+    Nyquist frequency of the most coarsely sampled seismogram, i.e.
+    `0.5 / max_delta.total_seconds()`.
+    """
 
     min_cc: float = field(
         default=IccsDefaults.min_cc,
@@ -526,7 +574,7 @@ class ICCS:
         self._valid_pick_range_cache = None
 
     @property
-    def _ramp_width_timedelta(self) -> pd.Timedelta:
+    def ramp_width_timedelta(self) -> pd.Timedelta:
         """Ramp width as a `pandas.Timedelta`, computed from the current window.
 
         For a float `ramp_width`, the duration is computed as a fraction of the
@@ -536,22 +584,29 @@ class ICCS:
         return _compute_ramp(self.ramp_width, self.window_pre, self.window_post)
 
     @property
-    def _min_delta(self) -> pd.Timedelta:
+    def min_delta(self) -> pd.Timedelta:
         """Minimum sampling interval across all seismograms."""
         if not self.seismograms:
             return pd.Timedelta(0)
         return min(s.delta for s in self.seismograms)
 
     @property
-    def _max_td_pre(self) -> pd.Timedelta:
+    def max_delta(self) -> pd.Timedelta:
+        """Maximum sampling interval across all seismograms."""
+        if not self.seismograms:
+            return pd.Timedelta(0)
+        return max(s.delta for s in self.seismograms)
+
+    @property
+    def max_td_pre(self) -> pd.Timedelta:
         """Maximum negative time delta between pick and seismogram begin_time.
 
         This property is used to calculate valid values for updating picks and
         attributes. Specifically:
 
-        - new_pick > old_pick + _max_td_pre - window_pre + ramp_width
-        - window_pre >= _max_td_pre + ramp_width
-        - ramp_width <= window_pre - _max_td_pre
+        - new_pick > old_pick + max_td_pre - window_pre + ramp_width
+        - window_pre >= max_td_pre + ramp_width
+        - ramp_width <= window_pre - max_td_pre
         """
         if not self.seismograms:
             return pd.Timedelta(days=-365 * 100)
@@ -564,15 +619,15 @@ class ICCS:
         return self._max_td_pre_cache
 
     @property
-    def _min_td_post(self) -> pd.Timedelta:
+    def min_td_post(self) -> pd.Timedelta:
         """Minimum positive time delta between pick and seismogram end_time.
 
         This property is used to calculate valid values for updating picks and
         attributes. Specifically:
 
-        - new_pick < old_pick + _min_td_post - window_post - ramp_width
-        - window_post <= _min_td_post - ramp_width
-        - ramp_width <= _min_td_post - window_post
+        - new_pick < old_pick + min_td_post - window_post - ramp_width
+        - window_post <= min_td_post - ramp_width
+        - ramp_width <= min_td_post - window_post
         """
         if not self.seismograms:
             return pd.Timedelta(days=365 * 100)
@@ -725,10 +780,10 @@ class ICCS:
         if window_pre >= window_post:
             return False
 
-        if window_pre > -self._min_delta:
+        if window_pre > -self.min_delta:
             return False
 
-        if window_post < self._min_delta:
+        if window_post < self.min_delta:
             return False
 
         ramp = _compute_ramp(self.ramp_width, window_pre, window_post)
@@ -932,7 +987,7 @@ def _prepare_seismograms(
 
     ephemeral_seismograms: list[_EphemeralSeismogram] = []
 
-    min_delta = instance._min_delta
+    min_delta = instance.min_delta
 
     for seismogram in instance.seismograms:
         pick = seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1
@@ -1067,5 +1122,5 @@ def _calc_valid_pick_range(instance: ICCS) -> tuple[pd.Timedelta, pd.Timedelta]:
         td_pre_values.append(s.begin_time - pick - instance.window_pre)
         td_post_values.append(s.end_time - pick - instance.window_post)
 
-    ramp = instance._ramp_width_timedelta
+    ramp = instance.ramp_width_timedelta
     return max(td_pre_values) + ramp, min(td_post_values) - ramp
