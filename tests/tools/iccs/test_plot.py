@@ -788,7 +788,7 @@ def test_update_bandpass_returns_types(iccs_instance: ICCS) -> None:
     iccs_instance()
     result = update_bandpass(iccs_instance, return_fig=True)
     fig, ax, widgets = result
-    check, slider_fmin, slider_fmax, b_save, b_cancel = widgets
+    _, _, _, _, _ = widgets
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
     plt.close(fig)
