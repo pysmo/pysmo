@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -868,28 +869,48 @@ def test_update_bandpass_save_with_apply_false(iccs_instance: ICCS) -> None:
     plt.close(fig)
 
 
-def _immediate_timer(delay: float, fn: Callable[[], None]) -> object:
-    """Test helper: replaces threading.Timer with one that fires synchronously."""
+def _make_immediate_timer(_canvas: object, interval: int = 0) -> object:
+    """Test helper: replaces canvas.new_timer with one that fires synchronously."""
 
     class _T:
-        def start(self) -> None:
-            fn()
+        def __init__(self) -> None:
+            self.single_shot = False
+            self._fn: Callable[[], None] | None = None
 
-        def cancel(self) -> None:
+        def add_callback(self, fn: Callable[[], None]) -> None:
+            self._fn = fn
+
+        def start(self) -> None:
+            if self._fn is not None:
+                self._fn()
+
+        def stop(self) -> None:
             pass
 
     return _T()
 
 
+def _immediate_timer_patch() -> AbstractContextManager[object]:
+    """Return a patch that replaces canvas.new_timer with a synchronous timer.
+
+    Discovers the actual canvas class at call time so the patch works regardless
+    of which Matplotlib backend is active (TkAgg, Agg, Qt, etc.).
+    """
+    import unittest.mock
+
+    tmp = plt.figure()
+    canvas_cls = type(tmp.canvas)
+    plt.close(tmp)
+    return unittest.mock.patch.object(canvas_cls, "new_timer", _make_immediate_timer)
+
+
 def test_update_bandpass_live_preview_stack(iccs_instance: ICCS) -> None:
     """Slider change triggers _update_stack and mutates iccs during live preview."""
-    from unittest.mock import patch
-
     iccs_instance()
     iccs_instance.bandpass_apply = True
     new_fmin = iccs_instance.bandpass_fmin + 0.05
 
-    with patch("pysmo.tools.iccs.plot.threading.Timer", _immediate_timer):
+    with _immediate_timer_patch():
         fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
             iccs_instance, return_fig=True
         )
@@ -901,13 +922,11 @@ def test_update_bandpass_live_preview_stack(iccs_instance: ICCS) -> None:
 
 def test_update_bandpass_live_preview_matrix(iccs_instance: ICCS) -> None:
     """Slider change triggers _update_matrix and mutates iccs during live preview."""
-    from unittest.mock import patch
-
     iccs_instance()
     iccs_instance.bandpass_apply = True
     new_fmin = iccs_instance.bandpass_fmin + 0.05
 
-    with patch("pysmo.tools.iccs.plot.threading.Timer", _immediate_timer):
+    with _immediate_timer_patch():
         fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
             iccs_instance, use_matrix_image=True, return_fig=True
         )
