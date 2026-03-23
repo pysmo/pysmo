@@ -5,7 +5,14 @@ import pandas as pd
 import pytest
 from matplotlib.figure import Figure
 
-from pysmo.tools.iccs import ICCS, IccsResult, IccsSeismogram, McccResult, plot_stack
+from pysmo.tools.iccs import (
+    ICCS,
+    IccsResult,
+    IccsSeismogram,
+    McccResult,
+    MiniIccsSeismogram,
+    plot_stack,
+)
 from pysmo.tools.iccs._types import ConvergenceMethod
 
 
@@ -77,9 +84,9 @@ class TestICCSEmpty:
         iccs = ICCS()
         assert iccs.seismograms == []
         # Properties should return unconstrained values
-        assert iccs._max_td_pre == pd.Timedelta(days=-365 * 100)
-        assert iccs._min_td_post == pd.Timedelta(days=365 * 100)
-        assert iccs._min_delta == pd.Timedelta(0)
+        assert iccs.max_td_pre == pd.Timedelta(days=-365 * 100)
+        assert iccs.min_td_post == pd.Timedelta(days=365 * 100)
+        assert iccs.min_delta == pd.Timedelta(0)
 
     def test_validate_empty(self) -> None:
         iccs = ICCS()
@@ -153,13 +160,12 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs.validate_time_window(min_td_post, max_td_pre) is False
         # window_pre too close to zero (must be <= -min_delta).
         assert (
-            self.iccs.validate_time_window(-self.iccs._min_delta / 2, min_td_post)
+            self.iccs.validate_time_window(-self.iccs.min_delta / 2, min_td_post)
             is False
         )
         # window_post too close to zero (must be >= min_delta).
         assert (
-            self.iccs.validate_time_window(max_td_pre, self.iccs._min_delta / 2)
-            is False
+            self.iccs.validate_time_window(max_td_pre, self.iccs.min_delta / 2) is False
         )
         # Just outside the pre-pick boundary.
         assert (
@@ -208,15 +214,15 @@ class TestICCSParameters(TestICCSBase):
         self.iccs.window_post = min_td_post
 
     def test_cached_td_properties(self) -> None:
-        """Test that _max_td_pre and _min_td_post are cached and cleared correctly."""
+        """Test that max_td_pre and min_td_post are cached and cleared correctly."""
         # First access populates caches.
-        max_td_pre = self.iccs._max_td_pre
-        min_td_post = self.iccs._min_td_post
+        max_td_pre = self.iccs.max_td_pre
+        min_td_post = self.iccs.min_td_post
         assert self.iccs._max_td_pre_cache is not None
         assert self.iccs._min_td_post_cache is not None
         # Second access returns the same cached value.
-        assert self.iccs._max_td_pre == max_td_pre
-        assert self.iccs._min_td_post == min_td_post
+        assert self.iccs.max_td_pre == max_td_pre
+        assert self.iccs.min_td_post == min_td_post
         # Clearing caches resets them.
         self.iccs.clear_cache()
         assert self.iccs._max_td_pre_cache is None
@@ -309,6 +315,31 @@ class TestICCSParameters(TestICCSBase):
         with pytest.raises(ValueError):
             self.iccs.bandpass_fmin = "abc"  # type: ignore
 
+        # bandpass_fmin must be positive
+        with pytest.raises(ValueError, match="bandpass_fmin must be positive"):
+            self.iccs.bandpass_fmin = 0.0
+        with pytest.raises(ValueError, match="bandpass_fmin must be positive"):
+            self.iccs.bandpass_fmin = -1.0
+
+        # bandpass_fmin must be less than bandpass_fmax
+        with pytest.raises(
+            ValueError, match="bandpass_fmin must be less than bandpass_fmax"
+        ):
+            self.iccs.bandpass_fmin = self.iccs.bandpass_fmax
+
+        # bandpass_fmax must be greater than bandpass_fmin
+        with pytest.raises(
+            ValueError, match="bandpass_fmax must be greater than bandpass_fmin"
+        ):
+            self.iccs.bandpass_fmax = self.iccs.bandpass_fmin
+
+        # bandpass_fmax must be below Nyquist
+        nyquist = 0.5 / self.iccs.max_delta.total_seconds()
+        with pytest.raises(
+            ValueError, match="bandpass_fmax must be below the Nyquist frequency"
+        ):
+            self.iccs.bandpass_fmax = nyquist
+
         # Test cache clearing
         self.iccs.cc_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
@@ -359,3 +390,55 @@ class TestICCSParameters(TestICCSBase):
         assert np.mean(np.abs(result.cc_means)) > np.mean(
             np.abs(result_no_abs.cc_means)
         )
+
+
+class TestICCSNyquistGating:
+    """Test that the Nyquist constraint on bandpass_fmax is gated by bandpass_apply."""
+
+    def _make_coarse_seismogram(self) -> MiniIccsSeismogram:
+
+        # delta = 1 s → Nyquist = 0.5 Hz, which is below the default bandpass_fmax = 2 Hz
+        seis = MiniIccsSeismogram(
+            begin_time=pd.Timestamp("2000-01-01", tz="UTC"),
+            delta=pd.Timedelta(seconds=1),
+            data=np.zeros(100),
+            t0=pd.Timestamp("2000-01-01T00:00:30", tz="UTC"),
+        )
+        return seis
+
+    def test_construction_succeeds_when_bandpass_apply_false(self) -> None:
+        """ICCS(seismograms) must not raise even if default bandpass_fmax exceeds Nyquist."""
+        seismograms = [self._make_coarse_seismogram() for _ in range(3)]
+        iccs = ICCS(seismograms)
+        assert not iccs.bandpass_apply
+
+    def test_enabling_bandpass_apply_raises_if_fmax_exceeds_nyquist(self) -> None:
+        """Switching bandpass_apply to True must raise when bandpass_fmax >= Nyquist."""
+        seismograms = [self._make_coarse_seismogram() for _ in range(3)]
+        iccs = ICCS(seismograms)
+        with pytest.raises(
+            ValueError, match="bandpass_fmax must be below the Nyquist frequency"
+        ):
+            iccs.bandpass_apply = True
+
+    def test_setting_fmax_above_nyquist_allowed_when_bandpass_apply_false(
+        self,
+    ) -> None:
+        """Setting bandpass_fmax above Nyquist is allowed while bandpass_apply is False."""
+        seismograms = [self._make_coarse_seismogram() for _ in range(3)]
+        iccs = ICCS(seismograms)
+        nyquist = 0.5 / iccs.max_delta.total_seconds()
+        iccs.bandpass_fmax = nyquist + 0.1  # should not raise
+
+    def test_setting_fmax_at_nyquist_raises_when_bandpass_apply_true(self) -> None:
+        """Setting bandpass_fmax >= Nyquist raises when bandpass_apply is True."""
+        seismograms = [self._make_coarse_seismogram() for _ in range(3)]
+        iccs = ICCS(seismograms)
+        nyquist = 0.5 / iccs.max_delta.total_seconds()
+        # First lower fmax to something valid, then enable bandpass_apply
+        iccs.bandpass_fmax = nyquist * 0.5
+        iccs.bandpass_apply = True  # now valid — should not raise
+        with pytest.raises(
+            ValueError, match="bandpass_fmax must be below the Nyquist frequency"
+        ):
+            iccs.bandpass_fmax = nyquist
