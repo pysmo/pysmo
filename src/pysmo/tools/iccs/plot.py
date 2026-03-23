@@ -12,6 +12,7 @@ workflows.
 """
 
 import threading
+from collections import OrderedDict
 from collections.abc import Callable
 from typing import Literal, overload
 
@@ -1040,6 +1041,15 @@ def update_bandpass(
     _orig_fmin = iccs.bandpass_fmin
     _orig_fmax = iccs.bandpass_fmax
 
+    _BANDPASS_CACHE_SIZE = 8
+
+    def _quantise_freq(f: float, sig_figs: int = 4) -> float:
+        """Round *f* to *sig_figs* significant figures for use as a cache key."""
+        if f <= 0:
+            return f
+        magnitude = 10 ** (sig_figs - 1 - int(np.floor(np.log10(f))))
+        return round(f * magnitude) / magnitude
+
     nyquist = 0.5 / iccs._min_delta.total_seconds()
     _freq_eps = nyquist * 1e-4  # open-bound approximation matching bandpass constraints
     _log_min = np.log(_freq_eps)
@@ -1056,14 +1066,22 @@ def update_bandpass(
     if use_matrix_image:
         axes_image, _ = _draw_matrix_image_initial(ax, iccs, context, all_seismograms)
         fig.subplots_adjust(bottom=0.32, left=0.05, right=0.95, top=0.93)
-        _matrix_cache: dict[tuple[bool, float, float], np.ndarray] = {}
+        _matrix_cache: OrderedDict[tuple[bool, float, float], np.ndarray] = (
+            OrderedDict()
+        )
 
         def _update_matrix() -> None:
             apply = check.get_status()[0]
-            fmin = float(np.exp(slider_fmin.val))
-            fmax = float(np.exp(slider_fmax.val))
+            fmin = max(_quantise_freq(float(np.exp(slider_fmin.val))), _freq_eps)
+            fmax = min(
+                _quantise_freq(float(np.exp(slider_fmax.val))), nyquist - _freq_eps
+            )
+            if fmin >= fmax:
+                return
             key = (apply, fmin, fmax)
             if key not in _matrix_cache:
+                if len(_matrix_cache) >= _BANDPASS_CACHE_SIZE:
+                    _matrix_cache.popitem(last=False)
                 iccs.bandpass_apply = apply
                 iccs.bandpass_fmin = fmin
                 iccs.bandpass_fmax = fmax
@@ -1074,6 +1092,8 @@ def update_bandpass(
                 ccs = np.abs(np.compress(mask, iccs.ccs))
                 matrix = np.array([s.data for s, m in zip(seismograms, mask) if m])
                 _matrix_cache[key] = matrix[np.argsort(ccs)[::-1]]
+            else:
+                _matrix_cache.move_to_end(key)
             axes_image.set_data(_matrix_cache[key])
             fig.canvas.draw_idle()
 
@@ -1083,16 +1103,22 @@ def update_bandpass(
             ax, iccs, context, all_seismograms
         )
         fig.subplots_adjust(bottom=0.29, left=0.09, right=1.05, top=0.93)
-        _stack_cache: dict[
+        _stack_cache: OrderedDict[
             tuple[bool, float, float], tuple[list[np.ndarray], np.ndarray, np.ndarray]
-        ] = {}
+        ] = OrderedDict()
 
         def _update_stack() -> None:
             apply = check.get_status()[0]
-            fmin = float(np.exp(slider_fmin.val))
-            fmax = float(np.exp(slider_fmax.val))
+            fmin = max(_quantise_freq(float(np.exp(slider_fmin.val))), _freq_eps)
+            fmax = min(
+                _quantise_freq(float(np.exp(slider_fmax.val))), nyquist - _freq_eps
+            )
+            if fmin >= fmax:
+                return
             key = (apply, fmin, fmax)
             if key not in _stack_cache:
+                if len(_stack_cache) >= _BANDPASS_CACHE_SIZE:
+                    _stack_cache.popitem(last=False)
                 iccs.bandpass_apply = apply
                 iccs.bandpass_fmin = fmin
                 iccs.bandpass_fmax = fmax
@@ -1104,6 +1130,8 @@ def update_bandpass(
                 ccs = np.abs(np.compress(mask, iccs.ccs))
                 seis_data = [s.data.copy() for s, m in zip(seismograms, mask) if m]
                 _stack_cache[key] = (seis_data, stack.data.copy(), ccs)
+            else:
+                _stack_cache.move_to_end(key)
             seis_data, stack_data, ccs = _stack_cache[key]
             new_norm = PowerNorm(vmin=np.min(ccs), vmax=np.max(ccs), gamma=2)
             new_colors = IccsDefaults.stack_cmap(new_norm(ccs))
