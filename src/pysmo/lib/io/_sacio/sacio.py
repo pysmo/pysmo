@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Literal, Self
 from zipfile import ZipFile
 
-import httpx
 import numpy as np
+import urllib3
 from attrs import define
 
 from pysmo import MiniLocation
@@ -414,25 +414,26 @@ class SacIO(SacIOBase):
         if end is not None and isinstance(end, datetime):
             kwargs["end"] = end.isoformat()
 
-        transport = httpx.HTTPTransport(retries=3)
-        client = httpx.Client(transport=transport)
+        http = urllib3.PoolManager()
         for attempt in range(SacIODefaults.iris_request_retries):
-            response = client.get(
+            response = http.request(
+                "GET",
                 SacIODefaults.iris_base_url,
-                params=kwargs,
-                follow_redirects=False,
+                fields=kwargs,
+                redirect=False,
                 timeout=SacIODefaults.iris_timeout_seconds,
             )
             if (
-                response.status_code == 500
+                response.status == 500
                 and attempt < SacIODefaults.iris_request_retries - 1
             ):
                 _time.sleep(SacIODefaults.iris_retry_delay_seconds)
                 continue
-            response.raise_for_status()
+            if response.status >= 400:
+                raise urllib3.exceptions.ResponseError(f"HTTP {response.status}")
             break
 
-        zip = ZipFile(BytesIO(response.content))
+        zip = ZipFile(BytesIO(response.data))
 
         result = {}
         for name in zip.namelist():

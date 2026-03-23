@@ -20,3 +20,4 @@
         - "!^update_min_cc$"
         - "!^update_pick$"
         - "!^update_timewindow$"
+        - "!^update_bandpass$"

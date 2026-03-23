@@ -14,7 +14,7 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
 dependencies = [
-  "httpx>=0.28.1",
+  "urllib3>=2.4.0",
   "numpy>=2.3.4",
   "matplotlib>=3.10.7",
   "pyproj>=3.7.2",
