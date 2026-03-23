@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from pysmo.tools.iccs.plot import (
     _ScrollIndexTracker,
     draw_common_matrix_image,
     draw_common_stack,
+    update_bandpass,
     update_min_cc,
     update_pick,
     update_timewindow,
@@ -773,4 +775,144 @@ def test_update_min_cc_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
     _click_button(b_cancel)
 
     assert iccs_instance.min_cc == original_min_cc
+    plt.close(fig)
+
+
+# ======================================================================
+# Tests for update_bandpass
+# ======================================================================
+
+
+def test_update_bandpass_returns_types(iccs_instance: ICCS) -> None:
+    """update_bandpass returns (Figure, Axes, widgets_tuple)."""
+    iccs_instance()
+    result = update_bandpass(iccs_instance, return_fig=True)
+    fig, ax, widgets = result
+    check, slider_fmin, slider_fmax, b_save, b_cancel = widgets
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    plt.close(fig)
+
+
+def test_update_bandpass_matrix_image_returns_types(iccs_instance: ICCS) -> None:
+    """update_bandpass with use_matrix_image=True returns correct types."""
+    iccs_instance()
+    result = update_bandpass(iccs_instance, use_matrix_image=True, return_fig=True)
+    fig, ax, widgets = result
+    check, slider_fmin, slider_fmax, b_save, b_cancel = widgets
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    plt.close(fig)
+
+
+def test_update_bandpass_save_applies_values(iccs_instance: ICCS) -> None:
+    """Clicking Save propagates slider/checkbox values to iccs."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    orig_fmin = iccs_instance.bandpass_fmin
+    orig_fmax = iccs_instance.bandpass_fmax
+
+    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
+        iccs_instance, return_fig=True
+    )
+
+    new_fmin = orig_fmin + 0.1
+    new_fmax = orig_fmax - 0.1
+    slider_fmin.set_val(np.log(new_fmin))
+    slider_fmax.set_val(np.log(new_fmax))
+
+    _click_button(b_save)
+
+    assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
+    assert iccs_instance.bandpass_fmax == pytest.approx(new_fmax)
+    assert iccs_instance.bandpass_apply is True
+    plt.close(fig)
+
+
+def test_update_bandpass_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
+    """Clicking Cancel restores the original bandpass parameters."""
+    iccs_instance()
+    orig_apply = iccs_instance.bandpass_apply
+    orig_fmin = iccs_instance.bandpass_fmin
+    orig_fmax = iccs_instance.bandpass_fmax
+
+    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
+        iccs_instance, return_fig=True
+    )
+
+    slider_fmin.set_val(np.log(orig_fmin + 0.1))
+    slider_fmax.set_val(np.log(orig_fmax - 0.1))
+
+    _click_button(b_cancel)
+
+    assert iccs_instance.bandpass_apply == orig_apply
+    assert iccs_instance.bandpass_fmin == pytest.approx(orig_fmin)
+    assert iccs_instance.bandpass_fmax == pytest.approx(orig_fmax)
+    plt.close(fig)
+
+
+def test_update_bandpass_save_with_apply_false(iccs_instance: ICCS) -> None:
+    """Toggling Apply bandpass off and saving sets bandpass_apply to False."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
+        iccs_instance, return_fig=True
+    )
+
+    # Toggle the checkbox off
+    check.set_active(0)
+
+    _click_button(b_save)
+
+    assert iccs_instance.bandpass_apply is False
+    plt.close(fig)
+
+
+def _immediate_timer(delay: float, fn: Callable[[], None]) -> object:
+    """Test helper: replaces threading.Timer with one that fires synchronously."""
+
+    class _T:
+        def start(self) -> None:
+            fn()
+
+        def cancel(self) -> None:
+            pass
+
+    return _T()
+
+
+def test_update_bandpass_live_preview_stack(iccs_instance: ICCS) -> None:
+    """Slider change triggers _update_stack and mutates iccs during live preview."""
+    from unittest.mock import patch
+
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    new_fmin = iccs_instance.bandpass_fmin + 0.05
+
+    with patch("pysmo.tools.iccs.plot.threading.Timer", _immediate_timer):
+        fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
+            iccs_instance, return_fig=True
+        )
+        slider_fmin.set_val(np.log(new_fmin))
+
+    assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
+    plt.close(fig)
+
+
+def test_update_bandpass_live_preview_matrix(iccs_instance: ICCS) -> None:
+    """Slider change triggers _update_matrix and mutates iccs during live preview."""
+    from unittest.mock import patch
+
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    new_fmin = iccs_instance.bandpass_fmin + 0.05
+
+    with patch("pysmo.tools.iccs.plot.threading.Timer", _immediate_timer):
+        fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
+            iccs_instance, use_matrix_image=True, return_fig=True
+        )
+        slider_fmin.set_val(np.log(new_fmin))
+
+    assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
     plt.close(fig)
