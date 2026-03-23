@@ -11,7 +11,6 @@ This module exposes lower-level drawing primitives (`draw_common_stack`,
 workflows.
 """
 
-import threading
 from collections import OrderedDict
 from collections.abc import Callable
 from typing import Literal, overload
@@ -20,7 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
-from matplotlib.backend_bases import Event, MouseEvent
+from matplotlib.backend_bases import Event, MouseEvent, TimerBase
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import PowerNorm
@@ -1059,7 +1058,7 @@ def update_bandpass(
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
-    _debounce_timer: list[threading.Timer | None] = [None]
+    _debounce_timer: list[TimerBase | None] = [None]
     _updating: list[bool] = [False]
     update_fn: Callable[[], None]
 
@@ -1180,8 +1179,10 @@ def update_bandpass(
 
     def _schedule_update() -> None:
         if _debounce_timer[0] is not None:
-            _debounce_timer[0].cancel()
-        timer = threading.Timer(0.15, update_fn)
+            _debounce_timer[0].stop()
+        timer = fig.canvas.new_timer(interval=150)
+        timer.single_shot = True
+        timer.add_callback(update_fn)
         _debounce_timer[0] = timer
         timer.start()
 
@@ -1223,7 +1224,7 @@ def update_bandpass(
 
     def on_save(_: Event) -> None:
         if _debounce_timer[0] is not None:
-            _debounce_timer[0].cancel()
+            _debounce_timer[0].stop()
         iccs.bandpass_apply = check.get_status()[0]
         iccs.bandpass_fmin = float(np.exp(slider_fmin.val))
         iccs.bandpass_fmax = float(np.exp(slider_fmax.val))
@@ -1232,7 +1233,7 @@ def update_bandpass(
 
     def on_cancel(_: Event) -> None:
         if _debounce_timer[0] is not None:
-            _debounce_timer[0].cancel()
+            _debounce_timer[0].stop()
         iccs.bandpass_apply = _orig_apply
         iccs.bandpass_fmin = _orig_fmin
         iccs.bandpass_fmax = _orig_fmax
