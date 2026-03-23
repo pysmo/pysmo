@@ -689,7 +689,7 @@ def test_iris_service_params_error() -> None:
         )
         assert False
     except Exception as error:
-        assert str(error).startswith("Client error '404 '")
+        assert str(error) == "HTTP 404"
 
 
 @pytest.mark.depends(on=["test_file_and_buffer"])
