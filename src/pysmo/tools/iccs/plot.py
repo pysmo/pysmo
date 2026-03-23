@@ -1043,7 +1043,9 @@ def update_bandpass(
     nyquist = 0.5 / iccs._min_delta.total_seconds()
     _freq_eps = nyquist * 1e-4  # open-bound approximation matching bandpass constraints
     _log_min = np.log(_freq_eps)
-    _log_max = np.log(nyquist - _freq_eps)
+    # Use a slightly tighter upper bound near Nyquist to keep inter-slider
+    # constraints safely within the global slider range.
+    _log_max = np.log(nyquist - 2 * _freq_eps)
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
