@@ -1,4 +1,5 @@
 import math
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -247,6 +248,13 @@ def multi_delay(
     Raises:
         ValueError: If any seismogram has a different sampling rate than the template.
 
+    Note:
+        Seismograms with zero standard deviation (i.e. constant data) cannot be
+        meaningfully normalised. A `UserWarning` is issued for each such trace and
+        its normalised values are treated as zero, which results in a correlation
+        coefficient of 0 for that trace. In an MCCC workflow this effectively
+        excludes the trace from the inversion via the `min_cc` threshold.
+
     Examples:
         Create a template seismogram and several shifted copies, then use
         `multi_delay` to recover the known shifts:
@@ -302,6 +310,12 @@ def multi_delay(
     t_mean = np.mean(t_data)
     t_std = np.std(t_data)
     if t_std == 0:
+        warnings.warn(
+            "Template seismogram has zero standard deviation (constant data). "
+            "Cross-correlation results will be zero for all traces.",
+            UserWarning,
+            stacklevel=2,
+        )
         t_std = 1.0
     template_padded = np.zeros(n_fft, dtype=float)
     template_padded[:len_t] = (t_data - t_mean) / t_std
@@ -313,6 +327,12 @@ def multi_delay(
         mean = np.mean(data)
         std = np.std(data)
         if std == 0:
+            warnings.warn(
+                f"Seismogram at index {i} has zero standard deviation (constant data). "
+                "Its cross-correlation coefficient will be zero.",
+                UserWarning,
+                stacklevel=2,
+            )
             std = 1.0
         seismogram_matrix[i, : len(data)] = (data - mean) / std
 
@@ -378,6 +398,12 @@ def multi_multi_delay(
     Raises:
         ValueError: If any seismogram has a different sampling rate than the others.
 
+    Note:
+        Seismograms with zero standard deviation (i.e. constant data) cannot be
+        meaningfully normalised. A `UserWarning` is issued for each such trace and
+        its normalised values are treated as zero, resulting in correlation
+        coefficients of 0 for all pairs involving that trace.
+
     Examples:
         Create seismograms with known shifts and compute all pairwise delays:
 
@@ -427,6 +453,12 @@ def multi_multi_delay(
         data = s.data
         std = np.std(data)
         if std == 0:
+            warnings.warn(
+                f"Seismogram at index {i} has zero standard deviation (constant data). "
+                "Its cross-correlation coefficients will be zero for all pairs.",
+                UserWarning,
+                stacklevel=2,
+            )
             std = 1.0
         data_matrix[i, : len(data)] = (data - np.mean(data)) / std
 

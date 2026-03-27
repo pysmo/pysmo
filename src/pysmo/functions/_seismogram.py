@@ -179,6 +179,10 @@ def normalize[T: Seismogram](
     Returns:
         Normalized [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
 
+    Raises:
+        ValueError: If the absolute maximum of the data (within the optional
+            time window) is zero, as normalisation would produce undefined results.
+
     Examples:
         ```python
         >>> import numpy as np
@@ -203,7 +207,15 @@ def normalize[T: Seismogram](
     if t2 is not None:
         end_index = time2index(seismogram, t2)
 
-    seismogram.data /= np.max(np.abs(seismogram.data[start_index:end_index]))
+    abs_max = np.max(np.abs(seismogram.data[start_index:end_index]))
+    if abs_max == 0:
+        raise ValueError(
+            "Cannot normalise a seismogram because the absolute maximum "
+            "within the selected time window (or entire trace if no window "
+            "is given) is zero."
+        )
+
+    seismogram.data /= abs_max
 
     if clone is True:
         return seismogram
@@ -460,7 +472,7 @@ def taper[T: Seismogram](
 
     if nsamples > len(seismogram.data):
         raise ValueError(
-            "'taper_width' is too large. Total taper width may exceed the duration of the seismogram."
+            "'taper_width' is too large. Total taper width exceeds the duration of the seismogram."
         )
 
     if clone is True:
@@ -526,48 +538,6 @@ def time2index(
         f"Calculated index {index} is out of bounds for seismogram with "
         f"{len(seismogram.data)} samples. (Target time: {time})"
     )
-
-
-# def time2index(
-#     seismogram: Seismogram,
-#     time: pd.Timestamp,
-#     allow_out_of_bounds: bool = False,
-# ) -> int:
-#     """Retuns data index corresponding to a given time.
-#
-#     This function converts time to index of a seismogram's data array. In most
-#     cases the time will not have an exact match in the data array.
-#
-#
-#     Args:
-#         seismogram: Seismogram object.
-#         time: Time to convert to index.
-#         method: Method to use for selecting the index to return.
-#         allow_out_of_bounds: If True, allow returning an index that is outside
-#             has no corresponding data point in the seismogram.
-#
-#     Returns:
-#         Index of the sample corresponding to the given time.
-#
-#     Raises:
-#         ValueError: If the calculated index is out of bounds and
-#             `allow_out_of_bounds` is not set to True.
-#     """
-#     index_float = (time - seismogram.begin_time) / seismogram.delta
-#
-#     # snap to index if index float is very close to an integer
-#     # also round to nearest integer if we are within the seismogram limits
-#     if np.isclose(index_float + 0.5 % 1, 0.5) or 0 < index_float < len(seismogram) - 1:
-#         index = np.floor(index_float + 0.5)
-#     elif index_float <= 0:
-#         index = np.ceil(index_float)
-#     else:
-#         index = np.floor(index_float)
-#
-#     if 0 <= index < len(seismogram) or allow_out_of_bounds is True:
-#         return int(index)
-#
-#     raise ValueError(f"Invalid time provided, calculated {index=} is out of bounds.")
 
 
 @overload
