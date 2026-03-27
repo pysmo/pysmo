@@ -209,7 +209,11 @@ def normalize[T: Seismogram](
 
     abs_max = np.max(np.abs(seismogram.data[start_index:end_index]))
     if abs_max == 0:
-        raise ValueError("Cannot normalise a seismogram with all-zero data.")
+        raise ValueError(
+            "Cannot normalise a seismogram because the absolute maximum "
+            "within the selected time window (or entire trace if no window "
+            "is given) is zero."
+        )
 
     seismogram.data /= abs_max
 
