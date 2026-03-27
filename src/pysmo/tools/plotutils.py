@@ -28,8 +28,9 @@ def time_array(seismogram: Seismogram) -> np.ndarray:
         seismogram: Seismogram object.
 
     Returns:
-        Array containing the Matplotlib dates (number of days since 1970)
-        of each point in the seismogram data.
+        Array containing the Matplotlib dates (number of days since the
+        Matplotlib epoch, default 1970-01-01) of each point in the
+        seismogram data.
 
     Examples:
         ```python
