@@ -24,7 +24,7 @@ differences between various compatible classes affect other parts of your
 code, as their "journeys" end here.
 
 For example, the following function takes any [`Seismogram`][pysmo.Seismogram]
-compatible object as input, and returns a [`timedelta`][datetime.timedelta]:
+compatible object as input, and returns a [`Timedelta`][pandas.Timedelta]:
 
 ```python title="double_delta_td.py"
 --8<-- "docs/snippets/double_delta_td.py"
