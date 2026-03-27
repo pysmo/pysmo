@@ -50,6 +50,11 @@ def filter[T: Seismogram](
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
 
+    Raises:
+        ValueError: If `filter_name` is not a registered filter. This can occur
+            when `FilterName` is updated but the corresponding filter function
+            has not yet been decorated with `@register_filter`.
+
     Examples:
         ```python
         >>> from pysmo.classes import SAC

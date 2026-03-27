@@ -10,14 +10,18 @@ import pandas as pd
 def average_datetimes(datetimes: Sequence[pd.Timestamp]) -> pd.Timestamp:
     """Average a sequence of datetimes.
 
+    The average is computed by taking the first datetime as a reference point,
+    summing the offsets of all remaining datetimes from that reference, and
+    adding the mean offset back to the reference.
+
     Args:
         datetimes: Datetimes to average.
 
     Returns:
-        Datetime representing average of all datetimes.
+        Datetime representing the mean of all input datetimes.
 
     Raises:
-        ValueError: If an empty sequence is provides as input.
+        ValueError: If an empty sequence is provided as input.
     """
     if len(datetimes) == 0:
         raise ValueError("Cannot average empty sequence of datetimes.")

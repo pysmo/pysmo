@@ -29,7 +29,7 @@ class Station(Location, Protocol):
     """Location ID.
 
     A two character code used to uniquely identify different data streams
-    at a single stationa.
+    at a single station.
     """
 
     channel: str

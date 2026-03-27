@@ -60,6 +60,38 @@ def test_normalize(seismogram: Seismogram) -> None:
     assert all(normalized_seis.data == normalized_seis2.data)
 
 
+def test_normalize_zero_data_raises() -> None:
+    """Normalising a seismogram with all-zero data must raise ValueError."""
+    from pysmo import MiniSeismogram
+    from pysmo.functions import normalize
+
+    zero_seis = MiniSeismogram(
+        begin_time=pd.Timestamp("2000-01-01", tz="UTC"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.zeros(100),
+    )
+    with pytest.raises(ValueError, match="zero"):
+        normalize(zero_seis)
+
+
+def test_normalize_zero_window_raises() -> None:
+    """Normalising with a time window that contains only zeros must raise ValueError."""
+    from pysmo import MiniSeismogram
+    from pysmo.functions import normalize
+
+    data = np.ones(100)
+    data[20:40] = 0.0
+    seis = MiniSeismogram(
+        begin_time=pd.Timestamp("2000-01-01", tz="UTC"),
+        delta=pd.Timedelta(seconds=1),
+        data=data,
+    )
+    t1 = seis.begin_time + 20 * seis.delta
+    t2 = seis.begin_time + 39 * seis.delta
+    with pytest.raises(ValueError, match="zero"):
+        normalize(seis, t1=t1, t2=t2)
+
+
 @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_normalize_snapshot(
     seismogram: Seismogram, snapshot: SnapshotAssertion

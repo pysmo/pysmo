@@ -5,6 +5,8 @@ Pysmo provides functions that perform common operations on the types of data tha
 match pysmo's types.
 """
 
+from typing import Any
+
 import matplotlib.dates as mdates
 import matplotlib.figure
 import matplotlib.pyplot as plt
@@ -26,8 +28,7 @@ def time_array(seismogram: Seismogram) -> np.ndarray:
         seismogram: Seismogram object.
 
     Returns:
-        Array containing the Matplotlib dates of seismogram data.
-        array containing the Matplotlib dates (number of days since 1970)
+        Array containing the Matplotlib dates (number of days since 1970)
         of each point in the seismogram data.
 
     Examples:
@@ -95,7 +96,7 @@ def plotseis(
     outfile: str = "",
     showfig: bool = True,
     title: str = "",
-    **kwargs: dict,
+    **kwargs: Any,
 ) -> matplotlib.figure.Figure:
     """Plot Seismogram objects.
 
@@ -105,7 +106,10 @@ def plotseis(
         outfile: Optionally save figure to this filename.
         showfig: Display figure.
         title: Optionally set figure title.
-        kwargs: Optionally add kwargs to pass to the plot command
+        kwargs: Optional keyword arguments passed directly to `matplotlib.pyplot.plot`.
+
+    Returns:
+        The matplotlib [`Figure`][matplotlib.figure.Figure] containing the plot.
 
     Examples:
         ```python
