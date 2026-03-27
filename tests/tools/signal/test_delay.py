@@ -689,3 +689,32 @@ def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
             assert actual.total_seconds() == pytest.approx(
                 expected.total_seconds(), abs=0.1
             )
+
+
+def test_multi_delay_constant_template_warns() -> None:
+    """Constant template (zero std) should issue a UserWarning."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 100))
+    template = MiniSeismogram(data=np.ones(100))
+    seismograms = [MiniSeismogram(data=data)]
+    with pytest.warns(UserWarning, match="zero standard deviation"):
+        multi_delay(template, seismograms)
+
+
+def test_multi_delay_constant_seismogram_warns() -> None:
+    """Constant seismogram (zero std) should issue a UserWarning."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 100))
+    template = MiniSeismogram(data=data)
+    seismograms = [MiniSeismogram(data=np.ones(100))]
+    with pytest.warns(UserWarning, match="zero standard deviation"):
+        multi_delay(template, seismograms)
+
+
+def test_multi_multi_delay_constant_seismogram_warns() -> None:
+    """Constant seismogram (zero std) in multi_multi_delay should issue a UserWarning."""
+    data = np.sin(np.linspace(0, 8 * np.pi, 100))
+    seismograms = [
+        MiniSeismogram(data=data),
+        MiniSeismogram(data=np.ones(100)),
+    ]
+    with pytest.warns(UserWarning, match="zero standard deviation"):
+        multi_multi_delay(seismograms, abs_max=False)
