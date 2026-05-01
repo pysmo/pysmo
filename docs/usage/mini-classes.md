@@ -59,8 +59,8 @@ might notice some differences:
   [attrs.define][]. They look and work similarly, but we get the option to do
   the advanced validation and conversion mentioned above.
 - The [`begin_time`][pysmo.MiniSeismogram.begin_time] is automatically
-  converted to a [`pandas.Timestamp`][pandas.Timestamp] and localized to UTC
-  if no timezone is provided.
+  converted to a [`pandas.Timestamp`][pandas.Timestamp]. Timezone-aware values
+  are converted to UTC; timezone-naive values are assumed to be UTC.
 - Some default values are provided. These will typically be replaced in
   real-world usage, but do allow for some convenience while quickly testing things.
 

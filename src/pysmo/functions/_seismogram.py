@@ -168,16 +168,18 @@ def normalize[T: Seismogram](
     t2: pd.Timestamp | None = None,
     clone: bool = False,
 ) -> None | T:
-    """Normalize a seismogram with its absolute max value.
+    """Normalise a seismogram with its absolute max value.
 
     Args:
         seismogram: Seismogram object.
-        t1: Optionally restrict searching of maximum to time after this time.
-        t2: Optionally restrict searching of maximum to time before this time.
+        t1: Start of the window used to find the maximum. If `None`, the search
+            starts from the beginning of the seismogram.
+        t2: End of the window used to find the maximum. If `None`, the search
+            continues to the end of the seismogram.
         clone: Operate on a clone of the input seismogram.
 
     Returns:
-        Normalized [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
+        Normalised [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
 
     Raises:
         ValueError: If the absolute maximum of the data (within the optional
@@ -447,6 +449,11 @@ def taper[T: Seismogram](
     Returns:
         Tapered [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
+    Note:
+        If `taper_width` resolves to fewer than 2 samples, no taper is applied.
+        This can occur when a very small [`pd.Timedelta`][pandas.Timedelta] is
+        provided.
+
     Examples:
         ```python
         >>> from pysmo.functions import taper, detrend
@@ -610,6 +617,9 @@ def window[T: Seismogram](
     Returns:
         Windowed [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
+    Raises:
+        ValueError: If the ramp extends beyond the seismogram on either side.
+
     Examples:
         In this example we focus on a window starting 500 seconds after the
         `begin_time` of the seismogram and lasting for 1000 seconds. Setting the
@@ -662,6 +672,17 @@ def window[T: Seismogram](
         ramp_duration = ramp_width * (window_end_time - window_begin_time)
     else:
         ramp_duration = ramp_width
+
+    if window_begin_time - ramp_duration < seismogram.begin_time:
+        raise ValueError(
+            f"ramp_width={ramp_width} requires data before {window_begin_time - ramp_duration}, "
+            f"but seismogram only starts at {seismogram.begin_time}."
+        )
+    if window_end_time + ramp_duration > seismogram.end_time:
+        raise ValueError(
+            f"ramp_width={ramp_width} requires data after {window_end_time + ramp_duration}, "
+            f"but seismogram only ends at {seismogram.end_time}."
+        )
 
     window_begin_time -= ramp_duration
     window_end_time += ramp_duration

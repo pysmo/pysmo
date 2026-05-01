@@ -86,12 +86,19 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
         ```
     """
 
-    target_proto = _get_flattened_types(proto)[0]
+    target_protos = _get_flattened_types(proto)
     possible_minis = _get_flattened_types(_AnyMini)
 
-    return tuple(
-        mini for mini in possible_minis if target_proto in matching_pysmo_types(mini)
-    )
+    seen: set[type[_AnyMini]] = set()
+    result: list[type[_AnyMini]] = []
+    for mini in possible_minis:
+        if (
+            any(tp in matching_pysmo_types(mini) for tp in target_protos)
+            and mini not in seen
+        ):
+            seen.add(mini)
+            result.append(mini)
+    return tuple(result)
 
 
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:

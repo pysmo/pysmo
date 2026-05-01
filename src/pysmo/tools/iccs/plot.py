@@ -61,17 +61,6 @@ def _make_mask(iccs: ICCS, all_seismograms: bool) -> list[bool]:
     return [s.select for s in iccs.seismograms]
 
 
-def _get_taper_ramp_in_seconds(iccs: ICCS) -> float:
-    """Return the taper ramp width in seconds.
-
-    If `ramp_width` is a pd.Timedelta it is converted directly; if it is a
-    float it is treated as a fraction of the total time window duration.
-    """
-    if isinstance(iccs.ramp_width, pd.Timedelta):
-        return iccs.ramp_width.total_seconds()
-    return iccs.ramp_width * (iccs.window_post - iccs.window_pre).total_seconds()
-
-
 def _add_save_cancel_buttons(
     fig: Figure,
     on_save: Callable[[Event], None],
@@ -156,7 +145,7 @@ def _draw_stack_initial(
     if context:
         tmin -= iccs.context_width.total_seconds()
         tmax += iccs.context_width.total_seconds()
-    elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
+    elif (taper_ramp_in_seconds := iccs.ramp_width_timedelta.total_seconds()) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
 
@@ -245,7 +234,7 @@ def _draw_matrix_image_initial(
     if context:
         tmin -= iccs.context_width.total_seconds()
         tmax += iccs.context_width.total_seconds()
-    elif (taper_ramp_in_seconds := _get_taper_ramp_in_seconds(iccs)) > 0:
+    elif (taper_ramp_in_seconds := iccs.ramp_width_timedelta.total_seconds()) > 0:
         tmin -= taper_ramp_in_seconds
         tmax += taper_ramp_in_seconds
 

@@ -649,6 +649,46 @@ def test_file_and_buffer(sacfile: Path) -> None:
     assert all(from_file.data == from_buffer.data)
 
 
+def test_computed_geo_properties_with_zero_coordinates() -> None:
+    """Zero-valued coordinates (equator/prime meridian) must not be treated as None."""
+    sac = SacIO()
+    # Place both station and event on the equator/prime meridian (lat=0, lon=0).
+    sac.stla = 0.0
+    sac.stlo = 0.0
+    sac.evla = 0.0
+    sac.evlo = 0.0
+    # All four computed properties must return a number, not raise TypeError.
+    assert isinstance(sac.dist, float)
+    assert isinstance(sac.az, float)
+    assert isinstance(sac.baz, float)
+    assert isinstance(sac.gcarc, float)
+
+
+def test_computed_geo_properties_raises_when_none() -> None:
+    """dist/az/baz/gcarc must raise TypeError when any coordinate is genuinely None."""
+    sac = SacIO()
+    # All coordinates None (default).
+    with pytest.raises(TypeError):
+        _ = sac.dist
+    with pytest.raises(TypeError):
+        _ = sac.az
+    with pytest.raises(TypeError):
+        _ = sac.baz
+    with pytest.raises(TypeError):
+        _ = sac.gcarc
+
+    # Partial None: stla set but stlo missing — must still raise.
+    sac.stla = 0.0
+    with pytest.raises(TypeError):
+        _ = sac.dist
+    with pytest.raises(TypeError):
+        _ = sac.az
+    with pytest.raises(TypeError):
+        _ = sac.baz
+    with pytest.raises(TypeError):
+        _ = sac.gcarc
+
+
 @pytest.mark.depends(on=["test_file_and_buffer"])
 def test_iris_service() -> None:
     retries = 3

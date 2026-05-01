@@ -152,7 +152,6 @@ alternate_style = true
 paths = ["src"]
 inventories = [
   "https://docs.python.org/3/objects.inv",
-  "https://docs.python.org/3/objects.inv",
   "https://mypy.readthedocs.io/en/stable/objects.inv",
   "https://numpy.org/doc/stable/objects.inv",
   "https://docs.scipy.org/doc/scipy/objects.inv",
