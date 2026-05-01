@@ -128,7 +128,12 @@ class SacIO(SacIOBase):
     @property
     def dist(self) -> int | float:
         """Station to event distance (km)."""
-        if self.stla and self.stlo and self.evla and self.evlo:
+        if (
+            self.stla is not None
+            and self.stlo is not None
+            and self.evla is not None
+            and self.evlo is not None
+        ):
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
             event_location = MiniLocation(latitude=self.evla, longitude=self.evlo)
             return (
@@ -139,7 +144,12 @@ class SacIO(SacIOBase):
     @property
     def az(self) -> int | float:
         """Event to station azimuth (degrees)."""
-        if self.stla and self.stlo and self.evla and self.evlo:
+        if (
+            self.stla is not None
+            and self.stlo is not None
+            and self.evla is not None
+            and self.evlo is not None
+        ):
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
             event_location = MiniLocation(latitude=self.evla, longitude=self.evlo)
             return azimuth(location_1=station_location, location_2=event_location)
@@ -148,7 +158,12 @@ class SacIO(SacIOBase):
     @property
     def baz(self) -> int | float:
         """Station to event azimuth (degrees)."""
-        if self.stla and self.stlo and self.evla and self.evlo:
+        if (
+            self.stla is not None
+            and self.stlo is not None
+            and self.evla is not None
+            and self.evlo is not None
+        ):
             station_location = MiniLocation(latitude=self.stla, longitude=self.stlo)
             event_location = MiniLocation(latitude=self.evla, longitude=self.evlo)
             return backazimuth(location_1=station_location, location_2=event_location)
@@ -157,7 +172,12 @@ class SacIO(SacIOBase):
     @property
     def gcarc(self) -> int | float:
         """Station to event great circle arc length (degrees)."""
-        if self.stla and self.stlo and self.evla and self.evlo:
+        if (
+            self.stla is not None
+            and self.stlo is not None
+            and self.evla is not None
+            and self.evlo is not None
+        ):
             lat1, lon1 = np.deg2rad(self.stla), np.deg2rad(self.stlo)
             lat2, lon2 = np.deg2rad(self.evla), np.deg2rad(self.evlo)
             return np.rad2deg(

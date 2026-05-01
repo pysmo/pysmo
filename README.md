@@ -32,43 +32,30 @@
 
 ---
 
-Most seismology libraries hand you a single large object — waveform samples,
-station coordinates, and event parameters all bundled together. This is a
-common pattern, but it sidesteps a question worth asking: *what is a
-seismogram, actually?* Not a file format. A seismogram is a time series:
-samples, a sampling interval, and a start time. A station is a named
-geographic position. These are narrow, precise concepts, and modern Python
-gives us the vocabulary to express them exactly — `Protocol` classes,
-`Annotated` types, structural subtyping. Pysmo follows that structure: each
-type maps to a real scientific concept, concrete classes enforce correctness
-at construction, and file-format adapters expose only what a concept actually
-needs.
+Pysmo is a seismology library built around a clean separation between data
+storage and data processing. Processing functions are written against small,
+focused interfaces — `Seismogram`, `Station`, `Event`, and so on — rather than
+against specific classes. Any object that satisfies an interface can be used
+with those functions directly.
 
-When a function declares exactly which concept it needs, your editor knows too — autocomplete is precise, type errors
-surface before runtime, and a function signature is enough to understand what
-it consumes. Narrower types also dissolve a question that haunts any large
-bundled object: what counts as data, and what is metadata? The answer depends
-on what you are doing, not on the file format that happens to store it. The
-conventional response is to make fields optional: bundle everything into one
-object, set unused attributes to `None`, and let callers decide what matters.
-This sidesteps the design question but compounds the practical one — a station
-coordinate of `None` is no more meaningful than a `float` with the value
-`"abc"`, and the error surfaces far from where the bad assumption was made.
-When types reflect scientific concepts directly, the boundaries emerge from the
-science instead. Code written against narrow interfaces is reusable for the
-same reason: a function that accepts a protocol works with any conforming
-object — a file parser, a hand-written dataclass, or a lightweight instance
-created in a notebook — without modification.
+The benefit is clearest when tackling a new problem. Data can be structured
+however the problem demands, rather than adapted to fit a pre-existing class.
+Functions specific to the problem can then consume that class directly, with
+access to all its fields. More general operations — filtering, normalising,
+resampling — are written against the interfaces and remain reusable across
+every compatible type; pysmo ships with a library of these. Functions written
+the same way for a specific project accumulate over time into a toolkit that
+works across projects — and any that prove broadly useful are welcome as
+contributions to pysmo.
 
-The same logic also narrows the gap between user code and library. Pysmo
-ships with a collection of processing tools — though that is not what it is
-fundamentally about. They exist because the same design applies: any function
-written against pysmo's protocols is compatible with every conforming object,
-and therefore useful beyond its original context. The tools can be used
-directly or as building blocks for something larger. Any well-written
-pysmo-compatible code is a reasonable candidate for inclusion in the library.
-Contributions are always welcome, though more often the consequence is
-simpler: code written for one project finds itself useful in the next.
+Under the hood this is all standard Python typing, which means editors
+understand it too: autocompletion is available on any argument declared as,
+say, `Seismogram`, and mistakes — a missing attribute, a wrong return type —
+are caught before any code is run. No special registration or inheritance is
+required; if an object has the right attributes, it is compatible. Python's
+typing system has advanced considerably in recent versions, and pysmo is
+written to take full advantage of it — which is why older Python is not
+supported.
 
 ## Quick Start
 
@@ -103,10 +90,8 @@ mini = MiniSeismogram(data=seis.data, delta=seis.delta, begin_time=seis.begin_ti
 print_info(mini)  # works with MiniSeismogram too — same protocol
 ```
 
-The design shifts the question from what a class provides to what a function
-needs. Rather than being bound by what a library class exposes, you are free
-to define bespoke classes for a particular project, and they will work with
-any function whose protocol they satisfy.
+The same holds for a bespoke class written from scratch for a particular
+project, including fields that have no place in the protocol:
 
 ```python
 from dataclasses import dataclass
@@ -118,7 +103,7 @@ class MySeismogram:
     data: np.ndarray
     delta: pd.Timedelta
     begin_time: pd.Timestamp
-    my_attribute: str
+    label: str
 
     @property
     def end_time(self) -> pd.Timestamp:
@@ -129,7 +114,7 @@ my_seis = MySeismogram(
     data=np.zeros(1000),
     delta=pd.Timedelta(seconds=0.01),
     begin_time=pd.Timestamp("2024-01-01", tz="UTC"),
-    my_attribute="hello world",
+    label="teleseismic_P",
 )
 
 print_info(my_seis)   # same function as above — no changes needed

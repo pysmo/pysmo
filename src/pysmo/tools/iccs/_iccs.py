@@ -969,8 +969,12 @@ def _update_seismogram(
     limit_post = seismogram.end_time - current_window[1]
 
     if not limit_pre <= updated_t1 <= limit_post:
+        # stacklevel is caller-dependent: __call__ is 4 frames up, run_mccc is 3.
+        # Use stacklevel=2 to point at the direct caller of _update_seismogram.
         warnings.warn(
-            f"Refusing to update t1 for {seismogram=}. Would move out of limits - consider reducing window size."
+            f"Refusing to update t1 for seismogram with t0={seismogram.t0}. "
+            "Would move out of limits - consider reducing window size.",
+            stacklevel=2,
         )
         return
 
@@ -1057,13 +1061,22 @@ def _create_stack(seismograms: Sequence[_EphemeralSeismogram]) -> MiniSeismogram
 
     Returns:
         A new seismogram whose data is the mean of all selected input seismograms.
+
+    Raises:
+        ValueError: If no seismograms are selected.
     """
-    begin_time = average_datetimes(
-        [p.begin_time for p in seismograms if p.parent_seismogram.select]
-    )
-    delta = seismograms[0].delta
+    if not seismograms:
+        raise ValueError("Cannot create stack: no seismograms are loaded.")
+    selected = [p for p in seismograms if p.parent_seismogram.select]
+    if not selected:
+        raise ValueError(
+            "Cannot create stack: no seismograms are selected. "
+            "Ensure at least one seismogram has select=True before accessing the stack."
+        )
+    begin_time = average_datetimes([p.begin_time for p in selected])
+    delta = selected[0].delta
     data = np.mean(
-        np.array([p.data for p in seismograms if p.parent_seismogram.select]),
+        np.array([p.data for p in selected]),
         axis=0,
     )
     return MiniSeismogram(begin_time=begin_time, delta=delta, data=data)

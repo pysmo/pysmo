@@ -116,6 +116,58 @@ class TestICCSEmpty:
             iccs.seismograms = iccs_seismograms
 
 
+class TestICCSAllDeselected:
+    """Test that accessing the stack when all seismograms are deselected raises a
+    clear ValueError rather than crashing inside average_datetimes or np.mean."""
+
+    @pytest.fixture(autouse=True)
+    def _iccs(self, iccs_seismograms: list[IccsSeismogram]) -> None:
+        self.iccs = ICCS(iccs_seismograms)
+
+    def test_stack_raises_when_all_deselected(self) -> None:
+        for s in self.iccs.seismograms:
+            s.select = False
+        with pytest.raises(ValueError, match="no seismograms are selected"):
+            _ = self.iccs.stack
+
+    def test_context_stack_raises_when_all_deselected(self) -> None:
+        for s in self.iccs.seismograms:
+            s.select = False
+        with pytest.raises(ValueError, match="no seismograms are selected"):
+            _ = self.iccs.context_stack
+
+
+class TestICCSUpdateWarning:
+    """Test the warning emitted when t1 update would move out of limits."""
+
+    def test_out_of_limits_warning_message(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        from pysmo.tools.iccs._iccs import _update_seismogram
+
+        seismogram = iccs_seismograms[0]
+        # A delay larger than the seismogram duration guarantees t1 moves out of limits.
+        huge_delay = pd.Timedelta(days=9999)
+        window = (pd.Timedelta(seconds=-15), pd.Timedelta(seconds=15))
+
+        with pytest.warns(UserWarning) as record:
+            _update_seismogram(
+                delay=huge_delay,
+                cc=1.0,
+                seismogram=seismogram,
+                autoflip=False,
+                autoselect=False,
+                min_cc_for_autoselect=0.0,
+                current_window=window,
+            )
+
+        assert len(record) == 1
+        msg = str(record[0].message)
+        # Must identify the seismogram by t0, not dump the full data array.
+        assert "t0=" in msg
+        assert "array(" not in msg
+
+
 class TestICCSParameters(TestICCSBase):
     """Test changing parameters and methods (other than __call__)."""
 

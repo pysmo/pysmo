@@ -10,72 +10,75 @@ from ._registry import register_filter
 
 @overload
 def envelope(
-    seismogram: Seismogram, Tn: float, alpha: float, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, clone: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def envelope[T: Seismogram](
-    seismogram: T, Tn: float, alpha: float, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, clone: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def envelope[T: Seismogram](
-    seismogram: T, Tn: float, alpha: float, clone: bool = False
+    seismogram: T, fc: float, alpha: float, clone: bool = False
 ) -> T | None:
     """
     Calculates the envelope of a gaussian filtered seismogram.
 
     Args:
-        seismogram: Name of the seismogram object passed to this function.
-        Tn: Center period of Gaussian filter [in seconds]
-        alpha: Set alpha (which determines filterwidth)
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
+        seismogram: Seismogram object.
+        fc: Centre frequency of the Gaussian filter (in Hz).
+        alpha: Dimensionless shape parameter controlling the filter width.
+            Larger values produce a narrower (more selective) filter.
+        clone: Operate on a clone of the input seismogram.
 
     Returns:
-        Seismogram containing the envelope
+        Seismogram containing the envelope.
 
     Examples:
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import envelope
         >>> seis = SAC.from_file("example.sac").seismogram
-        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> fc = 0.02 # Centre Gaussian filter at 0.02 Hz (50s period)
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> envelope_seis = envelope(seis, Tn, alpha, clone=True)
+        >>> envelope_seis = envelope(seis, fc, alpha, clone=True)
         >>>
         ```
     """
     if clone:
         seismogram = deepcopy(seismogram)
-    seismogram.data = _gauss(seismogram, Tn, alpha)[0]
+    seismogram.data = _gauss(seismogram, fc, alpha)[0]
     return seismogram if clone else None
 
 
 @overload
 def gauss(
-    seismogram: Seismogram, Tn: float, alpha: float, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, clone: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def gauss[T: Seismogram](
-    seismogram: T, Tn: float, alpha: float, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, clone: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def gauss[T: Seismogram](
-    seismogram: T, Tn: float, alpha: float, clone: bool = False
+    seismogram: T, fc: float, alpha: float, clone: bool = False
 ) -> T | None:
     """
     Returns a gaussian filtered seismogram.
 
     Args:
-        seismogram: Name of the SAC object passed to this function.
-        Tn: Center period of Gaussian filter [in seconds]
-        alpha: Set alpha (which determines filterwidth)
+        seismogram: Seismogram object.
+        fc: Centre frequency of the Gaussian filter (in Hz).
+        alpha: Dimensionless shape parameter controlling the filter width.
+            Larger values produce a narrower (more selective) filter.
+        clone: Operate on a clone of the input seismogram.
 
     Returns:
         Gaussian filtered seismogram.
@@ -85,27 +88,43 @@ def gauss[T: Seismogram](
         >>> from pysmo.classes import SAC
         >>> from pysmo.tools.signal import gauss
         >>> seis = SAC.from_file("example.sac").seismogram
-        >>> Tn = 50 # Center Gaussian filter at 50s period
+        >>> fc = 0.02 # Centre Gaussian filter at 0.02 Hz (50s period)
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> gauss_seis = gauss(seis, Tn, alpha, clone=True)
+        >>> gauss_seis = gauss(seis, fc, alpha, clone=True)
         >>>
         ```
     """
     if clone:
         seismogram = deepcopy(seismogram)
-    seismogram.data = _gauss(seismogram, Tn, alpha)[1]
+    seismogram.data = _gauss(seismogram, fc, alpha)[1]
     return seismogram if clone else None
 
 
 def _gauss(
-    seismogram: Seismogram, Tn: float, alpha: float
+    seismogram: Seismogram, fc: float, alpha: float
 ) -> tuple[np.ndarray, np.ndarray]:
-    Wn = 1 / float(Tn)
+    """Apply a Gaussian filter and compute the analytic signal.
+
+    Implements the multiple filter technique of Herrmann (1973)[^1].
+
+    [^1]: Herrmann, R. B. (1973). Some aspects of band-pass filtering of surface
+        waves. *Bulletin of the Seismological Society of America*, 63(2), 663–671.
+
+    Variable names follow the paper's notation:
+        W:  Frequency axis (Hz), 0 to Nyquist.
+        Hn: Gaussian-filtered spectrum — input spectrum multiplied by the
+            Gaussian window centred at fc.
+        hn: Filtered seismogram in the time domain (inverse FFT of Hn).
+        Qn: Spectrum of the Hilbert-transformed filtered signal, constructed
+            by rotating Hn by 90° (real → imaginary, imaginary → −real).
+        qn: Hilbert transform of hn in the time domain (inverse FFT of Qn).
+        an: Instantaneous amplitude (envelope) — sqrt(hn² + qn²).
+    """
     Nyq = 0.5 / seismogram.delta.total_seconds()
     npts = len(seismogram.data)
     spec = np.fft.fft(seismogram.data)
     W = np.array(np.linspace(0, Nyq, npts))
-    Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
+    Hn = spec * np.exp(-1 * alpha * ((W - fc) / fc) ** 2)
     Qn = complex(0, 1) * Hn.real - Hn.imag
     hn = np.fft.ifft(Hn).real
     qn = np.fft.ifft(Qn).real

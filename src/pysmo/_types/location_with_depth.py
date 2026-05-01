@@ -12,7 +12,7 @@ class LocationWithDepth(Location, Protocol):
     """Protocol class to define the `LocationWithDepth` type."""
 
     depth: float
-    """Location depth in metres."""
+    """Location depth in metres (positive downward from the surface)."""
 
 
 @define(kw_only=True, slots=True)
@@ -51,4 +51,4 @@ class MiniLocationWithDepth:
     depth: float = field(
         converter=float, on_setattr=setters.pipe(setters.convert, setters.validate)
     )
-    """Location depth in metres."""
+    """Location depth in metres (positive downward from the surface)."""

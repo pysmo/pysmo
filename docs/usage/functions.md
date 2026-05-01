@@ -16,6 +16,32 @@ Writing functions is the easiest and most common way of using pysmo. Regardless
 of what the functions do, they will most likely follow one of the patterns
 discussed below.
 
+## Mutable objects
+
+Before diving in, it is worth recalling how Python handles objects passed to
+functions. Python passes objects by reference, not by value — so a function
+receives the *same* object as the caller, not a copy. For simple types like
+[`int`][] or [`float`][] this rarely matters, because they are immutable.
+For mutable objects such as [`numpy.ndarray`][numpy.ndarray] it matters a
+great deal:
+
+```python
+>>> import numpy as np
+>>> def double_first(array):
+...     array[0] *= 2
+...
+>>> my_array = np.array([1.0, 2.0, 3.0])
+>>> double_first(my_array)
+>>> my_array
+array([2., 2., 3.])
+```
+
+The array was modified *inside* the function, yet the change is visible
+*outside* it — because both the caller and the function hold a reference to
+the same object. This behaviour is sometimes desired, but you must be aware of
+when it occurs. We will return to this when we discuss the `clone` argument
+below.
+
 ## Pysmo types as input
 
 The simplest way of using pysmo types is in functions that only use them to
@@ -29,17 +55,6 @@ compatible object as input, and returns a [`Timedelta`][pandas.Timedelta]:
 ```python title="double_delta_td.py"
 --8<-- "docs/snippets/double_delta_td.py"
 ```
-
-!!! Warning
-
-    Be careful when changing attributes of the input class inside a function.
-    Sometimes the attributes are objects that contain other objects (e.g. an
-    [`ndarray`][numpy.ndarray] containing [`float`][float] objects). In our
-    example above, the `seismogram` we use as input shares the nested objects
-    in the `data` attribute with the `seismogram` inside the function. Changing
-    `seismogram.data` inside the function will therefore also change it outside
-    too. This behaviour is often desired, but you must be aware of when this
-    occurs and when not.
 
 ## Pysmo types as output
 
@@ -56,8 +71,12 @@ type is. We can explore this with the following snippet:
 1. [`reveal_type`][typing.reveal_type] allows us to inspect the actual type of an object. It prints
   type information at runtime (what it actually is) or when using mypy (what
   can be inferred from type annotations).
-2. :bulb: Deep-copying objects can be expensive if they contain large nested
-  items.
+2. :bulb: As noted [above](#mutable-objects), passing an object to a function
+  does not copy it. Here we use [`deepcopy`][copy.deepcopy] explicitly to
+  create an independent copy before modifying it — leaving the caller's object
+  untouched. Pysmo functions that modify seismograms expose this via a `clone`
+  argument as a convenience. Note that deep-copying can be expensive for large
+  objects.
 
 Here, we create a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance from
 a SAC file and pass it to the `double_delta` function. Inside the function it
@@ -79,8 +98,8 @@ code, however, yields a different type for `my_seis_out`:
 
 ```bash
 $ mypy double_delta.py
-docs/snippets/double_delta.py:26: note: Revealed type is "SacSeismogram"
-docs/snippets/double_delta.py:27: note: Revealed type is "Seismogram"
+double_delta.py:26: note: Revealed type is "SacSeismogram"
+double_delta.py:27: note: Revealed type is "Seismogram"
 Success: no issues found in 1 source file
 ```
 
