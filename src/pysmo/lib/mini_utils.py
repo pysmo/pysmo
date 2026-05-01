@@ -92,10 +92,8 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
     seen: set[type[_AnyMini]] = set()
     result: list[type[_AnyMini]] = []
     for mini in possible_minis:
-        if (
-            any(tp in matching_pysmo_types(mini) for tp in target_protos)
-            and mini not in seen
-        ):
+        mini_types = matching_pysmo_types(mini)
+        if any(tp in mini_types for tp in target_protos) and mini not in seen:
             seen.add(mini)
             result.append(mini)
     return tuple(result)
