@@ -66,4 +66,4 @@ class MiniEvent:
     depth: float = field(
         converter=float, on_setattr=setters.pipe(setters.convert, setters.validate)
     )
-    """Event depth in metres."""
+    """Event depth in metres (positive downward from the surface)."""

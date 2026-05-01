@@ -8,9 +8,21 @@ tags:
 
 ## Prerequisites
 
-Pysmo requires a recent Python version and depends on a small number of
-third-party packages (e.g. [`NumPy`][numpy], [`SciPy`][scipy]). It is tested
-against the latest three stable Python releases on Linux, MacOS, and Windows.
+Pysmo depends on a small number of third-party packages (e.g. [`NumPy`][numpy],
+[`SciPy`][scipy]) and makes use of modern Python language features. Python is
+free and open-source software, so there is no good reason not to run the latest
+stable release — and every reason to do so. Pysmo is tested against the latest
+three stable Python releases on Linux, MacOS, and Windows.
+
+## Virtual environments
+
+It is good practice to install pysmo into a
+[virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
+rather than the system Python. Virtual environments are self-contained and do
+not require administrator privileges, making them well-suited to installing the
+latest Python and keeping project dependencies isolated.
+
+## Installing
 
 Pysmo is available from the
 [Python Package Index](https://pypi.org/project/pysmo/) and can be installed

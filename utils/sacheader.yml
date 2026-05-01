@@ -218,12 +218,12 @@ header_fields:
     header_type: f
 
   stel:
-    description: Station elevation above sea level (meters).
+    description: Station elevation above sea level (metres).
     start: 132
     header_type: f
 
   stdp:
-    description: Station depth below surface (meters).
+    description: Station depth below surface (metres).
     start: 136
     header_type: f
 
@@ -238,12 +238,12 @@ header_fields:
     header_type: f
 
   evel:
-    description: Event elevation (meters).
+    description: Event elevation (metres).
     start: 148
     header_type: f
 
   evdp:
-    description: Event depth below surface (kilometers -- previously meters).
+    description: Event depth below surface (kilometres -- previously metres).
     start: 152
     header_type: f
 

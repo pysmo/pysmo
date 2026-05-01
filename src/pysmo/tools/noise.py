@@ -35,7 +35,7 @@ __all__ = ["NoiseModel", "peterson", "generate_noise"]
 class NoiseModel:
     """Class to store seismic noise models.
 
-    Parameters:
+    Args:
         psd: Power spectral density of ground acceleration [dB].
         T: Period.
     """
@@ -227,9 +227,13 @@ def generate_noise(
     # Nyquist frequency
     Fnyq = 0.5 / delta.total_seconds()
 
-    # get next power of 2 of the nunmber of points and calculate frequencies from
-    # Fs/NPTS to Fnyq (we skip a frequency of 0 for now to avoid dividing by 0)
+    # get next power of 2 of the number of points and calculate frequencies from
+    # Fs/NPTS to Fnyq (we skip a frequency of 0 for now to avoid dividing by 0).
+    # When returning velocity, cumulative_trapezoid reduces the array length by 1,
+    # so NPTS must be strictly greater than npts to guarantee npts output samples.
     NPTS = int(2 ** np.ceil(np.log2(npts)))
+    if return_velocity and NPTS <= npts:
+        NPTS *= 2
     freqs = np.linspace(Fs / NPTS, Fnyq, NPTS - 1)
 
     # interpolate psd and recreate amplitude spectrum with the first

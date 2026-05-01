@@ -23,7 +23,9 @@ throughout).
 Mismatched units are a common source of errors and tedious format conversions.
 Pysmo assumes [SI](https://en.wikipedia.org/wiki/International_System_of_Units)
 units throughout, even where other conventions are common in seismology. This
-is also consistent with e.g. [`scipy.constants`][].
+is also consistent with e.g. [`scipy.constants`][]. A notable example is
+[`depth`][pysmo.LocationWithDepth.depth], which is in metres (positive
+downward from the surface) — many seismological tools use kilometres instead.
 
 ## Time
 
@@ -33,7 +35,7 @@ time are always [`pandas.Timestamp`][pandas.Timestamp] objects with
 [`tzinfo`][pandas.Timestamp.tzinfo] set to
 [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). All times
 are absolute — relative offsets from some reference point are avoided.
-Time intervals such as sampling rate are always
+Time intervals such as the sampling interval are always
 [`pandas.Timedelta`][pandas.Timedelta] objects.
 
 ## SciPy and NumPy parameters
@@ -46,12 +48,16 @@ uses the SciPy definition. Default parameter values follow SciPy and NumPy as
 well, which may produce different results from equivalent functions in other
 programs such as [SAC](https://ds.iris.edu/files/sac-manual/).
 
-## Avoid None type
+## Types are always complete
 
-Pysmo types are narrow and specific. Optional attributes — those that could
-be [`None`][] — are avoided unless strictly necessary. A `Coordinates` type,
-for example, always has a latitude and a longitude; neither should ever be
-[`None`][].
+Pysmo types are semantically complete — a [`Location`][pysmo.Location] without
+a latitude or longitude is not a location at all. For this reason, optional
+attributes (those that could be [`None`][]) are avoided unless strictly
+necessary. Every attribute a type defines is always present and meaningful. This
+is one of the advantages of pysmo's protocol-based approach over monolithic
+classes: because each type represents exactly one concept, code that receives a
+[`Location`][pysmo.Location] can use its attributes directly, without first
+checking that they have a value.
 
 ## Prefer functions over methods
 
