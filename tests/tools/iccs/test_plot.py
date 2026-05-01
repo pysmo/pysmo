@@ -15,7 +15,6 @@ from matplotlib.widgets import Button, Cursor, SpanSelector
 
 from pysmo.tools.iccs import ICCS
 from pysmo.tools.iccs.plot import (
-    _get_taper_ramp_in_seconds,
     _ScrollIndexTracker,
     draw_common_matrix_image,
     draw_common_stack,
@@ -228,25 +227,23 @@ def test_scroll_index_tracker(iccs_instance: ICCS) -> None:
 
 
 # ======================================================================
-# Tests for _get_taper_ramp_in_seconds
+# Tests for ICCS.ramp_width_timedelta (replaces removed _get_taper_ramp_in_seconds)
 # ======================================================================
 
 
-def test_taper_ramp_in_seconds_with_timedelta(iccs_instance: ICCS) -> None:
+def test_ramp_width_timedelta_with_timedelta(iccs_instance: ICCS) -> None:
     """pd.Timedelta ramp_width is returned as absolute seconds."""
     iccs_instance.ramp_width = pd.Timedelta(seconds=3)
-    assert _get_taper_ramp_in_seconds(iccs_instance) == pytest.approx(3.0)
+    assert iccs_instance.ramp_width_timedelta.total_seconds() == pytest.approx(3.0)
 
 
-def test_taper_ramp_in_seconds_with_float(iccs_instance: ICCS) -> None:
+def test_ramp_width_timedelta_with_float(iccs_instance: ICCS) -> None:
     """Float ramp_width is treated as a fraction of the total window duration."""
     fraction = 0.1
     iccs_instance.ramp_width = fraction
-    window_duration = (
-        iccs_instance.window_post - iccs_instance.window_pre
-    ).total_seconds()
+    window_duration = iccs_instance.window_post - iccs_instance.window_pre
     expected = fraction * window_duration
-    assert _get_taper_ramp_in_seconds(iccs_instance) == pytest.approx(expected)
+    assert iccs_instance.ramp_width_timedelta == expected
 
 
 # ======================================================================

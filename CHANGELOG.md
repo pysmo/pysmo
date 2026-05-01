@@ -9,10 +9,16 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Fix save cancel callback on buttons
 - Distinguish between required/non-required sac time headers
 - **(iccs)** Correct window limit validation and ramp-aware bounds checking
+- **(signal)** Fix mccc abs_max
+- **(iccs)** Proper limits for bandpass frequencies
 
 ### 📚 Documentation
 
 - Remove unused mkdocs-macros-plugin
+
+### 📦 Miscellaneous
+
+- Update deps, cleanup docstrings ([#271](https://github.com/pysmo/pysmo/issues/271))
 
 ### 🔍 Other Changes
 
@@ -38,6 +44,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(tools-signal)** Add multi-delay functions ([#249](https://github.com/pysmo/pysmo/issues/249))
 - **(tools-signal)** Add mccc function
 - **(iccs)** Add ICCS.run_mccc method, add ICCSSeismogram.extra attribute
+- **(iccs)** Add update_bandpass function. ([#269](https://github.com/pysmo/pysmo/issues/269))
 
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 

@@ -426,3 +426,46 @@ class TestWindow:
 
 class TestWindowFloat(TestWindow):
     TAPER_WIDTH: pd.Timedelta | float = 0.1
+
+
+class TestWindowRampValidation:
+    """window() must raise a clear ValueError when the ramp extends beyond the seismogram."""
+
+    @pytest.fixture()
+    def short_seismogram(self) -> Seismogram:
+        from pysmo import MiniSeismogram
+
+        return MiniSeismogram(
+            begin_time=pd.Timestamp("2000-01-01", tz="UTC"),
+            delta=pd.Timedelta(seconds=1),
+            data=np.zeros(100),
+        )
+
+    def test_ramp_too_large_timedelta(self, short_seismogram: Seismogram) -> None:
+        from pysmo.functions import window
+
+        mid = short_seismogram.begin_time + pd.Timedelta(seconds=50)
+        with pytest.raises(ValueError, match="ramp_width"):
+            window(
+                short_seismogram,
+                window_begin_time=mid - pd.Timedelta(seconds=10),
+                window_end_time=mid + pd.Timedelta(seconds=10),
+                ramp_width=pd.Timedelta(
+                    seconds=60
+                ),  # exceeds available data on each side
+            )
+
+    def test_ramp_too_large_float(self, short_seismogram: Seismogram) -> None:
+        from pysmo.functions import window
+
+        # window of 10 s with ramp_width=5.0 → ramp = 50 s on each side;
+        # seismogram only has ~50 s before the window start.
+        window_begin = short_seismogram.begin_time + pd.Timedelta(seconds=5)
+        window_end = window_begin + pd.Timedelta(seconds=10)
+        with pytest.raises(ValueError, match="ramp_width"):
+            window(
+                short_seismogram,
+                window_begin_time=window_begin,
+                window_end_time=window_end,
+                ramp_width=5.0,  # ramp = 50 s; only 5 s available before window
+            )

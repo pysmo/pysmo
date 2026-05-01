@@ -87,6 +87,34 @@ def test_peterson():  # type: ignore
 
 
 @pytest.mark.depends(on=["test_NoiseModel"])
+def test_generate_noise_velocity_power_of_two_npts() -> None:
+    """generate_noise with return_velocity=True must return exactly npts samples
+    when npts is an exact power of two.
+
+    cumulative_trapezoid reduces the internal array by 1; without the NPTS bump
+    the output was silently one sample short in this case.
+    """
+    delta = pd.Timedelta(seconds=0.1)
+    for npts in (256, 512, 1024, 2048):
+        result = noise.generate_noise(
+            model=noise.NHNM, npts=npts, delta=delta, return_velocity=True, seed=0
+        )
+        assert len(result.data) == npts, (
+            f"return_velocity=True with npts={npts} returned {len(result.data)} samples"
+        )
+
+
+@pytest.mark.depends(on=["test_NoiseModel"])
+def test_generate_noise_acceleration_length() -> None:
+    """generate_noise without return_velocity must also return exactly npts samples
+    for both power-of-two and non-power-of-two npts."""
+    delta = pd.Timedelta(seconds=0.1)
+    for npts in (256, 1000, 1024, 1500):
+        result = noise.generate_noise(model=noise.NHNM, npts=npts, delta=delta, seed=0)
+        assert len(result.data) == npts
+
+
+@pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
 def test_generate_noise():  # type: ignore
     npts = 10000

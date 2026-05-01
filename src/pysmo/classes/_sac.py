@@ -269,7 +269,7 @@ class SacStation(_SacNested):
 
     @property
     def elevation(self) -> int | float | None:
-        """Station elevation in meters."""
+        """Station elevation in metres."""
 
         return self._parent.stel
 
@@ -330,7 +330,7 @@ class SacEvent(_SacNested):
 
     @property
     def depth(self) -> int | float:
-        """Event depth in meters."""
+        """Event depth in metres (positive downward from the surface)."""
 
         if self._parent.evdp is None:
             raise TypeError("Sac object event depth 'evdp' is None.")

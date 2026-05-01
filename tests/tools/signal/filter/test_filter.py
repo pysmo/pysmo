@@ -97,7 +97,7 @@ def test_filter_gauss(seismogram: Seismogram) -> None:
         seismogram,
         filter,
         "gauss",
-        Tn=50,
+        fc=0.02,
         alpha=50,
         custom_assertions=check_gauss_properties,
     )
@@ -115,7 +115,7 @@ def test_filter_envelope(seismogram: Seismogram) -> None:
         seismogram,
         filter,
         "envelope",
-        Tn=50,
+        fc=0.02,
         alpha=50,
         custom_assertions=check_envelope_properties,
     )

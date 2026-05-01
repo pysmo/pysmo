@@ -46,11 +46,10 @@ def azimuth(
 ) -> float:
     """Calculate azimuth between two points.
 
-
     Args:
-        location_1: Name of the event object providing coordinates of the origin location.
-        location_2: Name of the station object providing coordinates of the target location.
-        ellps: Ellipsoid to use for azimuth calculation
+        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        ellps: Ellipsoid to use for azimuth calculation.
 
     Returns:
         Azimuth in degrees from location 1 to location 2.
@@ -75,15 +74,15 @@ def azimuth(
 def backazimuth(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
-    """Calculate backazimuth (in DEG) between two points.
+    """Calculate backazimuth between two points.
 
     Args:
-        location_1: Name of the event object providing coordinates of the origin location.
-        location_2: Name of the station object providing coordinates of the target location.
-        ellps: Ellipsoid to use for azimuth calculation
+        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        ellps: Ellipsoid to use for backazimuth calculation.
 
     Returns:
-        Backzimuth in degrees from point 2 to point 1
+        Backazimuth in degrees from point 2 to point 1.
 
     Examples:
         ```python
@@ -108,9 +107,9 @@ def distance(
     """Calculate the great circle distance (in metres) between two locations.
 
     Args:
-        location_1: Name of the event object providing coordinates of the origin location.
-        location_2: Name of the station object providing coordinates of the target location.
-        ellps: Ellipsoid to use for distance calculation
+        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        ellps: Ellipsoid to use for distance calculation.
 
     Returns:
         Great Circle Distance in metres.
