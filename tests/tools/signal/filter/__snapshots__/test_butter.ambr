@@ -1,4 +1,8 @@
 # serializer version: 1
+# name: TestBandpass.test_bandpass_snapshot[geocsv_seismogram]
+  array([  1.403748,   6.923526,  17.691488, ..., 387.608947, 390.621775,
+         393.329736], shape=(180000,))
+# ---
 # name: TestBandpass.test_bandpass_snapshot[mini_seismogram]
   array([  1.403748,   6.923526,  17.691488, ..., 387.608947, 390.621775,
          393.329736], shape=(180000,))
@@ -6,6 +10,10 @@
 # name: TestBandpass.test_bandpass_snapshot[sac_seismogram]
   array([  1.403748,   6.923526,  17.691488, ..., 387.608947, 390.621775,
          393.329736], shape=(180000,))
+# ---
+# name: TestBandstop.test_bandstop_snapshot[geocsv_seismogram]
+  array([2221.620379, 2074.443181, 1952.758411, ..., 2407.684712,
+         2338.440755, 2288.763087], shape=(180000,))
 # ---
 # name: TestBandstop.test_bandstop_snapshot[mini_seismogram]
   array([2221.620379, 2074.443181, 1952.758411, ..., 2407.684712,
@@ -15,6 +23,10 @@
   array([2221.620379, 2074.443181, 1952.758411, ..., 2407.684712,
          2338.440755, 2288.763087], shape=(180000,))
 # ---
+# name: TestHighpass.test_highpass_snapshot[geocsv_seismogram]
+  array([2281.63659 , 2251.994187, 2243.335682, ...,  413.741616,
+          341.95201 ,  286.240676], shape=(180000,))
+# ---
 # name: TestHighpass.test_highpass_snapshot[mini_seismogram]
   array([2281.63659 , 2251.994187, 2243.335682, ...,  413.741616,
           341.95201 ,  286.240676], shape=(180000,))
@@ -22,6 +34,10 @@
 # name: TestHighpass.test_highpass_snapshot[sac_seismogram]
   array([2281.63659 , 2251.994187, 2243.335682, ...,  413.741616,
           341.95201 ,  286.240676], shape=(180000,))
+# ---
+# name: TestLowpass.test_lowpass_snapshot[geocsv_seismogram]
+  array([2.17446800e+00, 1.06896400e+01, 2.71997330e+01, ...,
+         2.62159029e+03, 2.63059671e+03, 2.63938584e+03], shape=(180000,))
 # ---
 # name: TestLowpass.test_lowpass_snapshot[mini_seismogram]
   array([2.17446800e+00, 1.06896400e+01, 2.71997330e+01, ...,

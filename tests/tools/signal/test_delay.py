@@ -3,7 +3,6 @@ import random
 import numpy as np
 import pandas as pd
 import pytest
-from pytest_cases import parametrize_with_cases
 
 from pysmo import MiniSeismogram, Seismogram
 from pysmo.functions import clone_to_mini, detrend
@@ -63,7 +62,6 @@ def test_delay_with_abs_max_true() -> None:
     assert cc_coeff < 0
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     """
     Comprehensive test of the `delay` function using various signal manipulations.
@@ -250,7 +248,6 @@ def test_multi_delay_different_lengths() -> None:
     assert ccs[1] == pytest.approx(1, abs=0.05)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     """
     Test `multi_delay` using real seismogram data and synthetic shifts.
@@ -421,7 +418,6 @@ def test_multi_multi_delay_consistent_with_multi_delay() -> None:
             assert ccs_2d[i, j] == pytest.approx(ccs_1d[j], abs=0.05)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     """
     Test `multi_multi_delay` using real seismogram data and synthetic shifts.
@@ -659,7 +655,6 @@ def test_mccc_statistics() -> None:
     assert cc_stds[2] == pytest.approx(0.0, abs=0.1)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
     """
     Test `mccc` using real seismogram data and synthetic shifts.

@@ -6,7 +6,6 @@ Each function is tested for both clone modes, parameter validation, and zerophas
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import MiniSeismogram, Seismogram
@@ -14,7 +13,6 @@ from pysmo.tools.signal._filter._butter import bandpass, bandstop, highpass, low
 from tests.test_helpers import assert_seismogram_modification
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_bandpass_against_sac(
     seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
 ) -> None:
@@ -29,7 +27,6 @@ def test_bandpass_against_sac(
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_lowpass_against_sac(
     seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
 ) -> None:
@@ -43,7 +40,6 @@ def test_lowpass_against_sac(
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_highpass_against_sac(
     seismogram: Seismogram, butter_seis: dict[str, MiniSeismogram]
 ) -> None:
@@ -101,7 +97,6 @@ class BaseButterFilterTest:
 class TestBandpass(BaseButterFilterTest):
     """Tests for the bandpass filter function."""
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass(self, seismogram: Seismogram) -> None:
         """Test bandpass filter with default parameters.
 
@@ -121,7 +116,6 @@ class TestBandpass(BaseButterFilterTest):
             custom_assertions=self.check_filter_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_zerophase(self, seismogram: Seismogram) -> None:
         """Test bandpass filter with zero-phase filtering.
 
@@ -143,7 +137,6 @@ class TestBandpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_different_corners(self, seismogram: Seismogram) -> None:
         """Test bandpass filter with different corner values.
 
@@ -162,7 +155,6 @@ class TestBandpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_invalid_freqmin(self, seismogram: Seismogram) -> None:
         """Test that bandpass raises ValueError for invalid freqmin."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -171,7 +163,6 @@ class TestBandpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin.*is invalid for sampling rate"):
             bandpass(seismogram, freqmin=invalid_freqmin, freqmax=0.5)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_invalid_freqmax(self, seismogram: Seismogram) -> None:
         """Test that bandpass raises ValueError for invalid freqmax."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -180,7 +171,6 @@ class TestBandpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmax.*is invalid for sampling rate"):
             bandpass(seismogram, freqmin=0.1, freqmax=invalid_freqmax)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_freqmin_greater_than_freqmax(
         self, seismogram: Seismogram
     ) -> None:
@@ -188,7 +178,6 @@ class TestBandpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandpass(seismogram, freqmin=0.5, freqmax=0.1)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:
@@ -214,7 +203,6 @@ class TestBandpass(BaseButterFilterTest):
 class TestHighpass(BaseButterFilterTest):
     """Tests for the highpass filter function."""
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_highpass(self, seismogram: Seismogram) -> None:
         """Test highpass filter with default parameters.
 
@@ -232,7 +220,6 @@ class TestHighpass(BaseButterFilterTest):
             custom_assertions=self.check_filter_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_highpass_zerophase(self, seismogram: Seismogram) -> None:
         """Test highpass filter with zero-phase filtering."""
         freqmin = 0.1
@@ -248,7 +235,6 @@ class TestHighpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_highpass_different_corners(self, seismogram: Seismogram) -> None:
         """Test highpass filter with different corner values."""
         freqmin = 0.1
@@ -262,7 +248,6 @@ class TestHighpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_highpass_invalid_freqmin(self, seismogram: Seismogram) -> None:
         """Test that highpass raises ValueError for invalid freqmin."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -271,7 +256,6 @@ class TestHighpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin.*is invalid for sampling rate"):
             highpass(seismogram, freqmin=invalid_freqmin)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_highpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:
@@ -295,7 +279,6 @@ class TestHighpass(BaseButterFilterTest):
 class TestLowpass(BaseButterFilterTest):
     """Tests for the lowpass filter function."""
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_lowpass(self, seismogram: Seismogram) -> None:
         """Test lowpass filter with default parameters.
 
@@ -313,7 +296,6 @@ class TestLowpass(BaseButterFilterTest):
             custom_assertions=self.check_filter_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_lowpass_zerophase(self, seismogram: Seismogram) -> None:
         """Test lowpass filter with zero-phase filtering."""
         freqmax = 0.5
@@ -329,7 +311,6 @@ class TestLowpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_lowpass_different_corners(self, seismogram: Seismogram) -> None:
         """Test lowpass filter with different corner values."""
         freqmax = 0.5
@@ -343,7 +324,6 @@ class TestLowpass(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_lowpass_invalid_freqmax(self, seismogram: Seismogram) -> None:
         """Test that lowpass raises ValueError for invalid freqmax."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -352,7 +332,6 @@ class TestLowpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmax.*is invalid for sampling rate"):
             lowpass(seismogram, freqmax=invalid_freqmax)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_lowpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:
@@ -376,7 +355,6 @@ class TestLowpass(BaseButterFilterTest):
 class TestBandstop(BaseButterFilterTest):
     """Tests for the bandstop filter function."""
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop(self, seismogram: Seismogram) -> None:
         """Test bandstop filter with default parameters.
 
@@ -396,7 +374,6 @@ class TestBandstop(BaseButterFilterTest):
             custom_assertions=self.check_filter_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_zerophase(self, seismogram: Seismogram) -> None:
         """Test bandstop filter with zero-phase filtering."""
         freqmin = 0.1
@@ -414,7 +391,6 @@ class TestBandstop(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_different_corners(self, seismogram: Seismogram) -> None:
         """Test bandstop filter with different corner values."""
         freqmin = 0.1
@@ -430,7 +406,6 @@ class TestBandstop(BaseButterFilterTest):
             custom_assertions=self.check_basic_properties,
         )
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_invalid_freqmin(self, seismogram: Seismogram) -> None:
         """Test that bandstop raises ValueError for invalid freqmin."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -439,7 +414,6 @@ class TestBandstop(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin.*is invalid for sampling rate"):
             bandstop(seismogram, freqmin=invalid_freqmin, freqmax=0.5)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_invalid_freqmax(self, seismogram: Seismogram) -> None:
         """Test that bandstop raises ValueError for invalid freqmax."""
         nyquist = self.get_nyquist_frequency(seismogram)
@@ -448,7 +422,6 @@ class TestBandstop(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmax.*is invalid for sampling rate"):
             bandstop(seismogram, freqmin=0.1, freqmax=invalid_freqmax)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_freqmin_greater_than_freqmax(
         self, seismogram: Seismogram
     ) -> None:
@@ -456,7 +429,6 @@ class TestBandstop(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandstop(seismogram, freqmin=0.5, freqmax=0.1)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_bandstop_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:

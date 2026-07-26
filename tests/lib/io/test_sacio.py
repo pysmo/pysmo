@@ -3,8 +3,10 @@
 import copy
 import pickle
 import time
-from datetime import timezone
+from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import numpy.testing as npt
@@ -689,12 +691,13 @@ def test_computed_geo_properties_raises_when_none() -> None:
         _ = sac.gcarc
 
 
+@pytest.mark.real_web_request
 @pytest.mark.depends(on=["test_file_and_buffer"])
-def test_iris_service() -> None:
+def test_earthscope_service() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysac = SacIO.from_iris(
+            mysac = SacIO.from_earthscope(
                 net="C1",
                 sta="VA01",
                 cha="BHZ",
@@ -713,10 +716,11 @@ def test_iris_service() -> None:
             time.sleep(20)
 
 
+@pytest.mark.real_web_request
 @pytest.mark.depends(on=["test_file_and_buffer"])
-def test_iris_service_params_error() -> None:
+def test_earthscope_service_params_error() -> None:
     try:
-        SacIO.from_iris(
+        SacIO.from_earthscope(
             net="XX",
             sta="XXXX",
             cha="XXX",
@@ -732,12 +736,13 @@ def test_iris_service_params_error() -> None:
         assert str(error) == "HTTP 404"
 
 
+@pytest.mark.real_web_request
 @pytest.mark.depends(on=["test_file_and_buffer"])
-def test_iris_service_multi_result() -> None:
+def test_earthscope_service_multi_result() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysacs = SacIO.from_iris(
+            mysacs = SacIO.from_earthscope(
                 net="IU",
                 sta="MAKZ",
                 cha="HHZ",
@@ -767,12 +772,13 @@ def test_iris_service_multi_result() -> None:
             time.sleep(20)
 
 
+@pytest.mark.real_web_request
 @pytest.mark.depends(on=["test_file_and_buffer"])
-def test_iris_service_multi_result_forced() -> None:
+def test_earthscope_service_multi_result_forced() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysacs = SacIO.from_iris(
+            mysacs = SacIO.from_earthscope(
                 net="IU",
                 sta="MAKZ",
                 cha="HHZ",
@@ -790,3 +796,110 @@ def test_iris_service_multi_result_forced() -> None:
             if attempt == retries - 1:
                 raise
             time.sleep(20)
+
+
+def test_from_iris_deprecation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SacIO.from_iris warns and delegates to from_earthscope."""
+
+    def fake_http_get(*args: object, **kwargs: object) -> bytes:
+        raise RuntimeError("no network in this test")
+
+    monkeypatch.setattr("pysmo.lib.io._sacio.sacio.http_get", fake_http_get)
+
+    with (
+        pytest.warns(DeprecationWarning, match="from_iris is deprecated"),
+        pytest.raises(RuntimeError, match="no network in this test"),
+    ):
+        SacIO.from_iris(
+            net="IU",
+            sta="ANMO",
+            cha="BHZ",
+            loc="00",
+            start="2021-03-22T13:00:00",
+            duration=60,
+        )
+
+
+def _zip_of(entries: dict[str, bytes]) -> bytes:
+    buffer = BytesIO()
+    with ZipFile(buffer, "w") as archive:
+        for name, content in entries.items():
+            archive.writestr(name, content)
+    return buffer.getvalue()
+
+
+def test_from_earthscope_single_result_mocked(
+    monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
+) -> None:
+    """from_earthscope with force_single_result=True, against a mocked response."""
+    sac_bytes = assets["orgfile"].read_bytes()
+    monkeypatch.setattr(
+        "pysmo.lib.io._sacio.sacio.http_get",
+        lambda *args, **kwargs: _zip_of({"IU.ANMO.00.BHZ.SAC": sac_bytes}),
+    )
+
+    result = SacIO.from_earthscope(
+        net="IU",
+        sta="ANMO",
+        cha="BHZ",
+        loc="00",
+        start="2021-03-22T13:00:00",
+        duration=3600,
+        force_single_result=True,
+    )
+    assert isinstance(result, SacIO)
+
+
+def test_from_earthscope_multi_result_mocked(
+    monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
+) -> None:
+    """from_earthscope with force_single_result=False, against a mocked response."""
+    sac_bytes = assets["orgfile"].read_bytes()
+    monkeypatch.setattr(
+        "pysmo.lib.io._sacio.sacio.http_get",
+        lambda *args, **kwargs: _zip_of(
+            {"segment_1.SAC": sac_bytes, "segment_2.SAC": sac_bytes}
+        ),
+    )
+
+    result = SacIO.from_earthscope(
+        net="IU",
+        sta="ANMO",
+        cha="BHZ",
+        loc="00",
+        start="2021-03-22T13:00:00",
+        duration=3600,
+        force_single_result=False,
+    )
+    assert isinstance(result, dict)
+    assert result.keys() == {"segment_1.SAC", "segment_2.SAC"}
+    assert all(isinstance(sac, SacIO) for sac in result.values())
+
+
+def test_from_earthscope_datetime_params_mocked(
+    monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
+) -> None:
+    """from_earthscope converts datetime start/end kwargs to isoformat strings."""
+    sac_bytes = assets["orgfile"].read_bytes()
+    captured: dict[str, object] = {}
+
+    def fake_http_get(url: str, fields: dict[str, object], **kwargs: object) -> bytes:
+        captured.update(fields)
+        return _zip_of({"segment.SAC": sac_bytes})
+
+    monkeypatch.setattr("pysmo.lib.io._sacio.sacio.http_get", fake_http_get)
+
+    start = datetime(2021, 3, 22, 13, 0, 0, tzinfo=timezone.utc)
+    end = datetime(2021, 3, 22, 14, 0, 0, tzinfo=timezone.utc)
+    SacIO.from_earthscope(
+        net="IU",
+        sta="ANMO",
+        cha="BHZ",
+        loc="00",
+        start=start,
+        end=end,
+        force_single_result=True,
+    )
+
+    assert captured["start"] == start.isoformat()
+    assert captured["end"] == end.isoformat()

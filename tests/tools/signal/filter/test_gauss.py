@@ -2,7 +2,6 @@ import matplotlib
 import matplotlib.figure
 import numpy as np
 import pytest
-from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import Seismogram
@@ -13,7 +12,6 @@ from tests.test_helpers import assert_seismogram_modification
 matplotlib.use("Agg")
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_envelope(seismogram: Seismogram) -> None:
     """
     Calculate gaussian envelope from Seismogram object and verify the calculated
@@ -34,7 +32,6 @@ def test_envelope(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_gauss(seismogram: Seismogram) -> None:
     """
     Calculate gaussian filtered data from SacFile object and verify the calculated
@@ -54,7 +51,6 @@ def test_gauss(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_gauss_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian filtered data and verify against snapshot for regression testing.
@@ -68,7 +64,6 @@ def test_gauss_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> 
     assert_seismogram_modification(seismogram, gauss, fc, alpha, expected_data=snapshot)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_envelope_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """
     Calculate gaussian envelope and verify against snapshot for regression testing.

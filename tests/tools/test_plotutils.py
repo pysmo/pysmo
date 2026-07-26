@@ -3,7 +3,6 @@ from datetime import timezone
 import matplotlib  # type: ignore
 import pandas as pd
 import pytest
-from pytest_cases import parametrize_with_cases
 
 from pysmo import Seismogram
 
@@ -11,14 +10,13 @@ matplotlib.use("Agg")
 
 
 @pytest.mark.mpl_image_compare(remove_text=True)
-def test_plotutils_plotseis(seismograms: tuple[Seismogram, ...]):  # type: ignore
+def test_plotutils_plotseis(seismograms: list[Seismogram]):  # type: ignore
     from pysmo.tools.plotutils import plotseis
 
     fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
     return fig
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 class TestPlotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""

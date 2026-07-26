@@ -1,5 +1,5 @@
 # flake8: noqa: E402
-"""Classes compatible with pysmo types.
+"""Concrete classes compatible with pysmo types.
 
 --8<-- [start:in-the-box]
 The [`pysmo.classes`][] module provides classes that implement one or more
@@ -13,6 +13,7 @@ from .._utils import export_module_names
 
 _internal_names = set(dir())
 
+from ._geocsv import *  # noqa: F403
 from ._sac import *  # noqa: F403
 
 __all__ = [s for s in dir() if not s.startswith("_") and s not in _internal_names]
