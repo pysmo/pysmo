@@ -3,26 +3,15 @@ Validators and converters for pysmo classes using [`attrs`][attrs].
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import overload
 
 import numpy as np
 import pandas as pd
 
 
-@overload
-def convert_to_utc_timestamp(value: None) -> pd.Timestamp | None: ...
-
-
-@overload
-def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timestamp: ...
-
-
-def convert_to_utc_timestamp(
-    value: pd.Timestamp | datetime | str | None,
-) -> pd.Timestamp | None:
-    """Convert a value to a [`pandas.Timestamp`][pandas.Timestamp] object with `#!py tzdata=timezone.utc` set."""
+def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timestamp:
+    """Convert a value to a [`pandas.Timestamp`][pandas.Timestamp] object with `#!py tzinfo=timezone.utc` set."""
     if value is None:
-        return None
+        raise TypeError("Value is None.")
 
     ts = pd.Timestamp(value)
 

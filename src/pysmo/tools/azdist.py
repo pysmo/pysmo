@@ -1,10 +1,12 @@
 """Common distance and azimuth calculations using [`pyproj.Geod`][pyproj.Geod]."""
 
+import math
+
 from pyproj import Geod
 
 from pysmo import Location
 
-__all__ = ["azimuth", "backazimuth", "distance"]
+__all__ = ["azimuth", "backazimuth", "distance", "haversine"]
 
 DEFAULT_ELLPS = "WGS84"
 """Default model for distance and azimuth calculations."""
@@ -129,3 +131,44 @@ def distance(
         ```
     """
     return _azdist(location_1=location_1, location_2=location_2, ellps=ellps)[2]
+
+
+def haversine(location_1: Location, location_2: Location) -> float:
+    """Calculate the great circle distance in degrees between two locations.
+
+    Uses the haversine formula on a spherical Earth, which is the conventional
+    model for seismological epicentral distance.
+
+    Args:
+        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
+
+    Returns:
+        Epicentral distance in degrees.
+
+    Examples:
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> from pysmo.tools.azdist import haversine
+        >>> sac = SAC.from_file("example.sac")
+        >>> # the SAC class provides both event and station
+        >>> haversine(sac.event, sac.station)
+        17.013880
+        >>> # compare with the SAC gcarc header (spherical law of cosines)
+        >>> float(sac.gcarc)
+        17.013880
+        >>>
+        ```
+    """
+    lat1 = math.radians(location_1.latitude)
+    lat2 = math.radians(location_2.latitude)
+    dlat = lat2 - lat1
+    dlon = math.radians(location_2.longitude - location_1.longitude)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
+    # Clamp to guard against floating-point rounding pushing a fraction
+    # above 1.0 for near-identical or near-antipodal coordinates.
+    a = min(1.0, max(0.0, a))
+    return math.degrees(2 * math.asin(math.sqrt(a)))

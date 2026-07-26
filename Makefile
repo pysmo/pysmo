@@ -1,5 +1,5 @@
 .PHONY: help check-uv build changelog clean docs format format-check \
-	lint live-docs mypy python sync test-figs tests upgrade
+	lint live-docs mypy python sync test-figs tests test-web-live upgrade
 
 ifeq ($(OS),Windows_NT)
   UV_VERSION := $(shell uv --version 2> NUL)
@@ -59,10 +59,13 @@ sync: check-uv ## Install this project and its dependencies in a virtual environ
 	uv sync --locked --all-extras
 
 test-figs: check-uv ## Generate baseline figures for testing (then manually move them to the test directories).
-	uv run py.test --mpl-generate-path=baseline
+	uv run py.test --run-real-web-requests --mpl-generate-path=baseline
 
 tests: check-uv mypy ## Run all tests with pytest.
 	uv run pytest --cov --cov-report=term-missing --mpl
+
+test-web-live: check-uv ## Run tests that hit the real EarthScope web services.
+	uv run pytest --run-real-web-requests --mpl tests/lib/io/test_sacio.py tests/tools/test_web_live.py
 
 upgrade: check-uv ## Upgrade dependencies to their latest versions.
 	uv sync --upgrade

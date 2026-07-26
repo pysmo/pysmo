@@ -1,14 +1,12 @@
 """Unit tests for spectral analysis functions in _spectral.py."""
 
 import numpy as np
-from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import Seismogram
 from pysmo.tools.signal import psd
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_psd_basic(seismogram: Seismogram) -> None:
     """Test basic functionality of the psd function.
 
@@ -27,7 +25,6 @@ def test_psd_basic(seismogram: Seismogram) -> None:
     assert freqs[0] > 0  # f=0Hz should be dropped
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_psd_parameters(seismogram: Seismogram) -> None:
     """Test psd function with different parameters.
 
@@ -51,7 +48,6 @@ def test_psd_parameters(seismogram: Seismogram) -> None:
     assert len(freqs2) == nfft2 // 2
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_psd_scaling(seismogram: Seismogram) -> None:
     """Test psd function with different scaling options."""
     npts = len(seismogram.data)
@@ -69,7 +65,6 @@ def test_psd_scaling(seismogram: Seismogram) -> None:
     assert not np.allclose(psd_dens, psd_spec)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_psd_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test psd output against snapshot for regression testing."""
     # Use fixed parameters for stable snapshots
