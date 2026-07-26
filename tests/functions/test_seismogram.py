@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from matplotlib.figure import Figure
-from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import Seismogram
@@ -15,7 +14,6 @@ from pysmo.tools.plotutils import time_array
 from tests.test_helpers import assert_seismogram_modification
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_time2index(seismogram: Seismogram) -> None:
     from pysmo.functions import time2index
 
@@ -37,7 +35,6 @@ def test_time2index(seismogram: Seismogram) -> None:
         time2index(seismogram, seismogram.end_time + pd.Timedelta(seconds=1))
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_normalize(seismogram: Seismogram) -> None:
     """Normalize data with its absolute maximum value"""
     from pysmo.functions import normalize
@@ -92,7 +89,6 @@ def test_normalize_zero_window_raises() -> None:
         normalize(seis, t1=t1, t2=t2)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_normalize_snapshot(
     seismogram: Seismogram, snapshot: SnapshotAssertion
 ) -> None:
@@ -106,7 +102,6 @@ def test_normalize_snapshot(
     assert_seismogram_modification(seismogram, normalize, expected_data=snapshot)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_pad(seismogram: Seismogram) -> None:
     from pysmo.functions import pad
 
@@ -153,7 +148,6 @@ def test_pad(seismogram: Seismogram) -> None:
         )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_pad_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test pad output against snapshot for regression testing.
 
@@ -170,7 +164,6 @@ def test_pad_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> No
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_detrend(seismogram: Seismogram) -> None:
     """Detrend Seismogram object and verify mean is 0."""
     from pysmo.functions import detrend
@@ -183,7 +176,6 @@ def test_detrend(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_detrend_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test detrend output against snapshot for regression testing.
 
@@ -195,7 +187,6 @@ def test_detrend_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -
     assert_seismogram_modification(seismogram, detrend, expected_data=snapshot)
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_resample(seismogram: Seismogram) -> None:
     """Resample Seismogram object and verify resampled data."""
     from pysmo.functions import resample
@@ -227,7 +218,6 @@ def test_resample(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_resample_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test resample output against snapshot for regression testing.
 
@@ -243,7 +233,394 @@ def test_resample_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) 
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
+def test_estimate_delta_odd_count() -> None:
+    from pysmo.functions import estimate_delta
+
+    deltas = [
+        pd.Timedelta(seconds=1.0),
+        pd.Timedelta(seconds=1.0) + pd.Timedelta(nanoseconds=1),
+        pd.Timedelta(seconds=1.0),
+    ]
+    assert estimate_delta(deltas) == pd.Timedelta(seconds=1.0)
+
+
+def test_estimate_delta_even_count_picks_low_median() -> None:
+    from pysmo.functions import estimate_delta
+
+    deltas = [pd.Timedelta(seconds=1.0), pd.Timedelta(seconds=2.0)]
+    assert estimate_delta(deltas) == pd.Timedelta(seconds=1.0)
+
+
+def test_estimate_delta_empty_raises() -> None:
+    from pysmo.functions import estimate_delta
+
+    with pytest.raises(ValueError, match="No deltas to estimate from"):
+        estimate_delta([])
+
+
+def test_merge_auto_delta_resamples_jittery_deltas() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1) + pd.Timedelta(nanoseconds=1),
+        data=np.array([4.0, 5.0, 6.0]),
+    )
+
+    merged = merge([first, second], auto_delta=True, clone=True)
+    assert merged.delta == pd.Timedelta(seconds=1)
+    np.testing.assert_allclose(merged.data, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+
+    # Neither input is mutated when clone=True.
+    assert second.delta == pd.Timedelta(seconds=1) + pd.Timedelta(nanoseconds=1)
+
+
+def test_merge() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([4.0, 5.0]),
+    )
+
+    merged = merge([first, second], clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert merged.begin_time == first.begin_time
+    assert merged.delta == first.delta
+
+    result = merge([first, second])
+    assert result is None
+    np.testing.assert_array_equal(first.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    np.testing.assert_array_equal(second.data, np.array([4.0, 5.0]))
+
+
+def test_merge_out_of_order_input() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([4.0, 5.0]),
+    )
+
+    # `second` is passed first, even though `first` starts earlier.
+    merged = merge([second, first], clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert merged.begin_time == first.begin_time
+
+    # clone=False still mutates and returns the literal first list entry
+    # (`second`), even though it is not chronologically first.
+    result = merge([second, first])
+    assert result is None
+    np.testing.assert_array_equal(second.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert second.begin_time == first.begin_time
+    np.testing.assert_array_equal(first.data, np.array([1.0, 2.0, 3.0]))
+
+
+def test_merge_empty_seismogram_discarded() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    # Empty, and with a begin_time and delta that would otherwise be
+    # inconsistent with the real data -- must not affect the merge at all.
+    empty = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T05:00:00Z"),
+        delta=pd.Timedelta(seconds=99),
+        data=np.array([]),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([4.0, 5.0]),
+    )
+
+    merged = merge([first, empty, second], clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert merged.begin_time == first.begin_time
+
+
+def test_merge_first_empty_is_still_mutation_target() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    empty = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T05:00:00Z"),
+        delta=pd.Timedelta(seconds=99),
+        data=np.array([]),
+    )
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([4.0, 5.0]),
+    )
+
+    # clone=True: the clone is based on `empty` (the first list entry),
+    # even though it started out empty.
+    merged = merge([empty, first, second], clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert merged.begin_time == first.begin_time
+    assert merged.delta == first.delta
+    assert empty.data.size == 0  # the original `empty` object is untouched
+
+    # clone=False: `empty` itself is mutated in place and becomes the
+    # merged result, even though it started out empty.
+    result = merge([empty, first, second])
+    assert result is None
+    np.testing.assert_array_equal(empty.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert empty.begin_time == first.begin_time
+    assert empty.delta == first.delta
+    np.testing.assert_array_equal(first.data, np.array([1.0, 2.0, 3.0]))
+
+
+def test_merge_all_empty_raises() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    empty1 = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([]),
+    )
+    empty2 = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([]),
+    )
+
+    with pytest.raises(ValueError, match="No non-empty seismograms"):
+        merge([empty1, empty2])
+
+
+def test_merge_no_seismograms_raises() -> None:
+    from pysmo.functions import merge
+
+    with pytest.raises(ValueError, match="No seismograms to merge"):
+        merge([])
+
+
+def test_merge_with_resampling() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(4),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:04Z"),
+        delta=pd.Timedelta(milliseconds=500),
+        data=np.full(8, 2.0),
+    )
+
+    merged = merge([first, second], delta=pd.Timedelta(seconds=1), clone=True)
+    np.testing.assert_allclose(
+        merged.data, np.array([1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0])
+    )
+    assert merged.delta == pd.Timedelta(seconds=1)
+    assert second.delta == pd.Timedelta(milliseconds=500)
+
+
+def test_merge_with_resampling_no_clone() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(4),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:04Z"),
+        delta=pd.Timedelta(milliseconds=500),
+        data=np.full(8, 2.0),
+    )
+
+    result = merge([first, second], delta=pd.Timedelta(seconds=1))
+    assert result is None
+
+    # The first seismogram is mutated in place and becomes the merged result.
+    np.testing.assert_allclose(
+        first.data, np.array([1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0])
+    )
+    assert first.delta == pd.Timedelta(seconds=1)
+
+    # The second (non-first) input must not be mutated, even though it
+    # needed resampling to match delta.
+    assert second.delta == pd.Timedelta(milliseconds=500)
+    np.testing.assert_array_equal(second.data, np.full(8, 2.0))
+
+
+def test_merge_different_sampling_intervals_raise() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(milliseconds=500),
+        data=np.ones(6),
+    )
+
+    with pytest.raises(ValueError, match="different sampling intervals"):
+        merge([first, second])
+
+
+def test_merge_gap_raises() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03.6Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+
+    with pytest.raises(ValueError, match="Data gap of 0.600000 s"):
+        merge([first, second])
+
+
+def test_merge_allows_tiny_boundary_jitter() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03.0000005Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.full(2, 2.0),
+    )
+
+    merged = merge([first, second], clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 1.0, 1.0, 2.0, 2.0]))
+
+
+def test_merge_matching_overlap_is_trimmed() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    # Overlaps the last sample of `first` (value 3.0) by exactly one full
+    # sample interval; requires gap_tolerance_factor=1.0 to be tolerated.
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:02Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([3.0, 4.0, 5.0]),
+    )
+
+    merged = merge([first, second], gap_tolerance_factor=1.0, clone=True)
+    np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+    assert merged.begin_time == first.begin_time
+    assert merged.end_time == first.begin_time + merged.delta * 4
+
+
+def test_merge_mismatched_overlap_raises() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([1.0, 2.0, 3.0]),
+    )
+    # Overlaps by one full sample interval, but the overlapping sample
+    # value does not match.
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:02Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.array([999.0, 4.0, 5.0]),
+    )
+
+    with pytest.raises(ValueError, match="do not match"):
+        merge([first, second], gap_tolerance_factor=1.0)
+
+
+def test_merge_negative_gap_tolerance_factor_raises() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+
+    with pytest.raises(ValueError, match="gap_tolerance_factor must be non-negative"):
+        merge([first, second], gap_tolerance_factor=-1)
+
+
+def test_merge_overlap_exceeding_tolerance_raises() -> None:
+    from pysmo import MiniSeismogram
+    from pysmo.functions import merge
+
+    first = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+    # Overlaps by two full sample intervals, exceeding the default
+    # gap_tolerance_factor.
+    second = MiniSeismogram(
+        begin_time=pd.Timestamp("2010-02-27T06:30:01Z"),
+        delta=pd.Timedelta(seconds=1),
+        data=np.ones(3),
+    )
+
+    with pytest.raises(ValueError, match="Data overlap of 2.000000 s"):
+        merge([first, second])
+
+
 def test_crop(seismogram: Seismogram) -> None:
     """Crop Seismogram object and verify cropped data."""
     from pysmo.functions import crop
@@ -312,7 +689,6 @@ def test_crop(seismogram: Seismogram) -> None:
         assert all(cropped_seis.data == seis3.data[1:-1])
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_crop_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test crop output against snapshot for regression testing.
 
@@ -334,7 +710,6 @@ def test_crop_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> N
 
 
 class TestTaper:
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_taper(self, seismogram: Seismogram) -> Figure:
         from pysmo.functions import taper
@@ -379,7 +754,6 @@ class TestTaper:
 class TestWindow:
     TAPER_WIDTH: pd.Timedelta | float = pd.Timedelta(seconds=500)
 
-    @parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
     def test_window(self, seismogram: Seismogram) -> None:
         from pysmo.functions import time2index, window
 

@@ -1,0 +1,97 @@
+"""Live checks against the real EarthScope web services.
+
+These hit the actual network and are skipped by default; run with
+`pytest --run-real-web-requests` to opt in. They exist to catch drift
+between pysmo's assumptions and the live services (URL, request
+parameters, response format) that mocked tests in `test_web.py` cannot.
+
+`test_fetch_seismogram_live` is checked with pytest-mpl against a
+baseline plot (the waveform with the predicted P arrival marked) rather
+than a syrupy snapshot: syrupy fails the whole test session on any
+*unused* snapshot, and this test's snapshot would always be unused in a
+normal (non-live) run, breaking every default `make tests`/CI run.
+pytest-mpl's image comparison doesn't have that failure mode, and the
+plot doubles as a visual check that the fetched waveform actually looks
+like an earthquake, not just that its numbers match. The 2010 Maule
+event is archived, historical data, so both the waveform and the
+computed arrival time are expected to be stable across runs; a mismatch
+signals an upstream data change or a pysmo regression, not flakiness.
+Regenerate the baseline with `make test-figs` if a change is expected.
+"""
+
+import matplotlib
+import pandas as pd
+import pytest
+from matplotlib.dates import date2num
+from matplotlib.figure import Figure
+
+from pysmo import MiniEvent, MiniStation
+from pysmo.classes import GeoCsvSeismogram
+from pysmo.functions import detrend
+from pysmo.tools.plotutils import plotseis
+from pysmo.tools.web import fetch_seismogram, fetch_travel_times
+
+matplotlib.use("Agg")
+
+pytestmark = pytest.mark.real_web_request
+
+# EarthScope's IASP91 traveltime lookup for this depth/distance is a fixed
+# model evaluation, not a measurement, so it is expected to be stable across
+# runs; drift here signals a change on EarthScope's side, not flakiness.
+EXPECTED_TRAVEL_TIMES = {"P": 604.654, "S": 1096.553}
+
+
+@pytest.fixture()
+def station() -> MiniStation:
+    return MiniStation(
+        name="ANMO",
+        network="IU",
+        location="00",
+        channel="LHZ",
+        latitude=34.945981,
+        longitude=-106.457133,
+    )
+
+
+@pytest.fixture()
+def event() -> MiniEvent:
+    return MiniEvent(
+        latitude=-36.122,
+        longitude=-72.898,
+        depth=22900.0,
+        time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
+    )
+
+
+def test_fetch_travel_times_live() -> None:
+    result = fetch_travel_times(22.9, 60.0, ["P", "S"])
+
+    assert result.keys() >= {"P", "S"}
+    assert 0 < result["P"] < result["S"]
+    assert {phase: round(t, 3) for phase, t in result.items()} == EXPECTED_TRAVEL_TIMES
+
+
+@pytest.mark.mpl_image_compare(remove_text=True)
+def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure:
+    seismogram, arrivals = fetch_seismogram(
+        station=station,
+        event=event,
+        pre=pd.Timedelta(minutes=2),
+        post=pd.Timedelta(minutes=8),
+    )
+
+    assert isinstance(seismogram, GeoCsvSeismogram)
+    assert seismogram.sid == "IU_ANMO_00_LHZ"
+    assert seismogram.delta == pd.Timedelta(seconds=1)
+    assert len(seismogram.data) == 600
+
+    predicted_p = arrivals["P"]
+    assert seismogram.begin_time < predicted_p < seismogram.end_time
+
+    detrend(seismogram)
+    fig = plotseis(seismogram, showfig=False, linewidth=0.5)
+    fig.gca().axvline(
+        date2num(predicted_p), color="red", linestyle="--", label="predicted P"
+    )
+    fig.gca().legend(loc="upper right")
+    return fig

@@ -38,13 +38,12 @@ dev = [
   "types-pyyaml>=6.0.12.20250915",
 ]
 test = [
-  "pytest>=8.4.2",
+  "pytest>=9",
   "pytest-mpl>=0.17.0",
   "pytest-cov>=6.3.0",
   "pytest-mypy>=1.0.1",
   "pytest-depends>=1.0.1",
   "pytest-sugar>=1.1.1",
-  "pytest-cases>=3.9.1",
   "sybil[pytest]>=9.2.0",
   "syrupy>=4.9.1",
   "ruff>=0.11.13",
@@ -87,6 +86,9 @@ filterwarnings = ["ignore::UserWarning"]
 mpl-generate-summary = "html"
 mpl-use-full-test-name = true
 addopts = "-p no:doctest"
+markers = [
+  "real_web_request: hits live web services (e.g. EarthScope); skipped by default, run with --run-real-web-requests",
+]
 
 [tool.mypy]
 mypy_path = "src"
@@ -124,6 +126,7 @@ exclude_also = [
 exclude = [
   "docs/snippets/tutorial/season_seismogram_short.py",
   "src/pysmo/lib/io/_sacio/_sacio_rendered.py",
+  "*.md",
 ]
 
 [tool.ruff.lint]
