@@ -14,7 +14,7 @@ nav = [
     "first-steps/index.md",
     "first-steps/installation.md",
     "first-steps/tutorial.md",
-   {"FAQs" = "first-steps/faqs.md"},
+    { "FAQs" = "first-steps/faqs.md" },
   ] },
   { "Usage" = [
     "usage/index.md",
@@ -39,6 +39,7 @@ nav = [
       "api/pysmo/tools/plotutils.md",
       "api/pysmo/tools/signal.md",
       "api/pysmo/tools/utils.md",
+      "api/pysmo/tools/web.md",
     ] },
     "api/pysmo/typing.md",
   ] },

@@ -1,7 +1,7 @@
 """Functions for 'Mini' classes."""
 
 from copy import copy
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from attrs import NOTHING, fields
 from cattrs import unstructure
@@ -127,8 +127,7 @@ def clone_to_mini[TMini: _AnyMini](
             )
             for attr in fields(mini_cls)
         }
-        # TODO: why do we need cast here for mypy?
-        return cast(TMini, mini_cls(**clone_dict))
+        return mini_cls(**clone_dict)
 
     raise AttributeError(
         f"Unable to create clone: {source} not compatible with {mini_cls}."

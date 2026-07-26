@@ -1,5 +1,5 @@
 import struct
-import time as _time
+import warnings
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from os import PathLike
@@ -8,10 +8,10 @@ from typing import Any, Literal, Self
 from zipfile import ZipFile
 
 import numpy as np
-import urllib3
 from attrs import define
 
 from pysmo import MiniLocation
+from pysmo.lib.io import http_get
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
 from ._lib import SacIODefaults
@@ -38,10 +38,10 @@ class SacIO(SacIOBase):
     (for example the begin time [`b`][pysmo.lib.io.SacIO.b]) are checked for a
     valid format before being saved in the `SacIO` instance.
 
-    Warning:
-        This class should typically never be used directly. Instead please
-        use the [`SAC`][pysmo.classes.SAC] class, which inherits all attributes
-        and methods from here.
+    Tip:
+        This class should typically never be used directly. Instead use the
+        [`SAC`][pysmo.classes.SAC] class, which inherits all attributes and
+        methods from here.
 
     Examples:
         Create a new instance from a file and print seismogram data:
@@ -74,11 +74,11 @@ class SacIO(SacIOBase):
         >>>
         ```
 
-        Create a new instance from IRIS services:
+        Create a new instance from EarthScope services:
 
         ```python
         >>> from pysmo.lib.io import SacIO
-        >>> sac = SacIO.from_iris(net="C1",
+        >>> sac = SacIO.from_earthscope(net="C1",
         ... sta="VA01",
         ... cha="BHZ",
         ... loc="--",
@@ -398,7 +398,7 @@ class SacIO(SacIOBase):
         return newinstance
 
     @classmethod
-    def from_iris(
+    def from_earthscope(
         cls,
         net: str,
         sta: str,
@@ -407,8 +407,8 @@ class SacIO(SacIOBase):
         force_single_result: bool = False,
         **kwargs: Any,
     ) -> Self | dict[str, Self] | None:
-        """Create a list of SAC instances from a single IRIS
-        request using the output format as "sac.zip".
+        """Create a list of SAC instances from a single EarthScope
+        timeseries request using the output format as "sac.zip".
 
         Args:
             net: Network code (e.g. "US")
@@ -434,26 +434,16 @@ class SacIO(SacIOBase):
         if end is not None and isinstance(end, datetime):
             kwargs["end"] = end.isoformat()
 
-        http = urllib3.PoolManager()
-        for attempt in range(SacIODefaults.iris_request_retries):
-            response = http.request(
-                "GET",
-                SacIODefaults.iris_base_url,
-                fields=kwargs,
-                redirect=False,
-                timeout=SacIODefaults.iris_timeout_seconds,
-            )
-            if (
-                response.status == 500
-                and attempt < SacIODefaults.iris_request_retries - 1
-            ):
-                _time.sleep(SacIODefaults.iris_retry_delay_seconds)
-                continue
-            if response.status >= 400:
-                raise urllib3.exceptions.ResponseError(f"HTTP {response.status}")
-            break
+        data = http_get(
+            SacIODefaults.earthscope_base_url,
+            kwargs,
+            timeout_seconds=SacIODefaults.earthscope_timeout_seconds,
+            request_retries=SacIODefaults.earthscope_request_retries,
+            retry_delay_seconds=SacIODefaults.earthscope_retry_delay_seconds,
+            redirect=False,
+        )
 
-        zip = ZipFile(BytesIO(response.data))
+        zip = ZipFile(BytesIO(data))
 
         result = {}
         for name in zip.namelist():
@@ -463,6 +453,35 @@ class SacIO(SacIOBase):
                 return sac
             result[name] = sac
         return None if force_single_result else result
+
+    @classmethod
+    def from_iris(
+        cls,
+        net: str,
+        sta: str,
+        cha: str,
+        loc: str,
+        force_single_result: bool = False,
+        **kwargs: Any,
+    ) -> Self | dict[str, Self] | None:
+        """Deprecated alias of [`from_earthscope`][pysmo.lib.io.SacIO.from_earthscope].
+
+        IRIS merged into the EarthScope Consortium; use
+        [`from_earthscope`][pysmo.lib.io.SacIO.from_earthscope] instead.
+        """
+        warnings.warn(
+            "SacIO.from_iris is deprecated; use SacIO.from_earthscope instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.from_earthscope(
+            net=net,
+            sta=sta,
+            cha=cha,
+            loc=loc,
+            force_single_result=force_single_result,
+            **kwargs,
+        )
 
     def read_buffer(self, buffer: bytes) -> None:
         """Read data and headers from a SAC byte buffer into an existing SAC instance.
