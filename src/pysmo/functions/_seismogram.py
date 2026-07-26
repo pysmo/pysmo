@@ -1,6 +1,9 @@
+import statistics
+from collections.abc import Sequence
 from copy import deepcopy
+from itertools import pairwise
 from math import floor
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -20,6 +23,8 @@ if TYPE_CHECKING:
 __all__ = [
     "crop",
     "detrend",
+    "estimate_delta",
+    "merge",
     "normalize",
     "pad",
     "resample",
@@ -383,6 +388,337 @@ def resample[T: Seismogram](
     return None
 
 
+def estimate_delta(deltas: Sequence[PositiveTimedelta]) -> PositiveTimedelta:
+    """Estimate a canonical sampling interval from a set of near-equal deltas.
+
+    Useful when several seismograms nominally share a sampling interval but
+    report values that differ only by measurement noise (e.g. clock drift
+    reflected in a reported sample rate) or floating-point noise. Returns the low
+    median of `deltas`: an order-independent choice that is always one of
+    the input values, rather than a synthetic average that none of the
+    seismograms actually have.
+
+    This does not check how close the given deltas are to each other; for a
+    set of genuinely different sampling intervals it simply returns the low
+    median of the sorted values.
+
+    Args:
+        deltas: Sampling intervals to estimate a canonical value from.
+
+    Returns:
+        The estimated canonical sampling interval.
+
+    Raises:
+        ValueError: If `deltas` is empty.
+
+    Examples:
+        ```python
+        >>> import pandas as pd
+        >>> from pysmo.functions import estimate_delta
+        >>> deltas = [
+        ...     pd.Timedelta(seconds=0.01),
+        ...     pd.Timedelta(seconds=0.010000000000001),
+        ...     pd.Timedelta(seconds=0.01),
+        ... ]
+        >>> estimate_delta(deltas)
+        Timedelta('0 days 00:00:00.010000')
+        >>>
+        ```
+    """
+    if not deltas:
+        raise ValueError("No deltas to estimate from.")
+    return statistics.median_low(deltas)
+
+
+@overload
+def merge(
+    seismograms: Sequence[Seismogram],
+    *,
+    delta: PositiveTimedelta | None = ...,
+    auto_delta: Literal[False] = ...,
+    gap_tolerance_factor: NonNegativeNumber = ...,
+    clone: Literal[False] = ...,
+) -> None: ...
+
+
+@overload
+def merge(
+    seismograms: Sequence[Seismogram],
+    *,
+    delta: None = ...,
+    auto_delta: Literal[True],
+    gap_tolerance_factor: NonNegativeNumber = ...,
+    clone: Literal[False] = ...,
+) -> None: ...
+
+
+@overload
+def merge[T: Seismogram](
+    seismograms: Sequence[T],
+    *,
+    delta: PositiveTimedelta | None = ...,
+    auto_delta: Literal[False] = ...,
+    gap_tolerance_factor: NonNegativeNumber = ...,
+    clone: Literal[True],
+) -> T: ...
+
+
+@overload
+def merge[T: Seismogram](
+    seismograms: Sequence[T],
+    *,
+    delta: None = ...,
+    auto_delta: Literal[True],
+    gap_tolerance_factor: NonNegativeNumber = ...,
+    clone: Literal[True],
+) -> T: ...
+
+
+def merge[T: Seismogram](
+    seismograms: Sequence[Seismogram],
+    *,
+    delta: PositiveTimedelta | None = None,
+    auto_delta: bool = False,
+    gap_tolerance_factor: NonNegativeNumber = 0.5,
+    clone: bool = False,
+) -> None | T:
+    """Merge contiguous seismograms into a single seismogram.
+
+    Empty seismograms take no part in the merge arithmetic (they never
+    contribute data and never constrain sampling-interval or gap/overlap
+    checks) and are absent from the result if there are non-empty
+    seismograms to merge with. The remaining, non-empty seismograms are
+    merged in chronological order of `begin_time`, regardless of the order
+    they are given in, and must lie on a single regular sampling grid. By
+    default, this requires equal sampling intervals; when `delta` is
+    provided, each non-empty seismogram is first resampled to that common
+    interval using [`resample`][pysmo.functions.resample]. If `delta` is
+    `None` and `auto_delta` is `True`, a common interval is estimated with
+    [`estimate_delta`][pysmo.functions.estimate_delta] instead of requiring
+    an exact match — useful when sampling intervals only disagree by
+    measurement or floating-point noise.
+
+    A small amount of boundary timestamp jitter is allowed, bounded by
+    `gap_tolerance_factor` sampling intervals, so metadata rounding noise does
+    not block otherwise valid merges. If consecutive seismograms overlap
+    within this tolerance, the overlapping samples must match (compared with
+    [`numpy.allclose`][numpy.allclose] and its default tolerances, to
+    accommodate floating-point noise from e.g. prior resampling); they are
+    verified and the duplicates are discarded rather than concatenated.
+
+    When `clone=False`, the first seismogram in `seismograms` (as given —
+    not necessarily the chronologically first, and regardless of whether it
+    is itself empty) is modified in place and becomes the merged result: its
+    `begin_time` and `data` are overwritten to reflect the full,
+    chronologically-ordered merge of the non-empty seismograms. Other input
+    seismograms are never modified.
+
+    Args:
+        seismograms: Seismograms to merge. May be given in any order; any mix
+            of types satisfying the [`Seismogram`][pysmo.Seismogram] protocol
+            works at runtime. When `clone=True`, the return type is inferred
+            from `seismograms`; for a bare list/tuple literal mixing concrete
+            types, annotate it as `Sequence[Seismogram]` to keep the call
+            type-checked (see Examples).
+        delta: Sampling interval to resample all non-empty seismograms to
+            before merging. If `None`, all non-empty input seismograms must
+            already share the same sampling interval, unless `auto_delta`
+            is `True`.
+        auto_delta: Estimate a common sampling interval from the non-empty
+            seismograms with
+            [`estimate_delta`][pysmo.functions.estimate_delta] instead of
+            requiring an exact match. Mutually exclusive with `delta`; type
+            checkers reject passing both.
+        gap_tolerance_factor: Maximum allowed boundary timestamp jitter between
+            consecutive seismograms, as a fraction of the sampling interval.
+        clone: Operate on a clone of the first input seismogram.
+
+    Returns:
+        Merged [`Seismogram`][pysmo.Seismogram] object if called with
+        `clone=True`.
+
+    Raises:
+        ValueError: If `seismograms` is empty, contains no non-empty
+            seismograms, the sampling intervals of the non-empty seismograms
+            differ and neither `delta` nor `auto_delta` is provided, the
+            boundary between consecutive non-empty seismograms contains a
+            gap or overlap exceeding the allowed tolerance, overlapping
+            samples do not match, or `gap_tolerance_factor` is negative.
+
+    Examples:
+        ```python
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.functions import merge
+        >>> first = MiniSeismogram(
+        ...     begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        ...     delta=pd.Timedelta(seconds=1),
+        ...     data=np.array([1.0, 2.0, 3.0]),
+        ... )
+        >>> second = MiniSeismogram(
+        ...     begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        ...     delta=pd.Timedelta(seconds=1),
+        ...     data=np.array([4.0, 5.0]),
+        ... )
+        >>> merged = merge([first, second], clone=True)
+        >>> merged.data
+        array([1., 2., 3., 4., 5.])
+        >>> merged.begin_time
+        Timestamp('2010-02-27 06:30:00+0000', tz='UTC')
+
+        ```
+
+        Merging seismograms of different concrete types works the same way
+        at runtime. A bare list literal's inferred type comes from its
+        elements, though, and for a mix of concrete types that inferred type
+        may not satisfy the `Seismogram` bound at all, making the call fail
+        to type-check. Annotate the list as `Sequence[Seismogram]` to keep
+        the result type-checked:
+
+        ```python
+        >>> from collections.abc import Sequence
+        >>> from pysmo import Seismogram
+        >>> from pysmo.classes import GeoCsvSeismogram
+        >>> geocsv_seis = GeoCsvSeismogram(
+        ...     begin_time=pd.Timestamp("2010-02-27T06:30:05Z"),
+        ...     delta=pd.Timedelta(seconds=1),
+        ...     data=np.array([6.0, 7.0]),
+        ...     sid="IU_ANMO_00_LHZ",
+        ... )
+        >>> mixed: Sequence[Seismogram] = [merged, geocsv_seis]
+        >>> merged_mixed = merge(mixed, clone=True)
+        >>> merged_mixed.data
+        array([1., 2., 3., 4., 5., 6., 7.])
+        >>>
+        ```
+
+        The merged object's actual class is always `seismograms[0]`'s class,
+        regardless of what a type checker can infer — this is purely a
+        static-typing concern. If downstream code depends on the concrete
+        type, merging a single concrete type (the common case) lets it be inferred
+        automatically, without needing the annotation above.
+
+        Seismograms whose sampling intervals only disagree by measurement or
+        floating-point noise (see
+        [`estimate_delta`][pysmo.functions.estimate_delta]) can be merged
+        with `auto_delta=True` instead of requiring an exact match:
+
+        ```python
+        >>> steady = MiniSeismogram(
+        ...     begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+        ...     delta=pd.Timedelta(seconds=1),
+        ...     data=np.array([1.0, 2.0, 3.0]),
+        ... )
+        >>> jittery = MiniSeismogram(
+        ...     begin_time=pd.Timestamp("2010-02-27T06:30:03Z"),
+        ...     delta=pd.Timedelta(seconds=1) + pd.Timedelta(nanoseconds=1),
+        ...     data=np.array([4.0, 5.0, 6.0]),
+        ... )
+        >>> auto_merged = merge(
+        ...     [steady, jittery], auto_delta=True, clone=True
+        ... )
+        >>> auto_merged.delta
+        Timedelta('0 days 00:00:01')
+        >>> auto_merged.data
+        array([1., 2., 3., 4., 5., 6.])
+        >>>
+        ```
+
+        `auto_delta` estimates a canonical interval with
+        [`estimate_delta`][pysmo.functions.estimate_delta]; it does not
+        verify that the seismograms genuinely belong on the same sampling
+        grid. Users are encouraged to inspect the resulting `delta` (as
+        above), or call
+        [`estimate_delta`][pysmo.functions.estimate_delta] directly
+        beforehand, to confirm the estimate is the value expected rather
+        than assuming it silently.
+    """
+    if gap_tolerance_factor < 0:
+        raise ValueError("gap_tolerance_factor must be non-negative.")
+
+    if not seismograms:
+        raise ValueError("No seismograms to merge.")
+
+    working = (
+        [deepcopy(seismogram) for seismogram in seismograms]
+        if clone
+        else list(seismograms)
+    )
+
+    non_empty = [seismogram for seismogram in working if len(seismogram.data)]
+    if not non_empty:
+        raise ValueError("No non-empty seismograms to merge.")
+
+    if delta is None and auto_delta:
+        delta = estimate_delta([seismogram.delta for seismogram in non_empty])
+
+    if delta is None:
+        reference_delta = non_empty[0].delta
+        for seismogram in non_empty[1:]:
+            if seismogram.delta != reference_delta:
+                raise ValueError(
+                    "Cannot merge seismograms with different sampling intervals "
+                    f"without resampling: {reference_delta} vs {seismogram.delta}."
+                )
+    else:
+        reference_delta = delta
+        for index, seismogram in enumerate(working):
+            if len(seismogram.data) == 0:
+                continue
+            if seismogram.delta == delta:
+                continue
+            if clone or index > 0:
+                working[index] = resample(seismogram, delta, clone=True)
+            else:
+                resample(seismogram, delta)
+        non_empty = [seismogram for seismogram in working if len(seismogram.data)]
+
+    ordered = sorted(non_empty, key=lambda seismogram: seismogram.begin_time)
+
+    overlap_samples = [0] * len(ordered)
+    for index, (prev, curr) in enumerate(pairwise(ordered), start=1):
+        expected_next = prev.end_time + prev.delta
+        gap = curr.begin_time - expected_next
+        tolerance = prev.delta * gap_tolerance_factor
+        if abs(gap) > tolerance:
+            description = (
+                f"gap of {gap.total_seconds():.6f} s"
+                if gap > pd.Timedelta(0)
+                else f"overlap of {-gap.total_seconds():.6f} s"
+            )
+            raise ValueError(
+                f"Data {description} detected between seismogram ending at "
+                f"{prev.end_time} and seismogram starting at {curr.begin_time}."
+            )
+        if gap < pd.Timedelta(0):
+            samples = min(round(-gap / prev.delta), len(prev.data), len(curr.data))
+            if samples > 0 and not np.allclose(
+                prev.data[-samples:], curr.data[:samples]
+            ):
+                raise ValueError(
+                    f"Overlapping samples between seismogram ending at "
+                    f"{prev.end_time} and seismogram starting at "
+                    f"{curr.begin_time} do not match; cannot merge."
+                )
+            overlap_samples[index] = samples
+
+    merged = cast(T, working[0])
+    merged.begin_time = ordered[0].begin_time
+    merged.delta = reference_delta
+    merged.data = np.concatenate(
+        [ordered[0].data]
+        + [
+            seismogram.data[samples:]
+            for seismogram, samples in zip(ordered[1:], overlap_samples[1:])
+        ]
+    )
+
+    if clone:
+        return merged
+    return None
+
+
 @overload
 def taper(
     seismogram: Seismogram,
@@ -667,11 +1003,12 @@ def window[T: Seismogram](
 
     begin_time, end_time = seismogram.begin_time, seismogram.end_time
 
-    ramp_duration: pd.Timedelta
-    if isinstance(ramp_width, (float, int)):
-        ramp_duration = ramp_width * (window_end_time - window_begin_time)
-    else:
-        ramp_duration = ramp_width
+    window_duration = window_end_time - window_begin_time
+    ramp_duration = (
+        ramp_width
+        if isinstance(ramp_width, pd.Timedelta)
+        else ramp_width * window_duration  # ty: ignore[unsupported-operator]
+    )
 
     if window_begin_time - ramp_duration < seismogram.begin_time:
         raise ValueError(

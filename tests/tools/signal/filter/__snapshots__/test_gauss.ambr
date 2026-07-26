@@ -1,4 +1,8 @@
 # serializer version: 1
+# name: test_envelope_snapshot[geocsv_seismogram]
+  array([6.135334, 6.135136, 6.134937, ..., 6.135919, 6.135725, 6.13553 ],
+        shape=(180000,))
+# ---
 # name: test_envelope_snapshot[mini_seismogram]
   array([6.135334, 6.135136, 6.134937, ..., 6.135919, 6.135725, 6.13553 ],
         shape=(180000,))
@@ -6,6 +10,10 @@
 # name: test_envelope_snapshot[sac_seismogram]
   array([6.135334, 6.135136, 6.134937, ..., 6.135919, 6.135725, 6.13553 ],
         shape=(180000,))
+# ---
+# name: test_gauss_snapshot[geocsv_seismogram]
+  array([-3.889424, -3.912466, -3.935412, ..., -3.819732, -3.843057,
+         -3.866287], shape=(180000,))
 # ---
 # name: test_gauss_snapshot[mini_seismogram]
   array([-3.889424, -3.912466, -3.935412, ..., -3.819732, -3.843057,

@@ -4,7 +4,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 import pandas as pd
-from attrs import define, field, setters, validators
+from attrs import converters, define, field, setters, validators
 
 from pysmo import Seismogram
 from pysmo._types.seismogram import SeismogramEndtimeMixin
@@ -145,7 +145,9 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin, IccsSeismogram):
     """Initial pick."""
 
     t1: UtcTimestamp | None = field(
-        default=None, converter=convert_to_utc_timestamp, on_setattr=setters.convert
+        default=None,
+        converter=converters.optional(convert_to_utc_timestamp),
+        on_setattr=setters.convert,
     )
     """Updated pick."""
 

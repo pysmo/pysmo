@@ -7,7 +7,6 @@ raises ValueError for unregistered filter names.
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize_with_cases
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import Seismogram
@@ -19,7 +18,6 @@ from tests.test_helpers import assert_seismogram_modification
 # ---------------------------------------------------------------------------
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_invalid_name_raises(seismogram: Seismogram) -> None:
     """Test that an unregistered filter name raises ValueError."""
     with pytest.raises(ValueError, match="not registered"):
@@ -31,7 +29,6 @@ def test_filter_invalid_name_raises(seismogram: Seismogram) -> None:
 # ---------------------------------------------------------------------------
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_lowpass(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the lowpass filter."""
     assert_seismogram_modification(
@@ -43,7 +40,6 @@ def test_filter_lowpass(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_highpass(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the highpass filter."""
     assert_seismogram_modification(
@@ -55,7 +51,6 @@ def test_filter_highpass(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_bandpass(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the bandpass filter."""
     assert_seismogram_modification(
@@ -68,7 +63,6 @@ def test_filter_bandpass(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_bandstop(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the bandstop filter."""
     assert_seismogram_modification(
@@ -86,7 +80,6 @@ def test_filter_bandstop(seismogram: Seismogram) -> None:
 # ---------------------------------------------------------------------------
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_gauss(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the gauss filter."""
 
@@ -103,7 +96,6 @@ def test_filter_gauss(seismogram: Seismogram) -> None:
     )
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_envelope(seismogram: Seismogram) -> None:
     """Test that filter() correctly dispatches to the envelope filter."""
 
@@ -126,7 +118,6 @@ def test_filter_envelope(seismogram: Seismogram) -> None:
 # ---------------------------------------------------------------------------
 
 
-@parametrize_with_cases("seismogram", cases="tests.cases.seismogram_cases")
 def test_filter_bandpass_snapshot(
     seismogram: Seismogram, snapshot: SnapshotAssertion
 ) -> None:
