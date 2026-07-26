@@ -23,7 +23,9 @@ class SacIODefaults:
     iztype: str = "unkn"
     ievtyp: str = "unkn"
     leven: bool = True
-    iris_base_url: str = "https://service.iris.edu/irisws/timeseries/1/query"
-    iris_timeout_seconds: int = 10
-    iris_request_retries: int = 3
-    iris_retry_delay_seconds: int = 20
+    earthscope_base_url: str = (
+        "https://service.earthscope.org/irisws/timeseries/1/query"
+    )
+    earthscope_timeout_seconds: int = 10
+    earthscope_request_retries: int = 3
+    earthscope_retry_delay_seconds: int = 20

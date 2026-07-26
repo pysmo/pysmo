@@ -26,8 +26,8 @@ def average_datetimes(datetimes: Sequence[pd.Timestamp]) -> pd.Timestamp:
     if len(datetimes) == 0:
         raise ValueError("Cannot average empty sequence of datetimes.")
     reference_time = datetimes[0]
-    seconds = sum((i - reference_time).total_seconds() for i in datetimes[1:])
-    return reference_time + pd.Timedelta(seconds=seconds / len(datetimes))
+    offset = sum((i - reference_time for i in datetimes[1:]), start=pd.Timedelta(0))
+    return reference_time + offset / len(datetimes)
 
 
 def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID]:
