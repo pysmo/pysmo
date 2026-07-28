@@ -23,9 +23,6 @@ class Event(LocationWithDepth, Protocol):
 class MiniEvent:
     """Minimal class for use with the [`Event`][pysmo.Event] type.
 
-    The `MiniEvent` class provides a minimal implementation of class that is
-    compatible with the [`Event`][pysmo.Event] type.
-
     Examples:
         ```python
         >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location

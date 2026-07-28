@@ -1,13 +1,4 @@
-"""Shared HTTP helper for pysmo web-service requests.
-
-[`http_get`][pysmo.lib.io.http_get] wraps `urllib3` with the
-retry-on-server-error policy needed by every pysmo caller that fetches
-data over HTTP (e.g.
-[`SAC.from_earthscope`][pysmo.lib.io.SacIO.from_earthscope] and
-[`pysmo.tools.web`][pysmo.tools.web]), so that policy is written once
-rather than duplicated at each call site, and gives those call sites a
-single, shared seam to patch in tests.
-"""
+"""Shared HTTP helper for pysmo web-service requests."""
 
 import time
 from typing import Any

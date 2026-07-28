@@ -10,8 +10,33 @@ Examples:
     noise models. These are Peterson's NHNM (red), NLNM (blue), and an
     interpolated model that lies between the two (green).
 
-    ![peterson example](../../../images/tools/noise/peterson.png#only-light){ loading=lazy }
-    ![peterson example](../../../images/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
+    ```python exec="true" session="tools-noise-peterson"
+    import matplotlib
+
+    matplotlib.use("Agg")
+
+    --8<-- "docs/snippets/tools/noise/peterson.py"
+
+    from pathlib import Path
+
+    target_dir = Path("site/images/tools/noise")
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    main(outfile=str(target_dir / "peterson.png"))
+    plt.close("all")
+    plt.style.use("dark_background")
+    main(outfile=str(target_dir / "peterson_dark.png"))
+    plt.style.use("default")
+
+    print(
+        "![peterson example](../../../images/tools/noise/peterson.png#only-light)"
+        "{ loading=lazy }"
+    )
+    print(
+        "![peterson example](../../../images/tools/noise/peterson_dark.png#only-dark)"
+        "{ loading=lazy }"
+    )
+    ```
 
     ??? quote "Example source code"
         ```python title="peterson.py"
@@ -19,11 +44,11 @@ Examples:
         ```
 """
 
+import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
-from scipy.integrate import cumulative_trapezoid
 
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SeismogramDefaults
@@ -38,6 +63,25 @@ class NoiseModel:
     Args:
         psd: Power spectral density of ground acceleration [dB].
         T: Period.
+
+    Examples:
+        A `NoiseModel` freezes its own copy of `psd`, so the array passed in
+        remains writeable and independent of the stored copy:
+
+        ```python
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from pysmo.tools.noise import NoiseModel
+        >>> psd = np.array([-150.0, -140.0, -130.0])
+        >>> T = pd.to_timedelta([1.0, 10.0, 100.0], unit="s")
+        >>> model = NoiseModel(psd=psd, T=T)
+        >>> model.psd
+        array([-150., -140., -130.])
+        >>> psd[0] = -999.0  # does not affect the NoiseModel's own copy
+        >>> model.psd[0]
+        np.float64(-150.0)
+        >>>
+        ```
     """
 
     psd: np.ndarray = field(
@@ -54,7 +98,13 @@ class NoiseModel:
             raise ValueError(
                 f"psd ({np.size(self.psd)}) and T ({np.size(self.T)}) arrays are not of same size"
             )
-        self.psd.flags.writeable = False
+        # Freeze a copy rather than the caller's own array, so constructing a
+        # NoiseModel has no side effect on the array the caller passed in.
+        # T needs no equivalent treatment: unlike a plain ndarray, a
+        # pd.TimedeltaIndex's underlying data is already read-only.
+        psd = np.array(self.psd, copy=True)
+        psd.flags.writeable = False
+        object.__setattr__(self, "psd", psd)
 
 
 NLNM = NoiseModel(
@@ -162,12 +212,25 @@ def peterson(noise_level: float) -> NoiseModel:
 
     Args:
         noise_level: Determines the noise level of the generated noise model.
-                     A noise level of 0 returns the NLNM, 1 returns the NHNM,
-                     and anything > 0 and < 1 returns an interpolated model
-                     that lies between the NLNM and NHNM.
+            A noise level of 0 returns the NLNM, 1 returns the NHNM, and
+            anything > 0 and < 1 returns an interpolated model that lies
+            between the NLNM and NHNM.
 
     Returns:
         Noise model.
+
+    Examples:
+        ```python
+        >>> from pysmo.tools.noise import peterson, NLNM, NHNM
+        >>> peterson(0.0) == NLNM
+        True
+        >>> peterson(1.0) == NHNM
+        True
+        >>> model = peterson(0.5)
+        >>> model.psd[0]  # midpoint of NLNM and NHNM at the shortest period
+        np.float64(-129.75)
+        >>>
+        ```
     """
     # check for valid input
     if not 0 <= noise_level <= 1:
@@ -184,8 +247,16 @@ def peterson(noise_level: float) -> NoiseModel:
         T_common = np.unique(
             np.concatenate((NLNM.T.total_seconds(), NHNM.T.total_seconds()))
         )
-        NLNM_interp = np.interp(T_common, NLNM.T.total_seconds(), NLNM.psd)
-        NHNM_interp = np.interp(T_common, NHNM.T.total_seconds(), NHNM.psd)
+        # Peterson's model is a piecewise power law, i.e. linear in
+        # log10(period), not in period itself, so interpolate in log-period
+        # space to stay close to the true curve between tabulated points.
+        log_T_common = np.log10(T_common)
+        NLNM_interp = np.interp(
+            log_T_common, np.log10(NLNM.T.total_seconds()), NLNM.psd
+        )
+        NHNM_interp = np.interp(
+            log_T_common, np.log10(NHNM.T.total_seconds()), NHNM.psd
+        )
         dB = NLNM_interp + (NHNM_interp - NLNM_interp) * noise_level
         return NoiseModel(psd=dB, T=pd.to_timedelta(T_common, unit="s"))
 
@@ -205,57 +276,106 @@ def generate_noise(
     back to the time domain via an inverse FFT. Internally the computation is
     performed on the next power-of-two length greater than or equal to `npts`
     to ensure an efficient FFT; the central `npts` samples are then extracted
-    from the result.
+    from the result to avoid edge artefacts near the start and end of the
+    generated buffer.
 
     Args:
         model: Noise model used to compute seismic noise.
         npts: Number of samples in the output seismogram.
         delta: Sampling interval of the generated noise.
         begin_time: Begin time of the output seismogram.
-        return_velocity: If `True`, integrate the acceleration via the
-            trapezoidal rule to return ground velocity instead.
+        return_velocity: If `True`, integrate the acceleration spectrum
+            (division by `iω` in the frequency domain) to return ground
+            velocity instead.
         seed: Random seed for reproducibility (e.g. in tests).
+
+    Raises:
+        ValueError: If `npts` is not a positive integer.
 
     Returns:
         Seismogram containing the generated noise. Data represent ground
         acceleration (arbitrary units matching the noise model's PSD) unless
         `return_velocity=True`, in which case they represent ground velocity.
+
+    Examples:
+        ```python
+        >>> import pandas as pd
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.tools.noise import peterson, generate_noise
+        >>> model = peterson(0.0)
+        >>> noise = generate_noise(
+        ...     model=model, npts=64, delta=pd.Timedelta(seconds=1.0), seed=42
+        ... )
+        >>> isinstance(noise, MiniSeismogram)
+        True
+        >>> len(noise.data)
+        64
+        >>> noise.data[:3]
+        array([-4.20418403e-09, -1.25152943e-08, -8.42501771e-09])
+        >>>
+        ```
     """
-    # Sampling frequency
-    Fs = 1 / delta.total_seconds()
+    if npts < 1:
+        raise ValueError(f"npts={npts} must be a positive integer.")
 
-    # Nyquist frequency
-    Fnyq = 0.5 / delta.total_seconds()
+    dt = delta.total_seconds()
 
-    # get next power of 2 of the number of points and calculate frequencies from
-    # Fs/NPTS to Fnyq (we skip a frequency of 0 for now to avoid dividing by 0).
-    # When returning velocity, cumulative_trapezoid reduces the array length by 1,
-    # so NPTS must be strictly greater than npts to guarantee npts output samples.
-    NPTS = int(2 ** np.ceil(np.log2(npts)))
-    if return_velocity and NPTS <= npts:
-        NPTS *= 2
-    freqs = np.linspace(Fs / NPTS, Fnyq, NPTS - 1)
+    # Next power of 2 of the number of points (and at least 2, so the FFT is
+    # always well defined), for an efficient FFT.
+    NPTS = max(int(2 ** np.ceil(np.log2(npts))), 2)
 
-    # interpolate psd and recreate amplitude spectrum with the first
-    # term=0 (i.e. mean=0).
-    Pxx = np.interp(1 / freqs, model.T.total_seconds(), model.psd)
-    spectrum = np.append(
-        np.array([0]), np.sqrt(10 ** (Pxx / 10) * NPTS / delta.total_seconds() * 2)
-    )
+    # Frequencies from DC to Nyquist for a real signal of length NPTS.
+    freqs = np.fft.rfftfreq(NPTS, d=dt)
 
-    # phase is randomly generated
+    # Period corresponding to each frequency; DC has no period and is handled
+    # separately below (amplitude forced to zero there).
+    periods = np.empty_like(freqs)
+    periods[0] = np.inf
+    periods[1:] = 1 / freqs[1:]
+
+    T = model.T.total_seconds()
+    if periods[1:].min() < T.min() or periods[1:].max() > T.max():
+        warnings.warn(
+            "Requested frequencies extend beyond the noise model's tabulated "
+            "period range; extrapolating with the nearest tabulated value.",
+            stacklevel=2,
+        )
+
+    # Interpolate psd in log-period space: Peterson's model is a piecewise
+    # power law, i.e. linear in log10(period), not in period itself.
+    Pxx = np.interp(np.log10(periods), np.log10(T), model.psd)
+
+    # Recreate the amplitude spectrum, with the DC term set to 0 (mean=0).
+    # Pxx is a one-sided PSD (Peterson's convention, matching
+    # pysmo.tools.signal.psd's scipy.signal.welch default), which doubles the
+    # power of every interior bin to account for the folded negative
+    # frequencies. Since only the positive-frequency half is synthesised here,
+    # the target power must be halved to compensate, otherwise a one-sided
+    # PSD estimate of the generated noise comes out 3 dB too high.
+    amplitude = np.sqrt(10 ** (Pxx / 10) * NPTS / (2 * dt))
+    amplitude[0] = 0.0
+
+    # Phase is randomly generated; DC and Nyquist are forced real, as
+    # required for a Hermitian-symmetric spectrum representing a real signal.
     rng = np.random.default_rng(seed)
-    phase = (rng.random(NPTS) - 0.5) * np.pi * 2
+    phase = (rng.random(freqs.size) - 0.5) * np.pi * 2
+    phase[0] = 0.0
+    phase[-1] = 0.0
 
-    # combine amplitude with phase and perform ifft
-    NewX = spectrum * (np.cos(phase) + 1j * np.sin(phase))
-    acceleration = np.fft.irfft(NewX)
+    spectrum = amplitude * (np.cos(phase) + 1j * np.sin(phase))
 
-    start = int((NPTS - npts) / 2)
-    end = start + npts
     if return_velocity:
-        velocity = cumulative_trapezoid(acceleration, dx=delta.total_seconds())
-        velocity = velocity[start:end]
-        return MiniSeismogram(begin_time=begin_time, delta=delta, data=velocity)
-    acceleration = acceleration[start:end]
-    return MiniSeismogram(begin_time=begin_time, delta=delta, data=acceleration)
+        # Integrate acceleration to velocity in the frequency domain
+        # (division by iω), rather than the time domain: a cumulative
+        # time-domain integrator is only marginally stable and introduces
+        # unbounded low-frequency drift.
+        omega = 2 * np.pi * freqs
+        velocity_spectrum = np.zeros_like(spectrum)
+        velocity_spectrum[1:] = spectrum[1:] / (1j * omega[1:])
+        spectrum = velocity_spectrum
+
+    result = np.fft.irfft(spectrum, n=NPTS)
+
+    start = (NPTS - npts) // 2
+    end = start + npts
+    return MiniSeismogram(begin_time=begin_time, delta=delta, data=result[start:end])

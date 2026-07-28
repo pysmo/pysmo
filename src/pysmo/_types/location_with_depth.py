@@ -19,9 +19,6 @@ class LocationWithDepth(Location, Protocol):
 class MiniLocationWithDepth:
     """Minimal class for use with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
 
-    The `MiniLocationWithDepth` class provides a minimal implementation of class that
-    is compatible with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
-
     Examples:
         ```python
         >>> from pysmo import MiniLocationWithDepth, LocationWithDepth, Location

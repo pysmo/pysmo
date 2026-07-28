@@ -87,10 +87,6 @@ class IccsSeismogram(Seismogram, Protocol):
 class MiniIccsSeismogram(SeismogramEndtimeMixin, IccsSeismogram):
     """Minimal implementation of the [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] type.
 
-    The [`MiniIccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] class provides
-    a minimal implementation of a class that is compatible with the
-    [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] protocol.
-
     Examples:
         Because [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] inherits
         from [`Seismogram`][pysmo.Seismogram], we can easily create

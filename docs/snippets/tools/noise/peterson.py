@@ -12,7 +12,7 @@ from pysmo.tools.noise import generate_noise, peterson
 from pysmo.tools.signal import psd
 
 
-def main() -> None:
+def main(outfile: str = "peterson.png") -> None:
     # Set parameters
     npts: int = 200000  # multiple of 4
     delta = pd.Timedelta(seconds=0.1)
@@ -88,7 +88,7 @@ def main() -> None:
     plt.plot(
         high_noise_model.T.total_seconds(),
         high_noise_model.psd,
-        "k",
+        color=plt.rcParams["text.color"],
         linewidth=1,
         linestyle="dotted",
         label="NHNM",
@@ -96,7 +96,7 @@ def main() -> None:
     plt.plot(
         mid_noise_model.T.total_seconds(),
         mid_noise_model.psd,
-        "k",
+        color=plt.rcParams["text.color"],
         linewidth=1,
         linestyle="dashdot",
         label="Interpolated noise model",
@@ -104,7 +104,7 @@ def main() -> None:
     plt.plot(
         low_noise_model.T.total_seconds(),
         low_noise_model.psd,
-        "k",
+        color=plt.rcParams["text.color"],
         linewidth=1,
         linestyle="dashed",
         label="NLNM",
@@ -116,7 +116,7 @@ def main() -> None:
     plt.xlabel("Period [s]")
     plt.ylabel("Power Spectral Density (dB/Hz)")
     plt.legend()
-    plt.savefig("peterson.png", transparent=True)
+    plt.savefig(outfile, transparent=True)
     plt.show()
 
 

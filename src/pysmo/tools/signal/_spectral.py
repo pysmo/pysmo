@@ -16,8 +16,7 @@ def psd(
     """
     Calculate the Power Spectral Density (PSD) of a Seismogram using Welch's method.
 
-    This is a convenience wrapper around
-    [`scipy.signal.welch`][scipy.signal.welch].
+    This is a convenience wrapper around [`welch`][scipy.signal.welch].
 
     Args:
         seismogram: The Seismogram object.

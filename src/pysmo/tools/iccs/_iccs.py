@@ -438,7 +438,7 @@ class ICCS:
         Can be either a timedelta or a float, but they mean slightly different
         things. A float is interpreted as a fraction of the window duration,
         while a timedelta is an absolute duration. See the documentation of
-        of [`pysmo.functions.window()`][pysmo.functions.window] for details.
+        [`pysmo.functions.window()`][pysmo.functions.window] for details.
     """
 
     context_width: PositiveTimedelta = field(
@@ -652,14 +652,14 @@ class ICCS:
            [`True`][].
         2. Resampled to the minimum sampling interval of all input seismograms
            (only if it is not equal in all seismograms).
-        3. Cropped to `ramp_width` +  current time window + `ramp_width`.
+        3. Cropped to `ramp_width` + current time window + `ramp_width`.
         4. Detrended.
         5. Tapered using [`ramp_width`][pysmo.tools.iccs.ICCS.ramp_width]
            (tapered sections are *outside* time window).
         6. Normalised based on the highest absolute value within the cropped
            window. This step is done slightly differently in
            [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms]
-           --see the documentation of that property for details.
+           — see the documentation of that property for details.
         """
 
         if self._cc_seismograms_cache is None:
@@ -685,7 +685,7 @@ class ICCS:
            [`True`][].
         2. Resampled to the minimum sampling interval of all input seismograms
            (only if it is not equal in all seismograms).
-        3. Cropped and/or padded to `context_width` +  current time window +
+        3. Cropped and/or padded to `context_width` + current time window +
            `context_width`.
         4. Detrended.
         5. Normalised based on the highest absolute value within the selected
@@ -709,13 +709,14 @@ class ICCS:
 
     @property
     def stack(self) -> MiniSeismogram:
-        """Returns the stacked [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]).
+        """Returns the stacked [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms].
 
         The stack is calculated as the average of all seismograms with the
         attribute [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to
-        [`True`][True]. The [`begin_time`][pysmo.MiniSeismogram.begin_time] of
-        the returned stack is the average of the [`begin_time`]
-        [pysmo.tools.iccs.IccsSeismogram.begin_time] of the input seismograms.
+        [`True`][]. The [`begin_time`][pysmo.MiniSeismogram.begin_time] of the
+        returned stack is the average of the
+        [`begin_time`][pysmo.tools.iccs.IccsSeismogram.begin_time] of the
+        input seismograms.
 
         Returns:
             Stacked input seismograms.
@@ -741,7 +742,7 @@ class ICCS:
         The valid pick range is computed from every seismogram in
         [`seismograms`][pysmo.tools.iccs.ICCS.seismograms], including those with
         [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to
-        [`False`][False]. A pick is considered valid if it lies within this
+        [`False`][]. A pick is considered valid if it lies within this
         global range; selection only affects stacking, not the validity bounds.
 
         Args:

@@ -28,7 +28,7 @@ class _SacNested:
     """Base class for nested SAC classes."""
 
     _parent: SacIO = field(repr=False)
-    """_parent (SacIO): Parent SacIO instance."""
+    """Parent SacIO instance."""
 
     @property
     def _ref_datetime(self) -> UtcTimestamp:
@@ -177,7 +177,7 @@ class SacStation(_SacNested):
 
     The `SacStation` class is used to map SAC attributes in a way that
     matches pysmo types. An instance of this class is created for each
-    new (parent) [`SAC`][pysmo.classes.SAC]instance to enable pysmo
+    new (parent) [`SAC`][pysmo.classes.SAC] instance to enable pysmo
     types compatibility.
 
     Examples:
@@ -350,7 +350,7 @@ class SacEvent(_SacNested):
             `"o"`, then this is also the "Reference time equivalance" and
             [`SacIO.o`][pysmo.lib.io.SacIO.o] cannot be changed (it is always
             0). Changing the [`time`][pysmo.classes.SacEvent.time] directly
-            is not possible if this is is the case.
+            is not possible if this is the case.
         """
 
         event_time = self._get_timestamp_from_sac(SAC_OPTIONAL_TIME_HEADERS.o)
@@ -367,7 +367,7 @@ class RequiredSacTimestamp:
     """Descriptor for SAC headers that MUST exist and cannot be None.
 
     Args:
-        readonly (bool): If True, prevents modification of the header.
+        readonly: If True, prevents modification of the header.
     """
 
     def __init__(self, readonly: bool = False) -> None:
@@ -414,7 +414,7 @@ class OptionalSacTimestamp:
     """Descriptor for SAC headers that might be missing or set to None.
 
     Args:
-        readonly (bool): If True, prevents modification of the header.
+        readonly: If True, prevents modification of the header.
     """
 
     def __init__(self, readonly: bool = False) -> None:
@@ -621,7 +621,7 @@ class SAC(SacIO):
         Because the SAC file format defines a large amount of header fields for
         metadata, it needs to allow for many of these to be optional. Since the
         helper classes are more specific (and intended to be used with pysmo
-        types), their attributes typically may *not* be [`None`][None]:
+        types), their attributes typically may *not* be [`None`][]:
 
         ```python
         >>> # No error: a SAC file doesn't have to contain event information:
