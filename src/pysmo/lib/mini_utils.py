@@ -62,7 +62,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 
     Returns:
         A tuple of concrete Mini classes (e.g., `MiniLocation`, `MiniEvent`)
-            that satisfy the interface defined by `proto`.
+        that satisfy the interface defined by `proto`.
 
     Examples:
         Get all Mini classes that implement the `Location` protocol:
@@ -103,10 +103,10 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
     """Returns pysmo types that objects may be an instance of.
 
     Args:
-        obj: Name of the object to check.
+        obj: The object (or class) to check.
 
     Returns:
-        Pysmo types for which `obj` is an instance of.
+        Pysmo types that `obj` is an instance of.
 
     Examples:
         Pysmo types matching instances of

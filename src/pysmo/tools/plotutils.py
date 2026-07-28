@@ -1,8 +1,11 @@
 """
 Utilities for plotting with pysmo types.
 
-Pysmo provides functions that perform common operations on the types of data that
-match pysmo's types.
+Provides functions to convert a [`Seismogram`][pysmo.Seismogram]'s time axis
+into arrays matplotlib can plot directly
+([`time_array`][pysmo.tools.plotutils.time_array],
+[`unix_time_array`][pysmo.tools.plotutils.unix_time_array]), plus a basic
+plotting helper ([`plotseis`][pysmo.tools.plotutils.plotseis]).
 """
 
 from typing import Any
@@ -64,7 +67,7 @@ def unix_time_array(seismogram: Seismogram) -> np.ndarray:
         seismogram: Seismogram object.
 
     Returns:
-        array containing the unix epoch times (number of seconds since 1970)
+        Array containing the unix epoch times (number of seconds since 1970)
         of each point in the seismogram data.
 
     Examples:
@@ -102,8 +105,8 @@ def plotseis(
     """Plot Seismogram objects.
 
     Args:
-        seismograms: One or more seismogram objects. If a 'label' attribute is found
-                     it will be used to label the trace in the plot.
+        seismograms: One or more seismogram objects. If a 'label' attribute is
+            found it will be used to label the trace in the plot.
         outfile: Optionally save figure to this filename.
         showfig: Display figure.
         title: Optionally set figure title.

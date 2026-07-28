@@ -11,7 +11,8 @@ import numpy as np
 from attrs import define
 
 from pysmo import MiniLocation
-from pysmo.lib.io import http_get
+from pysmo.lib.http import http_get
+from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
 from ._lib import SacIODefaults
@@ -31,8 +32,8 @@ class SacIO(SacIOBase):
     Access SAC files in Python.
 
     The `SacIO` class reads and writes data and header values to and from a
-    SAC file. Instances of `SacIO` provide attributes named identially to
-    header names in the SAC file format. Additonal attributes may be set, but
+    SAC file. Instances of `SacIO` provide attributes named identically to
+    header names in the SAC file format. Additional attributes may be set, but
     are not written to a SAC file (because there is no space reserved for them
     there). Class attributes with corresponding header fields in a SAC file
     (for example the begin time [`b`][pysmo.lib.io.SacIO.b]) are checked for a
@@ -78,7 +79,7 @@ class SacIO(SacIOBase):
 
         ```python
         >>> from pysmo.lib.io import SacIO
-        >>> sac = SacIO.from_earthscope(net="C1",
+        >>> sac = SacIO.fetch(net="C1",
         ... sta="VA01",
         ... cha="BHZ",
         ... loc="--",
@@ -398,7 +399,7 @@ class SacIO(SacIOBase):
         return newinstance
 
     @classmethod
-    def from_earthscope(
+    def fetch(
         cls,
         net: str,
         sta: str,
@@ -407,19 +408,26 @@ class SacIO(SacIOBase):
         force_single_result: bool = False,
         **kwargs: Any,
     ) -> Self | dict[str, Self] | None:
-        """Create a list of SAC instances from a single EarthScope
-        timeseries request using the output format as "sac.zip".
+        """Fetch SAC file(s) from the EarthScope timeseries web service.
+
+        Requests data in `output=sac.zip` format and creates one `SacIO`
+        instance per file in the returned archive.
 
         Args:
-            net: Network code (e.g. "US")
-            sta: Station code (e.g. "BSS")
-            cha: Channel code (e.g. "BHZ")
-            loc: Location code (e.g. "00")
-            force_single_result: If true, the function will return a single SAC
-                                object or None if the requests returns nothing.
+            net: Network code (e.g. `"US"`).
+            sta: Station code (e.g. `"BSS"`).
+            cha: Channel code (e.g. `"BHZ"`).
+            loc: Location code (e.g. `"00"`).
+            force_single_result: If `True`, return a single `SacIO` instance
+                (or `None` if the request returns nothing) instead of a dict.
+            **kwargs: Additional query parameters passed through to the
+                EarthScope timeseries request (e.g. `start`, `end`,
+                `duration`, `scale`, `demean`).
 
         Returns:
-            A new SacIO instance.
+            A single `SacIO` instance, or `None`, if `force_single_result` is
+            `True`; otherwise a dict mapping each archive filename to its
+            corresponding `SacIO` instance.
         """
         kwargs["net"] = net
         kwargs["sta"] = sta
@@ -427,12 +435,19 @@ class SacIO(SacIOBase):
         kwargs["loc"] = loc
         kwargs["output"] = "sac.zip"
 
+        # The EarthScope timeseries service rejects fractional seconds and
+        # UTC offsets in start/end, unlike datetime.isoformat(). Converting
+        # to UTC first (rather than just stripping tzinfo via strftime)
+        # matters for a tz-aware value in a non-UTC zone: naively formatting
+        # its wall-clock fields would send the wrong instant.
         if isinstance(kwargs["start"], datetime):
-            kwargs["start"] = kwargs["start"].isoformat()
+            kwargs["start"] = convert_to_utc_timestamp(kwargs["start"]).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            )
 
         end = kwargs.get("end", None)
         if end is not None and isinstance(end, datetime):
-            kwargs["end"] = end.isoformat()
+            kwargs["end"] = convert_to_utc_timestamp(end).strftime("%Y-%m-%dT%H:%M:%S")
 
         data = http_get(
             SacIODefaults.earthscope_base_url,
@@ -464,17 +479,17 @@ class SacIO(SacIOBase):
         force_single_result: bool = False,
         **kwargs: Any,
     ) -> Self | dict[str, Self] | None:
-        """Deprecated alias of [`from_earthscope`][pysmo.lib.io.SacIO.from_earthscope].
+        """Deprecated alias of [`fetch`][pysmo.lib.io.SacIO.fetch].
 
         IRIS merged into the EarthScope Consortium; use
-        [`from_earthscope`][pysmo.lib.io.SacIO.from_earthscope] instead.
+        [`fetch`][pysmo.lib.io.SacIO.fetch] instead.
         """
         warnings.warn(
-            "SacIO.from_iris is deprecated; use SacIO.from_earthscope instead.",
+            "SacIO.from_iris is deprecated; use SacIO.fetch instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return cls.from_earthscope(
+        return cls.fetch(
             net=net,
             sta=sta,
             cha=cha,
