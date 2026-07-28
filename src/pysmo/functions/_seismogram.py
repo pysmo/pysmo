@@ -203,9 +203,6 @@ def normalize[T: Seismogram](
         ```
     """
 
-    if clone is True:
-        seismogram = deepcopy(seismogram)
-
     start_index, end_index = None, None
 
     if t1 is not None:
@@ -221,6 +218,9 @@ def normalize[T: Seismogram](
             "within the selected time window (or entire trace if no window "
             "is given) is zero."
         )
+
+    if clone is True:
+        seismogram = deepcopy(seismogram)
 
     seismogram.data /= abs_max
 
@@ -265,19 +265,18 @@ def pad[T: Seismogram](
 
     This function calculates the indices corresponding to the provided new
     begin and end times using [`time2index`][pysmo.functions.time2index], then
-    pads the [`data`][pysmo.Seismogram.data] array using
-    [`numpy.pad`][numpy.pad] and updates the
-    [`begin_time`][pysmo.Seismogram.begin_time]. Note that the actual begin and
-    end times are set by indexing, so they may be slightly different than the
-    provided input begin and end times.
+    pads the [`data`][pysmo.Seismogram.data] array using [`numpy.pad`][] and
+    updates the [`begin_time`][pysmo.Seismogram.begin_time]. Note that the
+    actual begin and end times are set by indexing, so they may be slightly
+    different than the provided input begin and end times.
 
     Args:
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
         begin_time: New begin time.
         end_time: New end time.
-        mode: Pad mode to use (see [`numpy.pad`][numpy.pad] for all modes).
+        mode: Pad mode to use (see [`numpy.pad`][] for all modes).
         clone: Operate on a clone of the input seismogram.
-        kwargs: Keyword arguments to pass to [`numpy.pad`][numpy.pad].
+        kwargs: Keyword arguments to pass to [`numpy.pad`][].
 
     Returns:
         Padded [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
@@ -348,9 +347,9 @@ def resample[T: Seismogram](
 ) -> None | T:
     """Resample Seismogram data using the Fourier method.
 
-    This function uses [`scipy.resample`][scipy.signal.resample] to resample
-    the data to a new sampling interval. If the new sampling interval is
-    identical to the current one, no action is taken.
+    This function uses [`scipy.signal.resample`][] to resample the data to a
+    new sampling interval. If the new sampling interval is identical to the
+    current one, no action is taken.
 
     Args:
         seismogram: Seismogram object.
@@ -502,9 +501,9 @@ def merge[T: Seismogram](
     `gap_tolerance_factor` sampling intervals, so metadata rounding noise does
     not block otherwise valid merges. If consecutive seismograms overlap
     within this tolerance, the overlapping samples must match (compared with
-    [`numpy.allclose`][numpy.allclose] and its default tolerances, to
-    accommodate floating-point noise from e.g. prior resampling); they are
-    verified and the duplicates are discarded rather than concatenated.
+    [`allclose`][numpy.allclose] and its default tolerances, to accommodate
+    floating-point noise from e.g. prior resampling); they are verified and
+    the duplicates are discarded rather than concatenated.
 
     When `clone=False`, the first seismogram in `seismograms` (as given —
     not necessarily the chronologically first, and regardless of whether it
@@ -746,15 +745,13 @@ def taper[T: Seismogram](
 ) -> None | T:
     """Apply a symmetric taper to the ends of a Seismogram.
 
-    The [`taper()`][pysmo.functions.taper] function applies a symmetric taper to
-    the data of a [`Seismogram`][pysmo.Seismogram] object. The taper width is
-    understood as the portion of the seismogram affected by the taper window
-    function. It can be provided as an absolute duration (non-negative
-    [`pd.Timedelta`][pandas.Timedelta]), or as a fraction of seismogram length
-    ([`float`][float] between `0` and `1`). Internally, absolute durations are
-    converted to fractions by dividing by the total seismogram duration, and
-    absolute durations should therefore not exceed the total seismogram
-    duration.
+    The taper width is understood as the portion of the seismogram affected
+    by the taper window function. It can be provided as an absolute duration
+    (non-negative [`Timedelta`][pandas.Timedelta]), or as a fraction of
+    seismogram length ([`float`][] between `0` and `1`). Internally, absolute
+    durations are converted to fractions by dividing by the total seismogram
+    duration, and absolute durations should therefore not exceed the total
+    seismogram duration.
 
     The shape of the windowing function is calculated by calling the scipy
     [`get_window()`][scipy.signal.windows.get_window] function using the number
@@ -787,7 +784,7 @@ def taper[T: Seismogram](
 
     Note:
         If `taper_width` resolves to fewer than 2 samples, no taper is applied.
-        This can occur when a very small [`pd.Timedelta`][pandas.Timedelta] is
+        This can occur when a very small [`Timedelta`][pandas.Timedelta] is
         provided.
 
     Examples:

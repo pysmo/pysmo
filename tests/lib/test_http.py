@@ -1,4 +1,4 @@
-"""Tests for pysmo.lib.io._http."""
+"""Tests for pysmo.lib.http."""
 
 from collections.abc import Iterator
 from typing import Any
@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 import urllib3
 
-import pysmo.lib.io._http as http_mod
+import pysmo.lib.http as http_mod
 
 
 class FakeResponse:
