@@ -3,7 +3,7 @@
 import copy
 import pickle
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
@@ -697,7 +697,7 @@ def test_earthscope_service() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysac = SacIO.from_earthscope(
+            mysac = SacIO.fetch(
                 net="C1",
                 sta="VA01",
                 cha="BHZ",
@@ -720,7 +720,7 @@ def test_earthscope_service() -> None:
 @pytest.mark.depends(on=["test_file_and_buffer"])
 def test_earthscope_service_params_error() -> None:
     try:
-        SacIO.from_earthscope(
+        SacIO.fetch(
             net="XX",
             sta="XXXX",
             cha="XXX",
@@ -742,7 +742,7 @@ def test_earthscope_service_multi_result() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysacs = SacIO.from_earthscope(
+            mysacs = SacIO.fetch(
                 net="IU",
                 sta="MAKZ",
                 cha="HHZ",
@@ -778,7 +778,7 @@ def test_earthscope_service_multi_result_forced() -> None:
     retries = 3
     for attempt in range(retries):
         try:
-            mysacs = SacIO.from_earthscope(
+            mysacs = SacIO.fetch(
                 net="IU",
                 sta="MAKZ",
                 cha="HHZ",
@@ -798,8 +798,43 @@ def test_earthscope_service_multi_result_forced() -> None:
             time.sleep(20)
 
 
+@pytest.mark.real_web_request
+@pytest.mark.depends(on=["test_file_and_buffer"])
+def test_fetch_datetime_start_uses_earthscope_compatible_format_live() -> None:
+    """A `start=<datetime>` kwarg is converted for the real EarthScope
+    timeseries service, which rejects fractional seconds or a UTC offset --
+    exactly what `datetime.isoformat()`/`pd.Timestamp.isoformat()` produce
+    -- with an opaque HTTP 400. A mocked test cannot catch this; only a
+    real request against the live service can."""
+    # A pd.Timestamp is a datetime subclass and is not aligned to a whole
+    # second, matching what a predicted phase-arrival time looks like --
+    # exactly the case that slipped through before this format fix.
+    start = pd.Timestamp("2010-02-27T06:44:06.043400Z")
+
+    retries = 3
+    for attempt in range(retries):
+        try:
+            sac = SacIO.fetch(
+                net="IU",
+                sta="ANMO",
+                cha="LHZ",
+                loc="00",
+                start=start,
+                duration=120,
+                force_single_result=True,
+            )
+            assert isinstance(sac, SacIO)
+            assert sac.npts == 120
+            assert sac.delta == 1.0
+            break
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(20)
+
+
 def test_from_iris_deprecation(monkeypatch: pytest.MonkeyPatch) -> None:
-    """SacIO.from_iris warns and delegates to from_earthscope."""
+    """SacIO.from_iris warns and delegates to fetch."""
 
     def fake_http_get(*args: object, **kwargs: object) -> bytes:
         raise RuntimeError("no network in this test")
@@ -828,17 +863,17 @@ def _zip_of(entries: dict[str, bytes]) -> bytes:
     return buffer.getvalue()
 
 
-def test_from_earthscope_single_result_mocked(
+def test_fetch_single_result_mocked(
     monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
 ) -> None:
-    """from_earthscope with force_single_result=True, against a mocked response."""
+    """fetch with force_single_result=True, against a mocked response."""
     sac_bytes = assets["orgfile"].read_bytes()
     monkeypatch.setattr(
         "pysmo.lib.io._sacio.sacio.http_get",
         lambda *args, **kwargs: _zip_of({"IU.ANMO.00.BHZ.SAC": sac_bytes}),
     )
 
-    result = SacIO.from_earthscope(
+    result = SacIO.fetch(
         net="IU",
         sta="ANMO",
         cha="BHZ",
@@ -850,10 +885,10 @@ def test_from_earthscope_single_result_mocked(
     assert isinstance(result, SacIO)
 
 
-def test_from_earthscope_multi_result_mocked(
+def test_fetch_multi_result_mocked(
     monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
 ) -> None:
-    """from_earthscope with force_single_result=False, against a mocked response."""
+    """fetch with force_single_result=False, against a mocked response."""
     sac_bytes = assets["orgfile"].read_bytes()
     monkeypatch.setattr(
         "pysmo.lib.io._sacio.sacio.http_get",
@@ -862,7 +897,7 @@ def test_from_earthscope_multi_result_mocked(
         ),
     )
 
-    result = SacIO.from_earthscope(
+    result = SacIO.fetch(
         net="IU",
         sta="ANMO",
         cha="BHZ",
@@ -876,10 +911,14 @@ def test_from_earthscope_multi_result_mocked(
     assert all(isinstance(sac, SacIO) for sac in result.values())
 
 
-def test_from_earthscope_datetime_params_mocked(
+def test_fetch_datetime_params_mocked(
     monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
 ) -> None:
-    """from_earthscope converts datetime start/end kwargs to isoformat strings."""
+    """fetch converts datetime start/end kwargs to the plain
+    YYYY-MM-DDTHH:MM:SS format the EarthScope timeseries service actually
+    requires -- not datetime.isoformat(), which includes fractional
+    seconds and a UTC offset that the live service rejects outright (see
+    test_fetch_window_uses_earthscope_compatible_format_live)."""
     sac_bytes = assets["orgfile"].read_bytes()
     captured: dict[str, object] = {}
 
@@ -889,9 +928,9 @@ def test_from_earthscope_datetime_params_mocked(
 
     monkeypatch.setattr("pysmo.lib.io._sacio.sacio.http_get", fake_http_get)
 
-    start = datetime(2021, 3, 22, 13, 0, 0, tzinfo=timezone.utc)
-    end = datetime(2021, 3, 22, 14, 0, 0, tzinfo=timezone.utc)
-    SacIO.from_earthscope(
+    start = datetime(2021, 3, 22, 13, 0, 0, 123456, tzinfo=timezone.utc)
+    end = datetime(2021, 3, 22, 14, 0, 0, 654321, tzinfo=timezone.utc)
+    SacIO.fetch(
         net="IU",
         sta="ANMO",
         cha="BHZ",
@@ -901,5 +940,37 @@ def test_from_earthscope_datetime_params_mocked(
         force_single_result=True,
     )
 
-    assert captured["start"] == start.isoformat()
-    assert captured["end"] == end.isoformat()
+    assert captured["start"] == "2021-03-22T13:00:00"
+    assert captured["end"] == "2021-03-22T14:00:00"
+
+
+def test_fetch_non_utc_timezone_converted_to_utc_mocked(
+    monkeypatch: pytest.MonkeyPatch, assets: dict[str, Path]
+) -> None:
+    """fetch converts tz-aware start/end kwargs to UTC before formatting,
+    rather than reading off their local wall-clock fields as-is — otherwise
+    a non-UTC value would silently reach EarthScope as the wrong instant."""
+    sac_bytes = assets["orgfile"].read_bytes()
+    captured: dict[str, object] = {}
+
+    def fake_http_get(url: str, fields: dict[str, object], **kwargs: object) -> bytes:
+        captured.update(fields)
+        return _zip_of({"segment.SAC": sac_bytes})
+
+    monkeypatch.setattr("pysmo.lib.io._sacio.sacio.http_get", fake_http_get)
+
+    est = timezone(timedelta(hours=-5))
+    start = datetime(2021, 3, 22, 8, 0, 0, tzinfo=est)  # 2021-03-22T13:00:00Z
+    end = pd.Timestamp("2021-03-22T09:30:00", tz=est)  # 2021-03-22T14:30:00Z
+    SacIO.fetch(
+        net="IU",
+        sta="ANMO",
+        cha="BHZ",
+        loc="00",
+        start=start,
+        end=end,
+        force_single_result=True,
+    )
+
+    assert captured["start"] == "2021-03-22T13:00:00"
+    assert captured["end"] == "2021-03-22T14:30:00"

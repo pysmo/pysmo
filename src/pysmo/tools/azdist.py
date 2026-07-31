@@ -1,4 +1,4 @@
-"""Common distance and azimuth calculations using [`pyproj.Geod`][pyproj.Geod]."""
+"""Common distance and azimuth calculations using [`pyproj.Geod`][]."""
 
 import math
 

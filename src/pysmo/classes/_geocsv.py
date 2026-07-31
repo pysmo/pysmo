@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from attrs import define, field, setters, validators
 
+from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.lib.io import (
     extract_geocsv_timeseries,
@@ -17,6 +18,7 @@ from pysmo.lib.validators import (
     convert_to_timedelta,
     convert_to_utc_timestamp,
 )
+from pysmo.tools.web import fetch_geocsvseismogram
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
 __all__ = ["GeoCsvSeismogram"]
@@ -138,3 +140,63 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             data=segment.data,
             sid=segment.sid,
         )
+
+    @classmethod
+    def fetch(
+        cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+    ) -> Self:
+        """Fetch and parse a seismogram from the EarthScope FDSN dataselect
+        web service, for an absolute time window.
+
+        For a window relative to a predicted phase arrival instead, compute
+        the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],
+        which shows exactly this in its own Examples) and pass the
+        resulting *starttime*/*endtime* here.
+
+        Args:
+            station: Any object satisfying the [`Station`][pysmo.Station]
+                protocol. Provides the network, station code, location, and
+                channel for the request.
+            starttime: Start of the requested time window (UTC).
+            endtime: End of the requested time window (UTC).
+
+        Returns:
+            A new GeoCsvSeismogram instance.
+
+        Raises:
+            ValueError: If no waveform data is returned for the given
+                window, or the returned segments cannot be merged into a
+                continuous trace (data gaps, differing channels or sample
+                rates).
+            urllib3.exceptions.ResponseError: If the dataselect web service
+                returns an HTTP error.
+
+        Examples:
+            ```python
+            >>> import pandas as pd
+            >>> from pysmo import MiniStation
+            >>> from pysmo.classes import GeoCsvSeismogram
+            >>> station = MiniStation(
+            ...     name="ANMO", network="IU", location="00", channel="LHZ",
+            ...     latitude=34.945981, longitude=-106.457133,
+            ... )
+            >>> seismogram = GeoCsvSeismogram.fetch(
+            ...     station=station,
+            ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+            ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            ... )  # doctest: +SKIP
+            >>>
+            ```
+        """
+        starttime = convert_to_utc_timestamp(starttime)
+        endtime = convert_to_utc_timestamp(endtime)
+        waveform_bytes = fetch_geocsvseismogram(
+            station=station, starttime=starttime, endtime=endtime
+        )
+        if not waveform_bytes.strip():
+            raise ValueError(
+                f"No waveform data returned for "
+                f"{station.network}.{station.name}.{station.location}."
+                f"{station.channel} between {starttime} and {endtime}."
+            )
+        return cls.from_text(waveform_bytes.decode("utf-8"))

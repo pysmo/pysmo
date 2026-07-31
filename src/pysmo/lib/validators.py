@@ -1,15 +1,22 @@
 """
-Validators and converters for pysmo classes using [`attrs`][attrs].
+Validators and converters for pysmo classes using [`attrs`][].
 """
 
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
+from attrs import Attribute
+
+
+def validate_nonzero(instance: object, attribute: Attribute, value: float) -> None:
+    """Ensure `value` is not exactly zero. Either sign is otherwise permitted."""
+    if value == 0:
+        raise ValueError(f"{attribute.name} must not be zero.")
 
 
 def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timestamp:
-    """Convert a value to a [`pandas.Timestamp`][pandas.Timestamp] object with `#!py tzinfo=timezone.utc` set."""
+    """Convert a value to a [`Timestamp`][pandas.Timestamp] object with `#!py tzinfo=timezone.utc` set."""
     if value is None:
         raise TypeError("Value is None.")
 
@@ -24,7 +31,7 @@ def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timesta
 def convert_to_timedelta(
     value: pd.Timedelta | timedelta | float | int | str,
 ) -> pd.Timedelta:
-    """Convert a value to a [`pandas.Timedelta`][pandas.Timedelta] object.
+    """Convert a value to a [`Timedelta`][pandas.Timedelta] object.
 
     If the value is a float or int, it is assumed to be in seconds.
     """
@@ -34,5 +41,5 @@ def convert_to_timedelta(
 
 
 def convert_to_ndarray(value: np.ndarray | list | tuple) -> np.ndarray:
-    """Convert a value to a [`numpy.ndarray`][numpy.ndarray] object."""
+    """Convert a value to a [`ndarray`][numpy.ndarray] object."""
     return np.asanyarray(value)

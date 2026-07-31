@@ -28,8 +28,9 @@ from matplotlib.figure import Figure
 from pysmo import MiniEvent, MiniStation
 from pysmo.classes import GeoCsvSeismogram
 from pysmo.functions import detrend
+from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
-from pysmo.tools.web import fetch_seismogram, fetch_travel_times
+from pysmo.tools.web import fetch_travel_times
 
 matplotlib.use("Agg")
 
@@ -73,19 +74,22 @@ def test_fetch_travel_times_live() -> None:
 
 @pytest.mark.mpl_image_compare(remove_text=True)
 def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure:
-    seismogram, arrivals = fetch_seismogram(
+    # Computing a phase-relative window is just the predicted arrival time
+    # plus/minus a duration — see fetch_travel_times's own Examples.
+    dist = haversine(event, station)
+    travel_times = fetch_travel_times(event.depth / 1000.0, dist, ["P"])
+    predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
+
+    seismogram = GeoCsvSeismogram.fetch(
         station=station,
-        event=event,
-        pre=pd.Timedelta(minutes=2),
-        post=pd.Timedelta(minutes=8),
+        starttime=predicted_p - pd.Timedelta(minutes=2),
+        endtime=predicted_p + pd.Timedelta(minutes=8),
     )
 
     assert isinstance(seismogram, GeoCsvSeismogram)
     assert seismogram.sid == "IU_ANMO_00_LHZ"
     assert seismogram.delta == pd.Timedelta(seconds=1)
     assert len(seismogram.data) == 600
-
-    predicted_p = arrivals["P"]
     assert seismogram.begin_time < predicted_p < seismogram.end_time
 
     detrend(seismogram)
