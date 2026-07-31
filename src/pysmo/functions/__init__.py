@@ -33,7 +33,7 @@ Note:
     instead.
 
 Hint:
-    Additional functions may be found in [`pysmo.tools`][pysmo.tools].
+    Additional functions may be found in [`pysmo.tools`][].
 """
 
 from .._utils import export_module_names

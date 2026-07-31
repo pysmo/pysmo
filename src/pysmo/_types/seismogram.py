@@ -84,9 +84,6 @@ class SeismogramEndtimeMixin:
 class MiniSeismogram(SeismogramEndtimeMixin):
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
 
-    The `MiniSeismogram` class provides a minimal implementation of class that
-    is compatible with the [`Seismogram`][pysmo.Seismogram] type.
-
     Examples:
         ```python
         >>> from pysmo import MiniSeismogram, Seismogram

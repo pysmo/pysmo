@@ -56,10 +56,16 @@ nav = [
 
 extra_css = [
   "css/mermaid.css",
-  # "css/mkdocstrings.css"
+  # "css/mkdocstrings.css",
+  "https://unpkg.com/katex@0/dist/katex.min.css",
 ]
-#extra_javascript = ["javascripts/extra.js"]
-#
+
+extra_javascript = [
+  "javascripts/katex.js",
+  "https://unpkg.com/katex@0/dist/katex.min.js",
+  "https://unpkg.com/katex@0/dist/contrib/auto-render.min.js",
+]
+
 [project.theme]
 # variant = "classic"
 #custom_dir = "overrides"
@@ -135,6 +141,8 @@ emoji_index = "zensical.extensions.emoji.twemoji"
 emoji_generator = "zensical.extensions.emoji.to_svg"
 [project.markdown_extensions.footnotes]
 [project.markdown_extensions.md_in_html]
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
 [project.markdown_extensions.pymdownx.details]
 [project.markdown_extensions.pymdownx.highlight]
 anchor_linenums = true
@@ -149,6 +157,8 @@ custom_fences = [
 ]
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
+[project.plugins.markdown-exec]
+
 [project.plugins.mkdocstrings.handlers.python]
 paths = ["src"]
 inventories = [

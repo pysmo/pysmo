@@ -4,7 +4,7 @@ from datetime import timezone
 from typing import Annotated
 
 import pandas as pd
-from annotated_types import Ge, Gt, Interval, Lt, Timezone
+from annotated_types import Ge, Gt, Interval, Lt, Predicate, Timezone
 
 # ---------------------------------------------------------------------------
 # Numeric Type Aliases with Constraints
@@ -15,6 +15,9 @@ type UnitFloat = Annotated[float | int, Interval(ge=0, le=1)]
 
 type PositiveNumber = Annotated[int | float, Gt(0)]
 """Positive Numbers (Float or Int) greater than 0."""
+
+type NonZeroNumber = Annotated[int | float, Predicate(lambda x: x != 0)]
+"""Non-zero Numbers (Float or Int) of either sign."""
 
 type NegativeNumber = Annotated[int | float, Lt(0)]
 """Negative Numbers (Float or Int) less than 0."""

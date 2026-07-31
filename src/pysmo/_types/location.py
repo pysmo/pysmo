@@ -28,9 +28,6 @@ class Location(Protocol):
 class MiniLocation:
     """Minimal class for use with the [`Location`][pysmo.Location] type.
 
-    The `MiniLocation` class provides a minimal implementation of class that
-    is compatible with the [`Location`][pysmo.Location] type.
-
     Examples:
         ```python
         >>> from pysmo import MiniLocation, Location

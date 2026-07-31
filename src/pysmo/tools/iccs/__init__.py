@@ -44,20 +44,20 @@ pysmo, the following parameters are required:
 | [`t0`][pysmo.tools.iccs.IccsSeismogram.t0]         | Initial pick (typically \
     computed). Serves as input only when `t1` is not set. |
 | [`t1`][pysmo.tools.iccs.IccsSeismogram.t1]         | Improved pick. \
-    Serves as both input (if not [`None`][None]) and output (always) when \
+    Serves as both input (if not [`None`][]) and output (always) when \
     [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm. It should \
-    be set to [`None`][None] initially. |
+    be set to [`None`][] initially. |
 | [`select`][pysmo.tools.iccs.IccsSeismogram.select] | Determines if a  \
-    seismogram is used for the stack, and should therefore be [`True`][True] \
-    initially. It is set to [`False`][False] for poor quality seismograms \
-    automatically during a run if `autoselect` is [`True`][True]. Note that \
+    seismogram is used for the stack, and should therefore be [`True`][] \
+    initially. It is set to [`False`][] for poor quality seismograms \
+    automatically during a run if `autoselect` is [`True`][]. Note that \
     this flag does _not_ exclude a seismogram from being cross-correlated with \
     the stack. Recovery is therefore possible and previously de-selected \
     seismograms may be selected again for the next iteration. |
 | [`flip`][pysmo.tools.iccs.IccsSeismogram.flip]     | Determines if the \
     seismogram data should be flipped (i.e. data are multiplied with -1) when \
     using it in the stack and cross-correlation. Can be automatically toggled \
-    when `autoflip` is [`True`][True] during a \
+    when `autoflip` is [`True`][] during a \
     [run][pysmo.tools.iccs.ICCS.__call__]. |
 
 !!! tip

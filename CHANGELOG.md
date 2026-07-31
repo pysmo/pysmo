@@ -19,6 +19,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### 📦 Miscellaneous
 
 - Update deps, cleanup docstrings ([#271](https://github.com/pysmo/pysmo/issues/271))
+- Update packages and small fixes for edge-cases ([#272](https://github.com/pysmo/pysmo/issues/272))
 
 ### 🔍 Other Changes
 
@@ -45,6 +46,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(tools-signal)** Add mccc function
 - **(iccs)** Add ICCS.run_mccc method, add ICCSSeismogram.extra attribute
 - **(iccs)** Add update_bandpass function. ([#269](https://github.com/pysmo/pysmo/issues/269))
+- **(web)** Fetch seismograms and travel times from EarthScope
+- **(response)** Add instrument response removal via SACPZ/StationXML
 
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 

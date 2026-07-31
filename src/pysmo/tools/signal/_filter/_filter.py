@@ -44,16 +44,16 @@ def filter[T: Seismogram](
     Args:
         seismogram: The input seismogram to be filtered.
         filter_name: The type of filter to apply.
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
-        **filter_options: Filter parameters passed to the specified filter function.
+        clone: If `True`, return a new Seismogram object with the filtered
+            data. If `False`, modify the input seismogram in place.
+        **filter_options: Filter parameters passed to the specified filter
+            function.
 
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
 
     Raises:
-        ValueError: If `filter_name` is not a registered filter. This can occur
-            when `FilterName` is updated but the corresponding filter function
-            has not yet been decorated with `@register_filter`.
+        ValueError: If `filter_name` is not a registered filter.
 
     Examples:
         ```python

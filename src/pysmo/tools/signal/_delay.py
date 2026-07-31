@@ -37,11 +37,10 @@ def delay(
     """
     Cross correlates two seismograms to determine signal delay.
 
-    This function is a wrapper around the
-    [`scipy.signal.correlate`][scipy.signal.correlate] function. The default
-    behaviour is to call the correlate function with `#!py mode="full"` using
-    the full length data of the input seismograms. This is the most robust
-    option, but also the slowest.
+    This function is a wrapper around the [`correlate`][scipy.signal.correlate]
+    function. The default behaviour is to call the correlate function with
+    `#!py mode="full"` using the full length data of the input seismograms.
+    This is the most robust option, but also the slowest.
 
     If an approximate delay is known (e.g. because a particular phase is being
     targeted using a computed arrival time), the search space can be limited
@@ -82,10 +81,10 @@ def delay(
         delay: Time delay of the second seismogram with respect to the first.
         cc: Normalised cross-correlation value of the overlapping
             seismograms *after* shifting (uses
-            [`scipy.stats.mstats.pearsonr`][scipy.stats.mstats.pearsonr] for
-            the calculation). This value ranges from -1 to 1, with 1 indicating
-            a perfect correlation, 0 indicating no correlation, and -1
-            indicating a perfect anti-correlation.
+            [`scipy.stats.mstats.pearsonr`][] for the calculation). This value
+            ranges from -1 to 1, with 1 indicating a perfect correlation, 0
+            indicating no correlation, and -1 indicating a perfect
+            anti-correlation.
 
     Examples:
         To illustration the use of the `delay()` function, we read a seismogram
@@ -380,7 +379,7 @@ def multi_multi_delay(
 
     Note:
         Unlike most pysmo functions, this returns `numpy.timedelta64` values
-        rather than [`pd.Timedelta`][pandas.Timedelta]. This avoids the overhead
+        rather than [`Timedelta`][pandas.Timedelta]. This avoids the overhead
         of an object array and allows efficient vectorized arithmetic in
         downstream functions such as [`mccc`][pysmo.tools.signal.mccc].
         Convert individual elements with `pandas.Timedelta(delays[i, j])` if
