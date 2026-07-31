@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from pysmo import Seismogram
+from pysmo import MiniStation, Seismogram
 from pysmo.classes import GeoCsvSeismogram
 
 FIXTURE = Path(__file__).parent.parent / "lib" / "io" / "dataselect_response.geocsv"
@@ -82,3 +82,60 @@ class TestGeoCsvSeismogram:
         seismogram = GeoCsvSeismogram.from_text(TEXT)
         with pytest.raises(TypeError):
             seismogram.sid = 42  # type: ignore[assignment]
+
+
+class TestFetch:
+    @pytest.fixture()
+    def station(self) -> MiniStation:
+        return MiniStation(
+            name="ANMO",
+            network="IU",
+            location="00",
+            channel="LHZ",
+            latitude=34.945981,
+            longitude=-106.457133,
+        )
+
+    def test_fetches_and_parses(
+        self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
+    ) -> None:
+        calls: list[tuple[str, dict[str, object]]] = []
+
+        def fake_http_get(
+            url: str, fields: dict[str, object], **kwargs: object
+        ) -> bytes:
+            calls.append((url, fields))
+            return TEXT.encode("utf-8")
+
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake_http_get)
+
+        seismogram = GeoCsvSeismogram.fetch(
+            station=station,
+            starttime=pd.Timestamp("2010-02-27T06:30:00Z"),
+            endtime=pd.Timestamp("2010-02-27T06:30:01Z"),
+        )
+
+        assert isinstance(seismogram, Seismogram)
+        assert seismogram.sid == "IU_ANMO_00_LHZ"
+        npt.assert_allclose(seismogram.data, [1.0, 2.0, 3.0])
+
+        _, fields = calls[0]
+        assert fields["net"] == "IU"
+        assert fields["sta"] == "ANMO"
+        assert fields["loc"] == "00"
+        assert fields["cha"] == "LHZ"
+        assert fields["format"] == "geocsv"
+        assert fields["starttime"] == "2010-02-27T06:30:00+00:00"
+        assert fields["endtime"] == "2010-02-27T06:30:01+00:00"
+
+    def test_no_data_raises(
+        self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
+    ) -> None:
+        monkeypatch.setattr("pysmo.tools.web.http_get", lambda *args, **kwargs: b"\n")
+
+        with pytest.raises(ValueError, match="No waveform data returned"):
+            GeoCsvSeismogram.fetch(
+                station=station,
+                starttime=pd.Timestamp("2010-02-27T06:30:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:30:03Z"),
+            )

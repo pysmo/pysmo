@@ -48,8 +48,10 @@ def bandpass[T: Seismogram](
         freqmin: The minimum frequency of the bandpass filter (in Hz).
         freqmax: The maximum frequency of the bandpass filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
-        zerophase: If True, apply the filter in both forward and reverse directions to achieve zero phase distortion.
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
+        zerophase: If `True`, apply the filter in both forward and reverse
+            directions to achieve zero phase distortion.
+        clone: If `True`, return a new Seismogram object with the filtered
+            data. If `False`, modify the input seismogram in place.
 
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
@@ -118,8 +120,10 @@ def highpass[T: Seismogram](
         seismogram: The input seismogram to be filtered.
         freqmin: The minimum frequency of the highpass filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
-        zerophase: If True, apply the filter in both forward and reverse directions to achieve zero phase distortion.
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
+        zerophase: If `True`, apply the filter in both forward and reverse
+            directions to achieve zero phase distortion.
+        clone: If `True`, return a new Seismogram object with the filtered
+            data. If `False`, modify the input seismogram in place.
 
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
@@ -180,8 +184,10 @@ def lowpass[T: Seismogram](
         seismogram: The input seismogram to be filtered.
         freqmax: The maximum frequency of the lowpass filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
-        zerophase: If True, apply the filter in both forward and reverse directions to achieve zero phase distortion.
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
+        zerophase: If `True`, apply the filter in both forward and reverse
+            directions to achieve zero phase distortion.
+        clone: If `True`, return a new Seismogram object with the filtered
+            data. If `False`, modify the input seismogram in place.
 
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.
@@ -247,8 +253,10 @@ def bandstop[T: Seismogram](
         freqmin: The minimum frequency of the bandstop filter (in Hz).
         freqmax: The maximum frequency of the bandstop filter (in Hz).
         corners: The number of corners (poles) for the Butterworth filter.
-        zerophase: If True, apply the filter in both forward and reverse directions to achieve zero phase distortion.
-        clone: If True, return a new Seismogram object with the filtered data. If False, modify the input seismogram in place.
+        zerophase: If `True`, apply the filter in both forward and reverse
+            directions to achieve zero phase distortion.
+        clone: If `True`, return a new Seismogram object with the filtered
+            data. If `False`, modify the input seismogram in place.
 
     Returns:
         A new Seismogram object containing the filtered data when called with `clone=True`.

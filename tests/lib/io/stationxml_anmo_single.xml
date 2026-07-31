@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+ <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:iris="http://www.fdsn.org/xml/station/1/iris" xsi:schemaLocation="http://www.fdsn.org/xml/station/1 http://www.fdsn.org/xml/station/fdsn-station-1.1.xsd" schemaVersion="1.1">
+  <Source>EarthScope</Source>
+  <Sender>EarthScope</Sender>
+  <Module>EarthScope WEB SERVICE: fdsnws-station | version: 1.1.56</Module>
+  <ModuleURI>https://service.earthscope.org/fdsnws/station/1/query?net=IU&amp;sta=ANMO&amp;loc=00&amp;cha=BHZ&amp;level=response&amp;starttime=2016-01-01T00:00:00&amp;endtime=2016-01-02T00:00:00</ModuleURI>
+  <Created>2026-07-28T08:09:36.4842</Created>
+  <Network code="IU" startDate="1988-01-01T00:00:00.0000" restrictedStatus="open">
+   <Description>Global Seismograph Network (GSN - IRIS/USGS) (GSN)</Description>
+   <Identifier type="DOI">10.7914/SN/IU
+   </Identifier>
+   <TotalNumberStations>117</TotalNumberStations>
+   <SelectedNumberStations>1</SelectedNumberStations>
+   <Station code="ANMO" startDate="2002-11-19T21:07:00.0000" restrictedStatus="open" iris:alternateNetworkCodes="_ANSS-BB,_CARIBE-EWS,_CEUSN,.CEUSN-CONTRIB,.EARTHSCOPE,_FDSN,_FDSN-ALL,.GREG,_GSN,_GSN-BROADBAND,_REALTIME,.TEST,.UNRESTRICTED,_US-ALL,_US-REF,_US-TA">
+    <Description>(GSN) IRIS/USGS (IU) and ANSS</Description>
+    <Latitude>34.94591</Latitude>
+    <Longitude>-106.4572</Longitude>
+    <Elevation>1820.0</Elevation>
+    <Site>
+     <Name>Albuquerque, New Mexico, USA</Name>
+    </Site>
+    <CreationDate>2002-11-19T21:07:00.0000</CreationDate>
+    <TotalNumberChannels>362</TotalNumberChannels>
+    <SelectedNumberChannels>1</SelectedNumberChannels>
+    <Channel code="BHZ" locationCode="00" startDate="2014-12-17T18:40:00.0000" endDate="2018-07-09T20:45:00.0000" restrictedStatus="open">
+     <Latitude>34.94591</Latitude>
+     <Longitude>-106.4572</Longitude>
+     <Elevation>1671</Elevation>
+     <Depth>145</Depth>
+     <Azimuth>0</Azimuth>
+     <Dip>-90</Dip>
+     <Type>CONTINUOUS</Type>
+     <Type>GEOPHYSICAL</Type>
+     <SampleRate>2E01</SampleRate>
+     <ClockDrift>0E00</ClockDrift>
+     <Sensor>
+      <Description>Geotech KS-54000 Borehole Seismometer</Description>
+     </Sensor>
+     <Response>
+     <InstrumentSensitivity>
+       <Value>3.40413E9</Value>
+       <Frequency>0.02</Frequency>
+       <InputUnits>
+         <Name>m/s</Name>
+         <Description>Velocity in Meters Per Second</Description>
+       </InputUnits>
+       <OutputUnits>
+         <Name>counts</Name>
+         <Description>Digital Counts</Description>
+       </OutputUnits>
+     </InstrumentSensitivity>
+      <Stage number="1">
+      <PolesZeros>
+        <InputUnits>
+          <Name>m/s</Name>
+          <Description>Velocity in Meters Per Second</Description>
+        </InputUnits>
+        <OutputUnits>
+          <Name>V</Name>
+          <Description>Volts</Description>
+        </OutputUnits>
+        <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+        <NormalizationFactor>86299.5</NormalizationFactor>
+        <NormalizationFrequency>0.02</NormalizationFrequency>
+        <Zero number="0">
+          <Real>0.0</Real>
+          <Imaginary>0.0</Imaginary>
+        </Zero>
+        <Zero number="1">
+          <Real>0.0</Real>
+          <Imaginary>0.0</Imaginary>
+        </Zero>
+        <Pole number="0">
+          <Real>-0.0048004</Real>
+          <Imaginary>0.0</Imaginary>
+        </Pole>
+        <Pole number="1">
+          <Real minusError="7.59413E-4" plusError="7.59413E-4">-0.0739406</Real>
+          <Imaginary>0.0</Imaginary>
+        </Pole>
+        <Pole number="2">
+          <Real>-22.7121</Real>
+          <Imaginary>-27.1065</Imaginary>
+        </Pole>
+        <Pole number="3">
+          <Real>-22.7121</Real>
+          <Imaginary>27.1065</Imaginary>
+        </Pole>
+        <Pole number="4">
+          <Real>-59.4313</Real>
+          <Imaginary>0.0</Imaginary>
+        </Pole>
+      </PolesZeros>
+      <Decimation>
+        <InputSampleRate>20.0</InputSampleRate>
+        <Factor>1</Factor>
+        <Offset>0</Offset>
+        <Delay>0.0</Delay>
+        <Correction>0.0</Correction>
+      </Decimation>
+      <StageGain>
+        <Value>2029.0</Value>
+        <Frequency>0.02</Frequency>
+      </StageGain>
+
+      </Stage>
+      <Stage number="2">
+      <Coefficients>
+        <InputUnits>
+          <Name>V</Name>
+          <Description>Volts</Description>
+        </InputUnits>
+        <OutputUnits>
+          <Name>counts</Name>
+          <Description>Digital Counts</Description>
+        </OutputUnits>
+        <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+      </Coefficients>
+      <Decimation>
+        <InputSampleRate>20.0</InputSampleRate>
+        <Factor>1</Factor>
+        <Offset>0</Offset>
+        <Delay>0.0</Delay>
+        <Correction>0.0</Correction>
+      </Decimation>
+      <StageGain>
+        <Value>1677720.0</Value>
+        <Frequency>0.0</Frequency>
+      </StageGain>
+
+      </Stage>
+      <Stage number="3">
+      <Coefficients>
+        <InputUnits>
+          <Name>counts</Name>
+          <Description>Digital Counts</Description>
+        </InputUnits>
+        <OutputUnits>
+          <Name>counts</Name>
+          <Description>Digital Counts</Description>
+        </OutputUnits>
+        <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+        <Numerator number="0">-3.65342E-17</Numerator>
+        <Numerator number="1">3.67488E-8</Numerator>
+        <Numerator number="2">-4.2706E-7</Numerator>
+        <Numerator number="3">1.14502E-6</Numerator>
+        <Numerator number="4">-1.87594E-7</Numerator>
+        <Numerator number="5">-3.37274E-7</Numerator>
+        <Numerator number="6">2.78747E-6</Numerator>
+        <Numerator number="7">-3.74403E-6</Numerator>
+        <Numerator number="8">5.41172E-6</Numerator>
+        <Numerator number="9">7.47336E-6</Numerator>
+        <Numerator number="10">-5.17759E-4</Numerator>
+        <Numerator number="11">2.10677E-4</Numerator>
+        <Numerator number="12">4.63258E-5</Numerator>
+        <Numerator number="13">-6.08222E-4</Numerator>
+        <Numerator number="14">0.00144175</Numerator>
+        <Numerator number="15">-0.00240627</Numerator>
+        <Numerator number="16">0.00322534</Numerator>
+        <Numerator number="17">-0.00350639</Numerator>
+        <Numerator number="18">0.00281441</Numerator>
+        <Numerator number="19">-7.71971E-4</Numerator>
+        <Numerator number="20">-0.00280512</Numerator>
+        <Numerator number="21">0.00777805</Numerator>
+        <Numerator number="22">-0.0135815</Numerator>
+        <Numerator number="23">0.0191765</Numerator>
+        <Numerator number="24">-0.0229704</Numerator>
+        <Numerator number="25">0.0240398</Numerator>
+        <Numerator number="26">-0.0220986</Numerator>
+        <Numerator number="27">0.00860734</Numerator>
+        <Numerator number="28">0.0117525</Numerator>
+        <Numerator number="29">-0.0447787</Numerator>
+        <Numerator number="30">0.0964923</Numerator>
+        <Numerator number="31">-0.191755</Numerator>
+        <Numerator number="32">0.527652</Numerator>
+        <Numerator number="33">0.724167</Numerator>
+        <Numerator number="34">-0.156905</Numerator>
+        <Numerator number="35">0.0442574</Numerator>
+        <Numerator number="36">0.00314168</Numerator>
+        <Numerator number="37">-0.0266714</Numerator>
+        <Numerator number="38">0.0361532</Numerator>
+        <Numerator number="39">-0.0385687</Numerator>
+        <Numerator number="40">0.0310842</Numerator>
+        <Numerator number="41">-0.0235259</Numerator>
+        <Numerator number="42">0.0153211</Numerator>
+        <Numerator number="43">-0.00740398</Numerator>
+        <Numerator number="44">0.00109645</Numerator>
+        <Numerator number="45">0.00309797</Numerator>
+        <Numerator number="46">-0.0051932</Numerator>
+        <Numerator number="47">0.00556131</Numerator>
+        <Numerator number="48">-0.0047611</Numerator>
+        <Numerator number="49">0.00338213</Numerator>
+        <Numerator number="50">-0.00192052</Numerator>
+        <Numerator number="51">7.15218E-4</Numerator>
+        <Numerator number="52">7.67719E-5</Numerator>
+        <Numerator number="53">-4.51897E-4</Numerator>
+        <Numerator number="54">5.027E-4</Numerator>
+        <Numerator number="55">-5.65037E-4</Numerator>
+        <Numerator number="56">-5.568E-5</Numerator>
+        <Numerator number="57">1.57736E-5</Numerator>
+        <Numerator number="58">-1.41985E-6</Numerator>
+        <Numerator number="59">8.14909E-7</Numerator>
+        <Numerator number="60">6.80795E-7</Numerator>
+        <Numerator number="61">-1.25273E-6</Numerator>
+        <Numerator number="62">1.52435E-6</Numerator>
+        <Numerator number="63">-2.83336E-7</Numerator>
+        <Numerator number="64">-1.06384E-8</Numerator>
+        <Numerator number="65">1.25712E-9</Numerator>
+        <Numerator number="66">-5.42954E-11</Numerator>
+      </Coefficients>
+      <Decimation>
+        <InputSampleRate>20.0</InputSampleRate>
+        <Factor>1</Factor>
+        <Offset>0</Offset>
+        <Delay>1.6305</Delay>
+        <Correction>1.6305</Correction>
+      </Decimation>
+      <StageGain>
+        <Value>1.0</Value>
+        <Frequency>0.0</Frequency>
+      </StageGain>
+
+      </Stage>
+     </Response>
+    </Channel>
+   </Station>
+  </Network>
+ </FDSNStationXML>

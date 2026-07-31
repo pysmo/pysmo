@@ -48,7 +48,12 @@ test = [
   "syrupy>=4.9.1",
   "ruff>=0.11.13",
 ]
-docs = ["zensical>=0.0.10", "mkdocstrings-python>=2.0.1", "git-cliff>=2.12.0"]
+docs = [
+  "zensical>=0.0.10",
+  "mkdocstrings-python>=2.0.1",
+  "git-cliff>=2.12.0",
+  "markdown-exec>=1.11.0",
+]
 
 [tool.uv]
 default-groups = ["dev", "test", "docs"]

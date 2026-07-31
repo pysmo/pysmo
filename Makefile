@@ -65,7 +65,7 @@ tests: check-uv mypy ## Run all tests with pytest.
 	uv run pytest --cov --cov-report=term-missing --mpl
 
 test-web-live: check-uv ## Run tests that hit the real EarthScope web services.
-	uv run pytest --run-real-web-requests --mpl tests/lib/io/test_sacio.py tests/tools/test_web_live.py
+	uv run pytest --run-real-web-requests --mpl tests/lib/io/test_sacio.py tests/tools/test_web_live.py tests/integration/
 
 upgrade: check-uv ## Upgrade dependencies to their latest versions.
 	uv sync --upgrade

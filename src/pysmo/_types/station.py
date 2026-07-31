@@ -55,10 +55,7 @@ def _pad_string(x: str) -> str:
 
 @define(kw_only=True, slots=True)
 class MiniStation:
-    """Minimal class for use with the Station type.
-
-    The `MiniStation` class provides a minimal implementation of class that
-    is compatible with the `Station` type.
+    """Minimal class for use with the [`Station`][pysmo.Station] type.
 
     Examples:
         ```python

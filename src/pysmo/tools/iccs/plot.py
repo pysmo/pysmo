@@ -327,8 +327,8 @@ def plot_stack(
     Examples:
         The default plotting mode is to pad the stack beyond the time window
         used for the cross-correlations (highlighted in light green). This is
-        useful particularly useful for narrow time windows. Note that because
-        of the padding, the displayed stack isn't exactly what is used for the
+        particularly useful for narrow time windows. Note that because of the
+        padding, the displayed stack isn't exactly what is used for the
         cross-correlations.
 
         ```python
