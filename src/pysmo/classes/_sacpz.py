@@ -138,6 +138,24 @@ class SacPZ:
         Tip: See Also
             [`SacPZ.all_from_text`][pysmo.classes.SacPZ.all_from_text]: Parse
             a bulk/concatenated multi-record text body.
+
+        Examples:
+            Reading a SAC PZ file already saved to disk — the common case for
+            archived/legacy data, e.g. extracted from an old SEED volume with
+            `rdseed -p`, rather than fetched live from EarthScope:
+
+            ```python
+            >>> from pathlib import Path
+            >>> from pysmo import Response
+            >>> from pysmo.classes import SacPZ
+            >>> text = Path("SACPZ.IU.ANMO.00.BHZ").read_text()
+            >>> response = SacPZ.from_text(text)
+            >>> isinstance(response, Response)
+            True
+            >>> response.network, response.station
+            ('IU', 'ANMO')
+            >>>
+            ```
         """
         records = parse_sacpz(text)
         if len(records) != 1:
@@ -173,6 +191,14 @@ class SacPZ:
                 exactly one SAC PZ record.
             urllib3.exceptions.ResponseError: If the web service returns an
                 HTTP error.
+
+        Tip:
+            When fetching live from EarthScope rather than reading an
+            existing SAC PZ file, prefer
+            [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: the
+            StationXML response also captures digital FIR/IIR stages, so it
+            always satisfies [`StagedResponse`][pysmo.StagedResponse], unlike
+            `SacPZ`.
 
         Examples:
             ```python

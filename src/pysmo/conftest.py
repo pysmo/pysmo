@@ -53,12 +53,17 @@ def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
         Path(__file__).parent.parent.parent
         / "tests/lib/io/stationxml_example_single.xml"
     )
+    asset_sacpz = (
+        Path(__file__).parent.parent.parent / "tests/lib/io/sacpz_anmo_single.txt"
+    )
     test_testfile = Path(tmp_path) / "example.sac"
     test_iccsdir = Path(tmp_path) / "iccs-example/"
     test_stationxml = Path(tmp_path) / "stationxml_example_single.xml"
+    test_sacpz = Path(tmp_path) / "SACPZ.IU.ANMO.00.BHZ"
     copyfile(asset_testfile, test_testfile)
     copytree(asset_iccsdir, test_iccsdir)
     copyfile(asset_stationxml, test_stationxml)
+    copyfile(asset_sacpz, test_sacpz)
     try:
         os.chdir(tmp_path)
         yield
