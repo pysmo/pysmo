@@ -2,23 +2,23 @@
 """
 Signal processing functions for pysmo types.
 
-Most functions in this module are convenience wrappers around
-[`scipy.signal`][] adapted to accept pysmo
-[`Seismogram`][pysmo.Seismogram] objects. This covers filtering
-([`bandpass`][pysmo.tools.signal.bandpass],
-[`lowpass`][pysmo.tools.signal.lowpass], etc.) and spectral analysis
-([`psd`][pysmo.tools.signal.psd], [`envelope`][pysmo.tools.signal.envelope]).
+Functions operate on pysmo [`Seismogram`][pysmo.Seismogram] objects and span
+filtering, spectral analysis, delay estimation and array-wide arrival-time
+refinement, instrument response removal, and frequency-domain calculus
+(integration and differentiation). Filters are additionally registered in a
+common registry, so they can be applied generically by name as well as by
+calling the specific filter function directly.
+
+Where a suitable implementation already exists in SciPy (e.g.
+[`scipy.signal`][]), functions in this module wrap it rather than
+reimplementing it; others implement seismology-specific algorithms with no
+direct SciPy equivalent.
 
 Functions that modify seismogram data follow the same `clone` convention as
 [`pysmo.functions`][]: without `clone` they operate in place
 and return `None`; with `clone=True` they return a modified copy.
 
-Specialised functions not found in SciPy include cross-correlation based
-delay estimation ([`delay`][pysmo.tools.signal.delay],
-[`multi_delay`][pysmo.tools.signal.multi_delay]) and the MCCC
-arrival-time solver ([`mccc`][pysmo.tools.signal.mccc]).
-
-!!! warning
+!!! note
 
     The [`Seismogram`][pysmo.Seismogram] type carries no unit label for
     `data`. Functions in this module do not track or convert physical
