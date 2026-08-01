@@ -102,11 +102,15 @@ def remove_response[T: Seismogram](
     [`Response.overall_sensitivity`][pysmo.Response.overall_sensitivity]).
 
     For a [`SacPZ`][pysmo.classes.SacPZ]-derived `response`, this path's output
-    is *not* in the units `input_units` declares: SAC PZ's `SENSITIVITY` header
-    (`reference_sensitivity`) stays in the sensor's native units (e.g. `M/S**2`
-    for an accelerometer), while SAC PZ's `poles`/`zeros`/`overall_sensitivity`
-    — and therefore `input_units`, and the full-deconvolution path below — are
-    normalised to displacement. A [`StationXML`][pysmo.classes.StationXML]-derived
+    is typically *not* in the units `input_units` declares: by SAC convention
+    (followed by e.g. the EarthScope SACPZ web service and `rdseed -p`), the
+    `SENSITIVITY` header (`reference_sensitivity`) stays in the sensor's
+    native units (e.g. `M/S**2` for an accelerometer), while
+    `poles`/`zeros`/`overall_sensitivity` — and therefore `input_units`, and
+    the full-deconvolution path below — are normalised to displacement. This
+    is a convention of the *producer*, not something `SacPZ`/`parse_sacpz`
+    enforce or verify — a hand-written SAC PZ file that doesn't follow it will
+    not exhibit this split. A [`StationXML`][pysmo.classes.StationXML]-derived
     `response` has no such split: both paths agree with `input_units`.
 
     **`pre_filt` given — spectral deconvolution.** Deconvolves `seismogram.data`
