@@ -40,6 +40,11 @@ _HEADER_PATTERN = re.compile(
 _REQUIRED_HEADERS = ("NETWORK", "STATION", "LOCATION", "CHANNEL", "START", "INPUT UNIT")
 
 
+def _parse_float(value: str) -> float:
+    """Convert `value` to `float`, tolerating Fortran `D`/`d` exponents."""
+    return float(value.replace("D", "E").replace("d", "e"))
+
+
 @dataclass
 class _RawSacPzResponse:
     """A single uninterpreted SAC PZ record."""
@@ -86,7 +91,7 @@ def _parse_complex_block(
     for _ in range(count):
         if index >= len(lines):
             raise ValueError(f"Unexpected end of text while parsing '{keyword}' block.")
-        real, imag = (float(part) for part in lines[index].split())
+        real, imag = (_parse_float(part) for part in lines[index].split())
         values.append(complex(real, imag))
         index += 1
     return values, index
@@ -166,7 +171,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
             raise ValueError(
                 f"Expected 'CONSTANT' at line {index + 1}, found {constant_line!r}."
             )
-        overall_sensitivity = float(constant_line.split()[1])
+        overall_sensitivity = _parse_float(constant_line.split()[1])
         index += 1
 
         end_date_text = headers.get("END", "")
@@ -185,7 +190,9 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
                 zeros=zeros,
                 overall_sensitivity=overall_sensitivity,
                 reference_sensitivity=(
-                    float(sensitivity_text.split()[0]) if sensitivity_text else None
+                    _parse_float(sensitivity_text.split()[0])
+                    if sensitivity_text
+                    else None
                 ),
                 input_units=headers["INPUT UNIT"],
             )
