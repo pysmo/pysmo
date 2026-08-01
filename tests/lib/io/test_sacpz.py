@@ -67,6 +67,20 @@ class TestParseSacpz:
         records = parse_sacpz(MINIMAL_RECORD)
         assert records[0].reference_sensitivity is None
 
+    def test_fortran_d_exponent_tolerated(self) -> None:
+        """Hand-written SAC PZ text may use Fortran `D`/`d` exponents instead
+        of `E`/`e`, e.g. from older Fortran-heritage tooling."""
+        text = (
+            MINIMAL_RECORD.replace("e+00", "D+00")
+            .replace("e-02", "d-02")
+            .replace("1.0e+09", "1.0D+09")
+        )
+        records = parse_sacpz(text)
+        record = records[0]
+        assert record.poles == [complex(-1.0e-2, 0.0)]
+        assert record.zeros == [complex(0.0, 0.0), complex(0.0, 0.0)]
+        assert record.overall_sensitivity == pytest.approx(1.0e9)
+
     def test_two_concatenated_records(self) -> None:
         text = MINIMAL_RECORD + "\n\n" + MINIMAL_RECORD
         records = parse_sacpz(text)
