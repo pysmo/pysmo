@@ -4,6 +4,10 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ## [Unreleased]
 
+### ⚙️ DevOps & Infrastructure
+
+- Auto-update CHANGELOG.md unreleased section on push to master
+
 ### 🐛 Bug Fixes
 
 - **(iccs)** Fix save cancel callback on buttons
@@ -11,6 +15,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Correct window limit validation and ramp-aware bounds checking
 - **(signal)** Fix mccc abs_max
 - **(iccs)** Proper limits for bandpass frequencies
+- **(sacpz)** Tolerate Fortran D/d exponents in SAC PZ text
 
 ### 📚 Documentation
 
@@ -48,6 +53,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Add update_bandpass function. ([#269](https://github.com/pysmo/pysmo/issues/269))
 - **(web)** Fetch seismograms and travel times from EarthScope
 - **(response)** Add instrument response removal via SACPZ/StationXML
+- **(plotutils)** Add relative_time_array function
 
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 
