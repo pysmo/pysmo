@@ -4,8 +4,9 @@ Utilities for plotting with pysmo types.
 Provides functions to convert a [`Seismogram`][pysmo.Seismogram]'s time axis
 into arrays matplotlib can plot directly
 ([`time_array`][pysmo.tools.plotutils.time_array],
-[`unix_time_array`][pysmo.tools.plotutils.unix_time_array]), plus a basic
-plotting helper ([`plotseis`][pysmo.tools.plotutils.plotseis]).
+[`unix_time_array`][pysmo.tools.plotutils.unix_time_array],
+[`relative_time_array`][pysmo.tools.plotutils.relative_time_array]), plus a
+basic plotting helper ([`plotseis`][pysmo.tools.plotutils.plotseis]).
 """
 
 from typing import Any
@@ -14,12 +15,14 @@ import matplotlib.dates as mdates
 import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from pysmo import Seismogram
 
 __all__ = [
     "time_array",
     "unix_time_array",
+    "relative_time_array",
     "plotseis",
 ]
 
@@ -92,6 +95,35 @@ def unix_time_array(seismogram: Seismogram) -> np.ndarray:
     """
     start = seismogram.begin_time.timestamp()
     end = seismogram.end_time.timestamp()
+    return np.linspace(start, end, len(seismogram.data))
+
+
+def relative_time_array(seismogram: Seismogram, reference: pd.Timestamp) -> np.ndarray:
+    """Create an array of elapsed seconds relative to a reference time.
+
+    Args:
+        seismogram: Seismogram object.
+        reference: Reference time.
+
+    Returns:
+        Array containing the elapsed time (in seconds) of each point in the
+        seismogram data, relative to `reference`. Values are negative for
+        points before `reference`.
+
+    Examples:
+        ```python
+        >>> from pysmo.tools.plotutils import relative_time_array
+        >>> from pysmo.classes import SAC
+        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> reference = seis.begin_time + (seis.end_time - seis.begin_time) / 2
+        >>> rel_times = relative_time_array(seis, reference)
+        >>> bool(rel_times[0] < 0 < rel_times[-1])
+        True
+        >>>
+        ```
+    """
+    start = (seismogram.begin_time - reference).total_seconds()
+    end = (seismogram.end_time - reference).total_seconds()
     return np.linspace(start, end, len(seismogram.data))
 
 
