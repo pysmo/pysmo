@@ -51,3 +51,32 @@ class TestPlotseisFunctions:
             pd.Timestamp.fromtimestamp(unix_times[-1], timezone.utc).timestamp()
             == seismogram.end_time.timestamp()
         )
+
+    def test_relative_time_array(self, seismogram: Seismogram) -> None:
+        """Get relative times from Seismogram object and verify them."""
+        from pysmo.tools.plotutils import relative_time_array
+
+        # Reference before begin_time: all elapsed times are positive.
+        reference = seismogram.begin_time - pd.Timedelta(seconds=10)
+        rel_times = relative_time_array(seismogram, reference)
+        assert len(rel_times) == len(seismogram.data)
+        assert rel_times[0] == pytest.approx(
+            (seismogram.begin_time - reference).total_seconds()
+        )
+        assert rel_times[-1] == pytest.approx(
+            (seismogram.end_time - reference).total_seconds()
+        )
+        assert rel_times[0] > 0
+
+        # Reference inside the trace: elapsed times change sign.
+        reference = (
+            seismogram.begin_time + (seismogram.end_time - seismogram.begin_time) / 2
+        )
+        rel_times = relative_time_array(seismogram, reference)
+        assert rel_times[0] == pytest.approx(
+            (seismogram.begin_time - reference).total_seconds()
+        )
+        assert rel_times[-1] == pytest.approx(
+            (seismogram.end_time - reference).total_seconds()
+        )
+        assert rel_times[0] < 0 < rel_times[-1]
