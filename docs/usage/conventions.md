@@ -38,6 +38,13 @@ are absolute — relative offsets from some reference point are avoided.
 Time intervals such as the sampling interval are always
 [`pandas.Timedelta`][pandas.Timedelta] objects.
 
+Many seismological data formats and tools store absolute times without
+recording a timezone, even though the values are effectively UTC. In keeping
+with "trust your data" above, a naive timestamp arriving at a pysmo type is
+therefore assumed to represent UTC and is converted accordingly — it is not
+rejected. This conversion happens once, at the class level; functions that
+accept timestamps do not repeat it.
+
 ## SciPy and NumPy parameters
 
 Where [`scipy`][] or [`numpy`][] functions are used, pysmo follows their
