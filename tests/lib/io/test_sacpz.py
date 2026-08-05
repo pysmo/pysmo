@@ -7,8 +7,8 @@ import pytest
 
 from pysmo.lib.io._sacpz import parse_sacpz
 
-SINGLE_FIXTURE = Path(__file__).parent / "sacpz_anmo_single.txt"
-BULK_FIXTURE = Path(__file__).parent / "sacpz_anmo_bulk.txt"
+SINGLE_FIXTURE = Path(__file__).parent / "assets" / "sacpz_anmo_single.txt"
+BULK_FIXTURE = Path(__file__).parent / "assets" / "sacpz_anmo_bulk.txt"
 
 MINIMAL_RECORD = """\
 * NETWORK   (KNETWK): IU

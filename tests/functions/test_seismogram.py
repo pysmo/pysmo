@@ -752,15 +752,15 @@ class TestTaper:
 
 
 class TestWindow:
-    TAPER_WIDTH: pd.Timedelta | float = pd.Timedelta(seconds=500)
+    TAPER_WIDTH: pd.Timedelta | float = pd.Timedelta(seconds=100)
 
     def test_window(self, seismogram: Seismogram) -> None:
         from pysmo.functions import time2index, window
 
         taper_width = self.TAPER_WIDTH
 
-        window_begin_time = seismogram.begin_time + pd.Timedelta(seconds=600)
-        window_end_time = window_begin_time + pd.Timedelta(seconds=1000)
+        window_begin_time = seismogram.begin_time + pd.Timedelta(seconds=150)
+        window_end_time = window_begin_time + pd.Timedelta(seconds=300)
         windowed_seis = window(
             seismogram,
             window_begin_time,

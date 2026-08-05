@@ -196,18 +196,18 @@ def test_write_to_file(empty_file: Path) -> None:
 def test_read_headers(sacfile: Path) -> None:
     """Read all SacIO headers from a test file."""
     sac = SacIO.from_file(sacfile)
-    assert sac.npts == 180000
-    assert sac.b == pytest.approx(-63.34000015258789)
-    assert sac.e == pytest.approx(3536.639892578125)
+    assert sac.npts == 57465
+    assert sac.b == pytest.approx(0.0005380000220611691)
+    assert sac.e == pytest.approx(2873.2005808140384)
     assert sac.iftype == "time"
     assert sac.leven is True
-    assert pytest.approx(sac.delta) == 0.02
+    assert pytest.approx(sac.delta) == 0.05
     assert sac.odelta is None
     assert sac.idep == "unkn"
-    assert sac.depmin == 451
-    assert sac.depmax == 4178
-    assert sac.depmen == pytest.approx(2323.753022222222)
-    assert sac.o == pytest.approx(0.0)
+    assert sac.depmin == -4431611
+    assert sac.depmax == 4836434
+    assert sac.depmen == pytest.approx(-48617.323240233185)
+    assert sac.o == pytest.approx(-594.5390014648438)
     assert sac.a is None
     assert sac.t0 is None
     assert sac.t1 is None
@@ -220,10 +220,10 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.t8 is None
     assert sac.t9 is None
     assert sac.f is None
-    assert sac.kzdate == "2005-03-01"
-    assert sac.kztime == "07:24:05.500"
-    assert sac.iztype == "o"
-    assert sac.kinst is None
+    assert sac.kzdate == "2010-02-27"
+    assert sac.kztime == "06:44:06.069"
+    assert sac.iztype == "unkn"
+    assert sac.kinst == "Geotech"
     assert sac.resp0 is None
     assert sac.resp1 is None
     assert sac.resp2 is None
@@ -235,26 +235,26 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.resp8 is None
     assert sac.resp9 is None
     assert sac.kdatrd is None
-    assert sac.kstnm == "VOH01"
+    assert sac.kstnm == "ANMO"
     assert sac.cmpaz == 0
     assert sac.cmpinc == 0
     assert sac.istreg is None
-    assert sac.stla == pytest.approx(-48.46787643432617)
-    assert sac.stlo == pytest.approx(-72.56145477294922)
-    assert sac.stel is None
-    assert sac.stdp is None
-    assert sac.kevnm == "050600723BHZ"
+    assert sac.stla == pytest.approx(34.945980072021484)
+    assert sac.stlo == pytest.approx(-106.4571304321289)
+    assert sac.stel == pytest.approx(1671.0)
+    assert sac.stdp == pytest.approx(145.0)
+    assert sac.kevnm == "-12345  -12345"
     assert sac.ievreg is None
-    assert sac.evla == pytest.approx(-31.465999603271484)
-    assert sac.evlo == pytest.approx(-71.71800231933594)
+    assert sac.evla == pytest.approx(-36.12200164794922)
+    assert sac.evlo == pytest.approx(-72.89800262451172)
     assert sac.evel is None
-    assert sac.evdp == 26
-    assert sac.ievtyp == "quake"
-    assert sac.khole == ""
-    assert sac.dist == pytest.approx(1889.1549940066523)
-    assert sac.az == pytest.approx(2.4677533885335987)
-    assert sac.baz == pytest.approx(181.9199258637492)
-    assert sac.gcarc == pytest.approx(17.013879929551447)
+    assert sac.evdp == pytest.approx(22.899999618530273)
+    assert sac.ievtyp == "unkn"
+    assert sac.khole == "00"
+    assert sac.dist == pytest.approx(8603.325124418385)
+    assert sac.az == pytest.approx(152.67365966211173)
+    assert sac.baz == pytest.approx(332.23754008191094)
+    assert sac.gcarc == pytest.approx(77.63835363183948)
     assert sac.lovrok is True
     assert sac.iqual is None
     assert sac.isynth is None
@@ -266,8 +266,8 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.user5 is None
     assert sac.user6 is None
     assert sac.user7 is None
-    assert sac.user8 == pytest.approx(5.199999809265137)
-    assert sac.user9 == pytest.approx(5.000000)
+    assert sac.user8 is None
+    assert sac.user9 is None
     assert sac.kuser0 is None
     assert sac.kuser1 is None
     assert sac.kuser2 is None
@@ -278,23 +278,23 @@ def test_read_headers(sacfile: Path) -> None:
     assert sac.yminimum is None
     assert sac.ymaximum is None
     assert sac.nvhdr == 6
-    assert sac.norid == 0
-    assert sac.nevid == 0
+    assert sac.norid is None
+    assert sac.nevid is None
     assert sac.nwfid is None
     assert sac.iinst is None
-    assert sac.lpspol is True
+    assert sac.lpspol is None
     assert sac.lcalda is True
     assert sac.kcmpnm == "BHZ"
-    assert sac.knetwk == "YJ"
+    assert sac.knetwk == "IU"
     assert sac.mag is None
     assert sac.imagtyp is None
     assert sac.imagsrc is None
-    assert sac.nzyear == 2005
-    assert sac.nzjday == 60
-    assert sac.nzhour == 7
-    assert sac.nzmin == 24
-    assert sac.nzsec == 5
-    assert sac.nzmsec == 500
+    assert sac.nzyear == 2010
+    assert sac.nzjday == 58
+    assert sac.nzhour == 6
+    assert sac.nzmin == 44
+    assert sac.nzsec == 6
+    assert sac.nzmsec == 69
     with pytest.raises(AttributeError):
         _ = sac.nonexistingheader  # type: ignore[attr-defined]
 
@@ -321,16 +321,16 @@ def test_read_data(sacfile: Path) -> None:
     assert all(
         sac.data[:10]
         == [
-            2302.0,
-            2313.0,
-            2345.0,
-            2377.0,
-            2375.0,
-            2407.0,
-            2378.0,
-            2358.0,
-            2398.0,
-            2331.0,
+            -47201.0,
+            -47361.0,
+            -47511.0,
+            -47666.0,
+            -47826.0,
+            -47993.0,
+            -48168.0,
+            -48344.0,
+            -48516.0,
+            -48684.0,
         ]
     )
 
@@ -499,10 +499,11 @@ def test_change_data(sacfile: Path) -> None:
 
 
 @pytest.mark.depends(on=["test_read_headers"])
-def test_iztype_prevents_zero_time_change(sacfile: Path) -> None:
+def test_iztype_prevents_zero_time_change() -> None:
     """Cannot change the header nominated as zero-time to a non-zero value."""
-    sac = SacIO.from_file(sacfile)
-    assert sac.iztype == "o"
+    sac = SacIO()
+    sac.o = 0.0
+    sac.iztype = "o"
     with pytest.raises(RuntimeError):
         sac.o = 123.0
 
