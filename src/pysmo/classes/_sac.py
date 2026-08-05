@@ -129,7 +129,7 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
 
         ```python
         >>> sac.seismogram.begin_time
-        Timestamp('2005-03-01 07:23:02.159999848+0000', tz='UTC')
+        Timestamp('2010-02-27 06:44:06.069538+0000', tz='UTC')
         >>>
         ```
     """
@@ -478,17 +478,17 @@ class SacTimestamps(_SacNested):
         >>>
         >>> # SAC header "B" as stored in a SAC file
         >>> sac.b
-        -63.34000015258789
+        0.0005380000220611691
         >>>
         >>> # the output above is the number of seconds relative
         >>> # to the reference time and date:
         >>> sac.kzdate , sac.kztime
-        ('2005-03-01', '07:24:05.500')
+        ('2010-02-27', '06:44:06.069')
         >>>
         >>> # Accessing the same SAC header via a `SacTimestamps` object
         >>> # yields a corresponding Timestamp object with the absolute time:
         >>> sac.timestamps.b
-        Timestamp('2005-03-01 07:23:02.159999848+0000', tz='UTC')
+        Timestamp('2010-02-27 06:44:06.069538+0000', tz='UTC')
         >>>
         ```
 
@@ -500,14 +500,14 @@ class SacTimestamps(_SacNested):
         >>>
         >>> # Original value of the "B" SAC header:
         >>> sac.b
-        -63.34000015258789
+        0.0005380000220611691
         >>>
         >>> # Add 30 seconds to the absolute time:
         >>> sac.timestamps.b += pd.Timedelta(seconds=30)
         >>>
         >>> # The relative time also changes by the same amount:
         >>> sac.b
-        -33.34
+        30.000538
         >>>
         >>> # Changing b to None is not allowed (it is a required time header):
         >>> sac.timestamps.b = None
@@ -582,11 +582,12 @@ class SAC(SacIO):
         >>> from pysmo.classes import SAC
         >>> sac = SAC.from_file("example.sac")
         >>> sac.delta
-        0.019999999552965164
+        0.05000000074505806
         >>> sac.data
-        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
+        array([-47201., -47361., -47511., ..., -82144., -71072., -59960.],
+              shape=(57465,))
         >>> sac.evla
-        -31.465999603271484
+        -36.12200164794922
         >>>
         ```
 

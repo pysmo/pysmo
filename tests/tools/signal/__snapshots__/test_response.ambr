@@ -1,13 +1,13 @@
 # serializer version: 1
 # name: TestSnapshot.test_full_pipeline_matches_snapshot[geocsv_seismogram]
-  array([-1.77e-04,  2.66e-04,  3.41e-04, ...,  3.42e-04, -5.40e-05,
-         -3.75e-04], shape=(180000,))
+  array([-6.3772e-06, -6.3759e-06, -6.3766e-06, ..., -6.3613e-06,
+         -6.3640e-06, -6.3708e-06], shape=(57465,))
 # ---
 # name: TestSnapshot.test_full_pipeline_matches_snapshot[mini_seismogram]
-  array([-1.77e-04,  2.66e-04,  3.41e-04, ...,  3.42e-04, -5.40e-05,
-         -3.75e-04], shape=(180000,))
+  array([-6.3772e-06, -6.3759e-06, -6.3766e-06, ..., -6.3613e-06,
+         -6.3640e-06, -6.3708e-06], shape=(57465,))
 # ---
 # name: TestSnapshot.test_full_pipeline_matches_snapshot[sac_seismogram]
-  array([-1.77e-04,  2.66e-04,  3.41e-04, ...,  3.42e-04, -5.40e-05,
-         -3.75e-04], shape=(180000,))
+  array([-6.3772e-06, -6.3759e-06, -6.3766e-06, ..., -6.3613e-06,
+         -6.3640e-06, -6.3708e-06], shape=(57465,))
 # ---

@@ -62,14 +62,20 @@ class TestSAC:
         assert isinstance(sacseis, Seismogram)
         assert isinstance(sacseis.data, np.ndarray)
         assert sacseis.data.all() == sacio.data.all()
-        assert list(sacseis.data[:5]) == [2302.0, 2313.0, 2345.0, 2377.0, 2375.0]
+        assert list(sacseis.data[:5]) == [
+            -47201.0,
+            -47361.0,
+            -47511.0,
+            -47666.0,
+            -47826.0,
+        ]
         assert (
             sacseis.delta.total_seconds()
             == pytest.approx(sacio.delta, 0.001)
-            == pytest.approx(0.02, 0.001)
+            == pytest.approx(0.05, 0.001)
         )
         assert sacseis.begin_time.timestamp() == pytest.approx(
-            pd.Timestamp(2005, 3, 1, 7, 23, 2, 160000, tzinfo=timezone.utc).timestamp()
+            pd.Timestamp(2010, 2, 27, 6, 44, 6, 69538, tzinfo=timezone.utc).timestamp()
         )
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
@@ -81,11 +87,16 @@ class TestSAC:
         if sacio.nzsec:
             assert sacseis.begin_time.second == (sacio.nzsec + int(sacio.b)) % 60
         if sacio.nzmsec:
+            # abs=1000: the formula truncates b's sub-millisecond part via
+            # int(...*1000), so it can be off from the true microsecond
+            # value by up to a full millisecond.
             assert sacseis.begin_time.microsecond == pytest.approx(
-                1000 * (sacio.nzmsec + int(sacio.b * 1000)) % 1000000, abs=1
+                1000 * (sacio.nzmsec + int(sacio.b * 1000)) % 1000000, abs=1000
             )
         assert sacseis.end_time.timestamp() == pytest.approx(
-            pd.Timestamp(2005, 3, 1, 8, 23, 2, 139920, tzinfo=timezone.utc).timestamp()
+            pd.Timestamp(
+                2010, 2, 27, 7, 31, 59, 269538, tzinfo=timezone.utc
+            ).timestamp()
         )
         assert (sacseis.end_time - sacseis.begin_time).total_seconds() == pytest.approx(
             sacio.delta * (sacio.npts - 1)
@@ -123,11 +134,9 @@ class TestSAC:
         sacio = SacIO.from_file(sacfile)
         assert sacstation.name == sacio.kstnm
         assert sacstation.network == sacio.knetwk
-        assert sacstation.latitude == sacio.stla == pytest.approx(-48.46787643432617)
-        assert sacstation.longitude == sacio.stlo == pytest.approx(-72.56145477294922)
-        assert (
-            sacstation.elevation == sacio.stel is None
-        )  # testfile happens to not have this set...
+        assert sacstation.latitude == sacio.stla == pytest.approx(34.945980072021484)
+        assert sacstation.longitude == sacio.stlo == pytest.approx(-106.4571304321289)
+        assert sacstation.elevation == sacio.stel == pytest.approx(1671.0)
 
         # try changing values
         new_name = "new_name"
@@ -178,17 +187,21 @@ class TestSAC:
         sac = SAC.from_file(sacfile)
         sacevent = sac.event
         sacio = SacIO.from_file(sacfile)
-        assert sacevent.latitude == sacio.evla == pytest.approx(-31.465999603271484)
-        assert sacevent.longitude == sacio.evlo == pytest.approx(-71.71800231933594)
+        assert sacevent.latitude == sacio.evla == pytest.approx(-36.12200164794922)
+        assert sacevent.longitude == sacio.evlo == pytest.approx(-72.89800262451172)
         if sacio.evdp is not None:
-            assert sacevent.depth == sacio.evdp * 1000 == 26000
+            assert sacevent.depth == sacio.evdp * 1000 == pytest.approx(22900)
         if sac.o is not None:
             assert sacevent.time == sac.seismogram.begin_time + pd.Timedelta(
                 seconds=sac.o - sac.b
             )
         newtime = sacevent.time + pd.Timedelta(seconds=30)
-        with pytest.raises(RuntimeError):
+        if sac.iztype == "o":
+            with pytest.raises(RuntimeError):
+                sacevent.time = newtime
+        else:
             sacevent.time = newtime
+            assert sacevent.time.timestamp() == pytest.approx(newtime.timestamp())
         sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
         assert sacevent.latitude == 32 == sac.evla
         assert sacevent.longitude == 100 == sac.evlo
