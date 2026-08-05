@@ -115,7 +115,7 @@ def delay(
         >>>
         >>> # The signal delay is the number of samples shifted * delta:
         >>> (signal_delay := nroll * seis1.delta).total_seconds()
-        24.68
+        61.7
         >>>
         >>> # Call the delay function with the two seismograms and verify
         >>> # that the caclulated_delay is equal to the known signal delay:
@@ -164,7 +164,7 @@ def delay(
         False
         >>> # The normalised cross-correlation value is also not very high
         >>> cc
-        np.float64(0.4267205)
+        np.float64(0.5094230)
         >>>
         >>> calculated_delay, cc = delay(seis1, seis2, abs_max=True)
         >>> # with `abs_max=True`, the signal delay is again retrieved:

@@ -10,7 +10,13 @@ import pytest
 from pysmo import MiniStation, Seismogram
 from pysmo.classes import GeoCsvSeismogram
 
-FIXTURE = Path(__file__).parent.parent / "lib" / "io" / "dataselect_response.geocsv"
+FIXTURE = (
+    Path(__file__).parent.parent
+    / "lib"
+    / "io"
+    / "assets"
+    / "dataselect_response.geocsv"
+)
 
 TEXT = """\
 # dataset: GeoCSV 2.0

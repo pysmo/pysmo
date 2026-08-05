@@ -119,6 +119,7 @@ def assert_seismogram_modification(
     expected_data: np.ndarray | Any | None = None,
     rtol: float = 1e-7,
     atol: float = 0.0,
+    snapshot_decimals: int = 6,
     **kwargs: Any,
 ) -> Seismogram:
     """Test that a seismogram modification function works correctly with both clone modes.
@@ -150,6 +151,13 @@ def assert_seismogram_modification(
             Only used when expected_data is an np.ndarray.
         atol: Absolute tolerance for expected_data comparison (default: 0.0).
             Only used when expected_data is an np.ndarray.
+        snapshot_decimals: Decimal places for `np.around()` before a syrupy
+            snapshot comparison (default: 6). The default suits data on the
+            order of raw SAC counts or normalised values; data with a much
+            smaller physical scale (e.g. deconvolved ground motion in m/s,
+            order 1e-4 or smaller) needs a higher value or 6 decimals rounds
+            away most of the signal. Only used when expected_data is a
+            SnapshotAssertion.
         **kwargs: Keyword arguments to pass to modification_func (except 'clone').
 
     Returns:
@@ -231,8 +239,8 @@ def assert_seismogram_modification(
             expected_data, SnapshotAssertion
         ):
             # Use syrupy's assert_match method for snapshot comparison
-            # Round data to 6 decimals to reduce snapshot size and improve precision control
-            rounded_data = np.around(cloned_modified.data, decimals=6)
+            # Round data to reduce snapshot size and improve precision control
+            rounded_data = np.around(cloned_modified.data, decimals=snapshot_decimals)
             expected_data.assert_match(rounded_data)
         elif isinstance(expected_data, np.ndarray):
             # Use numpy's assert_allclose for array comparison

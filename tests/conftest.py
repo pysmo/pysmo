@@ -15,11 +15,7 @@ from pysmo import (
 from pysmo.classes import SAC, GeoCsvSeismogram, SacSeismogram, SacStation
 
 TESTDATA = dict(
-    orgfile=Path(__file__).parent / "assets/testfile.sac",
-    sacfile_IB=Path(__file__).parent / "assets/testfile_iztype_is_IB.sac",
-    sacfile_no_b=Path(__file__).parent / "assets/no_b.sac",
-    sacfile_v6=Path(__file__).parent / "assets/funcgen6.sac",
-    sacfile_v7=Path(__file__).parent / "assets/funcgen7.sac",
+    orgfile=Path(__file__).parent / "assets/reference_event/iu_anmo_00_bhz.sac",
 )
 
 
@@ -46,33 +42,6 @@ def sacfile(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, Path]) -> P
 @pytest.fixture()
 def sac_instance(sacfile: Path) -> SAC:
     return SAC.from_file(sacfile)
-
-
-@pytest.fixture()
-def sacfile_no_b(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
-    orgfile = assets["sacfile_no_b"]
-    tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = Path(tmpdir) / "testfile.sac"
-    shutil.copyfile(orgfile, testfile)
-    return testfile
-
-
-@pytest.fixture()
-def sacfile_v6(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
-    orgfile = assets["sacfile_v6"]
-    tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = Path(tmpdir) / "testfile.sac"
-    shutil.copyfile(orgfile, testfile)
-    return testfile
-
-
-@pytest.fixture()
-def sacfile_v7(tmpdir_factory: pytest.TempdirFactory, assets: dict[str, str]) -> Path:
-    orgfile = assets["sacfile_v7"]
-    tmpdir = tmpdir_factory.mktemp("sacfiles")
-    testfile = Path(tmpdir) / "testfile.sac"
-    shutil.copyfile(orgfile, testfile)
-    return testfile
 
 
 @pytest.fixture()

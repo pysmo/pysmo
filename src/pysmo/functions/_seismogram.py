@@ -129,10 +129,10 @@ def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
         >>> from pysmo.functions import detrend
         >>> from pysmo.classes import SAC
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-8)
         np.False_
         >>> detrend(sac_seis)
-        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-11)
+        >>> 0 == pytest.approx(np.mean(sac_seis.data), abs=1e-8)
         np.True_
         >>>
         ```
@@ -294,14 +294,15 @@ def pad[T: Seismogram](
         >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> original_length = len(sac_seis.data)
         >>> sac_seis.data
-        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
+        array([-47201., -47361., -47511., ..., -82144., -71072., -59960.],
+              shape=(57465,))
         >>> new_begin_time = sac_seis.begin_time - pd.Timedelta(seconds=10)
         >>> new_end_time = sac_seis.end_time + pd.Timedelta(seconds=10)
         >>> pad(sac_seis, new_begin_time, new_end_time)
         >>> np.isclose(len(sac_seis.data), original_length + 20 / sac_seis.delta.total_seconds())
         np.True_
         >>> sac_seis.data
-        array([0., 0., 0., ..., 0., 0., 0.], shape=(181000,))
+        array([0., 0., 0., ..., 0., 0., 0.], shape=(57865,))
         >>>
         ```
     """
@@ -365,12 +366,12 @@ def resample[T: Seismogram](
         >>> from pysmo.classes import SAC
         >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> len(sac_seis.data)
-        180000
+        57465
         >>> original_delta = sac_seis.delta
         >>> new_delta = original_delta * 2
         >>> resample(sac_seis, new_delta)
         >>> len(sac_seis.data)
-        90000
+        28732
         >>>
         ```
     """
@@ -794,12 +795,12 @@ def taper[T: Seismogram](
         >>> sac_seis = SAC.from_file("example.sac").seismogram
         >>> detrend(sac_seis)
         >>> sac_seis.data
-        array([ 95.59652208, 106.59521819, 138.59391429, ..., 394.90004126,
-               330.89873737, 281.89743348], shape=(180000,))
+        array([   821.53861155,    661.55931267,    511.58001379, ...,
+               -32931.93353333, -21859.9128322 , -10747.89213108], shape=(57465,))
         >>> taper(sac_seis, 0.2)
         >>> sac_seis.data
-        array([0.00000000e+00, 8.11814104e-07, 4.22204657e-06, ...,
-               1.20300114e-05, 2.52007798e-06, 0.00000000e+00], shape=(180000,))
+        array([ 0.00000000e+00,  4.94398663e-05,  1.52926246e-04, ...,
+               -9.84431924e-03, -1.63364213e-03, -0.00000000e+00], shape=(57465,))
         >>>
         ```
     """
@@ -954,10 +955,10 @@ def window[T: Seismogram](
         ValueError: If the ramp extends beyond the seismogram on either side.
 
     Examples:
-        In this example we focus on a window starting 500 seconds after the
-        `begin_time` of the seismogram and lasting for 1000 seconds. Setting the
-        `ramp_width` to 250 seconds means that the actual window will start 250
-        seconds earlier and end 250 seconds later than the specified window
+        In this example we focus on a window starting 600 seconds after the
+        `begin_time` of the seismogram and lasting for 1200 seconds. Setting the
+        `ramp_width` to 300 seconds means that the actual window will start 300
+        seconds earlier and end 300 seconds later than the specified window
         begin and end times.
 
         ```python
@@ -967,9 +968,9 @@ def window[T: Seismogram](
         >>> import pandas as pd
         >>>
         >>> sac_seis = SAC.from_file("example.sac").seismogram
-        >>> ramp_width = pd.Timedelta(seconds=250)
-        >>> window_begin_time = sac_seis.begin_time + pd.Timedelta(seconds=500)
-        >>> window_end_time = window_begin_time + pd.Timedelta(seconds=1000)
+        >>> ramp_width = pd.Timedelta(seconds=300)
+        >>> window_begin_time = sac_seis.begin_time + pd.Timedelta(seconds=600)
+        >>> window_end_time = window_begin_time + pd.Timedelta(seconds=1200)
         >>> windowed_seis = window(sac_seis, window_begin_time, window_end_time, ramp_width, same_shape=True, clone=True)
         >>> detrend(sac_seis)
         >>> fig = plotseis(sac_seis, windowed_seis)
@@ -993,8 +994,8 @@ def window[T: Seismogram](
         -->
 
         <figure markdown="span">
-        ![Functions window](../../images/functions/functions_window.png#only-light){ loading=lazy }
-        ![Functions window](../../images/functions/functions_window-dark.png#only-dark){ loading=lazy }
+        ![Functions window](../../images/sybil/functions_window.png#only-light){ loading=lazy }
+        ![Functions window](../../images/sybil/functions_window-dark.png#only-dark){ loading=lazy }
         </figure>
     """
 

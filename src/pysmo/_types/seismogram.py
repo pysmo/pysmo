@@ -36,7 +36,7 @@ class Seismogram(Protocol):
         >>> sac = SAC.from_file("example.sac")
         >>> seismogram = sac.seismogram
         >>> example_function(seismogram)
-        '2005-03-01T07:23:02.160000+00:00'
+        '2010-02-27T06:44:06.069538+00:00'
         >>>
         ```
     """
