@@ -8,8 +8,12 @@ import pytest
 from pysmo import MiniStation, Response
 from pysmo.classes import SacPZ
 
-SINGLE_FIXTURE = Path(__file__).parent.parent / "lib" / "io" / "sacpz_anmo_single.txt"
-BULK_FIXTURE = Path(__file__).parent.parent / "lib" / "io" / "sacpz_anmo_bulk.txt"
+SINGLE_FIXTURE = (
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_single.txt"
+)
+BULK_FIXTURE = (
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_bulk.txt"
+)
 
 MINIMAL_RECORD = """\
 * NETWORK   (KNETWK): IU

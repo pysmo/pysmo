@@ -21,7 +21,10 @@ from pysmo.tools.signal import remove_response
 from tests.test_helpers import assert_seismogram_modification
 
 STATIONXML_SINGLE_EPOCH = (
-    Path(__file__).parent.parent.parent / "lib" / "io" / "stationxml_anmo_single.xml"
+    Path(__file__).parent.parent.parent
+    / "assets"
+    / "reference_event"
+    / "iu_anmo_00_bhz_response.xml"
 )
 
 
@@ -714,7 +717,13 @@ class TestSnapshot:
         """Regression guard alongside the round-trip correctness tests above:
         a snapshot can't catch a systematically wrong transfer function, but
         it does catch accidental behaviour changes in the full pipeline."""
-        raw = parse_stationxml(STATIONXML_SINGLE_EPOCH.read_bytes())[0]
+        epochs = parse_stationxml(STATIONXML_SINGLE_EPOCH.read_bytes())
+        raw = next(
+            epoch
+            for epoch in epochs
+            if epoch.start_date <= seismogram.begin_time
+            and (epoch.end_date is None or epoch.end_date > seismogram.begin_time)
+        )
         response = MiniStagedResponse(
             poles=raw.poles,
             zeros=raw.zeros,
@@ -741,6 +750,10 @@ class TestSnapshot:
             response,
             pre_filt=(f1, f2, f3, f4),
             expected_data=snapshot,
+            # Deconvolved ground motion is physically tiny (order 1e-4 m/s
+            # or smaller) — the default 6 decimals would round away almost
+            # all of it.
+            snapshot_decimals=10,
         )
 
 

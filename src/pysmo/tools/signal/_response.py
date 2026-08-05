@@ -212,7 +212,7 @@ def remove_response[T: Seismogram](
             of its actual roll-off.
 
     Examples:
-        The three examples below build on the same setup: `example.sac`'s own real
+        The examples below build on the same setup: `example.sac`'s own real
         response — a broadband seismometer and digitiser, from a genuine StationXML
         document for the actual station and epoch that recorded it.
 
@@ -222,7 +222,7 @@ def remove_response[T: Seismogram](
         >>> from pathlib import Path
         >>> from pysmo.classes import SAC, StationXML
         >>> from pysmo.tools.signal import remove_response
-        >>> xml = Path("stationxml_example_single.xml").read_bytes()
+        >>> xml = Path("example_response.xml").read_bytes()
         >>> original = SAC.from_file("example.sac").seismogram
         >>> response = StationXML.from_bytes(xml, time=original.begin_time)
         >>> seismogram = remove_response(original, response, clone=True)
@@ -256,6 +256,18 @@ def remove_response[T: Seismogram](
         >>>
         ```
 
+        !!! tip
+
+            $f_1$–$f_4$ above are chosen from the instrument and the
+            sampling rate — but deconvolution divides by the response
+            across that whole band, so what actually determines whether the
+            result is trustworthy is the *data's* own amplitude at each of
+            those frequencies, not just where the instrument and sample
+            rate look reasonable on paper. A technically-defensible
+            `pre_filt` can still amplify noise into a poor result if the
+            data itself has little real amplitude somewhere within that
+            band.
+
         With the earthquake's own dominant period band sitting well within
         `response`'s flat passband, the sensitivity-only and full-deconvolution paths
         agree closely in both amplitude and shape:
@@ -266,11 +278,55 @@ def remove_response[T: Seismogram](
         >>> gain_only_rms = np.sqrt(np.mean(gain_only.data**2))
         >>> deconvolved_rms = np.sqrt(np.mean(deconvolved.data**2))
         >>> round(float(gain_only_rms / deconvolved_rms), 3)  # ~1: amplitude match
-        1.011
+        1.082
         >>> round(float(np.corrcoef(gain_only.data, deconvolved.data)[0, 1]), 3)  # ~1: shape match
-        0.988
+        0.926
         >>>
         ```
+
+        Seeing the two paths plotted together makes that agreement concrete
+        rather than abstract:
+
+        ```python
+        >>> from pysmo.tools.plotutils import plotseis
+        >>> fig = plotseis(gain_only, deconvolved)
+        >>> _ = fig.gca().set_ylabel(f"Velocity ({response.input_units})")
+        >>> _ = fig.gca().legend(["Sensitivity only", "Full deconvolution"])
+        >>>
+        ```
+
+        <!-- invisible-code-block: python
+        ```
+        >>> import matplotlib.pyplot as plt
+        >>> plt.close("all")
+        >>> if savedir:
+        ...     plt.style.use("dark_background")
+        ...     fig = plotseis(gain_only, deconvolved)
+        ...     _ = fig.gca().set_ylabel(f"Velocity ({response.input_units})")
+        ...     _ = fig.gca().legend(["Sensitivity only", "Full deconvolution"])
+        ...     fig.savefig(
+        ...         savedir / "response_removal_comparison-dark.png",
+        ...         transparent=True,
+        ...         bbox_inches="tight",
+        ...     )
+        ...
+        ...     plt.style.use("default")
+        ...     fig = plotseis(gain_only, deconvolved)
+        ...     _ = fig.gca().set_ylabel(f"Velocity ({response.input_units})")
+        ...     _ = fig.gca().legend(["Sensitivity only", "Full deconvolution"])
+        ...     fig.savefig(
+        ...         savedir / "response_removal_comparison.png",
+        ...         transparent=True,
+        ...         bbox_inches="tight",
+        ...     )
+        >>>
+        ```
+        -->
+
+        <figure markdown="span">
+        ![Sensitivity-only vs full deconvolution](../../../images/sybil/response_removal_comparison.png#only-light){ loading=lazy }
+        ![Sensitivity-only vs full deconvolution](../../../images/sybil/response_removal_comparison-dark.png#only-dark){ loading=lazy }
+        </figure>
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot remove response from an empty seismogram.")

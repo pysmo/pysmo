@@ -15,7 +15,7 @@ from pysmo.lib.io._geocsv import (
     parse_geocsv,
 )
 
-FIXTURE = Path(__file__).parent / "dataselect_response.geocsv"
+FIXTURE = Path(__file__).parent / "assets" / "dataselect_response.geocsv"
 
 SIMPLE = """\
 # dataset: GeoCSV 2.0

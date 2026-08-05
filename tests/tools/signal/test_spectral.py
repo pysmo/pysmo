@@ -68,11 +68,18 @@ def test_psd_scaling(seismogram: Seismogram) -> None:
 def test_psd_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
     """Test psd output against snapshot for regression testing."""
     # Use fixed parameters for stable snapshots
-    # Seismogram cases have 180000 points
+    # Seismogram cases have 57465 points
     nperseg = 1000
     nfft = 2000
 
     freqs, psd_values = psd(seismogram, nperseg=nperseg, nfft=nfft)
+
+    # psd_values span many orders of magnitude (1e-3 to 1e13), and the
+    # underlying FFT differs in the last few ULPs between platforms (e.g.
+    # Accelerate on macOS vs OpenBLAS/pocketfft on Linux). Round to a fixed
+    # number of significant figures rather than decimal places so the
+    # snapshot is stable across platforms regardless of magnitude.
+    psd_values = np.array([float(f"{value:.6g}") for value in psd_values])
 
     # Combined snapshot of freqs and psd
     assert (freqs, psd_values) == snapshot
