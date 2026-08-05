@@ -9,9 +9,15 @@ from pysmo import MiniStation, Response, StagedResponse
 from pysmo.classes import StationXML
 
 SINGLE_EPOCH_FIXTURE = (
-    Path(__file__).parent.parent / "lib" / "io" / "stationxml_anmo_single.xml"
+    Path(__file__).parent.parent
+    / "lib"
+    / "io"
+    / "assets"
+    / "stationxml_anmo_single.xml"
 )
-BULK_FIXTURE = Path(__file__).parent.parent / "lib" / "io" / "stationxml_anmo_bulk.xml"
+BULK_FIXTURE = (
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "stationxml_anmo_bulk.xml"
+)
 
 OVERLAPPING_EPOCHS = b"""\
 <?xml version="1.0"?>

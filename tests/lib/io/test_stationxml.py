@@ -7,9 +7,9 @@ import pytest
 
 from pysmo.lib.io._stationxml import parse_stationxml
 
-SINGLE_EPOCH_FIXTURE = Path(__file__).parent / "stationxml_anmo_single.xml"
-BULK_FIXTURE = Path(__file__).parent / "stationxml_anmo_bulk.xml"
-FIR_STAGE_FIXTURE = Path(__file__).parent / "stationxml_fir_stage.xml"
+SINGLE_EPOCH_FIXTURE = Path(__file__).parent / "assets" / "stationxml_anmo_single.xml"
+BULK_FIXTURE = Path(__file__).parent / "assets" / "stationxml_anmo_bulk.xml"
+FIR_STAGE_FIXTURE = Path(__file__).parent / "assets" / "stationxml_fir_stage.xml"
 
 MINIMAL_ONE_STAGE = b"""\
 <?xml version="1.0"?>
