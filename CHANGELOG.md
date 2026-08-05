@@ -55,6 +55,10 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(response)** Add instrument response removal via SACPZ/StationXML
 - **(plotutils)** Add relative_time_array function
 
+### 🧪 Testing
+
+- Replace testfile.sac with a deliberate EarthScope reference event
+
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 
 ### ⚙️ DevOps & Infrastructure
