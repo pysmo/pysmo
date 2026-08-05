@@ -52,7 +52,8 @@ class SacIO(SacIOBase):
         >>> sac = SacIO.from_file("example.sac")
         >>> data = sac.data
         >>> data
-        array([2302., 2313., 2345., ..., 2836., 2772., 2723.], shape=(180000,))
+        array([-47201., -47361., -47511., ..., -82144., -71072., -59960.],
+              shape=(57465,))
         >>>
         ```
 
@@ -61,7 +62,7 @@ class SacIO(SacIOBase):
         ```python
         >>> delta = sac.delta
         >>> delta
-        0.019999999552965164
+        0.05000000074505806
         >>>
         ```
 

@@ -16,13 +16,17 @@ from pysmo.tools.web import (
 )
 
 STATIONXML_SINGLE_EPOCH = (
-    Path(__file__).parent.parent / "lib" / "io" / "stationxml_anmo_single.xml"
+    Path(__file__).parent.parent
+    / "lib"
+    / "io"
+    / "assets"
+    / "stationxml_anmo_single.xml"
 ).read_bytes()
 SACPZ_SINGLE = (
-    Path(__file__).parent.parent / "lib" / "io" / "sacpz_anmo_single.txt"
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_single.txt"
 ).read_text()
 SACPZ_BULK = (
-    Path(__file__).parent.parent / "lib" / "io" / "sacpz_anmo_bulk.txt"
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_bulk.txt"
 ).read_text()
 
 TRAVELTIME_RESPONSE = json.dumps(

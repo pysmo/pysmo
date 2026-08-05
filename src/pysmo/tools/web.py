@@ -10,7 +10,12 @@ from typing import Any, Self
 import pandas as pd
 
 from pysmo import Station
-from pysmo.lib.http import http_get
+from pysmo.lib.http import (
+    DEFAULT_REQUEST_RETRIES,
+    DEFAULT_RETRY_DELAY_SECONDS,
+    DEFAULT_TIMEOUT_SECONDS,
+    http_get,
+)
 from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = [
@@ -42,9 +47,9 @@ class _EarthScopeDefaults:
     station_url: str = "https://service.earthscope.org/fdsnws/station/1/query"
     sacpz_url: str = "https://service.earthscope.org/irisws/sacpz/1/query"
     dataselect_url: str = "https://service.earthscope.org/fdsnws/dataselect/1/query"
-    timeout_seconds: int = 30
-    request_retries: int = 3
-    retry_delay_seconds: int = 20
+    timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
+    request_retries: int = DEFAULT_REQUEST_RETRIES
+    retry_delay_seconds: int = DEFAULT_RETRY_DELAY_SECONDS
 
 
 def fetch_travel_times(

@@ -5,7 +5,22 @@ from typing import Any
 
 import urllib3
 
-__all__ = ["http_get"]
+__all__ = [
+    "http_get",
+    "DEFAULT_TIMEOUT_SECONDS",
+    "DEFAULT_REQUEST_RETRIES",
+    "DEFAULT_RETRY_DELAY_SECONDS",
+]
+
+#: Default timeout/retry values for web-service calls built on `http_get`.
+#: Defined here (the shared, lowest-level module both `pysmo.lib.io` and
+#: `pysmo.tools.web` already depend on) so the two independent "EarthScope
+#: defaults" dataclasses in those modules — which cannot import from each
+#: other without inverting pysmo's dependency layering — can still share one
+#: source of truth instead of duplicating literal values that can drift.
+DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_REQUEST_RETRIES = 3
+DEFAULT_RETRY_DELAY_SECONDS = 20
 
 _pool = urllib3.PoolManager()
 

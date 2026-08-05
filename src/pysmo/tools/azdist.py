@@ -63,10 +63,10 @@ def azimuth(
         >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
         >>> azimuth(sac.event, sac.station)
-        181.91993
+        332.23754
         >>> # Use Clarke 1966 instead of default
         >>> azimuth(sac.event, sac.station, ellps='clrk66')
-        181.92002
+        332.23615
         >>>
         ```
     """
@@ -93,10 +93,10 @@ def backazimuth(
         >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
         >>> backazimuth(sac.event, sac.station)
-        2.467753
+        152.67366
         >>> # Use Clarke 1966 instead of default
         >>> backazimuth(sac.event, sac.station, ellps='clrk66')
-        2.467847
+        152.672271
         >>>
         ```
     """
@@ -123,10 +123,10 @@ def distance(
         >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
         >>> distance(sac.event, sac.station)
-        1889154.994
+        8603325.124
         >>> # Use Clarke 1966 instead of default
         >>> distance(sac.event, sac.station, ellps='clrk66')
-        1889121.778
+        8602982.024
         >>>
         ```
     """
@@ -153,10 +153,10 @@ def haversine(location_1: Location, location_2: Location) -> float:
         >>> sac = SAC.from_file("example.sac")
         >>> # the SAC class provides both event and station
         >>> haversine(sac.event, sac.station)
-        17.013880
+        77.638354
         >>> # compare with the SAC gcarc header (spherical law of cosines)
         >>> float(sac.gcarc)
-        17.013880
+        77.638354
         >>>
         ```
     """
