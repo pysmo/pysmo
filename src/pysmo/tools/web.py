@@ -10,7 +10,7 @@ from typing import Any, Self
 import pandas as pd
 
 from pysmo import Station
-from pysmo.lib.http import (
+from pysmo.lib.io import (
     DEFAULT_REQUEST_RETRIES,
     DEFAULT_RETRY_DELAY_SECONDS,
     DEFAULT_TIMEOUT_SECONDS,
@@ -21,6 +21,7 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 __all__ = [
     "TravelTimeBackend",
     "fetch_geocsvseismogram",
+    "fetch_sac",
     "fetch_sacpz",
     "fetch_stationxml",
     "fetch_travel_times",
@@ -95,7 +96,7 @@ def fetch_travel_times(
         combination of this function with [`pysmo.tools.azdist.haversine`][]
         and a class's own `.fetch()` method (e.g.
         [`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch], or
-        [`SAC.fetch`][pysmo.lib.io.SacIO.fetch]):
+        [`SAC.fetch`][pysmo.classes.SAC.fetch]):
 
         ```python
         >>> import pandas as pd
@@ -312,6 +313,69 @@ def fetch_geocsvseismogram(
             "starttime": starttime.isoformat(),
             "endtime": endtime.isoformat(),
             "format": "geocsv",
+        },
+        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
+        request_retries=_EarthScopeDefaults.request_retries,
+        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+    )
+
+
+def fetch_sac(
+    *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+) -> bytes:
+    """Fetch a raw SAC zip archive for a station/channel and time window.
+
+    A lower-level counterpart to [`SAC.fetch`][pysmo.classes.SAC.fetch]:
+    returns the zip archive returned by the dataselect web service
+    unparsed and uninterpreted, without extracting or reading any of its
+    members. Save it to disk to defer parsing to later — offline,
+    without another network request.
+
+    Args:
+        station: Any object satisfying the [`Station`][pysmo.Station]
+            protocol. Provides the network, station code, location, and
+            channel for the request.
+        starttime: Start of the requested time window (UTC).
+        endtime: End of the requested time window (UTC).
+
+    Returns:
+        Raw zip archive bytes, as returned by the dataselect web service.
+
+    Raises:
+        urllib3.exceptions.ResponseError: If the dataselect web service
+            returns an HTTP error.
+
+    Examples:
+        ```python
+        >>> import pandas as pd
+        >>> from pathlib import Path
+        >>> from pysmo import MiniStation
+        >>> from pysmo.tools.web import fetch_sac
+        >>> station = MiniStation(
+        ...     name="ANMO", network="IU", location="00", channel="LHZ",
+        ...     latitude=34.945981, longitude=-106.457133,
+        ... )
+        >>> data = fetch_sac(  # doctest: +SKIP
+        ...     station=station,
+        ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+        ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+        ... )
+        >>> Path("ANMO.sac.zip").write_bytes(data)  # doctest: +SKIP
+        >>>
+        ```
+    """
+    starttime = convert_to_utc_timestamp(starttime)
+    endtime = convert_to_utc_timestamp(endtime)
+    return http_get(
+        _EarthScopeDefaults.dataselect_url,
+        {
+            "net": station.network,
+            "sta": station.name,
+            "loc": station.location,
+            "cha": station.channel,
+            "starttime": starttime.isoformat(),
+            "endtime": endtime.isoformat(),
+            "format": "sac.zip",
         },
         timeout_seconds=_EarthScopeDefaults.timeout_seconds,
         request_retries=_EarthScopeDefaults.request_retries,

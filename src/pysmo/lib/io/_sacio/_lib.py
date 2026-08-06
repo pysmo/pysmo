@@ -2,11 +2,6 @@ from dataclasses import dataclass
 from typing import Self
 
 from pysmo.lib.defaults import SeismogramDefaults
-from pysmo.lib.http import (
-    DEFAULT_REQUEST_RETRIES,
-    DEFAULT_RETRY_DELAY_SECONDS,
-    DEFAULT_TIMEOUT_SECONDS,
-)
 
 __all__ = ["SacIODefaults"]
 
@@ -28,14 +23,3 @@ class SacIODefaults:
     iztype: str = "unkn"
     ievtyp: str = "unkn"
     leven: bool = True
-    earthscope_base_url: str = (
-        "https://service.earthscope.org/irisws/timeseries/1/query"
-    )
-    # Shared with pysmo.tools.web._EarthScopeDefaults via pysmo.lib.http's
-    # module-level constants (the lowest-level module both already depend
-    # on), not duplicated literals: lib.io sits below tools.web in the
-    # dependency layering, so it cannot import from tools.web directly, but
-    # both can import from lib.http.
-    earthscope_timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
-    earthscope_request_retries: int = DEFAULT_REQUEST_RETRIES
-    earthscope_retry_delay_seconds: int = DEFAULT_RETRY_DELAY_SECONDS

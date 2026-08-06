@@ -26,7 +26,7 @@ from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
 from pysmo import MiniEvent, MiniStation
-from pysmo.classes import GeoCsvSeismogram
+from pysmo.classes import SAC, GeoCsvSeismogram
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
@@ -99,3 +99,29 @@ def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure
     )
     fig.gca().legend(loc="upper right")
     return fig
+
+
+def test_fetch_sac_live(station: MiniStation, event: MiniEvent) -> None:
+    # A phase-relative window is deliberately used (rather than a
+    # whole-second literal) so starttime/endtime are fractional-second
+    # pd.Timestamps -- exactly the shape fdsnws/dataselect must accept
+    # directly via .isoformat(), unlike the retired irisws/timeseries
+    # endpoint, which required stripping fractional seconds/UTC offsets
+    # before every request.
+    dist = haversine(event, station)
+    travel_times = fetch_travel_times(event.depth / 1000.0, dist, ["P"])
+    predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
+
+    sac = SAC.fetch(
+        station=station,
+        starttime=predicted_p - pd.Timedelta(minutes=2),
+        endtime=predicted_p + pd.Timedelta(minutes=8),
+    )
+
+    assert isinstance(sac, SAC)
+    assert sac.station.network == "IU"
+    assert sac.station.name == "ANMO"
+    assert sac.station.channel == "LHZ"
+    assert sac.seismogram.delta == pd.Timedelta(seconds=1)
+    assert len(sac.seismogram.data) == 600
+    assert sac.seismogram.begin_time < predicted_p < sac.seismogram.end_time
