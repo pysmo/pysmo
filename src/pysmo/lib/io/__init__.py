@@ -13,14 +13,24 @@ from ._geocsv import (
     merge_geocsv_timeseries,
     parse_geocsv,
 )
+from ._http import (
+    DEFAULT_REQUEST_RETRIES,
+    DEFAULT_RETRY_DELAY_SECONDS,
+    DEFAULT_TIMEOUT_SECONDS,
+    http_get,
+)
 from ._sacio import SacIO
 from ._sacpz import parse_sacpz
 from ._stationxml import parse_stationxml
 
 __all__ = [
+    "DEFAULT_REQUEST_RETRIES",
+    "DEFAULT_RETRY_DELAY_SECONDS",
+    "DEFAULT_TIMEOUT_SECONDS",
     "GeoCsvDataset",
     "SacIO",
     "extract_geocsv_timeseries",
+    "http_get",
     "merge_geocsv_timeseries",
     "parse_geocsv",
     "parse_sacpz",

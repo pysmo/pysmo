@@ -13,11 +13,8 @@ __all__ = [
 ]
 
 #: Default timeout/retry values for web-service calls built on `http_get`.
-#: Defined here (the shared, lowest-level module both `pysmo.lib.io` and
-#: `pysmo.tools.web` already depend on) so the two independent "EarthScope
-#: defaults" dataclasses in those modules — which cannot import from each
-#: other without inverting pysmo's dependency layering — can still share one
-#: source of truth instead of duplicating literal values that can drift.
+#: Defined here, the lowest-level module, so any caller of `http_get` can
+#: reuse sensible defaults without duplicating literal values.
 DEFAULT_TIMEOUT_SECONDS = 30
 DEFAULT_REQUEST_RETRIES = 3
 DEFAULT_RETRY_DELAY_SECONDS = 20
