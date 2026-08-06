@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import warnings
+from io import BytesIO
 from typing import TYPE_CHECKING, Self, overload
+from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas as pd
 from attrs import define, field
 
+from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS, SAC_REQUIRED_TIME_HEADERS
 from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.tools.web import fetch_sac
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
 __all__ = [
@@ -655,3 +659,111 @@ class SAC(SacIO):
         self.station = SacStation(parent=self)
         self.event = SacEvent(parent=self)
         self.timestamps = SacTimestamps(parent=self)
+
+    @classmethod
+    def fetch(
+        cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+    ) -> Self:
+        """Fetch and parse a SAC seismogram from the EarthScope FDSN
+        dataselect web service, for an absolute time window.
+
+        For a window relative to a predicted phase arrival instead, compute
+        the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],
+        which shows exactly this in its own Examples) and pass the
+        resulting *starttime*/*endtime* here.
+
+        Args:
+            station: Any object satisfying the [`Station`][pysmo.Station]
+                protocol. Provides the network, station code, location, and
+                channel for the request.
+            starttime: Start of the requested time window (UTC).
+            endtime: End of the requested time window (UTC).
+
+        Returns:
+            A new SAC instance.
+
+        Raises:
+            ValueError: If no waveform data is returned for the given
+                window, if more than one continuous segment is returned
+                (e.g. due to a data gap, an instrument/metadata epoch
+                change, overlapping records, or a wildcarded channel/
+                location code matching more than one channel), or if a
+                returned segment cannot be parsed as a SAC file.
+            urllib3.exceptions.ResponseError: If the dataselect web service
+                returns an HTTP error.
+
+        Examples:
+            ```python
+            >>> import pandas as pd
+            >>> from pysmo import MiniStation
+            >>> from pysmo.classes import SAC
+            >>> station = MiniStation(
+            ...     name="ANMO", network="IU", location="00", channel="LHZ",
+            ...     latitude=34.945981, longitude=-106.457133,
+            ... )
+            >>> sac = SAC.fetch(
+            ...     station=station,
+            ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+            ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            ... )  # doctest: +SKIP
+            >>>
+            ```
+        """
+        starttime = convert_to_utc_timestamp(starttime)
+        endtime = convert_to_utc_timestamp(endtime)
+        archive = fetch_sac(station=station, starttime=starttime, endtime=endtime)
+
+        no_data_message = (
+            f"No waveform data returned for "
+            f"{station.network}.{station.name}.{station.location}."
+            f"{station.channel} between {starttime} and {endtime}."
+        )
+
+        # dataselect returns an empty (zero-length) body, not a
+        # zero-member zip archive, when a request is well-formed but
+        # matches no data (HTTP 204, the FDSN default `nodata` handling)
+        # -- confirmed live. ZipFile raises BadZipFile on empty bytes, so
+        # this must be checked before attempting to open the archive.
+        if not archive:
+            raise ValueError(no_data_message)
+
+        try:
+            with ZipFile(BytesIO(archive)) as archive_zip:
+                names = archive_zip.namelist()
+                if not names:
+                    raise ValueError(no_data_message)
+                segments = []
+                for name in names:
+                    try:
+                        segments.append(cls.from_buffer(archive_zip.read(name)))
+                    except Exception as error:
+                        raise ValueError(
+                            f"Could not parse segment {name!r} returned for "
+                            f"{station.network}.{station.name}."
+                            f"{station.location}.{station.channel} between "
+                            f"{starttime} and {endtime}: {error}"
+                        ) from error
+        except BadZipFile as error:
+            raise ValueError(
+                f"dataselect response for "
+                f"{station.network}.{station.name}.{station.location}."
+                f"{station.channel} between {starttime} and {endtime} was "
+                f"not a valid zip archive: {error}"
+            ) from error
+
+        if len(segments) == 1:
+            return segments[0]
+
+        segment_lines = "\n".join(
+            f"  {segment.station.network}.{segment.station.name}."
+            f"{segment.station.location}.{segment.station.channel}  "
+            f"{segment.seismogram.begin_time} -- {segment.seismogram.end_time}"
+            for segment in segments
+        )
+        raise ValueError(
+            f"fdsnws/dataselect returned {len(segments)} segments for "
+            f"{station.network}.{station.name}.{station.location}."
+            f"{station.channel} between {starttime} and {endtime}; "
+            f"SAC.fetch() requires exactly one continuous segment. "
+            f"Segments returned:\n{segment_lines}"
+        )

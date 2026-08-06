@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 from pysmo import MiniEvent, MiniStation
-from pysmo.lib.http import (
+from pysmo.lib.io import (
     DEFAULT_REQUEST_RETRIES,
     DEFAULT_RETRY_DELAY_SECONDS,
     DEFAULT_TIMEOUT_SECONDS,
@@ -39,7 +39,7 @@ OUTPUT_DIR = Path(__file__).parent
 # internally by fetch_geocsvseismogram for format="geocsv" only), and this
 # script is external to the pysmo package, so it isn't meant to reach into
 # tools.web's private _EarthScopeDefaults for the URL. Only the numeric
-# retry/timeout defaults, already public in pysmo.lib.http, are reused.
+# retry/timeout defaults, already public in pysmo.lib.io, are reused.
 DATASELECT_URL = "https://service.earthscope.org/fdsnws/dataselect/1/query"
 
 EVENT = MiniEvent(
