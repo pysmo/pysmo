@@ -54,6 +54,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(web)** Fetch seismograms and travel times from EarthScope
 - **(response)** Add instrument response removal via SACPZ/StationXML
 - **(plotutils)** Add relative_time_array function
+- **(classes)** [**breaking**] Add SAC.fetch()/fetch_sac(), remove SacIO.fetch()/from_iris()
 
 ### 🧪 Testing
 
