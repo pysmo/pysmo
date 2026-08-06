@@ -323,7 +323,7 @@ class TestFetch:
             "pysmo.tools.web.http_get", lambda *args, **kwargs: _zip_of({})
         )
 
-        with pytest.raises(ValueError, match="No waveform data returned"):
+        with pytest.raises(ValueError, match="contains no SAC segments"):
             SAC.fetch(
                 station=mini_station,
                 starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
@@ -337,7 +337,7 @@ class TestFetch:
             "pysmo.tools.web.http_get", lambda *args, **kwargs: b"not a zip archive"
         )
 
-        with pytest.raises(ValueError, match="not a valid zip archive"):
+        with pytest.raises(ValueError, match="Not a valid zip archive"):
             SAC.fetch(
                 station=mini_station,
                 starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
@@ -379,3 +379,50 @@ class TestFetch:
                 starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
                 endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
             )
+
+
+class TestFromZip:
+    def test_from_zip_single_segment(
+        self, assets: dict[str, Path], mini_station: MiniStation
+    ) -> None:
+        sac_bytes = assets["orgfile"].read_bytes()
+        archive = _zip_of({"IU.ANMO.00.BHZ.SAC": sac_bytes})
+
+        sac = SAC.from_zip(archive)
+
+        assert isinstance(sac, SAC)
+        assert sac.station.network == mini_station.network
+        assert sac.station.name == mini_station.name
+
+    def test_from_zip_no_segments_raises(self) -> None:
+        with pytest.raises(ValueError, match="contains no SAC segments"):
+            SAC.from_zip(_zip_of({}))
+
+    def test_from_zip_multiple_segments_raises(self, assets: dict[str, Path]) -> None:
+        sac_bytes = assets["orgfile"].read_bytes()
+        archive = _zip_of({"segment_1.SAC": sac_bytes, "segment_2.SAC": sac_bytes})
+
+        with pytest.raises(ValueError, match="2 segments") as excinfo:
+            SAC.from_zip(archive)
+        assert "SAC.all_from_zip()" in str(excinfo.value)
+
+    def test_from_zip_non_zip_raises(self) -> None:
+        with pytest.raises(ValueError, match="Not a valid zip archive"):
+            SAC.from_zip(b"not a zip archive")
+
+    def test_from_zip_corrupt_member_raises(self) -> None:
+        archive = _zip_of({"segment.SAC": b"too short"})
+        with pytest.raises(ValueError, match="Could not parse segment"):
+            SAC.from_zip(archive)
+
+    def test_all_from_zip_returns_all_segments(self, assets: dict[str, Path]) -> None:
+        sac_bytes = assets["orgfile"].read_bytes()
+        archive = _zip_of({"segment_1.SAC": sac_bytes, "segment_2.SAC": sac_bytes})
+
+        segments = SAC.all_from_zip(archive)
+
+        assert len(segments) == 2
+        assert all(isinstance(segment, SAC) for segment in segments)
+
+    def test_all_from_zip_empty_archive_returns_empty_list(self) -> None:
+        assert SAC.all_from_zip(_zip_of({})) == []
