@@ -10,6 +10,7 @@ import pytest
 from pysmo import MiniStation, Response, StagedResponse
 from pysmo.classes import SacPZ, StationXML
 from pysmo.tools.web import (
+    fetch_sac,
     fetch_sacpz,
     fetch_stationxml,
     fetch_travel_times,
@@ -28,6 +29,7 @@ SACPZ_SINGLE = (
 SACPZ_BULK = (
     Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_bulk.txt"
 ).read_text()
+SAC_ZIP_BYTES = b"not a real zip archive -- fetch_sac() does no interpretation"
 
 TRAVELTIME_RESPONSE = json.dumps(
     {
@@ -165,3 +167,28 @@ class TestFetchSacpz:
         responses = SacPZ.all_from_text(text)
 
         assert len(responses) == 9
+
+
+class TestFetchSac:
+    def test_returns_raw_bytes(
+        self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
+    ) -> None:
+        fake = FakeHttpGet({"dataselect": SAC_ZIP_BYTES})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        data = fetch_sac(
+            station=station,
+            starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+            endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+        )
+
+        assert data == SAC_ZIP_BYTES
+        (url, fields) = fake.calls[0]
+        assert "dataselect" in url
+        assert fields["net"] == "IU"
+        assert fields["sta"] == "ANMO"
+        assert fields["loc"] == "00"
+        assert fields["cha"] == "LHZ"
+        assert fields["format"] == "sac.zip"
+        assert fields["starttime"] == "2010-02-27T06:44:00+00:00"
+        assert fields["endtime"] == "2010-02-27T06:54:00+00:00"
