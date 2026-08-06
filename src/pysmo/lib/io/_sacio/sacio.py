@@ -1,21 +1,15 @@
 import struct
-import warnings
 from datetime import datetime, timedelta, timezone
-from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import Any, Literal, Self
-from zipfile import ZipFile
+from typing import Literal, Self
 
 import numpy as np
 from attrs import define
 
 from pysmo import MiniLocation
-from pysmo.lib.http import http_get
-from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
-from ._lib import SacIODefaults
 from ._sacio_rendered import (
     HEADER_TYPES,
     SAC_ENUMS_DICT,
@@ -73,24 +67,6 @@ class SacIO(SacIOBase):
         >>> sac.delta = newdelta
         >>> sac.delta
         0.05
-        >>>
-        ```
-
-        Create a new instance from EarthScope services:
-
-        ```python
-        >>> from pysmo.lib.io import SacIO
-        >>> sac = SacIO.fetch(net="C1",
-        ... sta="VA01",
-        ... cha="BHZ",
-        ... loc="--",
-        ... start="2021-03-22T13:00:00",
-        ... duration=1 * 60 * 60,
-        ... scale="AUTO",
-        ... demean="true",
-        ... force_single_result=True)
-        >>> sac.npts
-        144001
         >>>
         ```
 
@@ -398,106 +374,6 @@ class SacIO(SacIOBase):
         newinstance = cls()
         newinstance.read_buffer(buffer)
         return newinstance
-
-    @classmethod
-    def fetch(
-        cls,
-        net: str,
-        sta: str,
-        cha: str,
-        loc: str,
-        force_single_result: bool = False,
-        **kwargs: Any,
-    ) -> Self | dict[str, Self] | None:
-        """Fetch SAC file(s) from the EarthScope timeseries web service.
-
-        Requests data in `output=sac.zip` format and creates one `SacIO`
-        instance per file in the returned archive.
-
-        Args:
-            net: Network code (e.g. `"US"`).
-            sta: Station code (e.g. `"BSS"`).
-            cha: Channel code (e.g. `"BHZ"`).
-            loc: Location code (e.g. `"00"`).
-            force_single_result: If `True`, return a single `SacIO` instance
-                (or `None` if the request returns nothing) instead of a dict.
-            **kwargs: Additional query parameters passed through to the
-                EarthScope timeseries request (e.g. `start`, `end`,
-                `duration`, `scale`, `demean`).
-
-        Returns:
-            A single `SacIO` instance, or `None`, if `force_single_result` is
-            `True`; otherwise a dict mapping each archive filename to its
-            corresponding `SacIO` instance.
-        """
-        kwargs["net"] = net
-        kwargs["sta"] = sta
-        kwargs["cha"] = cha
-        kwargs["loc"] = loc
-        kwargs["output"] = "sac.zip"
-
-        # The EarthScope timeseries service rejects fractional seconds and
-        # UTC offsets in start/end, unlike datetime.isoformat(). Converting
-        # to UTC first (rather than just stripping tzinfo via strftime)
-        # matters for a tz-aware value in a non-UTC zone: naively formatting
-        # its wall-clock fields would send the wrong instant.
-        if isinstance(kwargs["start"], datetime):
-            kwargs["start"] = convert_to_utc_timestamp(kwargs["start"]).strftime(
-                "%Y-%m-%dT%H:%M:%S"
-            )
-
-        end = kwargs.get("end", None)
-        if end is not None and isinstance(end, datetime):
-            kwargs["end"] = convert_to_utc_timestamp(end).strftime("%Y-%m-%dT%H:%M:%S")
-
-        data = http_get(
-            SacIODefaults.earthscope_base_url,
-            kwargs,
-            timeout_seconds=SacIODefaults.earthscope_timeout_seconds,
-            request_retries=SacIODefaults.earthscope_request_retries,
-            retry_delay_seconds=SacIODefaults.earthscope_retry_delay_seconds,
-            redirect=False,
-        )
-
-        zip = ZipFile(BytesIO(data))
-
-        result = {}
-        for name in zip.namelist():
-            buffer = zip.read(name)
-            sac = cls.from_buffer(buffer)
-            if force_single_result:
-                return sac
-            result[name] = sac
-        return None if force_single_result else result
-
-    @classmethod
-    def from_iris(
-        cls,
-        net: str,
-        sta: str,
-        cha: str,
-        loc: str,
-        force_single_result: bool = False,
-        **kwargs: Any,
-    ) -> Self | dict[str, Self] | None:
-        """Deprecated alias of [`fetch`][pysmo.lib.io.SacIO.fetch].
-
-        IRIS merged into the EarthScope Consortium; use
-        [`fetch`][pysmo.lib.io.SacIO.fetch] instead.
-        """
-        warnings.warn(
-            "SacIO.from_iris is deprecated; use SacIO.fetch instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return cls.fetch(
-            net=net,
-            sta=sta,
-            cha=cha,
-            loc=loc,
-            force_single_result=force_single_result,
-            **kwargs,
-        )
 
     def read_buffer(self, buffer: bytes) -> None:
         """Read data and headers from a SAC byte buffer into an existing SAC instance.
