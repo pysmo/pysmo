@@ -1,16 +1,26 @@
 from datetime import timezone
+from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from pysmo import Event, Seismogram, Station
+from pysmo import Event, MiniStation, Seismogram, Station
 from pysmo.classes import SAC
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
+
+
+def _zip_of(entries: dict[str, bytes]) -> bytes:
+    buffer = BytesIO()
+    with ZipFile(buffer, "w") as archive:
+        for name, content in entries.items():
+            archive.writestr(name, content)
+    return buffer.getvalue()
 
 
 class TestSAC:
@@ -252,3 +262,120 @@ class TestSAC:
         sac = SAC.from_file(sacfile)
         sac.event._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, None)
         assert getattr(sac.event._parent, SAC_OPTIONAL_TIME_HEADERS.o) is None
+
+
+class TestFetch:
+    def test_fetches_and_parses_single_member(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        assets: dict[str, Path],
+        mini_station: MiniStation,
+    ) -> None:
+        sac_bytes = assets["orgfile"].read_bytes()
+        calls: list[tuple[str, dict[str, object]]] = []
+
+        def fake_http_get(
+            url: str, fields: dict[str, object], **kwargs: object
+        ) -> bytes:
+            calls.append((url, fields))
+            return _zip_of({"IU.ANMO.00.BHZ.SAC": sac_bytes})
+
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake_http_get)
+
+        sac = SAC.fetch(
+            station=mini_station,
+            starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+            endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+        )
+
+        assert isinstance(sac, SAC)
+        assert sac.station.network == mini_station.network
+        assert sac.station.name == mini_station.name
+
+        _, fields = calls[0]
+        assert fields["net"] == mini_station.network
+        assert fields["sta"] == mini_station.name
+        assert fields["loc"] == mini_station.location
+        assert fields["cha"] == mini_station.channel
+        assert fields["format"] == "sac.zip"
+        assert fields["starttime"] == "2010-02-27T06:44:00+00:00"
+        assert fields["endtime"] == "2010-02-27T06:54:00+00:00"
+
+    def test_empty_response_raises(
+        self, monkeypatch: pytest.MonkeyPatch, mini_station: MiniStation
+    ) -> None:
+        """dataselect returns an empty body (HTTP 204) for a well-formed
+        request that matches no data -- not a zero-member zip archive.
+        Confirmed against the live service."""
+        monkeypatch.setattr("pysmo.tools.web.http_get", lambda *args, **kwargs: b"")
+
+        with pytest.raises(ValueError, match="No waveform data returned"):
+            SAC.fetch(
+                station=mini_station,
+                starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            )
+
+    def test_no_members_raises(
+        self, monkeypatch: pytest.MonkeyPatch, mini_station: MiniStation
+    ) -> None:
+        monkeypatch.setattr(
+            "pysmo.tools.web.http_get", lambda *args, **kwargs: _zip_of({})
+        )
+
+        with pytest.raises(ValueError, match="No waveform data returned"):
+            SAC.fetch(
+                station=mini_station,
+                starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            )
+
+    def test_non_zip_response_raises(
+        self, monkeypatch: pytest.MonkeyPatch, mini_station: MiniStation
+    ) -> None:
+        monkeypatch.setattr(
+            "pysmo.tools.web.http_get", lambda *args, **kwargs: b"not a zip archive"
+        )
+
+        with pytest.raises(ValueError, match="not a valid zip archive"):
+            SAC.fetch(
+                station=mini_station,
+                starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            )
+
+    def test_corrupt_member_raises(
+        self, monkeypatch: pytest.MonkeyPatch, mini_station: MiniStation
+    ) -> None:
+        monkeypatch.setattr(
+            "pysmo.tools.web.http_get",
+            lambda *args, **kwargs: _zip_of({"segment.SAC": b"too short"}),
+        )
+
+        with pytest.raises(ValueError, match="Could not parse segment"):
+            SAC.fetch(
+                station=mini_station,
+                starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            )
+
+    def test_multiple_members_raises(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        assets: dict[str, Path],
+        mini_station: MiniStation,
+    ) -> None:
+        sac_bytes = assets["orgfile"].read_bytes()
+        monkeypatch.setattr(
+            "pysmo.tools.web.http_get",
+            lambda *args, **kwargs: _zip_of(
+                {"segment_1.SAC": sac_bytes, "segment_2.SAC": sac_bytes}
+            ),
+        )
+
+        with pytest.raises(ValueError, match="2 segments"):
+            SAC.fetch(
+                station=mini_station,
+                starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+                endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+            )
