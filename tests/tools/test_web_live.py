@@ -25,12 +25,12 @@ import pytest
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
-from pysmo import MiniEvent, MiniStation
-from pysmo.classes import SAC, GeoCsvSeismogram
+from pysmo import MiniEvent, MiniStation, Response
+from pysmo.classes import SAC, GeoCsvSeismogram, SacPZ
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
-from pysmo.tools.web import fetch_travel_times
+from pysmo.tools.web import fetch_sac, fetch_travel_times
 
 matplotlib.use("Agg")
 
@@ -101,6 +101,17 @@ def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure
     return fig
 
 
+def test_fetch_sacpz_live(station: MiniStation) -> None:
+    response = SacPZ.fetch(station=station)
+
+    assert isinstance(response, Response)
+    assert response.network == "IU"
+    assert response.station == "ANMO"
+    assert response.channel == "LHZ"
+    assert len(response.poles) > 0
+    assert response.overall_sensitivity != 0
+
+
 def test_fetch_sac_live(station: MiniStation, event: MiniEvent) -> None:
     # A phase-relative window is deliberately used (rather than a
     # whole-second literal) so starttime/endtime are fractional-second
@@ -125,3 +136,35 @@ def test_fetch_sac_live(station: MiniStation, event: MiniEvent) -> None:
     assert sac.seismogram.delta == pd.Timedelta(seconds=1)
     assert len(sac.seismogram.data) == 600
     assert sac.seismogram.begin_time < predicted_p < sac.seismogram.end_time
+
+
+def test_fetch_sac_multiple_segments_live() -> None:
+    # A wildcarded channel matching more than one co-located component is a
+    # stable, indefinitely reproducible way to trigger SAC.fetch()'s
+    # multi-segment path -- unlike a real data gap, which could close if
+    # the archive is ever backfilled. IU.ANMO.00 records three orthogonal
+    # BH? components (BH1, BH2, BHZ).
+    station = MiniStation(
+        name="ANMO",
+        network="IU",
+        location="00",
+        channel="BH?",
+        latitude=34.945981,
+        longitude=-106.457133,
+    )
+    starttime = pd.Timestamp("2010-02-27T06:44:00Z")
+    endtime = pd.Timestamp("2010-02-27T06:54:00Z")
+
+    with pytest.raises(ValueError, match="3 segments"):
+        SAC.fetch(station=station, starttime=starttime, endtime=endtime)
+
+    archive = fetch_sac(station=station, starttime=starttime, endtime=endtime)
+    segments = SAC.all_from_zip(archive)
+
+    assert len(segments) == 3
+    assert all(isinstance(segment, SAC) for segment in segments)
+    assert {segment.station.channel for segment in segments} == {
+        "BH1",
+        "BH2",
+        "BHZ",
+    }

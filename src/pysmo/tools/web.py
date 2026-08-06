@@ -1,4 +1,14 @@
-"""Tools for fetching seismological data from web services."""
+"""Tools for fetching seismological data from web services.
+
+Thin wrappers around EarthScope's FDSN web services. `fetch_stationxml`,
+`fetch_sacpz`, `fetch_geocsvseismogram`, and `fetch_sac` return raw,
+unparsed responses — each a lower-level counterpart to a class's own
+`.fetch()` classmethod (e.g. [`SAC.fetch`][pysmo.classes.SAC.fetch]),
+useful on its own for saving a raw response to disk and deferring parsing
+to later, without another network request. `fetch_travel_times` is the
+exception: it has no class counterpart and returns an already-parsed
+`dict[str, float]`.
+"""
 
 from __future__ import annotations
 
@@ -328,8 +338,10 @@ def fetch_sac(
     A lower-level counterpart to [`SAC.fetch`][pysmo.classes.SAC.fetch]:
     returns the zip archive returned by the dataselect web service
     unparsed and uninterpreted, without extracting or reading any of its
-    members. Save it to disk to defer parsing to later — offline,
-    without another network request.
+    members. Save it to disk to defer parsing to later — offline, without
+    another network request — via
+    [`SAC.from_zip`][pysmo.classes.SAC.from_zip] or
+    [`SAC.all_from_zip`][pysmo.classes.SAC.all_from_zip].
 
     Args:
         station: Any object satisfying the [`Station`][pysmo.Station]
