@@ -661,6 +661,50 @@ class SAC(SacIO):
         self.timestamps = SacTimestamps(parent=self)
 
     @classmethod
+    def from_zip(cls, archive: bytes) -> Self:
+        """Create a new instance from a zip archive containing exactly one
+        continuous SAC segment.
+
+        Args:
+            archive: Raw zip archive bytes containing exactly one SAC file
+                (as returned by the FDSN dataselect web service with
+                `format=sac.zip`).
+
+        Returns:
+            A new SAC instance.
+
+        Raises:
+            ValueError: If `archive` is not a valid zip archive, contains no
+                members, contains more than one member (e.g. due to a data
+                gap, an instrument/metadata epoch change, overlapping
+                records, or a wildcarded channel/location code matching
+                more than one channel), or a member cannot be parsed as a
+                SAC file.
+
+        Tip: See Also
+            [`SAC.all_from_zip`][pysmo.classes.SAC.all_from_zip]: Parse
+            every segment in the archive without requiring exactly one.
+        """
+        segments = cls.all_from_zip(archive)
+        if len(segments) == 1:
+            return segments[0]
+        if not segments:
+            raise ValueError("Zip archive contains no SAC segments.")
+
+        segment_lines = "\n".join(
+            f"  {segment.station.network}.{segment.station.name}."
+            f"{segment.station.location}.{segment.station.channel}  "
+            f"{segment.seismogram.begin_time} -- {segment.seismogram.end_time}"
+            for segment in segments
+        )
+        raise ValueError(
+            f"Zip archive contains {len(segments)} segments; "
+            f"SAC.from_zip() requires exactly one continuous segment. "
+            f"Use SAC.all_from_zip() to get all segments instead. "
+            f"Segments found:\n{segment_lines}"
+        )
+
+    @classmethod
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
@@ -671,6 +715,12 @@ class SAC(SacIO):
         the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],
         which shows exactly this in its own Examples) and pass the
         resulting *starttime*/*endtime* here.
+
+        To fetch once and interpret later (e.g. offline, or without
+        repeating the network request), use
+        [`pysmo.tools.web.fetch_sac`][] and
+        [`from_zip`][pysmo.classes.SAC.from_zip] /
+        [`all_from_zip`][pysmo.classes.SAC.all_from_zip] directly instead.
 
         Args:
             station: Any object satisfying the [`Station`][pysmo.Station]
@@ -713,57 +763,51 @@ class SAC(SacIO):
         endtime = convert_to_utc_timestamp(endtime)
         archive = fetch_sac(station=station, starttime=starttime, endtime=endtime)
 
-        no_data_message = (
-            f"No waveform data returned for "
-            f"{station.network}.{station.name}.{station.location}."
-            f"{station.channel} between {starttime} and {endtime}."
-        )
-
         # dataselect returns an empty (zero-length) body, not a
         # zero-member zip archive, when a request is well-formed but
         # matches no data (HTTP 204, the FDSN default `nodata` handling)
-        # -- confirmed live. ZipFile raises BadZipFile on empty bytes, so
-        # this must be checked before attempting to open the archive.
+        # -- confirmed live.
         if not archive:
-            raise ValueError(no_data_message)
+            raise ValueError(
+                f"No waveform data returned for "
+                f"{station.network}.{station.name}.{station.location}."
+                f"{station.channel} between {starttime} and {endtime}."
+            )
+        return cls.from_zip(archive)
 
+    @classmethod
+    def all_from_zip(cls, archive: bytes) -> list[Self]:
+        """Create one instance per SAC file in a zip archive.
+
+        Unlike [`from_zip`][pysmo.classes.SAC.from_zip], this does not
+        require exactly one segment — a response covering a data gap, an
+        instrument/metadata epoch change, or a wildcarded channel/location
+        code returns several, which callers can inspect or merge
+        themselves.
+
+        Args:
+            archive: Raw zip archive bytes, as returned by the FDSN
+                dataselect web service with `format=sac.zip`.
+
+        Returns:
+            One SAC instance per member of the archive, in archive order.
+            Empty if the archive has no members.
+
+        Raises:
+            ValueError: If `archive` is not a valid zip archive, or a
+                member cannot be parsed as a SAC file.
+        """
         try:
             with ZipFile(BytesIO(archive)) as archive_zip:
                 names = archive_zip.namelist()
-                if not names:
-                    raise ValueError(no_data_message)
                 segments = []
                 for name in names:
                     try:
                         segments.append(cls.from_buffer(archive_zip.read(name)))
                     except Exception as error:
                         raise ValueError(
-                            f"Could not parse segment {name!r} returned for "
-                            f"{station.network}.{station.name}."
-                            f"{station.location}.{station.channel} between "
-                            f"{starttime} and {endtime}: {error}"
+                            f"Could not parse segment {name!r} in zip archive: {error}"
                         ) from error
         except BadZipFile as error:
-            raise ValueError(
-                f"dataselect response for "
-                f"{station.network}.{station.name}.{station.location}."
-                f"{station.channel} between {starttime} and {endtime} was "
-                f"not a valid zip archive: {error}"
-            ) from error
-
-        if len(segments) == 1:
-            return segments[0]
-
-        segment_lines = "\n".join(
-            f"  {segment.station.network}.{segment.station.name}."
-            f"{segment.station.location}.{segment.station.channel}  "
-            f"{segment.seismogram.begin_time} -- {segment.seismogram.end_time}"
-            for segment in segments
-        )
-        raise ValueError(
-            f"fdsnws/dataselect returned {len(segments)} segments for "
-            f"{station.network}.{station.name}.{station.location}."
-            f"{station.channel} between {starttime} and {endtime}; "
-            f"SAC.fetch() requires exactly one continuous segment. "
-            f"Segments returned:\n{segment_lines}"
-        )
+            raise ValueError(f"Not a valid zip archive: {error}") from error
+        return segments
