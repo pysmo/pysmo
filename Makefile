@@ -31,7 +31,7 @@ changelog: check-uv sync ## Generate CHANGELOG.md
 clean: ## Remove existing builds.
 	rm -rf build dist .egg pysmo.egg-info docs/build site
 
-docs: check-uv sync changelog ## Build html docs.
+docs: check-uv sync ## Build html docs.
 	uv run zensical build --clean
 
 format: check-uv ## Sort imports AND format code.
