@@ -102,7 +102,12 @@ namespace_packages = true
 disallow_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-exclude = ['division\.py$', 'division_annotated\.py$', 'duck\.py$']
+exclude = [
+  'division\.py$',
+  'division_annotated\.py$',
+  'duck\.py$',
+  'docs/snippets/external_classes/trace_seismogram\.py$',
+]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
