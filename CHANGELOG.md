@@ -55,6 +55,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(response)** Add instrument response removal via SACPZ/StationXML
 - **(plotutils)** Add relative_time_array function
 - **(classes)** [**breaking**] Add SAC.fetch()/fetch_sac(), remove SacIO.fetch()/from_iris()
+- **(classes)** Add SAC.from_zip()/all_from_zip() for offline/multi-segment parsing
 
 ### 🧪 Testing
 
