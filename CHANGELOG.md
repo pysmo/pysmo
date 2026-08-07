@@ -20,6 +20,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### 📚 Documentation
 
 - Remove unused mkdocs-macros-plugin
+- **(external-classes)** Add ObsPy Trace adapter recipe and protocol discussion
 
 ### 📦 Miscellaneous
 
