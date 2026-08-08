@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from io import BytesIO
-from typing import TYPE_CHECKING, Self, overload
+from typing import Self, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -138,41 +138,34 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
         ```
     """
 
-    if TYPE_CHECKING:
-        data: np.ndarray = field(init=False)
-        delta: PositiveTimedelta = field(init=False)
-        begin_time: UtcTimestamp = field(init=False)
+    @property
+    def data(self) -> np.ndarray:
+        """Seismogram data."""
 
-    else:
+        return self._parent.data
 
-        @property
-        def data(self) -> np.ndarray:
-            """Seismogram data."""
+    @data.setter
+    def data(self, value: np.ndarray) -> None:
+        self._parent.data = value
 
-            return self._parent.data
+    @property
+    def delta(self) -> PositiveTimedelta:
+        """Sampling interval."""
+        return pd.Timedelta(seconds=self._parent.delta)
 
-        @data.setter
-        def data(self, value: np.ndarray) -> None:
-            self._parent.data = value
+    @delta.setter
+    def delta(self, value: pd.Timedelta) -> None:
+        self._parent.delta = value.total_seconds()
 
-        @property
-        def delta(self) -> pd.Timedelta:
-            """Sampling interval."""
-            return pd.Timedelta(seconds=self._parent.delta)
+    @property
+    def begin_time(self) -> UtcTimestamp:
+        """Seismogram begin time."""
 
-        @delta.setter
-        def delta(self, value: pd.Timedelta) -> None:
-            self._parent.delta = value.total_seconds()
+        return self._get_timestamp_from_sac(SAC_REQUIRED_TIME_HEADERS.b)
 
-        @property
-        def begin_time(self) -> UtcTimestamp:
-            """Seismogram begin time."""
-
-            return self._get_timestamp_from_sac(SAC_REQUIRED_TIME_HEADERS.b)
-
-        @begin_time.setter
-        def begin_time(self, value: pd.Timestamp) -> None:
-            self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
+    @begin_time.setter
+    def begin_time(self, value: pd.Timestamp) -> None:
+        self._set_sac_from_timestamp(SAC_REQUIRED_TIME_HEADERS.b, value)
 
 
 @define(kw_only=True)
@@ -521,6 +514,8 @@ class SacTimestamps(_SacNested):
         >>>
         ```
     """
+
+    __slots__ = ()
 
     b: RequiredSacTimestamp = RequiredSacTimestamp()
     """Beginning time of the independent variable."""

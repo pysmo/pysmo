@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
 
+import pandas as pd
 from attrs import define, field, setters, validators
 
 from pysmo.lib.validators import validate_nonzero
@@ -12,6 +13,7 @@ __all__ = [
     "StagedResponse",
     "MiniResponseStage",
     "MiniStagedResponse",
+    "EpochProvenance",
 ]
 
 
@@ -134,7 +136,36 @@ class StagedResponse(Response, Protocol):
     analog sensor)."""
 
 
-@define(kw_only=True, slots=True)
+@runtime_checkable
+class EpochProvenance(Protocol):
+    """Protocol class to define the `EpochProvenance` type.
+
+    Channel identity (network/station/location/channel) plus the validity
+    window of one response epoch — the bookkeeping needed to place a
+    `Response` within a specific channel and time range, independent of the
+    response data itself.
+    """
+
+    network: str
+    """Network code."""
+
+    station: str
+    """Station code."""
+
+    location: str
+    """Location code."""
+
+    channel: str
+    """Channel code."""
+
+    start_date: pd.Timestamp
+    """Start of the epoch this response applies to."""
+
+    end_date: pd.Timestamp | None
+    """End of the epoch this response applies to, or `None` if still open."""
+
+
+@define(kw_only=True)
 class MiniResponse:
     """Minimal implementation of the [`Response`][pysmo.Response] type.
 
@@ -205,7 +236,7 @@ class MiniResponse:
     """
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniResponseStage:
     """Minimal implementation of the [`ResponseStage`][pysmo.ResponseStage] type.
 
@@ -279,7 +310,7 @@ class MiniResponseStage:
     """
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniStagedResponse(MiniResponse):
     """Minimal implementation of the [`StagedResponse`][pysmo.StagedResponse] type.
 

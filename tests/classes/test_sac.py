@@ -258,6 +258,20 @@ class TestSAC:
         assert sac.timestamps.b.tzinfo == timezone.utc
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_nested_objects_reject_unknown_attributes(self, sacfile: Path) -> None:
+        """Unknown attributes on the nested helper objects must raise."""
+
+        sac = SAC.from_file(sacfile)
+        with pytest.raises(AttributeError):
+            sac.seismogram.t0 = 60  # type: ignore[attr-defined]
+        with pytest.raises(AttributeError):
+            sac.station.foo = 60  # type: ignore[attr-defined]
+        with pytest.raises(AttributeError):
+            sac.event.foo = 60  # type: ignore[attr-defined]
+        with pytest.raises(AttributeError):
+            sac.timestamps.t10 = 60  # type: ignore[attr-defined]
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_set_sac_from_timestamp_optional_none(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sac.event._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, None)
