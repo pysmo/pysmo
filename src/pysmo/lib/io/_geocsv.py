@@ -17,13 +17,15 @@ EarthScope FDSN dataselect service (`SID`, `start_time`, `sample_rate_hz`,
 
 import csv
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
+from os import PathLike
 
 import numpy as np
 import pandas as pd
 
-from pysmo import MiniSeismogram
+from pysmo import MiniSeismogram, Seismogram
 from pysmo.functions._seismogram import merge
 from pysmo.typing import NonNegativeNumber
 
@@ -32,6 +34,7 @@ __all__ = [
     "parse_geocsv",
     "extract_geocsv_timeseries",
     "merge_geocsv_timeseries",
+    "write_geocsv",
 ]
 
 _KEYWORD_PATTERN = re.compile(r"^\s*#\s*([^:]+?)\s*:\s*(.*?)\s*$")
@@ -301,3 +304,119 @@ def merge_geocsv_timeseries(
         sid=reference.sid,
         data=merged.data,
     )
+
+
+def _geocsv_block(seismogram: Seismogram) -> str:
+    """Render a single Seismogram as one GeoCSV 2.0 dataset block."""
+    sid = getattr(seismogram, "sid", None)
+    data = seismogram.data
+    sample_count = len(data)
+    # `.value` (integer nanoseconds) rather than `.total_seconds()`: the
+    # latter loses sub-microsecond precision and can even round a valid
+    # delta down to zero, raising ZeroDivisionError.
+    sample_rate_hz = 1_000_000_000 / seismogram.delta.value
+
+    # np.isfinite(...) guards against `int(inf)` raising OverflowError below —
+    # inf/-inf trivially satisfy `x == round(x)` but are not representable as
+    # int; route them (and NaN) through the float branch instead.
+    is_integral = bool(np.all(np.isfinite(data)) and np.all(data == np.round(data)))
+    field_type = "integer" if is_integral else "float"
+
+    lines = [
+        "# dataset: GeoCSV 2.0",
+        "# delimiter: ,",
+        "# field_unit: UTC, Counts",
+        f"# field_type: datetime, {field_type}",
+    ]
+    if sid is not None:
+        lines.append(f"# SID: {sid}")
+    lines.extend(
+        [
+            f"# sample_count: {sample_count}",
+            f"# sample_rate_hz: {sample_rate_hz}",
+            f"# start_time: {seismogram.begin_time.isoformat()}",
+            "Time, Sample",
+        ]
+    )
+
+    for n, sample in enumerate(data):
+        timestamp = (seismogram.begin_time + n * seismogram.delta).isoformat()
+        formatted_sample = str(int(sample)) if is_integral else repr(float(sample))
+        lines.append(f"{timestamp}, {formatted_sample}")
+
+    return "\n".join(lines)
+
+
+def write_geocsv(
+    seismograms: Seismogram | Sequence[Seismogram],
+    path: str | PathLike,
+) -> None:
+    """Write one or more Seismogram objects to a GeoCSV 2.0 file.
+
+    Each object is serialised as a self-contained GeoCSV 2.0 timeseries
+    dataset block (`# dataset: GeoCSV 2.0` header, keyword metadata,
+    column header line, one row per sample). Multiple objects produce a
+    multi-dataset file that is readable by
+    [`parse_geocsv`][pysmo.lib.io.parse_geocsv].
+
+    Args:
+        seismograms: A single [`Seismogram`][pysmo.Seismogram] or a
+            non-empty sequence of them.
+        path: Destination file path. Written in UTF-8 text mode;
+            existing content is overwritten.
+
+    Raises:
+        ValueError: If *seismograms* is an empty sequence.
+        OSError: If the file cannot be written.
+
+    Note:
+        Dataset blocks are separated by a single blank line. The
+        `sample_rate_hz` header value is derived from
+        `1_000_000_000 / delta.value` (integer nanoseconds, to preserve
+        sub-microsecond precision). Both the `# start_time:` header and
+        every `Time` column value are `pd.Timestamp.isoformat()` calls
+        (`begin_time` and `begin_time + n * delta` respectively), which
+        preserve full precision (including nanoseconds). Sample values are
+        written as `integer` or `float` depending on whether the data is
+        integral, so genuinely non-integral data (e.g. a detrended or
+        filtered seismogram) is never silently truncated. A `sid` attribute
+        is used if present (e.g. on a
+        [`GeoCsvSeismogram`][pysmo.classes.GeoCsvSeismogram]), but is not
+        required by the [`Seismogram`][pysmo.Seismogram] protocol itself,
+        so the `# SID:` header line is simply omitted for objects that
+        don't have one. `# field_unit: UTC, Counts` is always written as-is
+        — neither `Seismogram` nor `GeoCsvSeismogram` carries a units
+        concept, so this label may not describe the data's actual physical
+        units (e.g. after response removal); `parse_geocsv`/
+        `extract_geocsv_timeseries` never read it back, so this doesn't
+        affect round-tripping, only external readers. `sid` is written
+        verbatim, with no escaping: a value containing a newline would
+        produce a file this module's own `parse_geocsv` cannot read back
+        correctly (a comma is fine, since header lines are matched by
+        regex, not CSV-split). Not a concern for real FDSN source
+        identifiers, which never contain a newline.
+
+    Examples:
+        ```python
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> from pysmo import MiniSeismogram
+        >>> from pysmo.lib.io import write_geocsv
+        >>> now = pd.Timestamp.now("UTC")
+        >>> delta = pd.Timedelta(seconds=0.1)
+        >>> seg1 = MiniSeismogram(begin_time=now, delta=delta, data=np.arange(5.0))
+        >>> seg2 = MiniSeismogram(begin_time=now, delta=delta, data=np.arange(5.0))
+        >>> write_geocsv(seg1, "out.geocsv")
+        >>> write_geocsv([seg1, seg2], "multi.geocsv")
+        >>>
+        ```
+    """
+    items = seismograms if isinstance(seismograms, Sequence) else [seismograms]
+    if not items:
+        raise ValueError("seismograms must not be an empty sequence.")
+
+    blocks = [_geocsv_block(seismogram) for seismogram in items]
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n\n".join(blocks))
+        f.write("\n")

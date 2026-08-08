@@ -1,5 +1,6 @@
 """GeoCSV import classes compatible with pysmo types."""
 
+from os import PathLike
 from typing import Self
 
 import numpy as np
@@ -12,6 +13,7 @@ from pysmo.lib.io import (
     extract_geocsv_timeseries,
     merge_geocsv_timeseries,
     parse_geocsv,
+    write_geocsv,
 )
 from pysmo.lib.validators import (
     convert_to_ndarray,
@@ -26,7 +28,7 @@ __all__ = ["GeoCsvSeismogram"]
 
 @define(kw_only=True)
 class GeoCsvSeismogram(SeismogramEndtimeMixin):
-    """Import class for seismograms in the GeoCSV timeseries format.
+    """Import/export class for seismograms in the GeoCSV timeseries format.
 
     Reads a waveform from the timeseries flavour of
     [GeoCSV](https://ds.iris.edu/files/documents/GeoCSV.pdf) and exposes
@@ -37,8 +39,9 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     waveform to a [`MiniSeismogram`][pysmo.MiniSeismogram], which can then
     be passed to [`copy_from_mini`][pysmo.functions.copy_from_mini] to
     populate another object such as a [`SAC`][pysmo.classes.SAC] instance.
-    Instances can be modified in memory but there is no write-back to
-    GeoCSV.
+    Use [`write`][pysmo.classes.GeoCsvSeismogram.write] to serialise the instance back
+    to a GeoCSV 2.0 file, or [`pysmo.lib.io.write_geocsv`][] to write one or more
+    `Seismogram`-compatible objects in a single call.
 
     Examples:
         ```python
@@ -66,6 +69,10 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         array([-47297., -47298., -47299.])
         >>> seismogram.end_time
         Timestamp('2010-02-27 06:30:02+0000', tz='UTC')
+        >>> import pathlib
+        >>> seismogram.write("out.geocsv"); recovered = GeoCsvSeismogram.from_text(pathlib.Path("out.geocsv").read_text())
+        >>> recovered.sid
+        'IU_ANMO_00_LHZ'
         >>>
         ```
     """
@@ -200,3 +207,42 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
                 f"{station.channel} between {starttime} and {endtime}."
             )
         return cls.from_text(waveform_bytes.decode("utf-8"))
+
+    def write(self, path: str | PathLike) -> None:
+        """Write this seismogram to a GeoCSV 2.0 file.
+
+        Serialises the instance as a single GeoCSV 2.0 timeseries dataset.
+        To write several seismograms into one multi-dataset file use
+        [`pysmo.lib.io.write_geocsv`][] directly.
+
+        Args:
+            path: Destination file path. The file is written in UTF-8 text
+                mode and any existing content is overwritten.
+
+        Examples:
+            ```python
+            >>> import pathlib
+            >>> from pysmo.classes import GeoCsvSeismogram
+            >>> text = '''\\
+            ... # dataset: GeoCSV 2.0
+            ... # delimiter: ,
+            ... # field_unit: UTC, Counts
+            ... # field_type: datetime, INTEGER
+            ... # SID: IU_ANMO_00_LHZ
+            ... # sample_count: 3
+            ... # sample_rate_hz: 1.0
+            ... # start_time: 2010-02-27T06:30:00Z
+            ... Time, Sample
+            ... 2010-02-27T06:30:00Z, -47297
+            ... 2010-02-27T06:30:01Z, -47298
+            ... 2010-02-27T06:30:02Z, -47299'''
+            >>> seismogram = GeoCsvSeismogram.from_text(text)
+            >>> seismogram.write("out.geocsv"); recovered = GeoCsvSeismogram.from_text(
+            ...     pathlib.Path("out.geocsv").read_text()
+            ... )
+            >>> recovered.sid == seismogram.sid
+            True
+            >>>
+            ```
+        """
+        write_geocsv(self, path)

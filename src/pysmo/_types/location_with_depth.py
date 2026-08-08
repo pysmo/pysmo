@@ -15,7 +15,7 @@ class LocationWithDepth(Location, Protocol):
     """Location depth in metres (positive downward from the surface)."""
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniLocationWithDepth:
     """Minimal class for use with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
 

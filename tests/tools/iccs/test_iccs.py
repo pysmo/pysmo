@@ -428,6 +428,13 @@ class TestICCSParameters(TestICCSBase):
         ):
             seis.delta = pd.Timedelta(seconds=-1)
 
+    def test_min_iccs_seismogram_rejects_unknown_attributes(self) -> None:
+        """Unknown attributes must raise, not silently succeed."""
+
+        seis = self.iccs.seismograms[0]
+        with pytest.raises(AttributeError):
+            seis.foo = 1  # type: ignore[attr-defined]
+
     def test_run_mccc_abs_max(self) -> None:
         """Test run_mccc with abs_max=True."""
         # Flip only one seismogram

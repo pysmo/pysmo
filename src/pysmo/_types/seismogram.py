@@ -66,6 +66,8 @@ class Seismogram(Protocol):
 class SeismogramEndtimeMixin:
     """Mixin class to add `end_time` property to a `Seismogram` object."""
 
+    __slots__ = ()
+
     @property
     def end_time(self: Seismogram) -> pd.Timestamp:
         """Seismogram end time."""
@@ -80,7 +82,7 @@ class SeismogramEndtimeMixin:
 # --8<-- [start:mini-seismogram]
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniSeismogram(SeismogramEndtimeMixin):
     """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
 

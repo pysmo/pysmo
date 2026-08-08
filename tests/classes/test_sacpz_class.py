@@ -135,3 +135,22 @@ class TestFetch:
 
         _, fields = calls[0]
         assert fields["time"] == "2016-01-01T00:00:00+00:00"
+
+
+class TestWrite:
+    def test_round_trip(self, tmp_path: Path) -> None:
+        response = SacPZ.from_text(SINGLE_FIXTURE.read_text())
+        path = tmp_path / "out.pz"
+        response.write(path)
+        recovered = SacPZ.from_text(path.read_text())
+        assert recovered.network == response.network
+        assert recovered.station == response.station
+        assert recovered.location == response.location
+        assert recovered.channel == response.channel
+        assert recovered.start_date == response.start_date
+        assert recovered.end_date == response.end_date
+        assert recovered.poles == pytest.approx(response.poles)
+        assert recovered.zeros == pytest.approx(response.zeros)
+        assert recovered.overall_sensitivity == pytest.approx(
+            response.overall_sensitivity
+        )
