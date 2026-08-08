@@ -24,13 +24,32 @@ interpret" split used by
 """
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
+from os import PathLike
+from typing import Protocol, runtime_checkable
 
 import pandas as pd
 
+from pysmo import EpochProvenance, Response
 from pysmo.lib.validators import convert_to_utc_timestamp
 
-__all__ = ["parse_sacpz"]
+__all__ = ["parse_sacpz", "write_sacpz", "ResponseWithEpoch"]
+
+
+@runtime_checkable
+class ResponseWithEpoch(Response, EpochProvenance, Protocol):
+    """Protocol class to define the `ResponseWithEpoch` type.
+
+    A [`Response`][pysmo.Response] with
+    [`EpochProvenance`][pysmo.EpochProvenance] — what
+    [`write_sacpz`][pysmo.lib.io.write_sacpz] requires. Any object
+    satisfying both protocols (e.g. [`SacPZ`][pysmo.classes.SacPZ] or
+    [`StationXML`][pysmo.classes.StationXML]) already satisfies this one
+    structurally; there is usually no need to reference it directly unless
+    type-annotating a variable meant to hold whatever `write_sacpz` accepts.
+    """
+
 
 _HEADER_PATTERN = re.compile(
     r"^\*\s*([A-Za-z][A-Za-z ]*?)\s*(?:\([^)]*\))?\s*:\s*(.*?)\s*$"
@@ -199,3 +218,95 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
         )
 
     return records
+
+
+def _sacpz_block(response: ResponseWithEpoch) -> str:
+    """Render a single Response+EpochProvenance object as one SAC PZ record."""
+    end_date = response.end_date.isoformat() if response.end_date is not None else ""
+
+    lines = [
+        f"* NETWORK   (KNETWK): {response.network}",
+        f"* STATION    (KSTNM): {response.station}",
+        f"* LOCATION   (KHOLE): {response.location}",
+        f"* CHANNEL   (KCMPNM): {response.channel}",
+        f"* START             : {response.start_date.isoformat()}",
+        f"* END               : {end_date}",
+    ]
+    if response.reference_sensitivity is not None:
+        lines.append(f"* SENSITIVITY       : {response.reference_sensitivity:.6e}")
+    lines.append(f"* INPUT UNIT        : {response.input_units}")
+
+    lines.append(f"ZEROS {len(response.zeros)}")
+    for zero in response.zeros:
+        lines.append(f"\t{zero.real:+.6e}\t{zero.imag:+.6e}")
+
+    lines.append(f"POLES {len(response.poles)}")
+    for pole in response.poles:
+        lines.append(f"\t{pole.real:+.6e}\t{pole.imag:+.6e}")
+
+    lines.append(f"CONSTANT {response.overall_sensitivity:.6e}")
+
+    return "\n".join(lines)
+
+
+def write_sacpz(
+    responses: ResponseWithEpoch | Sequence[ResponseWithEpoch],
+    path: str | PathLike,
+) -> None:
+    """Write one or more Response objects to a SAC PZ file.
+
+    Args:
+        responses: A single object satisfying both
+            [`Response`][pysmo.Response] and
+            [`EpochProvenance`][pysmo.EpochProvenance] (e.g.
+            [`SacPZ`][pysmo.classes.SacPZ] or
+            [`StationXML`][pysmo.classes.StationXML]), or a non-empty
+            sequence of them.
+        path: Destination file path; written in UTF-8 text mode.
+
+    Raises:
+        ValueError: If *responses* is an empty sequence.
+        OSError: If the file cannot be written.
+
+    Note:
+        Records are separated by a single blank line. Poles, zeros, and
+        `CONSTANT` are written at 6 decimal digits (`.6e`), matching the
+        EarthScope SACPZ web service's own output convention — a real SAC
+        PZ file never carries more precision than this, so writing a
+        [`SacPZ`][pysmo.classes.SacPZ] instance (which was itself parsed
+        from `.6e`-formatted text) back out loses nothing. Writing a
+        higher-precision source instead — e.g. a
+        [`StationXML`][pysmo.classes.StationXML] instance, whose XML
+        `<Real>`/`<Imaginary>` elements are not limited to 6 decimals —
+        does round to this format's conventional precision; that is
+        expected when converting into SAC PZ, not a bug to work around
+        here. The `* SENSITIVITY` header line is omitted when
+        `reference_sensitivity` is `None`. `network`/`station`/`location`/
+        `channel`/`input_units` are written verbatim, with no escaping: a
+        value containing a newline would produce a file this module's own
+        `parse_sacpz` cannot read back correctly (a colon is fine, since
+        `_HEADER_PATTERN`'s value group captures the rest of the line).
+        Not a concern for real FDSN network/station/location/channel codes
+        or SEED unit strings, which never contain a newline.
+
+    Examples:
+        ```python
+        >>> from pathlib import Path
+        >>> from pysmo.classes import SacPZ
+        >>> from pysmo.lib.io import write_sacpz
+        >>> text = Path("SACPZ.IU.ANMO.00.BHZ").read_text()
+        >>> response = SacPZ.from_text(text)
+        >>> write_sacpz(response, "out.pz")
+        >>> write_sacpz([response, response], "multi.pz")
+        >>>
+        ```
+    """
+    items = responses if isinstance(responses, Sequence) else [responses]
+    if not items:
+        raise ValueError("responses must not be an empty sequence.")
+
+    blocks = [_sacpz_block(response) for response in items]
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n\n".join(blocks))
+        f.write("\n")

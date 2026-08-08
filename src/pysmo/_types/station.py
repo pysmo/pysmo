@@ -53,7 +53,7 @@ def _pad_string(x: str) -> str:
     return f"{x:>2}"
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniStation:
     """Minimal class for use with the [`Station`][pysmo.Station] type.
 

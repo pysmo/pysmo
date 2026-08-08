@@ -19,7 +19,7 @@ class Event(LocationWithDepth, Protocol):
     """Event origin time."""
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniEvent:
     """Minimal class for use with the [`Event`][pysmo.Event] type.
 

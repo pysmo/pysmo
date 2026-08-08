@@ -24,7 +24,7 @@ class Location(Protocol):
 # --8<-- [start:mini-location]
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class MiniLocation:
     """Minimal class for use with the [`Location`][pysmo.Location] type.
 
