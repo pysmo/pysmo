@@ -148,7 +148,7 @@ def _validate_ramp_width(
         raise ValueError("ramp_width is too high for one or more seismograms.")
 
 
-@define(slots=True)
+@define
 class _EphemeralSeismogram(SeismogramEndtimeMixin):
     """A Seismogram class used internally in ICCS to store the prepared seismograms.
 
@@ -179,7 +179,7 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
         self.data = self.parent_seismogram.data.copy()
 
 
-@define(slots=True)
+@define
 class ICCS:
     """Class to store a list of [`IccsSeismograms`][pysmo.tools.iccs.IccsSeismogram] and run the ICCS algorithm.
 

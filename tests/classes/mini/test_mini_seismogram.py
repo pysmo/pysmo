@@ -92,6 +92,14 @@ class TestMiniSeismogram:
         assert len(miniseis.data) == 0
         assert miniseis.begin_time == miniseis.end_time
 
+    @pytest.mark.depends(name="test_create_instance")
+    def test_rejects_unknown_attributes(self) -> None:
+        """Unknown attributes must raise, not silently succeed."""
+
+        miniseis = MiniSeismogram()
+        with pytest.raises(AttributeError):
+            miniseis.t0 = 60  # type: ignore[attr-defined]
+
     @pytest.mark.depends(name="test_change_attributes")
     def test_as_seismogram(self) -> None:
         """check if it works in a functionfor Seismogram types."""
