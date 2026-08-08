@@ -5,7 +5,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pysmo.lib.io._sacpz import parse_sacpz
+from pysmo.classes import SacPZ
+from pysmo.lib.io._sacpz import parse_sacpz, write_sacpz
 
 SINGLE_FIXTURE = Path(__file__).parent / "assets" / "sacpz_anmo_single.txt"
 BULK_FIXTURE = Path(__file__).parent / "assets" / "sacpz_anmo_bulk.txt"
@@ -142,3 +143,52 @@ class TestParseSacpz:
         )
         with pytest.raises(ValueError, match="Unexpected end of text"):
             parse_sacpz(text)
+
+
+class TestWriteSacpz:
+    def test_round_trip_real_fixture(self, tmp_path: Path) -> None:
+        response = SacPZ.from_text(SINGLE_FIXTURE.read_text())
+        path = tmp_path / "out.pz"
+        write_sacpz(response, path)
+        records = parse_sacpz(path.read_text())
+        assert len(records) == 1
+        record = records[0]
+        assert record.network == response.network
+        assert record.station == response.station
+        assert record.location == response.location
+        assert record.channel == response.channel
+        assert record.start_date == response.start_date
+        assert record.end_date == response.end_date
+        assert record.input_units == response.input_units
+        assert record.poles == pytest.approx(response.poles)
+        assert record.zeros == pytest.approx(response.zeros)
+        assert record.overall_sensitivity == pytest.approx(response.overall_sensitivity)
+        assert record.reference_sensitivity == pytest.approx(
+            response.reference_sensitivity
+        )
+
+    def test_sensitivity_omitted_when_none(self, tmp_path: Path) -> None:
+        """MINIMAL_RECORD has no `* SENSITIVITY` header, so
+        `reference_sensitivity` is `None`; the writer must omit the line
+        rather than write `None`, and the record must remain readable."""
+        response = SacPZ.from_text(MINIMAL_RECORD)
+        assert response.reference_sensitivity is None
+        path = tmp_path / "out.pz"
+        write_sacpz(response, path)
+        assert "SENSITIVITY" not in path.read_text()
+        record = parse_sacpz(path.read_text())[0]
+        assert record.reference_sensitivity is None
+        assert record.end_date is None
+
+    def test_multi_record(self, tmp_path: Path) -> None:
+        responses = SacPZ.all_from_text(BULK_FIXTURE.read_text())[:2]
+        path = tmp_path / "multi.pz"
+        write_sacpz(responses, path)
+        records = parse_sacpz(path.read_text())
+        assert len(records) == 2
+        assert records[0].start_date == responses[0].start_date
+        assert records[1].start_date == responses[1].start_date
+
+    def test_empty_sequence_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="empty sequence"):
+            write_sacpz([], tmp_path / "out.pz")

@@ -41,7 +41,7 @@ def _matching_epochs(
     return [epoch for epoch in epochs if epoch.end_date is None]
 
 
-@define(kw_only=True, slots=True)
+@define(kw_only=True)
 class StationXML:
     """Import class for FDSN StationXML response metadata.
 
