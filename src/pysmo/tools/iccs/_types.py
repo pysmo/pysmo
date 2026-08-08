@@ -19,7 +19,7 @@ from pysmo.typing import PositiveTimedelta, UtcTimestamp
 __all__ = ["IccsResult", "IccsSeismogram", "McccResult", "MiniIccsSeismogram"]
 
 
-@define(frozen=True, slots=True)
+@define(frozen=True)
 class IccsResult:
     """Result returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__]."""
 
@@ -30,7 +30,7 @@ class IccsResult:
     """Whether the convergence limit was reached before `max_iter` iterations."""
 
 
-@define(frozen=True, slots=True)
+@define(frozen=True)
 class McccResult:
     """Result returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc].
 
@@ -83,8 +83,8 @@ class IccsSeismogram(Seismogram, Protocol):
     """Extra metadata that may be helpful to be stored alongside the seismogram."""
 
 
-@define(kw_only=True, slots=True)
-class MiniIccsSeismogram(SeismogramEndtimeMixin, IccsSeismogram):
+@define(kw_only=True)
+class MiniIccsSeismogram(SeismogramEndtimeMixin):
     """Minimal implementation of the [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] type.
 
     Examples:

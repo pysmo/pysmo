@@ -89,6 +89,11 @@ class TestGeoCsvSeismogram:
         with pytest.raises(TypeError):
             seismogram.sid = 42  # type: ignore[assignment]
 
+    def test_rejects_unknown_attributes(self) -> None:
+        seismogram = GeoCsvSeismogram.from_text(TEXT)
+        with pytest.raises(AttributeError):
+            seismogram.t0 = 60  # type: ignore[attr-defined]
+
 
 class TestFetch:
     @pytest.fixture()
@@ -145,3 +150,15 @@ class TestFetch:
                 starttime=pd.Timestamp("2010-02-27T06:30:00Z"),
                 endtime=pd.Timestamp("2010-02-27T06:30:03Z"),
             )
+
+
+class TestWrite:
+    def test_round_trip(self, tmp_path: Path) -> None:
+        seismogram = GeoCsvSeismogram.from_text(TEXT)
+        path = tmp_path / "out.geocsv"
+        seismogram.write(path)
+        recovered = GeoCsvSeismogram.from_text(path.read_text())
+        assert recovered.sid == seismogram.sid
+        assert recovered.begin_time == seismogram.begin_time
+        assert recovered.delta == seismogram.delta
+        npt.assert_allclose(recovered.data, seismogram.data)

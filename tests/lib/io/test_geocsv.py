@@ -7,12 +7,15 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
+from pysmo import MiniSeismogram
+from pysmo.classes import GeoCsvSeismogram
 from pysmo.lib.io._geocsv import (
     GeoCsvDataset,
     _TimeseriesSegment,
     extract_geocsv_timeseries,
     merge_geocsv_timeseries,
     parse_geocsv,
+    write_geocsv,
 )
 
 FIXTURE = Path(__file__).parent / "assets" / "dataselect_response.geocsv"
@@ -309,3 +312,92 @@ def test_real_dataselect_response() -> None:
 
 def test_dataset_delimiter_default() -> None:
     assert GeoCsvDataset().delimiter == ","
+
+
+class TestWriteGeocsv:
+    def make_seismogram(
+        self,
+        data: list[float] | None = None,
+        sid: str = "IU_ANMO_00_LHZ",
+    ) -> GeoCsvSeismogram:
+        return GeoCsvSeismogram(
+            begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+            delta=pd.Timedelta(seconds=1.0),
+            data=np.array(data if data is not None else [1.0, 2.0, 3.0]),
+            sid=sid,
+        )
+
+    def test_round_trip(self, tmp_path: Path) -> None:
+        seismogram = self.make_seismogram()
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        segment = extract_geocsv_timeseries(parse_geocsv(path.read_text())[0])
+        assert segment.start_time == seismogram.begin_time
+        assert segment.sample_rate_hz == pytest.approx(1.0)
+        npt.assert_allclose(segment.data, seismogram.data)
+
+    def test_sid_written_when_present(self, tmp_path: Path) -> None:
+        seismogram = self.make_seismogram()
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        assert "# SID: IU_ANMO_00_LHZ" in path.read_text()
+
+    def test_sid_omitted_when_absent(self, tmp_path: Path) -> None:
+        """A bare MiniSeismogram has no `sid` attribute at all — write_geocsv
+        must not raise, and must simply omit the `# SID:` header line."""
+        seismogram = MiniSeismogram(
+            begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+            delta=pd.Timedelta(seconds=1.0),
+            data=np.array([1.0, 2.0, 3.0]),
+        )
+        assert not hasattr(seismogram, "sid")
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        assert "SID" not in path.read_text()
+        segment = extract_geocsv_timeseries(parse_geocsv(path.read_text())[0])
+        assert segment.sid == ""
+
+    def test_integral_data_written_as_integer_field_type(self, tmp_path: Path) -> None:
+        seismogram = self.make_seismogram(data=[1.0, 2.0, 3.0])
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        assert "field_type: datetime, integer" in path.read_text()
+
+    def test_non_integral_data_round_trips_without_truncation(
+        self, tmp_path: Path
+    ) -> None:
+        """A hardcoded `int(sample)` would silently truncate 1.5 to 1 —
+        regression guard for that fix."""
+        seismogram = self.make_seismogram(data=[1.5, 2.25, 3.0])
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        text = path.read_text()
+        assert "field_type: datetime, float" in text
+        segment = extract_geocsv_timeseries(parse_geocsv(text)[0])
+        npt.assert_allclose(segment.data, [1.5, 2.25, 3.0])
+
+    def test_infinite_value_does_not_raise(self, tmp_path: Path) -> None:
+        """`inf == round(inf)` is True, so a naive integral check would
+        route `inf` into `int(inf)`, which raises OverflowError — regression
+        guard for the np.isfinite(...) fix."""
+        seismogram = self.make_seismogram(data=[1.0, 2.0, np.inf])
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        text = path.read_text()
+        assert "field_type: datetime, float" in text
+        segment = extract_geocsv_timeseries(parse_geocsv(text)[0])
+        npt.assert_allclose(segment.data, [1.0, 2.0, np.inf])
+
+    def test_multi_record(self, tmp_path: Path) -> None:
+        seg1 = self.make_seismogram(sid="IU_ANMO_00_LHZ")
+        seg2 = self.make_seismogram(data=[4.0, 5.0, 6.0], sid="IU_ANMO_00_BHZ")
+        path = tmp_path / "multi.geocsv"
+        write_geocsv([seg1, seg2], path)
+        datasets = parse_geocsv(path.read_text())
+        assert len(datasets) == 2
+        assert datasets[0].headers["sid"] == "IU_ANMO_00_LHZ"
+        assert datasets[1].headers["sid"] == "IU_ANMO_00_BHZ"
+
+    def test_empty_sequence_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="empty sequence"):
+            write_geocsv([], tmp_path / "out.geocsv")

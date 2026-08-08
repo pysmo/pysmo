@@ -1,9 +1,13 @@
 """Low-level I/O classes for reading and writing seismological data.
 
 Classes in this module handle file format details but do not implement
-[`pysmo`][] protocol types directly. They serve as the foundation for
-the higher-level classes in [`pysmo.classes`][] and should generally not
-be used directly.
+[`pysmo`][] protocol types directly. The `parse_*` functions here return
+uninterpreted raw records meant to be wrapped by a [`pysmo.classes`][] type
+before use, and should generally not be used directly for that reason. The
+`write_*` functions are the exception: they accept any object satisfying
+the relevant `pysmo` protocol directly (not just a `pysmo.classes` type)
+and are intended to be used directly, either standalone or via the thin
+`.write()` wrapper each supporting class provides.
 """
 
 from ..._utils import export_module_names
@@ -12,6 +16,7 @@ from ._geocsv import (
     extract_geocsv_timeseries,
     merge_geocsv_timeseries,
     parse_geocsv,
+    write_geocsv,
 )
 from ._http import (
     DEFAULT_REQUEST_RETRIES,
@@ -20,7 +25,7 @@ from ._http import (
     http_get,
 )
 from ._sacio import SacIO
-from ._sacpz import parse_sacpz
+from ._sacpz import ResponseWithEpoch, parse_sacpz, write_sacpz
 from ._stationxml import parse_stationxml
 
 __all__ = [
@@ -28,6 +33,7 @@ __all__ = [
     "DEFAULT_RETRY_DELAY_SECONDS",
     "DEFAULT_TIMEOUT_SECONDS",
     "GeoCsvDataset",
+    "ResponseWithEpoch",
     "SacIO",
     "extract_geocsv_timeseries",
     "http_get",
@@ -35,6 +41,8 @@ __all__ = [
     "parse_geocsv",
     "parse_sacpz",
     "parse_stationxml",
+    "write_geocsv",
+    "write_sacpz",
 ]
 
 export_module_names(globals(), __name__)
