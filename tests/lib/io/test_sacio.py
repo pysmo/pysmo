@@ -2,7 +2,7 @@
 
 import copy
 import pickle
-from datetime import timezone
+from datetime import timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -110,6 +110,12 @@ _ENUM_HEADERS: list[tuple[str, str]] = [
     ("imagtyp", "mb"),
     ("imagsrc", "neic"),
     ("ibody", "earth"),
+]
+
+# iztype is read-only after construction (see test_iztype_is_read_only and
+# test_change_ref_time), so it is excluded from the generic setter tests.
+_ENUM_HEADERS_SETTABLE: list[tuple[str, str]] = [
+    (h, v) for h, v in _ENUM_HEADERS if h != "iztype"
 ]
 
 # Read-only computed properties (no setter)
@@ -392,7 +398,7 @@ def test_set_bool_header(header: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "header,value", _ENUM_HEADERS, ids=[h for h, _ in _ENUM_HEADERS]
+    "header,value", _ENUM_HEADERS_SETTABLE, ids=[h for h, _ in _ENUM_HEADERS_SETTABLE]
 )
 def test_set_enum_header(header: str, value: str) -> None:
     sac = SacIO()
@@ -464,11 +470,19 @@ def test_str_header_max_len(header: str, _: str, max_len: int) -> None:
         setattr(sac, header, "x" * (max_len + 1))
 
 
-@pytest.mark.parametrize("header,_", _ENUM_HEADERS, ids=[h for h, _ in _ENUM_HEADERS])
+@pytest.mark.parametrize(
+    "header,_", _ENUM_HEADERS_SETTABLE, ids=[h for h, _ in _ENUM_HEADERS_SETTABLE]
+)
 def test_invalid_enum_value(header: str, _: str) -> None:
     sac = SacIO()
     with pytest.raises(ValueError):
         setattr(sac, header, "not_a_valid_enum")
+
+
+def test_iztype_invalid_enum_value() -> None:
+    """iztype's enum validator still runs at construction time."""
+    with pytest.raises(ValueError):
+        SacIO(iztype="not_a_valid_enum")
 
 
 # ─────────────────────────── Read-only attrs ───────────────────────────────
@@ -498,24 +512,95 @@ def test_change_data(sacfile: Path) -> None:
 @pytest.mark.depends(on=["test_read_headers"])
 def test_iztype_prevents_zero_time_change() -> None:
     """Cannot change the header nominated as zero-time to a non-zero value."""
-    sac = SacIO()
+    sac = SacIO(iztype="o")
     sac.o = 0.0
-    sac.iztype = "o"
     with pytest.raises(RuntimeError):
         sac.o = 123.0
 
 
 @pytest.mark.depends(on=["test_read_headers"])
-def test_change_all_times(sacfile: Path) -> None:
+def test_iztype_is_read_only(sacfile: Path) -> None:
+    """iztype can only be changed via change_ref_time."""
     sac = SacIO.from_file(sacfile)
-    sac2 = SacIO.from_file(sacfile)
-    dtime = 10
-    sac.a = 70.0
-    sac2.a = 70.0
-    sac2.change_all_times(dtime)
-    assert sac.o == sac2.o - dtime  # type: ignore
-    assert sac.b == sac2.b - dtime
-    assert sac.a == sac2.a - dtime  # type: ignore
+    with pytest.raises(AttributeError):
+        sac.iztype = "o"
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_change_ref_time(sacfile: Path) -> None:
+    sac = SacIO.from_file(sacfile)
+    old_ref = sac.ref_datetime
+    old_b = sac.b
+    old_o = sac.o
+    assert old_ref is not None
+    assert old_o is not None
+
+    sac.change_ref_time("o")
+
+    assert sac.iztype == "o"
+    new_ref = sac.ref_datetime
+    new_o = sac.o
+    new_b = sac.b
+    assert new_ref is not None
+    assert new_o is not None
+
+    # 'o' lands within half a millisecond of 0 (ref_datetime only has
+    # millisecond precision), not exactly on it.
+    assert new_o == pytest.approx(0.0, abs=5e-4)
+
+    # every header's absolute time is preserved exactly.
+    assert new_ref + timedelta(seconds=new_o) == old_ref + timedelta(seconds=old_o)
+    assert new_ref + timedelta(seconds=new_b) == old_ref + timedelta(seconds=old_b)
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_change_ref_time_invalid_header(sacfile: Path) -> None:
+    sac = SacIO.from_file(sacfile)
+    with pytest.raises(ValueError):
+        sac.change_ref_time("e")
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_change_ref_time_requires_ref_datetime() -> None:
+    sac = SacIO()
+    sac.o = 10.0
+    with pytest.raises(ValueError):
+        sac.change_ref_time("o")
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_change_ref_time_requires_header_value(sacfile: Path) -> None:
+    sac = SacIO.from_file(sacfile)
+    assert sac.a is None
+    with pytest.raises(ValueError):
+        sac.change_ref_time("a")
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_read_after_change_ref_time(sacfile: Path) -> None:
+    """Reloading a file must not raise because of a stale iztype-pinned
+    header value left over from before the reload."""
+    sac = SacIO.from_file(sacfile)
+    sac.change_ref_time("o")
+    assert sac.iztype == "o"
+
+    sac.read(sacfile)
+
+    assert sac.iztype == "unkn"
+    assert sac.o == pytest.approx(-594.5390014648438)
+
+
+@pytest.mark.depends(on=["test_read_headers"])
+def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
+    """A header this file doesn't define must not keep a stale value from
+    a previously loaded file when reusing an existing instance."""
+    sac = SacIO.from_file(sacfile)
+    sac.a = 123.0
+    assert sac.a == 123.0
+
+    sac.read(sacfile)
+
+    assert sac.a is None
 
 
 @pytest.mark.depends(on=["test_read_headers", "test_read_data"])
