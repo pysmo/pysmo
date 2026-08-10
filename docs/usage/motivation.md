@@ -110,6 +110,11 @@ type. This leads to the following approach:
 This approach gives complete freedom to store and use data in any way, while
 still being able to write reusable code using pysmo types.
 
+Not every pysmo type shares this exact origin, though —
+[`Seismogram`][pysmo.Seismogram] is a particularly clear-cut case. See
+["Why does this type exist?"](types.md#why-does-this-type-exist) on the
+[types](types.md) page for the other reasons a pysmo type may exist.
+
 ## Code writing experience
 
 At this point it is worth remembering that type hints in Python are not enforced
