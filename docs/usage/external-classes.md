@@ -161,6 +161,24 @@ class MyExtendedClass(ExternalClass):
         self.event_location = EventLocation(parent=self)
 ```
 
+Inheriting from `ExternalClass` isn't required here — composition (holding
+the external object as an attribute rather than subclassing it) works just
+as well:
+
+<!-- skip: next -->
+
+```python
+class MyExtendedClass:
+    def __init__(self, *args, **kwargs) -> None:
+        self.external = ExternalClass(*args, **kwargs)
+        self.station_location = StationLocation(parent=self.external)
+        self.event_location = EventLocation(parent=self.external)
+```
+
+Composition is the better choice whenever `ExternalClass` has a large
+surface you don't want to expose wholesale on `MyExtendedClass` — see the
+[`SAC`][pysmo.classes.SAC] example below, which does exactly this.
+
 ## Examples
 
 ### `SAC`
@@ -170,14 +188,30 @@ The pysmo package itself uses this pattern for the
 [`SacIO`][pysmo.lib.io.SacIO] class manages file I/O and provides access to
 all SAC header fields using their original names (`stla`, `evla`, `b`, etc.).
 These names do not match pysmo types, and several types (station location,
-event location, seismogram data) coexist within a single object.
+event location, seismogram data) coexist within a single object —
+and exposing all ~99 raw headers alongside the curated attributes invites
+name clashes and reference-time mixups: raw `t0` (a `float`, an offset in
+seconds from *that file's own* reference time) would sit right next to
+`SAC.timestamps.t0` (a [`pandas.Timestamp`][] in UTC, described below —
+a fixed point in calendar time, not an offset from another point) under
+the same name but with incompatible types and semantics — mixing the two,
+or comparing `t0` across two files with different reference times,
+produces a wrong answer with no indication anything went wrong.
 
-The [`SAC`][pysmo.classes.SAC] class solves this by inheriting from
-[`SacIO`][pysmo.lib.io.SacIO] and adding helper-class attributes. While
-[`SacIO`][pysmo.lib.io.SacIO] itself comprises roughly 800 lines of code,
-the adaptation layer in [`SAC`][pysmo.classes.SAC] is only around 200.
-Typically, it is much less work to adapt an existing class than what went into
-building it in the first place:
+[`SAC`][pysmo.classes.SAC] solves this with the composition variant above:
+it holds a [`SacIO`][pysmo.lib.io.SacIO] instance
+([`SAC.native`][pysmo.classes.SAC.native]) rather than inheriting from it,
+and adds helper-class attributes
+([`station`][pysmo.classes.SAC.station]/[`event`][pysmo.classes.SAC.event]/
+[`seismogram`][pysmo.classes.SAC.seismogram]/
+[`timestamps`][pysmo.classes.SAC.timestamps]) that read from and write to
+it. Only a small, deliberately curated surface (file I/O) is forwarded onto
+[`SAC`][pysmo.classes.SAC] directly; seismogram data and sampling interval
+are reached via [`SAC.seismogram`][pysmo.classes.SAC.seismogram], and the
+raw header names stay reachable only via `SAC.native.<name>`, for users who
+specifically want them, rather than sitting on `SAC` itself under the same
+names as the curated attributes. Typically, it is much less work to adapt
+an existing class than what went into building it in the first place:
 
 ```python
 >>> from pysmo import Seismogram, Station, Event
@@ -211,17 +245,6 @@ needs properties that convert between the two, not simple aliases.
 (`end_time` isn't read from `Trace.stats.endtime` at all — it's derived
 from `begin_time` and `delta` instead, the same way
 [`Seismogram`][pysmo.Seismogram]'s `end_time` is meant to be computed.)
-
-`Trace` is also mutable, in both directions. ObsPy's own processing methods
-(`.filter()`, `.taper()`, `.detrend()`, etc.) mutate it after you obtain it,
-and [`pysmo.functions`][] mutates it too, the other way round: functions
-like [`detrend`][pysmo.functions.detrend]/[`crop`][pysmo.functions.crop]/
-[`resample`][pysmo.functions.resample] assign to `.data`/`.delta`/
-`.begin_time` in place rather than returning a new object (unless called
-with `clone=True`). So both directions need to work, which means this
-adapter needs read/write properties with setters that write back to
-`self._parent`, matching [`SacSeismogram`][pysmo.classes.SacSeismogram]'s
-existing getter/setter pairs — not a read-only version.
 
 ```python title="trace_seismogram.py"
 --8<-- "docs/snippets/external_classes/trace_seismogram.py"

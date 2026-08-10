@@ -73,14 +73,14 @@ for header, header_dict in headers.items():
     if "allowed_vals" in header_dict:  # this means we are an enum header
         headers[header]["python_type"] = "str"
         headers[header]["is_enum"] = True
-        headers[header]["validators"] = ["validate_sacenum"]
+        headers[header]["validators"] = ["_validate_sacenum"]
     elif header_type == "f":
         headers[header]["python_type"] = "float"
         headers[header]["converter"] = "float"
         if header in time_headers:
             headers[header]["validators"] = [
                 "validators.instance_of(float)",
-                "validate_with_iztype",
+                "_validate_with_iztype",
             ]
         else:
             headers[header]["validators"] = ["validators.instance_of(float)"]
@@ -124,6 +124,10 @@ headers["evlo"]["validators"] = [
     "validators.ge(-180)",
     "validators.le(180)",
 ]
+
+# iztype must only change together with the time headers it references, so
+# it is frozen here and can only be changed via SacIO.change_ref_time().
+headers["iztype"]["on_setattr"] = "setters.frozen"
 
 # remove 'a' since it doesn't make sense here
 header_types.pop("a")

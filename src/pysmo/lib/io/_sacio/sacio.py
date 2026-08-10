@@ -1,4 +1,6 @@
 import struct
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from os import PathLike
 from pathlib import Path
@@ -10,14 +12,21 @@ from attrs import define
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
+from ._lib import SacIODefaults
 from ._sacio_rendered import (
     HEADER_TYPES,
+    IZTYPE,
     SAC_ENUMS_DICT,
     SAC_FOOTERS,
     SAC_HEADERS,
     SAC_TIME_HEADERS,
     SacIOBase,
 )
+
+# iztype values that name an actual time header and can therefore be used as
+# a zero-time reference. Excludes "unkn" (no reference) and "day" (midnight
+# of the reference GMT day, which is not a header of its own).
+_IZTYPE_TARGET_HEADERS = frozenset(IZTYPE.__members__) - {"unkn", "day"}
 
 
 @define(kw_only=True)
@@ -35,8 +44,9 @@ class SacIO(SacIOBase):
 
     Tip:
         This class should typically never be used directly. Instead use the
-        [`SAC`][pysmo.classes.SAC] class, which inherits all attributes and
-        methods from here.
+        [`SAC`][pysmo.classes.SAC] class, which wraps a `SacIO` instance
+        (reachable as [`SAC.native`][pysmo.classes.SAC.native]) and exposes
+        it through pysmo types.
 
     Examples:
         Create a new instance from a file and print seismogram data:
@@ -69,11 +79,47 @@ class SacIO(SacIOBase):
         0.05
         >>>
         ```
-
-    For each SAC(file) header field there is a corresponding attribute in this
-    class. There are a lot of header fields in a SAC file, which are all called
-    the same way when using `SacIO`.
     """
+
+    @contextmanager
+    def raw(self) -> Iterator[None]:
+        """Temporarily relax cross-field header restrictions on this instance.
+
+        Some headers are restricted based on the value of another header,
+        rather than by type or range alone. Writing a value that violates
+        such a restriction normally raises `RuntimeError`; within this
+        context, that check is skipped, so the write goes through.
+
+        For example, [`iztype`][pysmo.lib.io.SacIO.iztype] names one time
+        header (`b`, `o`, `a`, `t0`, etc.) as the zero-time reference, and
+        that header is normally pinned at `0`.
+        [`change_ref_time`][pysmo.lib.io.SacIO.change_ref_time] and
+        [`read_buffer`][pysmo.lib.io.SacIO.read_buffer] use this context
+        manager internally to move or replace the zero-time header before
+        the restriction holds again.
+
+        Note:
+            Only cross-field restrictions like this are relaxed, and only
+            on this instance. Other checks (type, enum membership,
+            numeric bounds, string length) still apply.
+
+        Examples:
+            ```python
+            >>> from pysmo.lib.io import SacIO
+            >>> sac = SacIO(o=0.0, iztype="o")
+            >>> with sac.raw():
+            ...     sac.o = 12.0
+            ...
+            >>> sac.o
+            12.0
+            >>>
+            ```
+        """
+        self._raw_mode = True
+        try:
+            yield
+        finally:
+            self._raw_mode = False
 
     @property
     def depmin(self) -> int | float | None:
@@ -225,7 +271,7 @@ class SacIO(SacIOBase):
 
     @property
     def ref_datetime(self) -> datetime | None:
-        """Return Python datetime object of GMT reference time and date."""
+        """GMT reference time and date, as a Python `datetime` object."""
         if (
             self.nzyear is None
             or self.nzjday is None
@@ -394,114 +440,187 @@ class SacIO(SacIOBase):
         else:
             file_byteorder = ">"
 
-        # Loop over all header fields and store them in the SAC object under their
-        # respective private names.
-        npts = 0
-        for header, header_metadata in SAC_HEADERS.items():
-            header_type = header_metadata.type
-            header_required = header_metadata.required
-            header_undefined = HEADER_TYPES[header_type].undefined
-            start = header_metadata.start
-            length = header_metadata.length
-            end = start + length
-            if end >= len(buffer):
-                continue
-            content = buffer[start:end]
-            value = struct.unpack(file_byteorder + header_metadata.format, content)[0]
-            if isinstance(value, bytes):
-                # strip spaces and "\x00" chars
-                value = value.decode().rstrip(" \x00")
+        # Reusing an existing instance (SAC.read/read_buffer's documented
+        # reload path) must not leave it in a mix of old and new file
+        # state. Suspend the zero-time guard for the whole import below:
+        # otherwise a header could still carry this instance's *previous*
+        # iztype-pinned value while that old iztype hasn't been overwritten
+        # yet, and setting it to the new file's value would incorrectly
+        # raise. iztype itself goes through object.__setattr__ throughout,
+        # since it is frozen (see change_ref_time) independently of this
+        # guard.
+        with self.raw():
+            # Reset optional headers to their defaults first, so a header
+            # this file doesn't define ends up unset rather than keeping a
+            # stale value from a previously loaded file.
+            for header, header_metadata in SAC_HEADERS.items():
+                if header_metadata.required:
+                    continue
+                default = getattr(SacIODefaults, header, None)
+                if header == "iztype":
+                    object.__setattr__(self, header, default)
+                    continue
+                try:
+                    setattr(self, header, default)
+                except AttributeError as e:
+                    if "object has no setter" in str(e):
+                        pass
 
-            # npts is read only property in this class, but is needed for reading data
-            if header == "npts":
-                npts = int(value)
-
-            # raise error if header is undefined AND required
-            if value == header_undefined and header_required:
-                raise RuntimeError(
-                    f"Required {header=} is undefined - invalid SAC file!"
-                )
-
-            # skip if undefined (value == -12345...) and not required
-            if value == header_undefined and not header_required:
-                continue
-
-            # convert enumerated header to string and format others
-            if header_type == "i":
-                value = SAC_ENUMS_DICT[header](value).name
-
-            # SAC file has headers fields which are read only attributes in this
-            # class. We skip them with this try/except.
-            # TODO: This is a bit crude, should maybe be a bit more specific.
-            try:
-                setattr(self, header, value)
-            except AttributeError as e:
-                if "object has no setter" in str(e):
-                    pass
-
-        # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks,
-        # which is something we don't support for now.
-        if self.iftype.lower() != "time":
-            raise NotImplementedError(
-                f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported."  # noqa: E501
-            )
-
-        # Read first data block
-        start = 632
-        length = npts * 4
-        data_end = start + length
-        self.data = np.array([])
-        if length > 0:
-            data_end = start + length
-            data_format = file_byteorder + str(npts) + "f"
-            if data_end > len(buffer):
-                raise EOFError()
-            content = buffer[start:data_end]
-            data = struct.unpack(data_format, content)
-            self.data = np.array(data)
-
-        if self.nvhdr == 7:
-            for footer, footer_metadata in SAC_FOOTERS.items():
-                undefined = -12345.0
-                length = 8
-                start = footer_metadata.start + data_end
+            # Loop over all header fields and store them in the SAC object under their
+            # respective private names.
+            npts = 0
+            for header, header_metadata in SAC_HEADERS.items():
+                header_type = header_metadata.type
+                header_required = header_metadata.required
+                header_undefined = HEADER_TYPES[header_type].undefined
+                start = header_metadata.start
+                length = header_metadata.length
                 end = start + length
-
-                if end > len(buffer):
-                    raise EOFError()
+                if end >= len(buffer):
+                    continue
                 content = buffer[start:end]
+                value = struct.unpack(file_byteorder + header_metadata.format, content)[
+                    0
+                ]
+                if isinstance(value, bytes):
+                    # strip spaces and "\x00" chars
+                    value = value.decode().rstrip(" \x00")
 
-                value = struct.unpack(file_byteorder + "d", content)[0]
+                # npts is read only property in this class, but is needed for reading data
+                if header == "npts":
+                    npts = int(value)
 
-                # skip if undefined (value == -12345...)
-                if value == undefined:
+                # raise error if header is undefined AND required
+                if value == header_undefined and header_required:
+                    raise RuntimeError(
+                        f"Required {header=} is undefined - invalid SAC file!"
+                    )
+
+                # skip if undefined (value == -12345...) and not required
+                if value == header_undefined and not header_required:
+                    continue
+
+                # convert enumerated header to string and format others
+                if header_type == "i":
+                    value = SAC_ENUMS_DICT[header](value).name
+
+                # iztype is frozen after construction (see change_ref_time), but
+                # reading a file must still be able to set it from raw data.
+                if header == "iztype":
+                    object.__setattr__(self, header, value)
                     continue
 
                 # SAC file has headers fields which are read only attributes in this
                 # class. We skip them with this try/except.
                 # TODO: This is a bit crude, should maybe be a bit more specific.
                 try:
-                    setattr(self, footer, value)
+                    setattr(self, header, value)
                 except AttributeError as e:
                     if "object has no setter" in str(e):
                         pass
 
-    def change_all_times(self, dtime: int | float) -> None:
-        """Change all time headers by the same amount.
+            # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks,
+            # which is something we don't support for now.
+            if self.iftype.lower() != "time":
+                raise NotImplementedError(
+                    f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported."  # noqa: E501
+                )
+
+            # Read first data block
+            start = 632
+            length = npts * 4
+            data_end = start + length
+            self.data = np.array([])
+            if length > 0:
+                data_end = start + length
+                data_format = file_byteorder + str(npts) + "f"
+                if data_end > len(buffer):
+                    raise EOFError()
+                content = buffer[start:data_end]
+                data = struct.unpack(data_format, content)
+                self.data = np.array(data)
+
+            if self.nvhdr == 7:
+                for footer, footer_metadata in SAC_FOOTERS.items():
+                    undefined = -12345.0
+                    length = 8
+                    start = footer_metadata.start + data_end
+                    end = start + length
+
+                    if end > len(buffer):
+                        raise EOFError()
+                    content = buffer[start:end]
+
+                    value = struct.unpack(file_byteorder + "d", content)[0]
+
+                    # skip if undefined (value == -12345...)
+                    if value == undefined:
+                        continue
+
+                    # SAC file has headers fields which are read only attributes in this
+                    # class. We skip them with this try/except.
+                    # TODO: This is a bit crude, should maybe be a bit more specific.
+                    try:
+                        setattr(self, footer, value)
+                    except AttributeError as e:
+                        if "object has no setter" in str(e):
+                            pass
+
+    def change_ref_time(self, header: str) -> None:
+        """Re-point the reference time to a different time header.
+
+        `header`'s absolute time becomes the new reference time and
+        [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is updated to match.
+        [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] and every
+        other time header are shifted by the exact same amount, so the
+        absolute (UTC) time each of them represents is unchanged.
+
+        Note:
+            [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] only has
+            millisecond precision, so the shift actually applied is rounded
+            to the nearest millisecond. `header` therefore ends up within
+            half a millisecond of `0`, rather than exactly `0`, whenever its
+            old value was not already millisecond-aligned.
 
         Args:
-            dtime: Time offset to apply.
+            header: Name of the time header to make the new zero-time
+                reference (e.g. `"b"`, `"o"`, `"a"`, `"t0"`, ..., `"t9"`).
 
-        Warning:
-            This method also changes the value for the current zero time header.
-            Typically it should only be used when changing
-            [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype].
+        Raises:
+            ValueError: If `header` cannot be used as a zero-time
+                reference, if [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime]
+                is not set, or if `header`'s current value is `None`.
         """
-        try:
-            self._zero_time_can_be_none_zero = True
+        if header not in _IZTYPE_TARGET_HEADERS:
+            raise ValueError(
+                f"{header=} cannot be used as a zero-time reference "
+                f"(must be one of {sorted(_IZTYPE_TARGET_HEADERS)})."
+            )
+        old_ref = self.ref_datetime
+        if old_ref is None:
+            raise ValueError(
+                "Unable to change reference time: SacIO.ref_datetime is not set."
+            )
+        dtime = getattr(self, header)
+        if dtime is None:
+            raise ValueError(f"Unable to use '{header}' as a reference: it is not set.")
+
+        # ref_datetime only has millisecond precision, so read back the
+        # rounded shift it actually applied and use that for the headers.
+        # This keeps every header's absolute time exactly consistent with
+        # the new reference, at the cost of 'header' landing within half a
+        # millisecond of 0 rather than exactly on it.
+        self.ref_datetime = old_ref + timedelta(seconds=dtime)
+        new_ref = self.ref_datetime
+        assert new_ref is not None
+        actual_dtime = (new_ref - old_ref).total_seconds()
+
+        with self.raw():
             for time_header in SAC_TIME_HEADERS:
                 try:
-                    setattr(self, time_header, getattr(self, time_header) + dtime)
+                    setattr(
+                        self, time_header, getattr(self, time_header) - actual_dtime
+                    )
                 except AttributeError as e:
                     if "object has no setter" in str(e):
                         continue
@@ -509,5 +628,4 @@ class SacIO(SacIOBase):
                     if "unsupported operand type(s) for" in str(e):
                         continue
 
-        finally:
-            self._zero_time_can_be_none_zero = False
+        object.__setattr__(self, "iztype", header)
