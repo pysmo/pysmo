@@ -45,6 +45,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Simplify plots by inlining widgets, cleanup imports throughout pysmo
 - **(iccs)** Rename plot image to plot matrix image
 - Add more output to mccc and iccs
+- **(classes)** [**breaking**] Change SAC from a SacIO subclass to composition
 
 ### 🚀 New Features
 
