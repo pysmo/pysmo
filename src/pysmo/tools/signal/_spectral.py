@@ -1,6 +1,4 @@
-"""
-Functions for spectral analysis.
-"""
+"""Functions for spectral analysis."""
 
 import numpy as np
 from scipy import signal
@@ -13,8 +11,7 @@ __all__ = ["psd"]
 def psd(
     seismogram: Seismogram, nperseg: int, nfft: int, scaling: str = "density"
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Calculate the Power Spectral Density (PSD) of a Seismogram using Welch's method.
+    """Calculate the Power Spectral Density (PSD) of a Seismogram using Welch's method.
 
     This is a convenience wrapper around [`welch`][scipy.signal.welch].
 

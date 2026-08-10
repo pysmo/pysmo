@@ -22,7 +22,7 @@ def _convert_optional_float(value: float | None) -> float | None:
 
 @define(kw_only=True)
 class SacPZ:
-    """Import/export class for SAC PZ (pole-zero) files.
+    r"""Import/export class for SAC PZ (pole-zero) files.
 
     Reads an analog instrument response from a
     [SAC PZ](https://ds.iris.edu/files/sac-manual/commands/transfer.html)
@@ -40,7 +40,7 @@ class SacPZ:
         ```python
         >>> from pysmo import Response
         >>> from pysmo.classes import SacPZ
-        >>> text = '''\\
+        >>> text = '''\
         ... * NETWORK   (KNETWK): IU
         ... * STATION    (KSTNM): ANMO
         ... * LOCATION   (KHOLE): 00
@@ -49,10 +49,10 @@ class SacPZ:
         ... * END               :
         ... * INPUT UNIT        : M
         ... ZEROS 2
-        ... \\t+0.000000e+00\\t+0.000000e+00
-        ... \\t+0.000000e+00\\t+0.000000e+00
+        ... \t+0.000000e+00\t+0.000000e+00
+        ... \t+0.000000e+00\t+0.000000e+00
         ... POLES 1
-        ... \\t-1.000000e-02\\t+0.000000e+00
+        ... \t-1.000000e-02\t+0.000000e+00
         ... CONSTANT 1.0e+09
         ... '''
         >>> response = SacPZ.from_text(text)
@@ -175,8 +175,7 @@ class SacPZ:
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
-        """Fetch and parse an instrument response from the EarthScope SACPZ
-        web service, selecting one epoch.
+        """Fetch and parse an instrument response from the EarthScope SACPZ web service, selecting one epoch.
 
         Unlike [`StationXML.fetch`][pysmo.classes.StationXML.fetch], epoch
         selection happens server-side: the SACPZ web service's own `time`

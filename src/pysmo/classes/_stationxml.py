@@ -43,7 +43,7 @@ def _matching_epochs(
 
 @define(kw_only=True)
 class StationXML:
-    """Import class for FDSN StationXML response metadata.
+    r"""Import class for FDSN StationXML response metadata.
 
     Reads an instrument response from a
     [FDSN StationXML](http://www.fdsn.org/xml/station/) document (as
@@ -65,7 +65,7 @@ class StationXML:
         ```python
         >>> from pysmo import Response, StagedResponse
         >>> from pysmo.classes import StationXML
-        >>> xml = b'''\\
+        >>> xml = b'''\
         ... <?xml version="1.0"?>
         ... <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
         ...   <Network code="IU">
@@ -233,8 +233,7 @@ class StationXML:
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
-        """Fetch and parse an instrument response from the EarthScope FDSN
-        station web service, selecting one epoch.
+        """Fetch and parse an instrument response from the EarthScope FDSN station web service, selecting one epoch.
 
         A channel's instrument response usually has several epochs (e.g.
         after a sensor swap), so the request is narrowed to a single one:

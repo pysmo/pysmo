@@ -64,7 +64,7 @@ class Seismogram(Protocol):
 
 # --8<-- [start:seismogram-mixin]
 class SeismogramEndtimeMixin:
-    """Mixin class to add `end_time` property to a `Seismogram` object."""
+    """A mixin class that adds a computed `end_time` property to any class that already has `begin_time`, `delta`, and `data`."""
 
     __slots__ = ()
 
