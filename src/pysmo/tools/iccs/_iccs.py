@@ -207,11 +207,11 @@ class ICCS:
     if relevant parameters are updated.
 
     Examples:
-        We begin with a set of SAC files of the same event, recorded at different
-        stations. All files have a preliminary phase arrival estimate saved in the
-        `T0` SAC header, so we can use these files to create instances of the
-        [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] class for use
-        with the [`ICCS`][pysmo.tools.iccs.ICCS] class:
+        This example starts with a set of SAC files of the same event, recorded at
+        different stations. All files have a preliminary phase arrival estimate
+        saved in the `T0` SAC header, so these files can be used to create
+        instances of the [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram]
+        class for use with the [`ICCS`][pysmo.tools.iccs.ICCS] class:
 
         ```python
         >>> from pysmo.classes import SAC
@@ -232,7 +232,7 @@ class ICCS:
         ```
 
         To better illustrate the different modes of running the ICCS algorithm,
-        we modify the data and picks in the seismograms to make them **worse**
+        the data and picks in the seismograms are modified to make them **worse**
         than they actually are:
 
         ```python
@@ -257,8 +257,8 @@ class ICCS:
         >>>
         ```
 
-        We can now create an instance of the [`ICCS`][pysmo.tools.iccs.ICCS]
-        class and plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
+        An instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class can now be
+        created, to plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
         [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]:
 
         ```python
@@ -288,7 +288,7 @@ class ICCS:
         The phase emergence is not visible in the stack, and the (absolute)
         correlation coefficients of the seismograms are not very high. This
         shows the initial picks are not very good and/or that the data are of
-        low quality. To run the ICCS algorithm, we simply call (execute) the
+        low quality. To run the ICCS algorithm, simply call (execute) the
         ICCS instance:
 
         ```python
@@ -871,7 +871,7 @@ class ICCS:
                 selected seismograms).
             min_cc: Minimum correlation coefficient required to include a pair
                 in the inversion.
-            damping: Tikhonov regularization strength. Set to 0 to disable.
+            damping: Tikhonov regularisation strength. Set to 0 to disable.
             abs_max: If `True`, uses absolute max correlation (polarity insensitive)
                 for the pairwise delays.
 

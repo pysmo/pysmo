@@ -1,6 +1,5 @@
 # flake8: noqa: E402, F403
-"""
-Signal processing functions for pysmo types.
+"""Signal processing functions for pysmo types.
 
 Functions operate on pysmo [`Seismogram`][pysmo.Seismogram] objects and span
 filtering, spectral analysis, delay estimation and array-wide arrival-time
