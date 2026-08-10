@@ -503,7 +503,9 @@ header_fields:
       volts: Velocity in volts.
 
   iztype:
-    description: Reference time equivalence.
+    description: >-
+      Reference time equivalence. Read-only; changed via
+      `SacIO.change_ref_time`.
     start: 348
     header_type: i
     allowed_vals:

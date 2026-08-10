@@ -155,7 +155,7 @@ def haversine(location_1: Location, location_2: Location) -> float:
         >>> haversine(sac.event, sac.station)
         77.638354
         >>> # compare with the SAC gcarc header (spherical law of cosines)
-        >>> float(sac.gcarc)
+        >>> float(sac.native.gcarc)
         77.638354
         >>>
         ```
