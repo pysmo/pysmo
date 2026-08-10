@@ -22,7 +22,6 @@ subpackages.
 from importlib.metadata import version
 
 from ._types import (
-    EpochProvenance,
     Event,
     Location,
     LocationWithDepth,
@@ -75,7 +74,6 @@ __all__ = [
     "Response",
     "StagedResponse",
     "ResponseStage",
-    "EpochProvenance",
     "MiniSeismogram",
     "MiniStation",
     "MiniEvent",
