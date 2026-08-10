@@ -13,7 +13,6 @@ __all__ = [
     "StagedResponse",
     "MiniResponseStage",
     "MiniStagedResponse",
-    "EpochProvenance",
 ]
 
 
@@ -137,13 +136,20 @@ class StagedResponse(Response, Protocol):
 
 
 @runtime_checkable
-class EpochProvenance(Protocol):
-    """Protocol class to define the `EpochProvenance` type.
+class _EpochProvenance(Protocol):
+    """Protocol class to define the `_EpochProvenance` type.
 
     Channel identity (network/station/location/channel) plus the validity
     window of one response epoch — the bookkeeping needed to place a
     `Response` within a specific channel and time range, independent of the
     response data itself.
+
+    Private: unlike `Response`/`ResponseStage`/`StagedResponse`, this exists
+    only so `pysmo.lib.io.write_sacpz` (via `ResponseWithEpoch`) can
+    type-check, not to be implemented by third-party code directly. Real
+    callers already satisfy it structurally as part of a bigger object
+    (`SacPZ`, `StationXML`), so it is deliberately not exported at the
+    `pysmo` root namespace.
     """
 
     network: str
