@@ -66,6 +66,26 @@ class TestSAC:
         assert isinstance(sac.event, Event)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_native_is_frozen(self, sacfile: Path) -> None:
+        """Reassigning `native` would orphan the nested helpers (they bind
+        to the `SacIO` instance at construction time), so it must be
+        blocked. Reloading data must go through `read`/`read_buffer`,
+        which mutate the same `SacIO` instance in place instead."""
+
+        sac = SAC.from_file(sacfile)
+        original_native = sac.native
+        with pytest.raises(AttributeError):
+            sac.native = SacIO()  # type: ignore[misc]
+        assert sac.native is original_native
+
+        sac.read(sacfile)
+        assert sac.native is original_native
+        assert sac.station._parent is sac.native
+        assert sac.event._parent is sac.native
+        assert sac.seismogram._parent is sac.native
+        assert sac.timestamps._parent is sac.native
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:
         sacseis = SAC.from_file(sacfile).seismogram
         sacio = SacIO.from_file(sacfile)
@@ -161,11 +181,11 @@ class TestSAC:
         sacstation.latitude = new_latitude
         sacstation.longitude = new_longitude
         sacstation.elevation = new_elevation
-        assert sacstation.name == new_name == sac.kstnm
-        assert sacstation.network == new_network == sac.knetwk
-        assert sacstation.latitude == new_latitude == sac.stla
-        assert sacstation.longitude == new_longitude == sac.stlo
-        assert sacstation.elevation == new_elevation == sac.stel
+        assert sacstation.name == new_name == sac.native.kstnm
+        assert sacstation.network == new_network == sac.native.knetwk
+        assert sacstation.latitude == new_latitude == sac.native.stla
+        assert sacstation.longitude == new_longitude == sac.native.stlo
+        assert sacstation.elevation == new_elevation == sac.native.stel
         with pytest.raises(ValueError):
             sacstation.latitude = bad_latitude
         with pytest.raises(ValueError):
@@ -173,22 +193,22 @@ class TestSAC:
 
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station
-        sac.kstnm = None
+        sac.native.kstnm = None
         with pytest.raises(TypeError):
             sacstation.name
-        sac.stla = None
+        sac.native.stla = None
         with pytest.raises(TypeError):
             sacstation.latitude
-        sac.stlo = None
+        sac.native.stlo = None
         with pytest.raises(TypeError):
             sacstation.longitude
-        sac.knetwk = None
+        sac.native.knetwk = None
         with pytest.raises(TypeError):
             sacstation.network
-        sac.khole = None
+        sac.native.khole = None
         with pytest.raises(TypeError):
             sacstation.location
-        sac.kcmpnm = None
+        sac.native.kcmpnm = None
         with pytest.raises(TypeError):
             sacstation.channel
 
@@ -201,22 +221,22 @@ class TestSAC:
         assert sacevent.longitude == sacio.evlo == pytest.approx(-72.89800262451172)
         if sacio.evdp is not None:
             assert sacevent.depth == sacio.evdp * 1000 == pytest.approx(22900)
-        if sac.o is not None:
+        if sac.native.o is not None:
             assert sacevent.time == sac.seismogram.begin_time + pd.Timedelta(
-                seconds=sac.o - sac.b
+                seconds=sac.native.o - sac.native.b
             )
         newtime = sacevent.time + pd.Timedelta(seconds=30)
-        if sac.iztype == "o":
+        if sac.native.iztype == "o":
             with pytest.raises(RuntimeError):
                 sacevent.time = newtime
         else:
             sacevent.time = newtime
             assert sacevent.time.timestamp() == pytest.approx(newtime.timestamp())
         sacevent.latitude, sacevent.longitude, sacevent.depth = 32, 100, 5000
-        assert sacevent.latitude == 32 == sac.evla
-        assert sacevent.longitude == 100 == sac.evlo
-        if sac.evdp:
-            assert sacevent.depth == 5000 == sac.evdp * 1000
+        assert sacevent.latitude == 32 == sac.native.evla
+        assert sacevent.longitude == 100 == sac.native.evlo
+        if sac.native.evdp:
+            assert sacevent.depth == 5000 == sac.native.evdp * 1000
         with pytest.raises(ValueError):
             sacevent.latitude = 100
         with pytest.raises(ValueError):
@@ -227,7 +247,7 @@ class TestSAC:
             sacevent.longitude = -500
         #
         #
-        sac.evdp = None
+        sac.native.evdp = None
         with pytest.raises(TypeError):
             sacevent.depth
 
