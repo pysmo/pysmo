@@ -40,8 +40,7 @@ def bandpass[T: Seismogram](
     zerophase: bool = False,
     clone: bool = False,
 ) -> T | None:
-    """
-    Apply a bandpass filter to the input seismogram.
+    """Apply a bandpass filter to the input seismogram.
 
     Args:
         seismogram: The input seismogram to be filtered.
@@ -113,8 +112,7 @@ def highpass[T: Seismogram](
     zerophase: bool = False,
     clone: bool = False,
 ) -> T | None:
-    """
-    Apply a highpass filter to the input seismogram.
+    """Apply a highpass filter to the input seismogram.
 
     Args:
         seismogram: The input seismogram to be filtered.
@@ -177,8 +175,7 @@ def lowpass[T: Seismogram](
     zerophase: bool = False,
     clone: bool = False,
 ) -> T | None:
-    """
-    Apply a lowpass filter to the input seismogram.
+    """Apply a lowpass filter to the input seismogram.
 
     Args:
         seismogram: The input seismogram to be filtered.
@@ -245,8 +242,7 @@ def bandstop[T: Seismogram](
     zerophase: bool = False,
     clone: bool = False,
 ) -> T | None:
-    """
-    Apply a bandstop filter to the input seismogram.
+    """Apply a bandstop filter to the input seismogram.
 
     Args:
         seismogram: The input seismogram to be filtered.

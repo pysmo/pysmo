@@ -1,6 +1,5 @@
 # flake8: noqa: E402
-"""
-Pysmo protocol classes and their minimal implementations.
+"""Pysmo protocol classes and their minimal implementations.
 
 --8<-- [start:in-the-box]
 The [`pysmo`][] base namespace provides protocol classes used as type hints

@@ -1,5 +1,4 @@
-"""
-Utilities for plotting with pysmo types.
+"""Utilities for plotting with pysmo types.
 
 Provides functions to convert a [`Seismogram`][pysmo.Seismogram]'s time axis
 into arrays matplotlib can plot directly

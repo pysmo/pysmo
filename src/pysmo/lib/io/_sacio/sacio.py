@@ -31,8 +31,7 @@ _IZTYPE_TARGET_HEADERS = frozenset(IZTYPE.__members__) - {"unkn", "day"}
 
 @define(kw_only=True)
 class SacIO(SacIOBase):
-    """
-    Access SAC files in Python.
+    """Access SAC files in Python.
 
     The `SacIO` class reads and writes data and header values to and from a
     SAC file. Instances of `SacIO` provide attributes named identically to

@@ -1,6 +1,5 @@
 # flake8: noqa: E402, F403
-"""
-Building-block functions for pysmo types.
+"""Building-block functions for pysmo types.
 
 --8<-- [start:in-the-box]
 The [`pysmo.functions`][] module provides low-level functions that perform

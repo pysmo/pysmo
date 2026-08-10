@@ -1,5 +1,4 @@
-"""
-Generate realistic synthetic noise that matches the naturally observed amplitude spectrum.
+"""Generate realistic synthetic noise that matches the naturally observed amplitude spectrum.
 
 Examples:
     Given the spectral amplitude in observed seismic noise on Earth is not flat
@@ -15,7 +14,9 @@ Examples:
 
     matplotlib.use("Agg")
 
+    # fmt: off
     --8<-- "docs/snippets/tools/noise/peterson.py"
+    # fmt: on
 
     from pathlib import Path
 
@@ -40,7 +41,9 @@ Examples:
 
     ??? quote "Example source code"
         ```python title="peterson.py"
+        # fmt: off
         --8<-- "docs/snippets/tools/noise/peterson.py"
+        # fmt: on
         ```
 """
 
@@ -94,6 +97,7 @@ class NoiseModel:
     )
 
     def __post_init__(self) -> None:
+        """Validate `psd`/`T` have matching lengths, then freeze a copy of `psd`."""
         if np.size(self.psd) != np.size(self.T):
             raise ValueError(
                 f"psd ({np.size(self.psd)}) and T ({np.size(self.T)}) arrays are not of same size"
@@ -203,8 +207,7 @@ NHNM = NoiseModel(
 
 
 def peterson(noise_level: float) -> NoiseModel:
-    """Generate a noise model by interpolating between Peterson's[^1]
-    New Low Noise Model (NLNM) and New High Noise Model (NHNM).
+    """Generate a noise model by interpolating between Peterson's[^1] New Low Noise Model (NLNM) and New High Noise Model (NHNM).
 
     [^1]: Peterson, Jon R. Observations and Modeling of Seismic Background
         Noise. Report, 93–322, 1993, https://doi.org/10.3133/ofr93322. USGS

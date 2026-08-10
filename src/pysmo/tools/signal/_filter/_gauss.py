@@ -24,8 +24,7 @@ def envelope[T: Seismogram](
 def envelope[T: Seismogram](
     seismogram: T, fc: float, alpha: float, clone: bool = False
 ) -> T | None:
-    """
-    Calculates the envelope of a gaussian filtered seismogram.
+    """Calculates the envelope of a gaussian filtered seismogram.
 
     Args:
         seismogram: Seismogram object.
@@ -70,8 +69,7 @@ def gauss[T: Seismogram](
 def gauss[T: Seismogram](
     seismogram: T, fc: float, alpha: float, clone: bool = False
 ) -> T | None:
-    """
-    Returns a gaussian filtered seismogram.
+    """Returns a gaussian filtered seismogram.
 
     Args:
         seismogram: Seismogram object.

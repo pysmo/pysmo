@@ -36,8 +36,7 @@ def filter[T: Seismogram](
     clone: bool = False,
     **filter_options: bool | int | float,
 ) -> T | None:
-    """
-    Apply a specified filter to the input seismogram.
+    """Apply a specified filter to the input seismogram.
 
     This function is a convenience wrapper that calls other filters in this module.
 

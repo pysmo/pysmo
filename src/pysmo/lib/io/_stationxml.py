@@ -2,10 +2,10 @@
 
 This module implements the parsing side of the response-relevant subset of
 [FDSN StationXML](http://www.fdsn.org/xml/station/). It returns uninterpreted
-[`_RawResponse`][pysmo.lib.io._stationxml._RawResponse] instances — one per
-`<Channel>` epoch — without constructing any `pysmo` type. Interpretation
-into a [`Response`][pysmo.Response]-compatible object happens one layer up,
-in [`pysmo.classes.StationXML`][].
+`_RawResponse` instances — one per `<Channel>` epoch — without constructing
+any `pysmo` type. Interpretation into a
+[`Response`][pysmo.Response]-compatible object happens one layer up, in
+[`pysmo.classes.StationXML`][].
 """
 
 import warnings
@@ -29,8 +29,7 @@ _DIGITAL_CF_TYPE = "DIGITAL"
 
 `<Coefficients>` can also encode an `ANALOG (RADIANS/SECOND)` or `ANALOG
 (HERTZ)` s-domain rational function; only `DIGITAL` (z-domain) belongs in
-[`_RawDigitalStage`][pysmo.lib.io._stationxml._RawDigitalStage], which is
-evaluated with `scipy.signal.freqz`."""
+`_RawDigitalStage`, which is evaluated with `scipy.signal.freqz`."""
 
 
 @dataclass
@@ -81,6 +80,7 @@ def _parse_pz_values(pz: ET.Element, tag: str) -> list[complex]:
     """Parse a `PolesZeros` element's `<tag>` entries into complex values.
 
     Args:
+        pz: `<PolesZeros>` element to read entries from.
         tag: Entry element name to look up (`"Zero"` or `"Pole"`), sorted by
             their `number` attribute.
     """
@@ -101,6 +101,7 @@ def _parse_coefficients(
     """Parse an element's `<tag>` entries into floats, sorted by `index_attr`.
 
     Args:
+        elem: Element to read `<tag>` entries from.
         tag: Entry element name to look up (`"Numerator"`, `"Denominator"`
             or `"NumeratorCoefficient"`).
         index_attr: Attribute each entry is indexed/sorted by. FDSN
@@ -162,9 +163,7 @@ def _normalise_unit_gain(
 
 
 def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
-    """Parse `stage`'s `<Decimation>` element into `(input_sample_rate,
-    decimation_factor, correction)`; `correction` defaults to `0.0` if
-    `<Correction>` is absent."""
+    """Parse `stage`'s `<Decimation>` element into `(input_sample_rate, decimation_factor, correction)`; `correction` defaults to `0.0` if `<Correction>` is absent."""
     decimation = stage.find("fdsn:Decimation", _NS)
     if decimation is None:
         raise ValueError(f"Stage {stage.get('number')} has no <Decimation> element.")
@@ -206,7 +205,7 @@ _StageParseResult = (
     | tuple[Literal["digital"], _RawDigitalStage]
     | tuple[Literal["gain"], None]
 )
-"""[`_parse_stage`][pysmo.lib.io._stationxml._parse_stage]'s tagged-union result."""
+"""`_parse_stage`'s tagged-union result."""
 
 
 def _parse_stage(stage: ET.Element) -> _StageParseResult:
@@ -296,8 +295,7 @@ def _parse_stage(stage: ET.Element) -> _StageParseResult:
 def _parse_response(
     response: ET.Element,
 ) -> tuple[list[complex], list[complex], float, float, str, list[_RawDigitalStage]]:
-    """Parse a `<Response>` element into `(poles, zeros, normalization_factor,
-    sensitivity_value, sensitivity_input_units, digital_stages)`."""
+    """Parse a `<Response>` element into `(poles, zeros, normalization_factor, sensitivity_value, sensitivity_input_units, digital_stages)`."""
     sensitivity = response.find("fdsn:InstrumentSensitivity", _NS)
     if sensitivity is None:
         raise ValueError("Response has no <InstrumentSensitivity> element.")
@@ -326,7 +324,7 @@ def _parse_response(
                 # Cascaded analog stages (e.g. a sensor followed by an
                 # analog preamplifier encoded per FDSN convention as a
                 # gain-only PolesZeros stage) multiply in the s-domain:
-                # their poles/zeros concatenate and normalization factors
+                # their poles/zeros concatenate and normalisation factors
                 # multiply together.
                 poles += parsed_poles
                 zeros += parsed_zeros

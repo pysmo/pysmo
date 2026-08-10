@@ -836,8 +836,7 @@ def time2index(
     time: pd.Timestamp,
     allow_out_of_bounds: bool = False,
 ) -> int:
-    """
-    Converts a specific timestamp to the corresponding data array index.
+    """Converts a specific timestamp to the corresponding data array index.
 
     Seismic data is sampled at discrete intervals. When a requested time does
     not align perfectly with a sample, this function selects the nearest

@@ -1,6 +1,4 @@
-"""
-Defaults for pysmo functions/classes.
-"""
+"""Defaults for pysmo functions/classes."""
 
 from dataclasses import dataclass
 from datetime import timezone

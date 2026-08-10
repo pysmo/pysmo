@@ -1,6 +1,5 @@
 # flake8: noqa: E402
-"""
-Iterative Cross-Correlation and Stack (ICCS).
+"""Iterative Cross-Correlation and Stack (ICCS).
 
 Warning:
     This module is being developed alongside a complete rewrite of
