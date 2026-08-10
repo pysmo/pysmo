@@ -31,23 +31,23 @@ from typing import Protocol, runtime_checkable
 
 import pandas as pd
 
-from pysmo import EpochProvenance, Response
+from pysmo import Response
+from pysmo._types.response import _EpochProvenance
 from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = ["parse_sacpz", "write_sacpz", "ResponseWithEpoch"]
 
 
 @runtime_checkable
-class ResponseWithEpoch(Response, EpochProvenance, Protocol):
+class ResponseWithEpoch(Response, _EpochProvenance, Protocol):
     """Protocol class to define the `ResponseWithEpoch` type.
 
-    A [`Response`][pysmo.Response] with
-    [`EpochProvenance`][pysmo.EpochProvenance] — what
-    [`write_sacpz`][pysmo.lib.io.write_sacpz] requires. Any object
-    satisfying both protocols (e.g. [`SacPZ`][pysmo.classes.SacPZ] or
-    [`StationXML`][pysmo.classes.StationXML]) already satisfies this one
-    structurally; there is usually no need to reference it directly unless
-    type-annotating a variable meant to hold whatever `write_sacpz` accepts.
+    A [`Response`][pysmo.Response] with `_EpochProvenance` (channel identity plus a
+    validity window) — what [`write_sacpz`][pysmo.lib.io.write_sacpz] requires. Any
+    object satisfying both protocols (e.g. [`SacPZ`][pysmo.classes.SacPZ] or
+    [`StationXML`][pysmo.classes.StationXML]) already satisfies this one structurally;
+    there is usually no need to reference it directly unless type-annotating a variable
+    meant to hold whatever `write_sacpz` accepts.
     """
 
 
@@ -221,7 +221,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
 
 
 def _sacpz_block(response: ResponseWithEpoch) -> str:
-    """Render a single Response+EpochProvenance object as one SAC PZ record."""
+    """Render a single `ResponseWithEpoch` object as one SAC PZ record."""
     end_date = response.end_date.isoformat() if response.end_date is not None else ""
 
     lines = [
@@ -256,9 +256,8 @@ def write_sacpz(
     """Write one or more Response objects to a SAC PZ file.
 
     Args:
-        responses: A single object satisfying both
-            [`Response`][pysmo.Response] and
-            [`EpochProvenance`][pysmo.EpochProvenance] (e.g.
+        responses: A single object satisfying
+            [`ResponseWithEpoch`][pysmo.lib.io.ResponseWithEpoch] (e.g.
             [`SacPZ`][pysmo.classes.SacPZ] or
             [`StationXML`][pysmo.classes.StationXML]), or a non-empty
             sequence of them.
