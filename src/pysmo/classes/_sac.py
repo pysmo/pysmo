@@ -215,11 +215,14 @@ class SacStation(_SacNested):
 
     @property
     def location(self) -> str:
-        """Location code."""
+        """Location code.
 
-        if self._parent.khole is None:
-            raise TypeError("SAC object location code 'khole' is None.")
-        return self._parent.khole
+        Unlike the other station identifiers, a missing location code
+        (`khole` not set) is common in real-world SAC files and is not
+        treated as an error - it is returned as an empty string.
+        """
+
+        return self._parent.khole or ""
 
     @location.setter
     def location(self, value: str) -> None:
