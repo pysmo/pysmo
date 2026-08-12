@@ -38,8 +38,7 @@ _FILTER_REGISTRY: FilterRegistry = {}
 
 
 def register_filter[F: Callable[..., Any]](func: F) -> F:
-    """
-    Decorator to mark and register valid filter functions.
+    """Decorator to mark and register valid filter functions.
 
     Registered functions are added to the `_FILTER_REGISTRY` and become available
     for use through the `pysmo.tools.signal.filter` convenience wrapper.

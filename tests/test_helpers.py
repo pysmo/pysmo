@@ -174,9 +174,7 @@ def assert_seismogram_modification(
         >>> def check_normalised(seis: Seismogram) -> None:
         ...     assert np.max(np.abs(seis.data)) <= 1.0
         >>> modified = assert_seismogram_modification(
-        ...     my_seismogram,
-        ...     normalize,
-        ...     custom_assertions=check_normalised
+        ...     my_seismogram, normalize, custom_assertions=check_normalised
         ... )
 
         With expected data validation:
@@ -186,7 +184,7 @@ def assert_seismogram_modification(
         ...     my_seismogram,
         ...     normalize,
         ...     expected_data=expected,
-        ...     rtol=1e-5  # relative tolerance
+        ...     rtol=1e-5,  # relative tolerance
         ... )
 
         With syrupy snapshot:
@@ -194,7 +192,7 @@ def assert_seismogram_modification(
         >>> modified = assert_seismogram_modification(
         ...     my_seismogram,
         ...     normalize,
-        ...     expected_data=snapshot  # syrupy snapshot fixture
+        ...     expected_data=snapshot,  # syrupy snapshot fixture
         ... )
     """
     # Test with clone=True - should return a new modified seismogram

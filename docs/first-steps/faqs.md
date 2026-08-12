@@ -3,6 +3,7 @@ icon: lucide/circle-question-mark
 tags:
   - First steps
 ---
+
 # Frequently asked questions
 
 ## What is pysmo?
@@ -16,9 +17,9 @@ This makes your code more modular, more reusable, and easier to maintain.
 ## How does pysmo relate to ObsPy?
 
 Pysmo is designed to complement existing tools rather than replace them. If you
-already use a library like [ObsPy](https://obspy.org), you can continue doing
-so and adapt its classes to conform to pysmo types. This lets you benefit from
-both ecosystems: the rich functionality of the other library, and the clean,
+already use a library like [ObsPy](https://obspy.org), you can continue doing so
+and adapt its classes to conform to pysmo types. This lets you benefit from both
+ecosystems: the rich functionality of the other library, and the clean,
 type-safe interfaces that pysmo provides.
 
 ## Do I need to rewrite my existing code to use pysmo?
@@ -70,13 +71,12 @@ Python skills in general, regardless of whether you continue using pysmo.
 
 !!! tip
 
-    Pysmo does make use of typing features that go beyond basic type
-    annotations. Python's type system has progressed considerably in recent
-    versions, and pysmo leans into that. You do not need to fully understand
-    these features to use pysmo, but they are what allow your editor or type
-    checker to catch errors before you even run your code. The
-    [first steps](index.md) page and the [tutorial](tutorial.md) walk through
-    these ideas step by step.
+    Pysmo does make use of typing features that go beyond basic type annotations.
+    Python's type system has progressed considerably in recent versions, and pysmo
+    leans into that. You do not need to fully understand these features to use
+    pysmo, but they are what allow your editor or type checker to catch errors
+    before you even run your code. The [first steps](index.md) page and the
+    [tutorial](tutorial.md) walk through these ideas step by step.
 
 ## When does pysmo really shine?
 
@@ -87,12 +87,12 @@ shared processing steps once. Over time you may even find that you — or someon
 else — have already written a function that does exactly what you need.
 
 Because pysmo types are much smaller than a typical monolithic seismogram class,
-populating them does not require a single file that contains everything. Instead,
-individual attributes can be sourced from wherever makes sense — a database, a
-web service, local files, or any combination of the above. Pysmo does not need
-to anticipate every possible way data might be structured in the future — new
-challenges and new data formats can be accommodated simply by writing classes
-that conform to the existing types.
+populating them does not require a single file that contains everything.
+Instead, individual attributes can be sourced from wherever makes sense — a
+database, a web service, local files, or any combination of the above. Pysmo
+does not need to anticipate every possible way data might be structured in the
+future — new challenges and new data formats can be accommodated simply by
+writing classes that conform to the existing types.
 
 ## Does pysmo enforce types at runtime?
 
@@ -101,16 +101,15 @@ tools like [mypy](https://mypy.readthedocs.io) or your IDE — not at runtime.
 This means Python will not stop you from passing the wrong type to a function,
 but a type checker will warn you before you ever run the code. If you need
 runtime validation, consider pairing pysmo with a library like
-[attrs](https://www.attrs.org) or
-[pydantic](https://docs.pydantic.dev).
+[attrs](https://www.attrs.org) or [pydantic](https://docs.pydantic.dev).
 
 !!! note
 
     While pysmo *types* do not perform runtime checks, some of the classes and
     functions shipped with pysmo do validate their inputs at runtime. The
-    distinction is that the types define an interface for static analysis,
-    whereas the concrete implementations may choose to enforce constraints
-    when they are actually used.
+    distinction is that the types define an interface for static analysis, whereas
+    the concrete implementations may choose to enforce constraints when they are
+    actually used.
 
 ## What if no pysmo type fits my data?
 

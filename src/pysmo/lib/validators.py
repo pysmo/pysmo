@@ -1,6 +1,4 @@
-"""
-Validators and converters for pysmo classes using [`attrs`][].
-"""
+"""Validators and converters for pysmo classes using [`attrs`][]."""
 
 from datetime import datetime, timedelta, timezone
 

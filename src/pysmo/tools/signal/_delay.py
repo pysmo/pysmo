@@ -34,8 +34,7 @@ def delay(
     max_shift: pd.Timedelta | None = None,
     abs_max: bool = False,
 ) -> tuple[pd.Timedelta, float]:
-    """
-    Cross correlates two seismograms to determine signal delay.
+    """Cross correlates two seismograms to determine signal delay.
 
     This function is a wrapper around the [`correlate`][scipy.signal.correlate]
     function. The default behaviour is to call the correlate function with
@@ -87,11 +86,10 @@ def delay(
             anti-correlation.
 
     Examples:
-        To illustration the use of the `delay()` function, we read a seismogram
-        from a SAC file and then generate a second seismogram from it by
-        modifying it with a shift in the data and a shift in the begin time.
-        This means the true delay is known, and we are able to compare the
-        computed delays with this known delay:
+        To illustrate the `delay()` function: this reads a seismogram from a
+        SAC file, then generates a second seismogram from it with a shift in
+        the data and in the begin time. That makes the true delay known, so
+        it can be compared against the computed delay:
 
         ```python
         >>> from pysmo import MiniSeismogram
@@ -125,11 +123,10 @@ def delay(
         >>>
         ```
 
-        As we know what the true delay is, we can mimic a scenario where an
-        approximate delay is known prior to the cross-correlation, which can be
-        used to limit the search space and speed up the calculation. Here we
-        assign a value of the known signal delay plus 1 second to the
-        `max_shift` parameter:
+        Since the true delay is known, this can mimic a scenario where an
+        approximate delay is known before the cross-correlation, which can be
+        used to limit the search space and speed up the calculation. Here,
+        `max_shift` is set to the known signal delay plus 1 second:
 
         ```python
         >>> max_shift = signal_delay + timedelta(seconds=1)
@@ -140,7 +137,7 @@ def delay(
         >>>
         ```
 
-        Setting `total_delay=True`, we also takes into account the difference
+        Setting `total_delay=True` also takes into account the difference
         in `begin_time` between the two seismograms:
 
         ```python
@@ -152,8 +149,8 @@ def delay(
         >>>
         ```
 
-        To demonstrate usage of the `abs_max` parameter, we flip the sign of
-        the second seismogram data:
+        To demonstrate the `abs_max` parameter, the second seismogram's data
+        is sign-flipped:
 
         ```python
         >>> seis2.data *= -1
@@ -227,8 +224,7 @@ def delay(
 def multi_delay(
     template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
 ) -> tuple[list[pd.Timedelta], list[float]]:
-    """
-    Calculates delays and correlation coefficients for a list of seismograms against a template.
+    """Calculates delays and correlation coefficients for a list of seismograms against a template.
 
     This function uses FFT-based cross-correlation to efficiently compute delays
     for multiple seismograms at once against a single template. This is faster
@@ -300,7 +296,7 @@ def multi_delay(
     len_t = len(template.data)
     len_s = max(len(s.data) for s in seismograms)
 
-    # pad to avoid circular convolution artifacts
+    # pad to avoid circular convolution artefacts
     # (length >= len_template + len_signal - 1)
     n_fft = next_fast_len(len_s + len_t - 1)
 
@@ -365,8 +361,7 @@ def multi_multi_delay(
     seismograms: Sequence[Seismogram],
     abs_max: bool,
 ) -> tuple[npt.NDArray[np.timedelta64], npt.NDArray[np.floating]]:
-    """
-    Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
+    """Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
 
     This function cross-correlates every seismogram with every other seismogram
     in the sequence using FFT-based cross-correlation. All FFTs are computed once
@@ -380,7 +375,7 @@ def multi_multi_delay(
     Note:
         Unlike most pysmo functions, this returns `numpy.timedelta64` values
         rather than [`Timedelta`][pandas.Timedelta]. This avoids the overhead
-        of an object array and allows efficient vectorized arithmetic in
+        of an object array and allows efficient vectorised arithmetic in
         downstream functions such as [`mccc`][pysmo.tools.signal.mccc].
         Convert individual elements with `pandas.Timedelta(delays[i, j])` if
         needed.
@@ -443,7 +438,7 @@ def multi_multi_delay(
     lengths = np.array([len(s.data) for s in seismograms])
     max_len = int(lengths.max())
 
-    # pad to avoid circular convolution artifacts
+    # pad to avoid circular convolution artefacts
     n_fft = next_fast_len(2 * max_len - 1)
 
     # normalise and pad all seismograms
@@ -499,13 +494,12 @@ def mccc(
 ) -> tuple[
     list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta, list[float], list[float]
 ]:
-    """
-    Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
+    """Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
 
     Computes all pairwise cross-correlation delays using
     [`multi_multi_delay`][pysmo.tools.signal.multi_multi_delay], then solves
     for self-consistent relative time shifts using a weighted least-squares
-    inversion with a zero-mean constraint and Tikhonov regularization. Pairs
+    inversion with a zero-mean constraint and Tikhonov regularisation. Pairs
     whose correlation coefficient falls below `min_cc` are excluded from the
     inversion.
 
@@ -517,7 +511,7 @@ def mccc(
             sampling interval.
         min_cc: Minimum correlation coefficient required to include a pair
             in the inversion.
-        damping: Tikhonov regularization strength. Set to 0 to disable.
+        damping: Tikhonov regularisation strength. Set to 0 to disable.
         abs_max: If `True`, uses absolute max correlation (polarity insensitive)
             for the pairwise delays.
 
@@ -667,7 +661,7 @@ def mccc(
     g_system = np.vstack([g_weighted, np.ones(n_traces) * constraint_weight])
     d_system = np.concatenate([d_weighted, [0.0]])
 
-    # Tikhonov regularization
+    # Tikhonov regularisation
     if damping > 0:
         g_system = np.vstack([g_system, damping * np.eye(n_traces)])
         d_system = np.concatenate([d_system, np.zeros(n_traces)])
