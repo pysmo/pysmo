@@ -2,10 +2,9 @@
 icon: lucide/boxes
 tags:
 
-- Classes
-- Mini
-- Usage
-
+  - Classes
+  - Mini
+  - Usage
 ---
 
 # Mini Classes
@@ -14,11 +13,11 @@ Because pysmo is built around its types rather than some all-encompassing class,
 it doesn't have a native class that can be used with the various functions and
 modules that come as part of this package. As shown in the
 [tutorial](../first-steps/tutorial.md), the idea is for you to use a tailor-made
-class for a particular use case. However, should you find yourself needing
-a class that has exactly the same attributes as a particular type, then pysmo
-has you covered with its "Mini" classes. These classes are minimal
-implementations of their respective types and are named accordingly (e.g.
-for the [`Seismogram`][pysmo.Seismogram] type there is a
+class for a particular use case. However, should you find yourself needing a
+class that has exactly the same attributes as a particular type, then pysmo has
+you covered with its "Mini" classes. These classes are minimal implementations
+of their respective types and are named accordingly (e.g. for the
+[`Seismogram`][pysmo.Seismogram] type there is a
 [`MiniSeismogram`][pysmo.MiniSeismogram] class).
 
 ## Helpful and restrictive
@@ -37,8 +36,8 @@ negative value, as a negative sampling interval is physically impossible.
 Similarly, the [`data`][pysmo.MiniSeismogram.data] attribute accepts lists or
 tuples and converts them to a [`numpy.ndarray`][numpy.ndarray] automatically.
 
-This "forgiving on input, strict on value" approach also applies when you
-modify attributes after the object has been created.
+This "forgiving on input, strict on value" approach also applies when you modify
+attributes after the object has been created.
 
 ## MiniSeismogram
 
@@ -56,13 +55,14 @@ At a first glance it looks similar to the examples in the
 might notice some differences:
 
 - Instead of using the built-in [`dataclasses.dataclass`][] it uses
-  [attrs.define][]. They look and work similarly, but we get the option to do
-  the advanced validation and conversion mentioned above.
-- The [`begin_time`][pysmo.MiniSeismogram.begin_time] is automatically
-  converted to a [`pandas.Timestamp`][pandas.Timestamp]. Timezone-aware values
-  are converted to UTC; timezone-naive values are assumed to be UTC.
+    [attrs.define][]. They look and work similarly, but we get the option to do
+    the advanced validation and conversion mentioned above.
+- The [`begin_time`][pysmo.MiniSeismogram.begin_time] is automatically converted
+    to a [`pandas.Timestamp`][pandas.Timestamp]. Timezone-aware values are
+    converted to UTC; timezone-naive values are assumed to be UTC.
 - Some default values are provided. These will typically be replaced in
-  real-world usage, but do allow for some convenience while quickly testing things.
+    real-world usage, but do allow for some convenience while quickly testing
+    things.
 
 ## Example workflow
 
@@ -71,11 +71,11 @@ an instance and populate it at the same time with data from another type. Pysmo
 provides two functions for this:
 
 - [`clone_to_mini`][pysmo.functions.clone_to_mini] creates a new Mini class
-  instance by copying matching attributes from an existing object. Attributes
-  present in the source but not in the Mini class are ignored, resulting in a
-  lightweight copy of the original data.
+    instance by copying matching attributes from an existing object. Attributes
+    present in the source but not in the Mini class are ignored, resulting in a
+    lightweight copy of the original data.
 - [`copy_from_mini`][pysmo.functions.copy_from_mini] does the reverse: it copies
-  attributes from a Mini class instance back to a compatible target object.
+    attributes from a Mini class instance back to a compatible target object.
 
 Together, these two functions enable a workflow where data are cloned into a
 Mini class for processing, and the results are then copied back to the original
@@ -90,5 +90,5 @@ back:
 ```
 
 1. We could also process `sac.seismogram` directly. For this example we will
-   therefore assume the processing completes significantly faster using a
-   [`MiniSeismogram`][pysmo.MiniSeismogram]...
+    therefore assume the processing completes significantly faster using a
+    [`MiniSeismogram`][pysmo.MiniSeismogram]...
