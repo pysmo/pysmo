@@ -164,6 +164,7 @@ class TestSAC:
         sacio = SacIO.from_file(sacfile)
         assert sacstation.name == sacio.kstnm
         assert sacstation.network == sacio.knetwk
+        assert sacstation.location == sacio.khole
         assert sacstation.latitude == sacio.stla == pytest.approx(34.945980072021484)
         assert sacstation.longitude == sacio.stlo == pytest.approx(-106.4571304321289)
         assert sacstation.elevation == sacio.stel == pytest.approx(1671.0)
@@ -205,9 +206,10 @@ class TestSAC:
         sac.native.knetwk = None
         with pytest.raises(TypeError):
             sacstation.network
+        # Unlike the other station identifiers, a missing location code is
+        # common and not treated as an error - it defaults to "".
         sac.native.khole = None
-        with pytest.raises(TypeError):
-            sacstation.location
+        assert sacstation.location == ""
         sac.native.kcmpnm = None
         with pytest.raises(TypeError):
             sacstation.channel
