@@ -1,2 +1,5 @@
 # Migrate code style to Black
 a009c918cb7fd8e5e31e81e238902a4c590e049b
+
+# Reformat markdown per .editorconfig
+6962f74c6110b1cd6884286c74f93517f897639b
