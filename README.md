@@ -42,27 +42,26 @@ The benefit is clearest when tackling a new problem. Data can be structured
 however the problem demands, rather than adapted to fit a pre-existing class.
 Functions specific to the problem can then consume that class directly, with
 access to all its fields. More general operations — filtering, normalising,
-resampling — are written against the interfaces and remain reusable across
-every compatible type; pysmo ships with a library of these. Functions written
-the same way for a specific project accumulate over time into a toolkit that
-works across projects — and any that prove broadly useful are welcome as
-contributions to pysmo.
+resampling — are written against the interfaces and remain reusable across every
+compatible type; pysmo ships with a library of these. Functions written the same
+way for a specific project accumulate over time into a toolkit that works across
+projects — and any that prove broadly useful are welcome as contributions to
+pysmo.
 
 Under the hood this is all standard Python typing, which means editors
-understand it too: autocompletion is available on any argument declared as,
-say, `Seismogram`, and mistakes — a missing attribute, a wrong return type —
-are caught before any code is run. No special registration or inheritance is
+understand it too: autocompletion is available on any argument declared as, say,
+`Seismogram`, and mistakes — a missing attribute, a wrong return type — are
+caught before any code is run. No special registration or inheritance is
 required; if an object has the right attributes, it is compatible. Python's
-typing system has advanced considerably in recent versions, and pysmo is
-written to take full advantage of it — which is why older Python is not
-supported.
+typing system has advanced considerably in recent versions, and pysmo is written
+to take full advantage of it — which is why older Python is not supported.
 
 ## Quick Start
 
 Pysmo includes concrete classes and processing functions that put everything
 above into practice. Below, two of those classes are used alongside built-in
-functions and a simple user-defined one — the latter works with both without
-any modification, which is the point.
+functions and a simple user-defined one — the latter works with both without any
+modification, which is the point.
 
 ```python
 from pysmo import Seismogram, MiniSeismogram
