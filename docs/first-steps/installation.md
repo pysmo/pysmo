@@ -39,6 +39,7 @@ with [`pip`](https://pip.pypa.io/en/stable/):
     ```bash
     $ python3 -m pip install pysmo --pre
     ```
+
 === "Development Version"
 
     ```bash
@@ -46,9 +47,9 @@ with [`pip`](https://pip.pypa.io/en/stable/):
     ```
 
 !!! tip
-    The stable release can be installed alongside the development version.
-    See the [development documentation](../development/index.md) for
-    instructions.
+
+    The stable release can be installed alongside the development version. See the
+    [development documentation](../development/index.md) for instructions.
 
 ## Upgrading
 
@@ -67,6 +68,7 @@ python3 -m pip uninstall pysmo
 ```
 
 !!! note
-    `pip` does not remove dependencies that were automatically installed.
-    Run `pip list` to see what is installed, then remove any unwanted packages
-    with `pip uninstall`.
+
+    `pip` does not remove dependencies that were automatically installed. Run
+    `pip list` to see what is installed, then remove any unwanted packages with
+    `pip uninstall`.

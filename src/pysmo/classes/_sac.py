@@ -37,9 +37,7 @@ class _SacNested:
 
     @property
     def _ref_datetime(self) -> UtcTimestamp:
-        """
-        Returns:
-            The SAC file's reference date and time.
+        """The SAC file's reference date and time.
 
         Note:
             If the SAC instance has no reference time, this function
@@ -721,8 +719,7 @@ class SAC:
 
     @classmethod
     def from_zip(cls, archive: bytes) -> Self:
-        """Create a new instance from a zip archive containing exactly one
-        continuous SAC segment.
+        """Create a new instance from a zip archive containing exactly one continuous SAC segment.
 
         Args:
             archive: Raw zip archive bytes containing exactly one SAC file
@@ -767,8 +764,7 @@ class SAC:
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
-        """Fetch and parse a SAC seismogram from the EarthScope FDSN
-        dataselect web service, for an absolute time window.
+        """Fetch and parse a SAC seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
 
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],

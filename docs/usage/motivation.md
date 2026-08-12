@@ -4,19 +4,19 @@ tags:
   - Motivation
   - Usage
 ---
+
 # Motivation
 
 Typing has become an increasingly important feature of modern Python. This has
-changed how we write code, helped prevent errors, and improved the experience
-of working with modern editors. Pysmo brings these features to the field of
+changed how we write code, helped prevent errors, and improved the experience of
+working with modern editors. Pysmo brings these features to the field of
 seismology.
 
 !!! tip
 
-    <a id="type-tip"></a>
-    In the paragraphs below we use the terms "class" and "type" a lot. We can
-    explore the relationship between these terms in more detail using the
-    built-in [`float`][] type:
+    <a id="type-tip"></a> In the paragraphs below we use the terms "class" and
+    "type" a lot. We can explore the relationship between these terms in more detail
+    using the built-in [`float`][] type:
 
     ```python
     >>> a = 1.2 #(1)!
@@ -31,8 +31,8 @@ seismology.
     2. Then we verify it is indeed a float using the `type` command.
     3. The type of the float class is... a type!
 
-    This example shows that the type of a class is itself a type, so every time
-    we define a class in Python, we also define a type.
+    This example shows that the type of a class is itself a type, so every time we
+    define a class in Python, we also define a type.
 
 ## The problem with types in seismology
 
@@ -65,50 +65,52 @@ cases!).
 
 ??? example "File formats in seismology"
 
-    The challenges we face due to different file formats that exist in
-    seismology, and how they are used for processing, are not dissimilar to
-    what was discussed above. Their design naturally focuses on data storage,
-    but they often try to cater towards applications too. We can use
+    The challenges we face due to different file formats that exist in seismology,
+    and how they are used for processing, are not dissimilar to what was discussed
+    above. Their design naturally focuses on data storage, but they often try to
+    cater towards applications too. We can use
     [SAC](https://ds.iris.edu/files/sac-manual/manual/file_format.html) as an
-    example for this; SAC is essentially an application with its own file
-    format. Additionally, SAC files are commonly used as input format for third-party
-    applications. This is possible because SAC files allow storing a lot
-    of metadata in their "headers". The approach does have a few drawbacks
-    though:
+    example for this; SAC is essentially an application with its own file format.
+    Additionally, SAC files are commonly used as input format for third-party
+    applications. This is possible because SAC files allow storing a lot of metadata
+    in their "headers". The approach does have a few drawbacks though:
 
-    - The majority of SAC headers are optional (only 6 are mandatory), so there
-      is no guarantee they are actually set to a value. To prevent this from
-      causing errors, checks need to be built into code to ensure they are
-      actually set.
-    - The large number of headers (over 150!) requires intricate knowledge of
-      the file format. Even so, using SAC files probably feels far from
-      intuitive.
-    - SAC files are limited to the headers defined in the format. The only way
-      to store custom data is via the "user defined headers", or if those run
-      out, repurposing other headers to mean something else.
+    - The majority of SAC headers are optional (only 6 are mandatory), so there is
+        no guarantee they are actually set to a value. To prevent this from causing
+        errors, checks need to be built into code to ensure they are actually set.
+    - The large number of headers (over 150!) requires intricate knowledge of the
+        file format. Even so, using SAC files probably feels far from intuitive.
+    - SAC files are limited to the headers defined in the format. The only way to
+        store custom data is via the "user defined headers", or if those run out,
+        repurposing other headers to mean something else.
 
 ## The pysmo solution
 
 As it is impossible to know all possible ways a seismogram might be used in the
 future, defining an all-encompassing type for a seismogram for any use case is
-equally impossible (and would be difficult to use anyway). Pysmo instead
-focuses on what different seismograms have *in common* to define a seismogram
-type. This leads to the following approach:
+equally impossible (and would be difficult to use anyway). Pysmo instead focuses
+on what different seismograms have *in common* to define a seismogram type. This
+leads to the following approach:
 
 - Seismogram data are stored in any existing or new format (i.e. Python class).
-  We might call this the "data seismogram". Recall also that any class in
-  Python is also a type that can be used in type annotations.
-- The attributes all seismograms have in common determine the pysmo type.
-  Unlike the data seismogram, it is only used for type annotations, so it
-  doesn't need to be a real class. As mentioned elsewhere,
-  [`Protocol`][typing.Protocol] classes are used for this purpose.
+    We might call this the "data seismogram". Recall also that any class in
+    Python is also a type that can be used in type annotations.
+- The attributes all seismograms have in common determine the pysmo type. Unlike
+    the data seismogram, it is only used for type annotations, so it doesn't
+    need to be a real class. As mentioned elsewhere,
+    [`Protocol`][typing.Protocol] classes are used for this purpose.
 - Code that requires access to specific attributes or methods of the data
-  seismogram uses that as its type (i.e. as their type annotation).
-- Code that only uses the parts of the data seismogram that all seismograms
-  have in common uses pysmo types instead.
+    seismogram uses that as its type (i.e. as their type annotation).
+- Code that only uses the parts of the data seismogram that all seismograms have
+    in common uses pysmo types instead.
 
 This approach gives complete freedom to store and use data in any way, while
 still being able to write reusable code using pysmo types.
+
+Not every pysmo type shares this exact origin, though —
+[`Seismogram`][pysmo.Seismogram] is a particularly clear-cut case. See
+["Why does this type exist?"](types.md#why-does-this-type-exist) on the
+[types](types.md) page for the other reasons a pysmo type may exist.
 
 ## Code writing experience
 
@@ -121,9 +123,9 @@ form of autocomplete and error checking.
 
 Once [installed](../first-steps/installation.md), the pysmo types can be
 imported and used just like any class. We can, for example, use the
-[`Seismogram`][pysmo.Seismogram] type to annotate a function. A modern editor
-is then able to tell us what attributes are available for a variable and speed
-up the coding process by offering autocomplete for the attributes:
+[`Seismogram`][pysmo.Seismogram] type to annotate a function. A modern editor is
+then able to tell us what attributes are available for a variable and speed up
+the coding process by offering autocomplete for the attributes:
 
 ![Editor Autocomplete](../images/editor_autocomplete_dark.png#only-dark)
 ![Editor Autocomplete](../images/editor_autocomplete_light.png#only-light)
@@ -141,8 +143,9 @@ programming errors such as trying to set the value of `delta` to a string
 instead of a float.
 
 !!! tip
-    Should your editor for some reason be unable to parse type hints, testing
-    your code for typing errors can still be done with
+
+    Should your editor for some reason be unable to parse type hints, testing your
+    code for typing errors can still be done with
     [mypy](https://mypy.readthedocs.io/en/stable/) by running:
 
     ```bash

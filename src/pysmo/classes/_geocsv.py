@@ -28,7 +28,7 @@ __all__ = ["GeoCsvSeismogram"]
 
 @define(kw_only=True)
 class GeoCsvSeismogram(SeismogramEndtimeMixin):
-    """Import/export class for seismograms in the GeoCSV timeseries format.
+    r"""Import/export class for seismograms in the GeoCSV timeseries format.
 
     Reads a waveform from the timeseries flavour of
     [GeoCSV](https://ds.iris.edu/files/documents/GeoCSV.pdf) and exposes
@@ -47,7 +47,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import GeoCsvSeismogram
-        >>> text = '''\\
+        >>> text = '''\
         ... # dataset: GeoCSV 2.0
         ... # delimiter: ,
         ... # field_unit: UTC, Counts
@@ -152,8 +152,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
-        """Fetch and parse a seismogram from the EarthScope FDSN dataselect
-        web service, for an absolute time window.
+        """Fetch and parse a seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
 
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],
@@ -209,7 +208,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         return cls.from_text(waveform_bytes.decode("utf-8"))
 
     def write(self, path: str | PathLike) -> None:
-        """Write this seismogram to a GeoCSV 2.0 file.
+        r"""Write this seismogram to a GeoCSV 2.0 file.
 
         Serialises the instance as a single GeoCSV 2.0 timeseries dataset.
         To write several seismograms into one multi-dataset file use
@@ -223,7 +222,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             ```python
             >>> import pathlib
             >>> from pysmo.classes import GeoCsvSeismogram
-            >>> text = '''\\
+            >>> text = '''\
             ... # dataset: GeoCSV 2.0
             ... # delimiter: ,
             ... # field_unit: UTC, Counts

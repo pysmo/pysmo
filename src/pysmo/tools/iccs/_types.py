@@ -89,11 +89,11 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
 
     Examples:
         Because [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] inherits
-        from [`Seismogram`][pysmo.Seismogram], we can easily create
+        from [`Seismogram`][pysmo.Seismogram],
         [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] instances
-        from existing seismograms using the
-        [`clone_to_mini()`][pysmo.functions.clone_to_mini] function, whereby
-        the `update` parameter is used to provide the extra information needed:
+        can easily be created from existing seismograms using the
+        [`clone_to_mini()`][pysmo.functions.clone_to_mini] function, with the
+        `update` parameter providing the extra information needed:
 
         ```python
         >>> from pysmo.classes import SAC
