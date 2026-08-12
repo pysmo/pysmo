@@ -1,4 +1,4 @@
-.PHONY: help check-uv build changelog clean docs format format-check \
+.PHONY: help check-uv build clean docs format format-check \
 	lint live-docs mypy python sync test-figs tests test-web-live upgrade
 
 ifeq ($(OS),Windows_NT)
@@ -24,9 +24,6 @@ endif
 
 build: clean check-uv sync ## Build distribution.
 	uv build
-
-changelog: check-uv sync ## Generate CHANGELOG.md
-	uv run git-cliff --config cliff.toml --output CHANGELOG.md
 
 clean: ## Remove existing builds.
 	rm -rf build dist .egg pysmo.egg-info docs/build site
