@@ -8,6 +8,11 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 - Auto-update CHANGELOG.md unreleased section on push to master
 
+### 🎨 Styling
+
+- **(ruff)** Enable google docstring convention and docstring-code-format
+- Reformat markdown per .editorconfig
+
 ### 🐛 Bug Fixes
 
 - **(iccs)** Fix save cancel callback on buttons
@@ -21,11 +26,14 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 - Remove unused mkdocs-macros-plugin
 - **(external-classes)** Add ObsPy Trace adapter recipe and protocol discussion
+- **(types)** Explain why pysmo protocols exist
 
 ### 📦 Miscellaneous
 
 - Update deps, cleanup docstrings ([#271](https://github.com/pysmo/pysmo/issues/271))
 - Update packages and small fixes for edge-cases ([#272](https://github.com/pysmo/pysmo/issues/272))
+- Add .editorconfig
+- Ignore markdown reformat in git blame
 
 ### 🔍 Other Changes
 
