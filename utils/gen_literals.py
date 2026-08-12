@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate PEP 695 Literal type aliases from Enum/StrEnum classes.
+"""Generate PEP 695 Literal type aliases from Enum/StrEnum classes.
 
 Example:
     $ python tools/gen_literals.py \

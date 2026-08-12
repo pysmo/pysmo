@@ -140,10 +140,20 @@ exclude = [
   "*.md",
 ]
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = ["E501"]
+select = ["E", "F", "I", "D"]
+ignore = ["E501", "D202"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "src/pysmo/lib/io/_sacio/_sacio_rendered.py" = ["E741"]
 "docs/first-steps/tutorial/tutorial.ipynb" = ["F811"]
+"tests/**" = ["D"]
+"docs/**" = ["D"]
+"utils/**" = ["D"]
+"**/conftest.py" = ["D"]

@@ -103,7 +103,7 @@ class MiniStation:
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Channel code.
- 
+
     See [`Station.channel`][pysmo.Station.channel] for more details.
     """
 

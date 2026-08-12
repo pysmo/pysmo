@@ -81,7 +81,7 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
 def pearson_matrix_vector(matrix: np.ndarray, vector: np.ndarray) -> np.ndarray:
     """Compute Pearson correlation of each row in a matrix against a vector.
 
-    This is a vectorized alternative to calling [`scipy.stats.pearsonr`][] in
+    This is a vectorised alternative to calling [`scipy.stats.pearsonr`][] in
     a loop. All row correlations are computed in a single matrix operation.
 
     Args:

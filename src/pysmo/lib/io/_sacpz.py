@@ -13,10 +13,9 @@ giving the plain reference-frequency sensitivity with `A0` excluded (see
 present in real EarthScope output, but not guaranteed for hand-written SAC PZ
 text.
 
-[`parse_sacpz`][pysmo.lib.io._sacpz.parse_sacpz] splits a text body into raw,
-uninterpreted [`_RawSacPzResponse`][pysmo.lib.io._sacpz._RawSacPzResponse]
-records without constructing any `pysmo` type — mirroring the "parse, don't
-interpret" split used by
+[`parse_sacpz`][pysmo.lib.io.parse_sacpz] splits a text body into raw,
+uninterpreted `_RawSacPzResponse` records without constructing any `pysmo`
+type — mirroring the "parse, don't interpret" split used by
 [`parse_geocsv`][pysmo.lib.io.parse_geocsv] and
 [`parse_stationxml`][pysmo.lib.io.parse_stationxml]. Interpretation into a
 [`Response`][pysmo.Response]-compatible object happens one layer up, in
@@ -97,6 +96,8 @@ def _parse_complex_block(
     """Parse a `KEYWORD <count>` block of `real imag` pairs starting at `index`.
 
     Args:
+        lines: Full text body, split into lines.
+        index: Line index to start parsing the block at.
         keyword: Block keyword expected at `lines[index]` (`"ZEROS"` or `"POLES"`).
     """
     stripped = lines[index].strip() if index < len(lines) else ""
@@ -117,7 +118,7 @@ def _parse_complex_block(
 
 
 def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
-    """Split SAC PZ text into a list of uninterpreted records.
+    r"""Split SAC PZ text into a list of uninterpreted records.
 
     A text body may contain several concatenated records (the EarthScope
     SACPZ web service returns one per channel epoch when a query is not
@@ -137,7 +138,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
     Examples:
         ```python
         >>> from pysmo.lib.io._sacpz import parse_sacpz
-        >>> text = '''\\
+        >>> text = '''\
         ... * NETWORK   (KNETWK): IU
         ... * STATION    (KSTNM): ANMO
         ... * LOCATION   (KHOLE): 00
@@ -146,10 +147,10 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
         ... * END               :
         ... * INPUT UNIT        : M
         ... ZEROS 2
-        ... \\t+0.000000e+00\\t+0.000000e+00
-        ... \\t+0.000000e+00\\t+0.000000e+00
+        ... \t+0.000000e+00\t+0.000000e+00
+        ... \t+0.000000e+00\t+0.000000e+00
         ... POLES 1
-        ... \\t-1.000000e-02\\t+0.000000e+00
+        ... \t-1.000000e-02\t+0.000000e+00
         ... CONSTANT 1.0e+09
         ... '''
         >>> records = parse_sacpz(text)
