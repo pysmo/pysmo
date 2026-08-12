@@ -22,6 +22,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Proper limits for bandpass frequencies
 - **(sacpz)** Tolerate Fortran D/d exponents in SAC PZ text
 - Set explicit permissions on workflow-calling jobs
+- Treat missing SAC location code as empty string, not an error
 
 ### 📚 Documentation
 
