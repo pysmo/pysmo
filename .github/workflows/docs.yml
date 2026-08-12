@@ -13,26 +13,4 @@ permissions:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/configure-pages@v5
-      - uses: actions/checkout@v5
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-      - name: Install docs dependencies
-        run: |
-          uv sync --locked --no-dev --group docs
-      - name: Build site
-        run: uv run zensical build --clean
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: site
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
-        id: deployment
+    uses: pysmo/.github/.github/workflows/docs.yml@main
