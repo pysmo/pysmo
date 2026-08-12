@@ -21,6 +21,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(signal)** Fix mccc abs_max
 - **(iccs)** Proper limits for bandpass frequencies
 - **(sacpz)** Tolerate Fortran D/d exponents in SAC PZ text
+- Set explicit permissions on workflow-calling jobs
 
 ### 📚 Documentation
 
@@ -34,6 +35,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Update packages and small fixes for edge-cases ([#272](https://github.com/pysmo/pysmo/issues/272))
 - Add .editorconfig
 - Ignore markdown reformat in git blame
+- Move CI workflows to reusable versions in pysmo/.github
 
 ### 🔍 Other Changes
 
