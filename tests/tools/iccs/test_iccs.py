@@ -1,3 +1,4 @@
+import copy
 import re
 
 import numpy as np
@@ -14,6 +15,7 @@ from pysmo.tools.iccs import (
     plot_stack,
 )
 from pysmo.tools.iccs._types import ConvergenceMethod
+from pysmo.tools.signal import multi_multi_delay
 
 
 class TestICCSBase:
@@ -436,19 +438,52 @@ class TestICCSParameters(TestICCSBase):
             seis.foo = 1  # type: ignore[attr-defined]
 
     def test_run_mccc_abs_max(self) -> None:
-        """Test run_mccc with abs_max=True."""
-        # Flip only one seismogram
-        self.iccs.seismograms[0].data *= -1
-        self.iccs.clear_cache()
+        """Test run_mccc with abs_max=True.
 
-        # Without abs_max=True, it should have lower absolute CC
-        result_no_abs = self.iccs.run_mccc(abs_max=False)
+        iccs_seismograms already has exactly one flipped seismogram
+        (seismograms[0], flipped in the fixture itself) — no need to flip
+        anything here.
 
-        # With abs_max=True, it should have higher absolute CC
-        result = self.iccs.run_mccc(abs_max=True)
-        assert np.mean(np.abs(result.cc_means)) > np.mean(
-            np.abs(result_no_abs.cc_means)
-        )
+        abs_max is guaranteed to never decrease |cc| for any individual
+        pair (it explicitly searches for the lag maximising |cc| rather
+        than cc), but that guarantee doesn't survive averaging *signed*
+        per-station means and taking abs() of the result afterwards — sign
+        cancellation across pairs can move that population statistic
+        either way (verified: with this fixture's real data, mean(|cc_means|)
+        can go down under abs_max even though every individual pairwise
+        |cc| involving the flipped station strictly increases). Compare the
+        flipped seismogram's own pairwise correlations directly instead,
+        which is where a genuine polarity mismatch actually shows up and
+        where the guarantee holds.
+        """
+        cc_seismograms = self.iccs.selected_cc_seismograms
+        _, cc_no_abs = multi_multi_delay(cc_seismograms, abs_max=False)
+        _, cc_abs = multi_multi_delay(cc_seismograms, abs_max=True)
+
+        # Row 0 is the flipped seismogram; drop the self-pair (always 1.0).
+        flipped_row_no_abs = np.delete(cc_no_abs[0], 0)
+        flipped_row_abs = np.delete(cc_abs[0], 0)
+        assert np.mean(np.abs(flipped_row_abs)) > np.mean(np.abs(flipped_row_no_abs))
+
+    def test_run_mccc_abs_max_reaches_mccc(self) -> None:
+        """abs_max passed to ICCS.run_mccc must actually reach mccc().
+
+        The check above tests the underlying maths directly via
+        multi_multi_delay. This test instead exercises run_mccc() itself,
+        so a future change that stops forwarding abs_max (e.g. dropping the
+        keyword when calling mccc()) is caught here rather than only at the
+        lower level. Two independent deep copies are needed because
+        run_mccc mutates seismogram picks in place.
+        """
+        seismograms_no_abs = copy.deepcopy(self.iccs.seismograms)
+        seismograms_abs = copy.deepcopy(self.iccs.seismograms)
+
+        result_no_abs = ICCS(seismograms_no_abs).run_mccc(abs_max=False)
+        result_abs = ICCS(seismograms_abs).run_mccc(abs_max=True)
+
+        # The flipped seismogram (index 0) should end up with a different
+        # pick depending on whether abs_max is honoured.
+        assert result_no_abs.picks[0] != result_abs.picks[0]
 
 
 class TestICCSNyquistGating:

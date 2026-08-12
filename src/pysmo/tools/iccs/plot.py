@@ -1,13 +1,10 @@
 """Extra plotting functions for the ICCS module.
 
-These functions provide additional plotting capabilities for the ICCS module.
-They are generally not meant to be consumed directly.
-Instead, use the higher-level plotting functions (e.g., `plot_stack`, `update_pick`)
-available directly from the `pysmo.tools.iccs` namespace, which provide a more
-integrated and user-friendly experience.
-
-This module exposes lower-level drawing primitives (`draw_common_stack`,
-`draw_common_matrix_image`) for advanced users who wish to customise their plotting
+Most of this module's contents are internal helpers for the higher-level
+plotting functions (e.g. `plot_stack`, `update_pick`) exposed from the
+`pysmo.tools.iccs` namespace, and are not meant to be used directly. The
+exception is `draw_common_stack` and `draw_common_matrix_image`, lower-level
+drawing primitives exposed for users who wish to customise their own plotting
 workflows.
 """
 
@@ -185,7 +182,7 @@ def _draw_stack_initial(
 def draw_common_stack(
     ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
 ) -> None:
-    """Returns a basic stack plot for use in other plots.
+    """Return a basic stack plot for use in other plots.
 
     Args:
         ax: Axes to plot on.
@@ -258,7 +255,7 @@ def _draw_matrix_image_initial(
 def draw_common_matrix_image(
     ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
 ) -> np.ndarray:
-    """Returns a basic matrix image plot for use in other plots.
+    """Return a basic matrix image plot for use in other plots.
 
     Args:
         ax: Axes to plot on.

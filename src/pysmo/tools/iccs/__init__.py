@@ -13,7 +13,7 @@ parameters are set that control the algorithm, which then iteratively aligns
 seismograms, or discards them from further consideration if they are of poor
 quality.
 
-The basic idea of ICCS, is that stacking all seismograms (aligned with respect
+The basic idea of ICCS is that stacking all seismograms (aligned with respect
 to an initial, and later improved, phase arrival pick) will lead to the
 targeted phase arrival becoming visible in the stack. As the stack is generated
 from all input seismograms, the phase arrival in the stack may be considered a
@@ -28,6 +28,10 @@ cross-correlated with the stack, whereas in MCCC all seismograms are
 cross-correlated with each other). ICCS is therefore particularly useful to
 prepare data for a successful MCCC run (e.g. if the initial picks are
 calculated rather than hand picked).
+
+[^1]: Lou, X., et al. “AIMBAT: A Python/Matplotlib Tool for Measuring
+    Teleseismic Arrival Times.” Seismological Research Letters, vol. 84,
+    no. 1, Jan. 2013, pp. 85–93, <https://doi.org/10.1785/0220120033>.
 
 ## Data requirements
 
@@ -58,13 +62,6 @@ pysmo, the following parameters are required:
     using it in the stack and cross-correlation. Can be automatically toggled \
     when `autoflip` is [`True`][] during a \
     [run][pysmo.tools.iccs.ICCS.__call__]. |
-
-!!! tip
-
-    Functions and methods in this module do not modify any attributes other
-    than the ones listed above. Preparation of seismograms for use in the
-    cross-correlation and relevant visualisation functions happens
-    internally, and does not affect the data of the original seismograms.
 
 ## Ephemeral seismograms
 
@@ -97,8 +94,9 @@ calling [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache].
 ## Execution flow
 
 The diagram below shows execution flow, and how the above parameters are used
-when the ICCS algorithm is executed (see [here][pysmo.tools.iccs.ICCS.__call__]
-for parameters and default values):
+when the ICCS algorithm is executed (see
+[`ICCS.__call__`][pysmo.tools.iccs.ICCS.__call__] for parameters and default
+values):
 
 ```mermaid
 flowchart TD
@@ -125,19 +123,234 @@ H -->|Yes| End
 I -->|Yes| End
 ```
 
-Convergence is reached when the stack itself is not changing significantly
-anymore between iterations. Typically this happens within a few iterations.
+Convergence is reached when the stack is no longer changing significantly
+between iterations. Typically this happens within a few iterations.
 
 ## Operator involvement
 
-The ICCS algorithm relies on a few parameters that need to be adjusted by the
-user. This module provides functions to visualise the stack and individual
-seismograms (all at the same time), and to update the parameters based on
-visual inspection.
+Using ICCS involves two distinct kinds of iteration, easy to conflate but
+serving different purposes:
 
-[^1]: Lou, X., et al. “AIMBAT: A Python/Matplotlib Tool for Measuring
-    Teleseismic Arrival Times.” Seismological Research Letters, vol. 84,
-    no. 1, Jan. 2013, pp. 85–93, <https://doi.org/10.1785/0220120033>.
+- **Algorithmic iteration**, shown in the diagram above, is automatic and
+  internal to a single call of an [`ICCS`][pysmo.tools.iccs.ICCS] instance.
+  Each iteration cross-correlates seismograms with the current stack, updates
+  picks (and, optionally, `flip`/`select`), and recomputes the stack, stopping
+  once the stack converges or `max_iter` is reached. The operator has no part
+  in this process; `max_iter` only bounds it.
+- **Operator iteration** is the repeated refinement of the *parameters* given
+  to the algorithm, across repeated calls. After a call, the operator inspects
+  the resulting stack and individual seismograms visually, and may decide
+  that the pick, time window, minimum correlation coefficient, or bandpass
+  filter need adjusting — e.g. narrowing the time window once the phase
+  arrival is clearly visible, or raising `min_cc` once obviously poor
+  seismograms have been excluded. This module provides interactive functions
+  for making exactly these adjustments —
+  [`update_pick`][pysmo.tools.iccs.update_pick],
+  [`update_timewindow`][pysmo.tools.iccs.update_timewindow],
+  [`update_min_cc`][pysmo.tools.iccs.update_min_cc], and
+  [`update_bandpass`][pysmo.tools.iccs.update_bandpass] — after which the
+  instance is called again. How many times this happens, and when to stop, is
+  entirely up to the operator; nothing in the algorithm tracks or limits it.
+
+!!! tip "AIMBAT"
+
+    [AIMBAT](https://github.com/pysmo/aimbat) builds this operator loop into a
+    full interactive application, managing parameter snapshots and the wider
+    ICCS → QC → MCCC pipeline, rather than requiring it to be scripted by hand
+    as in the example below.
+
+## Basic example
+
+This example starts with a set of SAC files from the same event, recorded
+at different stations. Each file has a preliminary phase arrival estimate
+stored in its `T0` header, so the files can be used to create instances of
+the [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] class for
+use with the [`ICCS`][pysmo.tools.iccs.ICCS] class below. Only 6 of the
+available files are used here, so that the perturbations introduced below
+remain a large enough fraction of the stack to be visible; with the dozens
+of stations a real array typically provides, the same perturbations would
+be a much smaller fraction of the total, and their effect correspondingly
+harder to see:
+
+```python
+>>> from pysmo.classes import SAC
+>>> from pysmo.functions import clone_to_mini
+>>> from pysmo.tools.iccs import MiniIccsSeismogram
+>>> from pathlib import Path
+>>>
+>>> sacfiles = sorted(Path("iccs-example/").glob("*.bhz"))[:6]
+>>>
+>>> seismograms = []
+>>> for sacfile in sacfiles:
+...     sac = SAC.from_file(sacfile)
+...     update = {"t0": sac.timestamps.t0}
+...     iccs_seismogram = clone_to_mini(MiniIccsSeismogram, sac.seismogram, update=update)
+...     seismograms.append(iccs_seismogram)
+...
+>>>
+```
+
+To illustrate the different modes of running the ICCS algorithm, the data
+and picks are then degraded. Every seismogram but the first has its pick
+shifted by a few seconds, varied enough that no phase emergence survives
+naive stacking on the raw picks. The first seismogram has its polarity
+reversed instead, and a seventh, entirely synthetic seismogram of random
+data is appended:
+
+```python
+>>> import pandas as pd
+>>> from copy import deepcopy
+>>> import numpy as np
+>>>
+>>> # change the sign of the data in the first seismogram
+>>> seismograms[0].data *= -1
+>>>
+>>> # shift the remaining picks by varying amounts, in both directions
+>>> shifts = [-4, 4, -6, 6, -3]
+>>> for seismogram, shift in zip(seismograms[1:], shifts):
+...     seismogram.t0 += pd.Timedelta(seconds=shift)
+...
+>>>
+>>> # create a seismogram with completely random data
+>>> iccs_random: MiniIccsSeismogram = deepcopy(seismograms[-1])
+>>> np.random.seed(42)  # set this for consistent results during testing
+>>> iccs_random.data = np.random.rand(len(iccs_random.data))
+>>> seismograms.append(iccs_random)
+>>>
+```
+
+An [`ICCS`][pysmo.tools.iccs.ICCS] instance can now be created and used to
+plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
+[`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms].
+[`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is enabled from
+the outset, restricting comparisons to the teleseismic P-wave band:
+without it, the reversed-polarity seismogram's correlation coefficient is
+erratic and its pick drifts by several seconds to an unrelated lag, since
+naive correlation has no reason to prefer the true, strongly negative
+alignment over any other spurious match:
+
+```python
+>>> from pysmo.tools.iccs import ICCS, plot_stack
+>>> iccs = ICCS(seismograms)
+>>> iccs.bandpass_apply = True
+>>> fig, ax = plot_stack(iccs, context=False)
+>>>
+```
+
+<!-- invisible-code-block: python
+```
+>>> import matplotlib.pyplot as plt
+>>> if savedir:
+...     fig.savefig(savedir / "iccs_stack_initial.png", transparent=True)
+...     plt.close("all")
+...     plt.style.use("dark_background")
+...     fig, ax = plot_stack(iccs, context=False)
+...     fig.savefig(savedir / "iccs_stack_initial-dark.png", transparent=True)
+...     plt.style.use("default")
+>>>
+```
+-->
+
+![Initial stack](../../../images/sybil/iccs_stack_initial.png#only-light){ loading=lazy }
+![Initial stack](../../../images/sybil/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
+
+No phase emergence is visible in the stack yet. To run the ICCS
+algorithm, simply call (execute) the ICCS instance:
+
+```python
+>>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
+>>>                            # a list of the convergence value after each
+>>>                            # iteration.
+>>> fig, ax = plot_stack(iccs, context=False)
+>>>
+```
+
+<!-- invisible-code-block: python
+```
+>>> if savedir:
+...     fig.savefig(savedir / "iccs_stack_first_run.png", transparent=True)
+...     plt.close("all")
+...     plt.style.use("dark_background")
+...     fig, ax = plot_stack(iccs, context=False)
+...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
+...     plt.style.use("default")
+>>>
+```
+-->
+
+![Stack after first run](../../../images/sybil/iccs_stack_first_run.png#only-light){ loading=lazy }
+![Stack after first run](../../../images/sybil/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
+
+Despite the random noise seismogram, the phase arrival is now visible in
+the stack, and most correlation coefficients are high. The noise
+seismogram's correlation is clearly the lowest, but the
+reversed-polarity seismogram's is only mediocre rather than obviously
+bad — precisely the case [`ICCS`][pysmo.tools.iccs.ICCS] is designed to
+catch automatically, since a real dataset of hundreds of seismograms
+cannot be checked individually by eye. Running ICCS again with
+`autoflip=True` checks the reversed-polarity hypothesis for every
+seismogram and finds a substantially better fit for this one:
+
+```python
+>>> _ = iccs(autoflip=True)
+>>> fig, ax = plot_stack(iccs, context=False)
+>>>
+```
+
+<!-- invisible-code-block: python
+```
+>>> if savedir:
+...     fig.savefig(savedir / "iccs_stack_autoflip.png", transparent=True)
+...     plt.close("all")
+...     plt.style.use("dark_background")
+...     fig, ax = plot_stack(iccs, context=False)
+...     fig.savefig(savedir / "iccs_stack_autoflip-dark.png", transparent=True)
+...     plt.style.use("default")
+>>>
+```
+-->
+
+![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip.png#only-light){ loading=lazy }
+![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
+
+The previously-mediocre seismogram is now among the best-fitting of all
+seven. The noise seismogram is unaffected — no polarity reversal fixes
+what is not a real signal — and remains the clear outlier. Running ICCS
+again with `autoselect=True` deselects seismograms whose fit is
+genuinely poor, rather than merely reversed:
+
+```python
+>>> _ = iccs(autoselect=True)
+>>> [seismogram.select for seismogram in iccs.seismograms]
+[True, True, True, True, True, True, False]
+>>> fig, ax = plot_stack(iccs, context=False)
+>>>
+```
+
+<!-- invisible-code-block: python
+```
+>>> if savedir:
+...     fig.savefig(savedir / "iccs_stack_autoselect.png", transparent=True)
+...     plt.close("all")
+...     plt.style.use("dark_background")
+...     fig, ax = plot_stack(iccs, context=False)
+...     fig.savefig(savedir / "iccs_stack_autoselect-dark.png", transparent=True)
+...     plt.style.use("default")
+>>>
+```
+-->
+
+![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect.png#only-light){ loading=lazy }
+![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
+
+Only the noise seismogram is deselected; every real seismogram,
+including the one that needed flipping, now contributes to the stack.
+
+The stack above still has room for improvement: the pick sits slightly
+off the main pulse, and the default ±15 s time window extends well past
+the P-wave energy into coda that only adds noise to the cross-correlation.
+See [operator iteration](#operator-involvement) above for
+how to refine these before, say, proceeding to MCCC.
 """
 
 from ..._utils import export_module_names
