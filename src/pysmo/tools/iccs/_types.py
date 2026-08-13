@@ -74,13 +74,13 @@ class IccsSeismogram(Seismogram, Protocol):
     """Updated pick."""
 
     flip: bool
-    """Data in seismogram should be flipped for ICCS."""
+    """Whether the seismogram data should be flipped for ICCS."""
 
     select: bool
-    """Use seismogram to create stack."""
+    """Whether to use the seismogram in the stack."""
 
     extra: dict[Hashable, Any]
-    """Extra metadata that may be helpful to be stored alongside the seismogram."""
+    """Extra metadata to store alongside the seismogram."""
 
 
 @define(kw_only=True)
@@ -153,7 +153,7 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
         validator=validators.instance_of(bool),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
-    """Data in seismogram should be flipped for ICCS."""
+    """Whether the seismogram data should be flipped for ICCS."""
 
     select: bool = field(
         default=True,
@@ -161,7 +161,7 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
         validator=validators.instance_of(bool),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
-    """Use seismogram to create stack."""
+    """Whether to use the seismogram in the stack."""
 
     extra: dict[Hashable, Any] = field(factory=dict)
-    """Extra metadata that may be helpful to be stored alongside the seismogram."""
+    """Extra metadata to store alongside the seismogram."""
