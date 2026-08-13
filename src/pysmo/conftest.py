@@ -45,21 +45,19 @@ def mpl_backend(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture()
-def copy_testfiles(tmp_path: Path) -> Generator[None, Any, None]:
+def copy_testfiles(
+    tmp_path: Path, reference_event_assets: dict[str, Path]
+) -> Generator[None, Any, None]:
     cwd = os.getcwd()
-    asset_dir = Path(__file__).parent.parent.parent / "tests/assets/reference_event"
-    asset_testfile = asset_dir / "iu_anmo_00_bhz.sac"
     asset_iccsdir = Path(__file__).parent.parent.parent / "tests/tools/iccs/assets/"
-    asset_stationxml = asset_dir / "iu_anmo_00_bhz_response.xml"
-    asset_sacpz = asset_dir / "iu_anmo_00_bhz.pz"
     test_testfile = Path(tmp_path) / "example.sac"
     test_iccsdir = Path(tmp_path) / "iccs-example/"
     test_stationxml = Path(tmp_path) / "example_response.xml"
     test_sacpz = Path(tmp_path) / "SACPZ.IU.ANMO.00.BHZ"
-    copyfile(asset_testfile, test_testfile)
+    copyfile(reference_event_assets["sac_bhz"], test_testfile)
     copytree(asset_iccsdir, test_iccsdir)
-    copyfile(asset_stationxml, test_stationxml)
-    copyfile(asset_sacpz, test_sacpz)
+    copyfile(reference_event_assets["stationxml_bhz"], test_stationxml)
+    copyfile(reference_event_assets["sacpz_bhz"], test_sacpz)
     try:
         os.chdir(tmp_path)
         yield

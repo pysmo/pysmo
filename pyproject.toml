@@ -48,6 +48,7 @@ test = [
   "syrupy>=4.9.1",
   "ruff>=0.11.13",
   "hypothesis>=6.140.3",
+  "testkit",
 ]
 docs = [
   "zensical>=0.0.10",
@@ -58,6 +59,9 @@ docs = [
 
 [tool.uv]
 default-groups = ["dev", "test", "docs"]
+
+[tool.uv.sources]
+testkit = { git = "https://github.com/pysmo/testkit", tag = "v0.1.0" }
 
 [tool.hatch.version]
 source = "vcs"

@@ -1295,6 +1295,7 @@ test = [
     { name = "ruff" },
     { name = "sybil", extra = ["pytest"] },
     { name = "syrupy" },
+    { name = "testkit" },
 ]
 
 [package.metadata]
@@ -1336,6 +1337,7 @@ test = [
     { name = "ruff", specifier = ">=0.11.13" },
     { name = "sybil", extras = ["pytest"], specifier = ">=9.2.0" },
     { name = "syrupy", specifier = ">=4.9.1" },
+    { name = "testkit", git = "https://github.com/pysmo/testkit?tag=v0.1.0" },
 ]
 
 [[package]]
@@ -1665,6 +1667,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/46/79/cf31d7a93a8fdc6aa
 wheels = [
     { url = "https://files.pythonhosted.org/packages/33/d1/8bb87d21e9aeb323cc03034f5eaf2c8f69841e40e4853c2627edf8111ed3/termcolor-3.3.0-py3-none-any.whl", hash = "sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5", size = 7734, upload-time = "2025-12-29T12:55:20.718Z" },
 ]
+
+[[package]]
+name = "testkit"
+version = "0.1.0"
+source = { git = "https://github.com/pysmo/testkit?tag=v0.1.0#76909eb410c0fdceddfb2273bd3cf00841d75f98" }
 
 [[package]]
 name = "tomli"
