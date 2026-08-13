@@ -3,7 +3,7 @@
 Most of this module's contents are internal helpers for the higher-level
 plotting functions (e.g. `plot_stack`, `update_pick`) exposed from the
 `pysmo.tools.iccs` namespace, and are not meant to be used directly. The
-exception is `draw_common_stack` and `draw_common_matrix_image`, lower-level
+exceptions are `draw_common_stack` and `draw_common_matrix_image`, lower-level
 drawing primitives exposed for users who wish to customise their own plotting
 workflows.
 """

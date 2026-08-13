@@ -478,8 +478,13 @@ class TestICCSParameters(TestICCSBase):
         seismograms_no_abs = copy.deepcopy(self.iccs.seismograms)
         seismograms_abs = copy.deepcopy(self.iccs.seismograms)
 
-        result_no_abs = ICCS(seismograms_no_abs).run_mccc(abs_max=False)
-        result_abs = ICCS(seismograms_abs).run_mccc(abs_max=True)
+        iccs_no_abs = ICCS(seismograms_no_abs)
+        iccs_no_abs.ramp_width = self.iccs.ramp_width
+        iccs_abs = ICCS(seismograms_abs)
+        iccs_abs.ramp_width = self.iccs.ramp_width
+
+        result_no_abs = iccs_no_abs.run_mccc(abs_max=False)
+        result_abs = iccs_abs.run_mccc(abs_max=True)
 
         # The flipped seismogram (index 0) should end up with a different
         # pick depending on whether abs_max is honoured.
