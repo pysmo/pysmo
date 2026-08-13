@@ -2,8 +2,8 @@
 
 22-station BHZ subset of [`data-example`](https://github.com/pysmo/data-example)'s
 `fiji_region` event (2014-11-01 M7.1, Fiji region, 434 km deep — see that
-repo's `PROVENANCE.md` on its dataset-rebuild branch for the full
-event/station-selection/window/response-removal/annotation methodology).
+repo's `PROVENANCE.md` for the full event/station-selection/window/
+response-removal/annotation methodology).
 Every file here already has its instrument response removed (`idep=vel`,
 real ground velocity in m/s), an initial phase-arrival pick (`t0`, the
 predicted P time), and is written as SAC v7 (`nvhdr=7`, double-precision
