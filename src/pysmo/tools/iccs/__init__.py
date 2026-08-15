@@ -161,31 +161,47 @@ serving different purposes:
 
 ## Basic example
 
-This example starts with a set of SAC files from the same event, recorded
-at different stations. Each file has a preliminary phase arrival estimate
-stored in its `T0` header, so the files can be used to create instances of
-the [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram] class for
-use with the [`ICCS`][pysmo.tools.iccs.ICCS] class below. Only 6 of the
-available files are used here, so that the perturbations introduced below
-remain a large enough fraction of the stack to be visible; with the dozens
-of stations a real array typically provides, the same perturbations would
-be a much smaller fraction of the total, and their effect correspondingly
-harder to see:
+This example starts with six synthetic seismograms, each built from the
+same underlying pulse (an idealised phase arrival) buried in independent
+background noise, so the perturbations introduced below remain a large
+enough fraction of the signal to be clearly visible; with the dozens of
+stations a real array typically provides, the same perturbations would be
+a much smaller fraction of the total, and their effect correspondingly
+harder to see. Using synthetic data instead of a real recording keeps this
+walkthrough fully self-contained and its outcome exactly reproducible:
 
 ```python
->>> from pysmo.classes import SAC
->>> from pysmo.functions import clone_to_mini
+>>> import numpy as np
+>>> import pandas as pd
 >>> from pysmo.tools.iccs import MiniIccsSeismogram
->>> from pathlib import Path
 >>>
->>> sacfiles = sorted(Path("iccs-example/").glob("*.bhz"))[:6]
+>>> def ricker(points: int, width: float) -> np.ndarray:
+...     # a "Mexican hat" wavelet, standing in for a real phase arrival
+...     t = np.arange(points) - (points - 1) / 2
+...     return (
+...         2
+...         / (np.sqrt(3 * width) * np.pi**0.25)
+...         * (1 - (t / width) ** 2)
+...         * np.exp(-(t**2) / (2 * width**2))
+...     )
+...
+>>> pulse = ricker(200, 12)
+>>> pulse /= np.abs(pulse).max()
 >>>
+>>> npts = 2400
+>>> pick_index = 1200
+>>> delta = pd.Timedelta(seconds=0.05)
+>>> begin_time = pd.Timestamp("2024-01-01", tz="UTC")
+>>> t0 = begin_time + pick_index * delta
+>>>
+>>> rng = np.random.default_rng(42)
 >>> seismograms = []
->>> for sacfile in sacfiles:
-...     sac = SAC.from_file(sacfile)
-...     update = {"t0": sac.timestamps.t0}
-...     iccs_seismogram = clone_to_mini(MiniIccsSeismogram, sac.seismogram, update=update)
-...     seismograms.append(iccs_seismogram)
+>>> for _ in range(6):
+...     data = rng.normal(scale=0.03, size=npts)
+...     data[pick_index - 100 : pick_index + 100] += pulse
+...     seismograms.append(
+...         MiniIccsSeismogram(begin_time=begin_time, delta=delta, data=data, t0=t0)
+...     )
 ...
 >>>
 ```
@@ -195,12 +211,10 @@ and picks are then degraded. Every seismogram but the first has its pick
 shifted by a few seconds, varied enough that no phase emergence survives
 naive stacking on the raw picks. The first seismogram has its polarity
 reversed instead, and a seventh, entirely synthetic seismogram of random
-data is appended:
+noise (no pulse at all) is appended:
 
 ```python
->>> import pandas as pd
 >>> from copy import deepcopy
->>> import numpy as np
 >>>
 >>> # change the sign of the data in the first seismogram
 >>> seismograms[0].data *= -1
@@ -213,26 +227,18 @@ data is appended:
 >>>
 >>> # create a seismogram with completely random data
 >>> iccs_random: MiniIccsSeismogram = deepcopy(seismograms[-1])
->>> np.random.seed(42)  # set this for consistent results during testing
->>> iccs_random.data = np.random.rand(len(iccs_random.data))
+>>> iccs_random.data = np.random.default_rng(1).normal(scale=0.3, size=npts)
 >>> seismograms.append(iccs_random)
 >>>
 ```
 
 An [`ICCS`][pysmo.tools.iccs.ICCS] instance can now be created and used to
 plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
-[`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms].
-[`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is enabled from
-the outset, restricting comparisons to the teleseismic P-wave band:
-without it, the reversed-polarity seismogram's correlation coefficient is
-erratic and its pick drifts by several seconds to an unrelated lag, since
-naive correlation has no reason to prefer the true, strongly negative
-alignment over any other spurious match:
+[`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]:
 
 ```python
 >>> from pysmo.tools.iccs import ICCS, plot_stack
 >>> iccs = ICCS(seismograms)
->>> iccs.bandpass_apply = True
 >>> fig, ax = plot_stack(iccs, context=False)
 >>>
 ```
@@ -267,11 +273,37 @@ algorithm, simply call (execute) the ICCS instance:
 
 <!-- invisible-code-block: python
 ```
+>>> def _annotate_flipped(ax):
+...     # find the trace whose trough is deepest relative to its own
+...     # peak -- the visual signature of the reversed-polarity
+...     # seismogram, for readers viewing the saved image
+...     candidates = [
+...         line
+...         for line in ax.lines
+...         if line.get_label() != "Stack" and len(line.get_xdata()) > 2
+...     ]
+...     flipped_line = max(
+...         candidates,
+...         key=lambda line: -min(line.get_ydata()) - max(line.get_ydata()),
+...     )
+...     idx = np.argmin(flipped_line.get_ydata())
+...     x = flipped_line.get_xdata()[idx]
+...     y = flipped_line.get_ydata()[idx]
+...     ax.annotate(
+...         "reversed polarity",
+...         xy=(x, y),
+...         xytext=(x + 4, y + 0.5),
+...         ha="left",
+...         arrowprops={"arrowstyle": "->"},
+...     )
+...
 >>> if savedir:
+...     _annotate_flipped(ax)
 ...     fig.savefig(savedir / "iccs_stack_first_run.png", transparent=True)
 ...     plt.close("all")
 ...     plt.style.use("dark_background")
 ...     fig, ax = plot_stack(iccs, context=False)
+...     _annotate_flipped(ax)
 ...     fig.savefig(savedir / "iccs_stack_first_run-dark.png", transparent=True)
 ...     plt.style.use("default")
 >>>
@@ -287,9 +319,12 @@ seismogram's correlation is clearly the lowest, but the
 reversed-polarity seismogram's is only mediocre rather than obviously
 bad — precisely the case [`ICCS`][pysmo.tools.iccs.ICCS] is designed to
 catch automatically, since a real dataset of hundreds of seismograms
-cannot be checked individually by eye. Running ICCS again with
-`autoflip=True` checks the reversed-polarity hypothesis for every
-seismogram and finds a substantially better fit for this one:
+cannot be checked individually by eye. It is annotated above: the trace
+whose largest excursion points downward rather than upward, easy to miss
+among the others at a glance but a useful hint once you know to look for
+it. Running ICCS again with `autoflip=True` checks the reversed-polarity
+hypothesis for every seismogram and finds a substantially better fit for
+this one:
 
 ```python
 >>> _ = iccs(autoflip=True)
@@ -346,11 +381,11 @@ genuinely poor, rather than merely reversed:
 Only the noise seismogram is deselected; every real seismogram,
 including the one that needed flipping, now contributes to the stack.
 
-The stack above still has room for improvement: the pick sits slightly
-off the main pulse, and the default ±15 s time window extends well past
-the P-wave energy into coda that only adds noise to the cross-correlation.
-See [operator iteration](#operator-involvement) above for
-how to refine these before, say, proceeding to MCCC.
+The stack above still has room for improvement: the pick sits several
+seconds off the main pulse, and the default ±15 s time window extends well
+past the pulse's energy into background noise that only degrades the
+cross-correlation. See [operator iteration](#operator-involvement) above
+for how to refine these before, say, proceeding to MCCC.
 """
 
 from ..._utils import export_module_names
