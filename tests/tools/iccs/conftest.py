@@ -11,9 +11,12 @@ from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
 
 
 @pytest.fixture()
-def iccs_seismograms() -> Generator[list[MiniIccsSeismogram], Any, None]:
+def iccs_seismograms(
+    iccs_events_assets: dict[str, dict[str, Path]],
+) -> Generator[list[MiniIccsSeismogram], Any, None]:
     seismograms: list[MiniIccsSeismogram] = []
-    iccs_files = sorted((Path(__file__).parent / "assets/").glob("*.bhz"))
+    event_stations = iccs_events_assets["solomon_islands"]
+    iccs_files = [event_stations[station] for station in sorted(event_stations)]
 
     for sacfile in iccs_files:
         sac = SAC.from_file(sacfile)
