@@ -20,13 +20,6 @@ from pysmo.lib.io import parse_stationxml
 from pysmo.tools.signal import remove_response
 from tests.test_helpers import assert_seismogram_modification
 
-STATIONXML_SINGLE_EPOCH = (
-    Path(__file__).parent.parent.parent
-    / "assets"
-    / "reference_event"
-    / "iu_anmo_00_bhz_response.xml"
-)
-
 
 def _analog_response(
     poles: list[complex], zeros: list[complex], sensitivity: float, freqs: np.ndarray
@@ -712,12 +705,15 @@ class TestNearNyquistWarning:
 
 class TestSnapshot:
     def test_full_pipeline_matches_snapshot(
-        self, seismogram: Seismogram, snapshot: SnapshotAssertion
+        self,
+        seismogram: Seismogram,
+        snapshot: SnapshotAssertion,
+        reference_event_assets: dict[str, Path],
     ) -> None:
         """Regression guard alongside the round-trip correctness tests above:
         a snapshot can't catch a systematically wrong transfer function, but
         it does catch accidental behaviour changes in the full pipeline."""
-        epochs = parse_stationxml(STATIONXML_SINGLE_EPOCH.read_bytes())
+        epochs = parse_stationxml(reference_event_assets["stationxml_bhz"].read_bytes())
         raw = next(
             epoch
             for epoch in epochs

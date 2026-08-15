@@ -14,14 +14,10 @@ from pysmo import (
 )
 from pysmo.classes import SAC, GeoCsvSeismogram, SacSeismogram, SacStation
 
-TESTDATA = dict(
-    orgfile=Path(__file__).parent / "assets/reference_event/iu_anmo_00_bhz.sac",
-)
-
 
 @pytest.fixture()
-def assets() -> dict[str, Path]:
-    return TESTDATA
+def assets(reference_event_assets: dict[str, Path]) -> dict[str, Path]:
+    return {"orgfile": reference_event_assets["sac_bhz"]}
 
 
 @pytest.fixture()
