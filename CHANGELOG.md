@@ -23,6 +23,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(sacpz)** Tolerate Fortran D/d exponents in SAC PZ text
 - Set explicit permissions on workflow-calling jobs
 - Treat missing SAC location code as empty string, not an error
+- **(tools-signal)** Honour max_shift in multi_delay and ICCS
 
 ### 📚 Documentation
 
