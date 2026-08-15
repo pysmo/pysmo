@@ -41,6 +41,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### 🔍 Other Changes
 
 - Install pandas
+- Chore/testkit reference event ([#288](https://github.com/pysmo/pysmo/issues/288))
 
 ### 🔧 Refactoring
 
