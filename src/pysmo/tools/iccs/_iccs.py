@@ -622,7 +622,7 @@ class ICCS:
         convergence_limit: float = IccsDefaults.convergence_limit,
         convergence_method: ConvergenceMethod = IccsDefaults.convergence_method,
         max_iter: int = IccsDefaults.max_iter,
-        max_shift: pd.Timedelta | None = None,
+        max_shift: NonNegativeTimedelta | None = None,
     ) -> IccsResult:
         """Run the ICCS algorithm.
 
@@ -632,7 +632,10 @@ class ICCS:
             convergence_limit: Convergence limit at which the algorithm stops.
             convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
-            max_shift: Maximum (absolute) shift to consider (see [`delay()`][pysmo.tools.signal.delay]).
+            max_shift: Maximum (absolute) shift to consider in each iteration,
+                relative to the stack at that iteration (see
+                [`delay()`][pysmo.tools.signal.delay]). This is not a bound on
+                the cumulative shift over the full run.
 
         Returns:
             An [`IccsResult`][pysmo.tools.iccs.IccsResult] containing the
@@ -645,7 +648,12 @@ class ICCS:
             prev_stack = clone_to_mini(MiniSeismogram, self.stack)
 
             # Get delays and correlation coefficients for all seismograms in one go
-            delays, ccs = multi_delay(self.stack, self.cc_seismograms, abs_max=autoflip)
+            delays, ccs = multi_delay(
+                self.stack,
+                self.cc_seismograms,
+                abs_max=autoflip,
+                max_shift=max_shift,
+            )
 
             # Update seismograms based on results and settings.
             for delay, cc, cc_seismogram in zip(delays, ccs, self.cc_seismograms):

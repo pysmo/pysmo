@@ -173,6 +173,28 @@ class TestICCSUpdateWarning:
 class TestICCSParameters(TestICCSBase):
     """Test changing parameters and methods (other than __call__)."""
 
+    def test_call_forwards_max_shift(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """`ICCS.__call__` must forward `max_shift` to `multi_delay` on every
+        iteration; it must not be silently dropped."""
+        from pysmo.tools.iccs import _iccs as iccs_module
+
+        original_multi_delay = iccs_module.multi_delay
+        seen_max_shifts: list[pd.Timedelta | None] = []
+
+        def spy_multi_delay(
+            *args: object, **kwargs: object
+        ) -> tuple[list[pd.Timedelta], list[float]]:
+            seen_max_shifts.append(kwargs.get("max_shift"))  # type: ignore[arg-type]
+            return original_multi_delay(*args, **kwargs)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(iccs_module, "multi_delay", spy_multi_delay)
+
+        max_shift = pd.Timedelta(seconds=3)
+        self.iccs(max_iter=2, max_shift=max_shift)
+
+        assert len(seen_max_shifts) >= 1
+        assert all(seen == max_shift for seen in seen_max_shifts)
+
     def test_change_timewindow(self) -> None:
         assert self.iccs.window_pre.total_seconds() == -15
         with pytest.raises(ValueError):
