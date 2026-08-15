@@ -11,6 +11,7 @@ from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 
 from pysmo import Seismogram
+from pysmo.typing import NonNegativeTimedelta
 
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 
@@ -31,7 +32,7 @@ def delay(
     seismogram1: Seismogram,
     seismogram2: Seismogram,
     total_delay: bool = False,
-    max_shift: pd.Timedelta | None = None,
+    max_shift: NonNegativeTimedelta | None = None,
     abs_max: bool = False,
 ) -> tuple[pd.Timedelta, float]:
     """Cross correlates two seismograms to determine signal delay.
@@ -222,7 +223,10 @@ def delay(
 
 
 def multi_delay(
-    template: Seismogram, seismograms: Sequence[Seismogram], abs_max: bool = False
+    template: Seismogram,
+    seismograms: Sequence[Seismogram],
+    abs_max: bool = False,
+    max_shift: NonNegativeTimedelta | None = None,
 ) -> tuple[list[pd.Timedelta], list[float]]:
     """Calculates delays and correlation coefficients for a list of seismograms against a template.
 
@@ -235,6 +239,10 @@ def multi_delay(
         template: Template seismogram object.
         seismograms: Sequence of Seismogram objects.
         abs_max: If `True`, uses absolute max correlation (polarity insensitive).
+        max_shift: Maximum (absolute) shift to consider. If set, the search for
+            the maximum correlation is restricted to lags within `max_shift` of
+            zero, which can avoid spuriously large delays when the correlation
+            has multiple peaks (e.g. from a cyclic waveform).
 
     Returns:
         delays: Delays of each input seismogram relative to template.
@@ -242,6 +250,16 @@ def multi_delay(
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the template.
+        ValueError: If `max_shift` is negative.
+
+    Note:
+        Unlike [`delay`][pysmo.tools.signal.delay], `max_shift` here does not
+        require the seismograms to be of equal length, and does not speed up
+        the calculation (the full cross-correlation is always computed; only
+        the search for its maximum is restricted). If the true delay lies
+        outside the `max_shift` range, the delay returned will be constrained
+        to (and typically found at the edge of) that range, and its
+        correlation coefficient will usually be low.
 
     Note:
         Seismograms with zero standard deviation (i.e. constant data) cannot be
@@ -285,7 +303,24 @@ def multi_delay(
         True
         >>>
         ```
+
+        Use `max_shift` to restrict the search space, e.g. to avoid a spurious
+        match at a larger, unwanted lag:
+
+        ```python
+        >>> import pandas as pd
+        >>> shifted = MiniSeismogram(data=np.roll(data, 10))
+        >>> delays, ccs = multi_delay(
+        ...     template, [shifted], max_shift=pd.Timedelta(seconds=20)
+        ... )
+        >>> delays[0].total_seconds()
+        10.0
+        >>>
+        ```
     """
+    if max_shift is not None and max_shift < pd.Timedelta(0):
+        raise ValueError("max_shift must not be negative.")
+
     if not seismograms:
         return [], []
 
@@ -341,14 +376,21 @@ def multi_delay(
     # inverse FFT & scale (div by len(template) for Pearson approx)
     cc_matrix = irfft(cc_freq, n=n_fft, axis=1) / len_t
 
-    # find maxima
-    if abs_max:
-        max_indices = np.argmax(np.abs(cc_matrix), axis=1)
-    else:
-        max_indices = np.argmax(cc_matrix, axis=1)
+    # find maxima, restricting the search to within max_shift if set
+    mid_point = n_fft // 2
+    search_matrix = np.abs(cc_matrix) if abs_max else cc_matrix
+    if max_shift is not None:
+        max_lag_in_samples = math.ceil(max_shift / template.delta)
+        index_lags = np.where(
+            np.arange(n_fft) <= mid_point,
+            np.arange(n_fft),
+            np.arange(n_fft) - n_fft,
+        )
+        search_matrix = search_matrix.copy()
+        search_matrix[:, np.abs(index_lags) > max_lag_in_samples] = -np.inf
+    max_indices = np.argmax(search_matrix, axis=1)
 
     # convert circular indices to signed lags
-    mid_point = n_fft // 2
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
     delta = template.delta
     delays = [int(lag) * delta for lag in signed_lags]

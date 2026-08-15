@@ -213,6 +213,92 @@ def test_multi_delay_abs_max() -> None:
     assert ccs[0] < 0
 
 
+def test_multi_delay_max_shift_recovers_known_shift() -> None:
+    """
+    Test `multi_delay` with `max_shift` set wide enough to include the true shift.
+
+    Verifies that restricting the search space via `max_shift` still recovers
+    the correct delay when the true shift lies within the restricted range.
+    """
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    template = MiniSeismogram(data=data.copy())
+    nroll = 10
+    seis = MiniSeismogram(data=np.roll(data, nroll))
+    delays, ccs = multi_delay(template, [seis], max_shift=pd.Timedelta(seconds=20))
+    expected_delay = nroll * template.delta
+    assert delays[0] == expected_delay
+    assert ccs[0] == pytest.approx(1, abs=0.05)
+
+
+def test_multi_delay_max_shift_restricts_search() -> None:
+    """
+    Test that `multi_delay` confines the correlation search to `max_shift`.
+
+    Verifies that when `max_shift` is set narrower than the true signal shift,
+    the returned delay is bounded by `max_shift` rather than the (unreachable)
+    true shift, confirming the search space is actually restricted rather than
+    the parameter being silently ignored.
+    """
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    template = MiniSeismogram(data=data.copy())
+    nroll = 50
+    seis = MiniSeismogram(data=np.roll(data, nroll))
+
+    max_shift = pd.Timedelta(seconds=10)
+    delays, _ = multi_delay(template, [seis], max_shift=max_shift)
+
+    # For this sinusoid, correlation increases monotonically towards the
+    # (excluded) true peak at nroll within this window, so the masked search
+    # lands exactly on the edge. This exact value is specific to this
+    # waveform/nroll/max_shift combination; if you change any of them,
+    # re-derive the expected delay rather than assuming it still holds.
+    assert delays[0] == max_shift
+
+
+def test_multi_delay_max_shift_with_abs_max() -> None:
+    """
+    Test `max_shift` combined with `abs_max` (polarity-insensitive matching).
+
+    Verifies that the absolute-value masking used for `abs_max=True` respects
+    `max_shift` correctly, both when the true (anti-correlated) shift lies
+    within the restricted range and when it lies outside it.
+    """
+    data = np.sin(np.linspace(0, 8 * np.pi, 1000))
+    template = MiniSeismogram(data=data.copy())
+
+    nroll = 12
+    seis = MiniSeismogram(data=-np.roll(data, nroll))
+    delays, ccs = multi_delay(
+        template, [seis], abs_max=True, max_shift=pd.Timedelta(seconds=20)
+    )
+    assert delays[0] == nroll * template.delta
+    assert ccs[0] < 0
+
+    nroll_far = 50
+    seis_far = MiniSeismogram(data=-np.roll(data, nroll_far))
+    max_shift = pd.Timedelta(seconds=10)
+    delays_far, ccs_far = multi_delay(
+        template, [seis_far], abs_max=True, max_shift=max_shift
+    )
+    assert delays_far[0] == max_shift
+    assert ccs_far[0] < 0
+
+
+def test_multi_delay_negative_max_shift_raises() -> None:
+    """
+    Test that `multi_delay` raises `ValueError` for a negative `max_shift`.
+
+    `#!py delay(seismogram1, seismogram2, max_shift=...)` also rejects a
+    negative `max_shift`, though only incidentally (`numpy.pad` raises on a
+    negative pad width). `multi_delay` checks explicitly instead, since its
+    FFT-based search has no equivalent implicit failure mode.
+    """
+    template = MiniSeismogram(data=np.array([1.0, 2.0, 3.0]))
+    seis = MiniSeismogram(data=np.array([1.0, 2.0, 3.0]))
+    with pytest.raises(ValueError):
+        multi_delay(template, [seis], max_shift=pd.Timedelta(seconds=-1))
+
+
 def test_multi_delay_different_delta_raises() -> None:
     """
     Test that `multi_delay` raises `ValueError` for mismatched sampling rates.
