@@ -1,5 +1,6 @@
 import copy
 import re
+import unittest.mock
 
 import numpy as np
 import pandas as pd
@@ -14,8 +15,9 @@ from pysmo.tools.iccs import (
     MiniIccsSeismogram,
     plot_stack,
 )
+from pysmo.tools.iccs._defaults import IccsDefaults
 from pysmo.tools.iccs._types import ConvergenceMethod
-from pysmo.tools.signal import multi_multi_delay
+from pysmo.tools.signal import causal_band, multi_multi_delay
 
 
 class TestICCSBase:
@@ -423,7 +425,11 @@ class TestICCSParameters(TestICCSBase):
             self.iccs.corners = 0
         with pytest.raises(ValueError):
             self.iccs.corners = -1
-        self.iccs.corners = 64  # no upper bound enforced
+        # No numerical-stability cap on raising corners. Raising corners
+        # also can't invalidate the causal-band correction (only lowering
+        # it, or narrowing bandpass_fmin/bandpass_fmax, can) -- see
+        # corners' own docstring.
+        self.iccs.corners = 64
         assert self.iccs.corners == 64
         self.iccs.corners = 2
 
@@ -471,6 +477,62 @@ class TestICCSParameters(TestICCSBase):
         high_order = self.iccs.cc_seismograms_causal[0].data.copy()
         assert not np.array_equal(low_order, high_order)
         self.iccs.corners = 2
+
+    def test_causal_band_validity_iccs_defaults_stays_valid(self) -> None:
+        """Non-regression: IccsDefaults' own corners/bandpass_fmin/bandpass_fmax stays a valid causal band."""
+        freqmin_causal, freqmax_causal = causal_band(
+            IccsDefaults.bandpass_fmin,
+            IccsDefaults.bandpass_fmax,
+            IccsDefaults.corners,
+        )
+        assert freqmin_causal < freqmax_causal
+
+    def test_causal_band_validity_lowering_corners_can_invalidate(self) -> None:
+        """Lowering corners (not raising it) can invalidate a previously-valid causal band."""
+        self.iccs.bandpass_fmin = 0.5
+        self.iccs.bandpass_fmax = 1.0
+        self.iccs.corners = 2  # valid: causal_band(0.5, 1.0, 2) doesn't invert
+        with pytest.raises(
+            ValueError,
+            match="corners is too low for the causal variant's corrected passband",
+        ):
+            self.iccs.corners = 1  # invalid: causal_band(0.5, 1.0, 1) inverts
+
+    def test_causal_band_validity_raising_bandpass_fmin_can_invalidate(self) -> None:
+        """Raising bandpass_fmin can invalidate a previously-valid causal band."""
+        self.iccs.corners = 1
+        self.iccs.bandpass_fmax = 1.0
+        self.iccs.bandpass_fmin = 0.3  # valid: causal_band(0.3, 1.0, 1) doesn't invert
+        with pytest.raises(
+            ValueError,
+            match="bandpass_fmin is too close to bandpass_fmax",
+        ):
+            self.iccs.bandpass_fmin = 0.5  # invalid: causal_band(0.5, 1.0, 1) inverts
+
+    def test_causal_band_validity_lowering_bandpass_fmax_can_invalidate(self) -> None:
+        """Lowering bandpass_fmax can invalidate a previously-valid causal band."""
+        self.iccs.corners = 1
+        self.iccs.bandpass_fmin = 0.3
+        self.iccs.bandpass_fmax = 1.0  # valid: causal_band(0.3, 1.0, 1) doesn't invert
+        with pytest.raises(
+            ValueError,
+            match="bandpass_fmax is too close to bandpass_fmin",
+        ):
+            self.iccs.bandpass_fmax = 0.5  # invalid: causal_band(0.3, 0.5, 1) inverts
+
+    def test_prepare_seismograms_causal_branch_calls_causal_band(self) -> None:
+        """_prepare_seismograms's causal branch calls causal_band with the instance's own field values."""
+        self.iccs.bandpass_apply = True
+        self.iccs.bandpass_fmin = 0.05
+        self.iccs.bandpass_fmax = 2.0
+        self.iccs.corners = 2
+        with unittest.mock.patch(
+            "pysmo.tools.iccs._iccs.causal_band", wraps=causal_band
+        ) as spy:
+            self.iccs.cc_seismograms_causal
+        assert spy.call_count == len(self.iccs.seismograms)
+        for call in spy.call_args_list:
+            assert call.args == (0.05, 2.0, 2)
 
     def test_min_iccs_seismogram_validation(self) -> None:
         """Test validation on MiniIccsSeismogram attributes."""

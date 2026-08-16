@@ -15,6 +15,7 @@ from matplotlib.widgets import Button, Cursor, SpanSelector
 
 from pysmo.tools.iccs import ICCS
 from pysmo.tools.iccs.plot import (
+    _apply_bandpass_params,
     _ScrollIndexTracker,
     draw_common_matrix_image,
     draw_common_stack,
@@ -832,6 +833,55 @@ def test_draw_common_matrix_image_causal_labels_variant(iccs_instance: ICCS) -> 
     plt.close(fig)
 
 
+def test_draw_common_stack_colorbar_labels_zerophase_only_when_apply_true(
+    iccs_instance: ICCS,
+) -> None:
+    """The colorbar always reads zero-phase, never "(causal)", regardless of the preview toggle."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    fig, ax = plt.subplots()
+    draw_common_stack(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    colorbar_ax = fig.axes[-1]
+    assert "(zero-phase)" in colorbar_ax.get_ylabel()
+    assert "(causal)" not in colorbar_ax.get_ylabel()
+    plt.close(fig)
+
+    iccs_instance.bandpass_apply = False
+    fig, ax = plt.subplots()
+    draw_common_stack(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    colorbar_ax = fig.axes[-1]
+    assert "(zero-phase)" not in colorbar_ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_draw_common_matrix_image_ylabel_zerophase_only_when_apply_true(
+    iccs_instance: ICCS,
+) -> None:
+    """The row-order y-label always reads zero-phase, gated the same way as the colorbar."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    fig, ax = plt.subplots()
+    draw_common_matrix_image(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    assert "(zero-phase)" in ax.get_ylabel()
+    plt.close(fig)
+
+    iccs_instance.bandpass_apply = False
+    fig, ax = plt.subplots()
+    draw_common_matrix_image(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    assert "(zero-phase)" not in ax.get_ylabel()
+    plt.close(fig)
+
+
 def test_plot_stack_causal_smoke(iccs_instance: ICCS) -> None:
     """plot_stack accepts causal=True and draws without error."""
     iccs_instance()
@@ -861,12 +911,12 @@ def test_update_pick_defaults_to_causal(iccs_instance: ICCS) -> None:
     plt.close(fig)
 
 
-def test_update_timewindow_defaults_to_causal(iccs_instance: ICCS) -> None:
-    """update_timewindow defaults to causal=True (the point of the feature)."""
+def test_update_timewindow_defaults_to_zerophase(iccs_instance: ICCS) -> None:
+    """update_timewindow defaults to causal=False (matches what window_pre/post actually crop)."""
     iccs_instance()
     iccs_instance.bandpass_apply = True
     fig, ax, _ = update_timewindow(iccs_instance, return_fig=True)
-    assert "(causal)" in ax.get_ylabel()
+    assert "(zero-phase)" in ax.get_ylabel()
     plt.close(fig)
 
 
@@ -999,6 +1049,56 @@ def test_update_bandpass_save_with_apply_false(iccs_instance: ICCS) -> None:
     plt.close(fig)
 
 
+def test_update_bandpass_sliders_locked_consistently_when_apply_false(
+    iccs_instance: ICCS,
+) -> None:
+    """fmin, fmax, and corners sliders are all inactive together when Apply bandpass starts off."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = False
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+
+    assert slider_fmin.active is False
+    assert slider_fmax.active is False
+    assert slider_corners.active is False
+    plt.close(fig)
+
+
+def test_update_bandpass_sliders_toggle_consistently_with_apply(
+    iccs_instance: ICCS,
+) -> None:
+    """Toggling Apply bandpass locks/unlocks fmin, fmax, and corners sliders together."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+
+    assert slider_fmin.active is True
+    assert slider_fmax.active is True
+    assert slider_corners.active is True
+
+    check.set_active(0)  # toggle off
+
+    assert slider_fmin.active is False
+    assert slider_fmax.active is False
+    assert slider_corners.active is False
+
+    check.set_active(0)  # toggle back on
+
+    assert slider_fmin.active is True
+    assert slider_fmax.active is True
+    assert slider_corners.active is True
+    plt.close(fig)
+
+
 def _make_immediate_timer(_canvas: object, interval: int = 0) -> object:
     """Test helper: replaces canvas.new_timer with one that fires synchronously."""
 
@@ -1083,6 +1183,30 @@ def test_update_bandpass_live_preview_matrix(iccs_instance: ICCS) -> None:
         slider_fmin.set_val(np.log(new_fmin))
 
     assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
+    plt.close(fig)
+
+
+def test_update_bandpass_colorbar_label_updates_live_with_apply_toggle(
+    iccs_instance: ICCS,
+) -> None:
+    """Toggling Apply bandpass updates the colorbar's "(zero-phase)" suffix live, not just at initial draw."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    with _immediate_timer_patch():
+        (
+            fig,
+            ax,
+            (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+        ) = update_bandpass(iccs_instance, return_fig=True)
+        colorbar_ax = next(
+            a for a in fig.axes if "Correlation coefficient" in a.get_ylabel()
+        )
+        assert "(zero-phase)" in colorbar_ax.get_ylabel()
+
+        check.set_active(0)  # toggle Apply bandpass off; _on_check schedules an update
+
+    assert "(zero-phase)" not in colorbar_ax.get_ylabel()
     plt.close(fig)
 
 
@@ -1214,4 +1338,106 @@ def test_update_bandpass_corners_slider_not_clamped_above_default_max(
     # Save without touching the corners slider must not overwrite the value.
     _click_button(b_save)
     assert iccs_instance.corners == 12
+    plt.close(fig)
+
+
+def test_apply_bandpass_params_avoids_stale_intermediate_rejection(
+    iccs_instance: ICCS,
+) -> None:
+    """A fixed write order (fmin, fmax, corners) can reject a jointly-valid target; a safe order doesn't."""
+    iccs_instance.corners = 1
+    iccs_instance.bandpass_fmin = 0.3
+    iccs_instance.bandpass_fmax = 1.0
+
+    assert _apply_bandpass_params(iccs_instance, True, 0.5, 2.0, 4)
+
+    assert iccs_instance.bandpass_apply is True
+    assert iccs_instance.bandpass_fmin == pytest.approx(0.5)
+    assert iccs_instance.bandpass_fmax == pytest.approx(2.0)
+    assert iccs_instance.corners == 4
+
+
+def test_apply_bandpass_params_returns_false_on_invalid_target(
+    iccs_instance: ICCS,
+) -> None:
+    """An invalid target combination is rejected and iccs is left unchanged."""
+    iccs_instance.bandpass_apply = True
+    orig_fmin = iccs_instance.bandpass_fmin
+    orig_fmax = iccs_instance.bandpass_fmax
+    orig_corners = iccs_instance.corners
+
+    assert not _apply_bandpass_params(iccs_instance, True, 0.5, 1.0, 1)
+
+    assert iccs_instance.bandpass_fmin == orig_fmin
+    assert iccs_instance.bandpass_fmax == orig_fmax
+    assert iccs_instance.corners == orig_corners
+
+
+def test_update_bandpass_causal_preview_ignores_invalid_combination(
+    iccs_instance: ICCS,
+) -> None:
+    """Dragging into a combination causal_band would invert doesn't raise or mutate iccs.
+
+    Each slider change triggers its own debounced write, so fmin/fmax move
+    first (each individually valid against the still-default corners=2:
+    causal_band(0.5, 2.0, 2) and causal_band(0.5, 1.0, 2) both hold), then
+    lowering corners to 1 is the step that actually inverts the band
+    (causal_band(0.5, 1.0, 1) does not). That last write must be silently
+    refused (matching the existing fmin >= fmax guard's behaviour), not
+    raise from inside the debounced timer callback, leaving corners at its
+    last valid value.
+    """
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    orig_corners = iccs_instance.corners
+
+    with _immediate_timer_patch():
+        (
+            fig,
+            ax,
+            (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+        ) = update_bandpass(iccs_instance, return_fig=True)
+        radio.set_active(1)  # "Causal"
+        slider_fmin.set_val(np.log(0.5))
+        slider_fmax.set_val(np.log(1.0))
+        slider_corners.set_val(1)  # refused: causal_band(0.5, 1.0, 1) inverts
+
+    assert iccs_instance.bandpass_fmin == pytest.approx(0.5)
+    assert iccs_instance.bandpass_fmax == pytest.approx(1.0)
+    assert iccs_instance.corners == orig_corners
+    plt.close(fig)
+
+
+def test_update_bandpass_causal_save_ignores_invalid_combination(
+    iccs_instance: ICCS,
+) -> None:
+    """Clicking Save in an invalid causal-band combination doesn't raise or mutate iccs.
+
+    Mirrors the preview guard's silent-refusal behaviour: with the sliders
+    left at fmin=0.5, fmax=1.0, corners=1 (causal_band(0.5, 1.0, 1)
+    inverts), Save must refuse rather than propagate the uncaught
+    ValueError bandpass_fmin/bandpass_fmax/corners' own validators would
+    otherwise raise.
+    """
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    orig_fmin = iccs_instance.bandpass_fmin
+    orig_fmax = iccs_instance.bandpass_fmax
+    orig_corners = iccs_instance.corners
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+    radio.set_active(1)  # "Causal"
+    slider_fmin.set_val(np.log(0.5))
+    slider_fmax.set_val(np.log(1.0))
+    slider_corners.set_val(1)
+
+    _click_button(b_save)  # must not raise
+
+    assert iccs_instance.bandpass_fmin == pytest.approx(orig_fmin)
+    assert iccs_instance.bandpass_fmax == pytest.approx(orig_fmax)
+    assert iccs_instance.corners == orig_corners
     plt.close(fig)
