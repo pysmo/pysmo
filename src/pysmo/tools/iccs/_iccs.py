@@ -21,7 +21,7 @@ from pysmo.functions import (
     window,
 )
 from pysmo.lib.validators import convert_to_timedelta
-from pysmo.tools.signal import bandpass, mccc, multi_delay
+from pysmo.tools.signal import bandpass, causal_band, mccc, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
 from pysmo.typing import (
     NegativeTimedelta,
@@ -106,6 +106,13 @@ def _validate_bandpass_fmin(
         raise ValueError("bandpass_fmin must be positive.")
     if value >= instance.bandpass_fmax:
         raise ValueError("bandpass_fmin must be less than bandpass_fmax.")
+    try:
+        causal_band(value, instance.bandpass_fmax, instance.corners)
+    except ValueError:
+        raise ValueError(
+            "bandpass_fmin is too close to bandpass_fmax for the causal "
+            "variant's corrected passband at the current corners."
+        ) from None
 
 
 def _validate_bandpass_fmax(
@@ -120,6 +127,26 @@ def _validate_bandpass_fmax(
             raise ValueError(
                 f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
             )
+    try:
+        causal_band(instance.bandpass_fmin, value, instance.corners)
+    except ValueError:
+        raise ValueError(
+            "bandpass_fmax is too close to bandpass_fmin for the causal "
+            "variant's corrected passband at the current corners."
+        ) from None
+
+
+def _validate_corners_causal_band(
+    instance: "ICCS", attribute: Attribute, value: int
+) -> None:
+    """Ensure corners doesn't invert the causal variant's corrected passband."""
+    try:
+        causal_band(instance.bandpass_fmin, instance.bandpass_fmax, value)
+    except ValueError:
+        raise ValueError(
+            "corners is too low for the causal variant's corrected "
+            "passband at the current bandpass_fmin/bandpass_fmax."
+        ) from None
 
 
 def _validate_bandpass_apply(
@@ -337,12 +364,16 @@ class ICCS:
     corners: PositiveInt = field(
         default=IccsDefaults.corners,
         converter=int,
-        validator=[validators.instance_of(int), validators.gt(0)],
+        validator=[
+            validators.instance_of(int),
+            validators.gt(0),
+            _validate_corners_causal_band,
+        ],
         on_setattr=setters.pipe(
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
     )
-    """Number of corners (poles) for the zero-phase bandpass filter applied to
+    r"""Number of corners (poles) for the zero-phase bandpass filter applied to
     [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]/
     [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] when
     [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
@@ -351,17 +382,40 @@ class ICCS:
     ([`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal],
     [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal])
     use `2 * corners` poles, matching the rolloff steepness of the zero-phase
-    filter (`sosfiltfilt` effectively doubles filter order by applying it
-    twice). Their nominal -3dB frequencies are not adjusted to compensate for
-    this: a causal Butterworth's -3dB point sits at the nominal
-    `bandpass_fmin`/`bandpass_fmax`, while `sosfiltfilt`'s actual -3dB point
-    is pulled inward by a factor of `(√2 − 1)^(1/2·corners)` (≈0.80 at the
-    default `corners=2`). This means the two variants don't just differ in
-    timing/smearing — the causal variant's effective passband is genuinely
-    wider (closer to the nominal corners) than the zero-phase variant's, so
-    it will also pass more energy near the band edges. This is a known,
-    accepted discrepancy between the two variants, not a bug to be fixed by
-    adjusting frequencies.
+    filter ([`sosfiltfilt`][scipy.signal.sosfiltfilt] effectively doubles
+    filter order by applying it twice). Their design `freqmin`/`freqmax`
+    passed to [`bandpass`][pysmo.tools.signal.bandpass] are corrected via
+    [`causal_band`][pysmo.tools.signal.causal_band] so the causal variant's
+    actual -3dB point matches the zero-phase variant's actual (inward-shifted)
+    -3dB point closely — not exactly. See
+    [`causal_band`][pysmo.tools.signal.causal_band] for the correction
+    itself and its derivation; in short, the residual comes
+    from real Butterworth bandpass edges interacting with each other (not
+    behaving as two independent single-edge filters, which is what the
+    correction formula assumes). At `ICCS`'s own defaults
+    (`corners=2`, `freqmax/freqmin=40`) the residual settles at **≈1.33%**
+    at typical broadband seismic sample rates, shrinking further with wider
+    relative bandwidth or higher `corners` and growing with narrower
+    bandwidth or lower `corners`; at low sample rates relative to
+    `bandpass_fmax` (e.g. 20 Hz) a second, otherwise-negligible effect
+    compounds with it and the residual grows to **≈2.37%** (worked example
+    and exact figures: [`causal_band`][pysmo.tools.signal.causal_band]'s own
+    docstring).
+
+    Because the correction moves both corrected edges inward from the
+    nominal band, `corners` is no longer independent of `bandpass_fmin`/
+    `bandpass_fmax`: lowering `corners` while they stay fixed (or narrowing
+    them while `corners` stays fixed) can raise `ValueError` if the corrected
+    band would invert — the ratio `causal_band` applies is monotonically
+    increasing in `corners`, so *raising* `corners` can only
+    move a combination towards validity, never away from it; only lowering
+    it (or narrowing the nominal band) can break a previously-valid one. See
+    [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin]/
+    [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax] for the coupled
+    validation. This is a distinct, *frequency-validity* constraint from the
+    numerical-stability finding below — there is still no cap on `corners`
+    for numerical-stability reasons; the new `ValueError` is a different
+    mechanism entirely.
 
     The causal variant also has non-zero, frequency-dependent group delay
     (unlike the zero-phase variant, which has none by construction): a
@@ -370,9 +424,9 @@ class ICCS:
     systematically biased later than the true onset by an amount that
     depends on `corners`, `bandpass_fmin`, and `bandpass_fmax` — this is the
     trade-off for avoiding zero-phase's backward precursor smearing, not
-    something corrected here. Compute `scipy.signal.group_delay` on the same
-    `corners`/frequency combination if an exact per-configuration correction
-    is needed.
+    something corrected here. Compute
+    [`group_delay`][scipy.signal.group_delay] on the same `corners`/frequency
+    combination if an exact per-configuration correction is needed.
 
     Raising `corners` well above typical seismological values has no
     dedicated guard: filtering stays numerically well-behaved even at
@@ -998,10 +1052,16 @@ def _prepare_seismograms(
         ephemeral_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
 
         if instance.bandpass_apply:
+            if causal:
+                freqmin, freqmax = causal_band(
+                    instance.bandpass_fmin, instance.bandpass_fmax, instance.corners
+                )
+            else:
+                freqmin, freqmax = instance.bandpass_fmin, instance.bandpass_fmax
             bandpass(
                 ephemeral_seismogram,
-                instance.bandpass_fmin,
-                instance.bandpass_fmax,
+                freqmin,
+                freqmax,
                 corners=instance.corners * 2 if causal else instance.corners,
                 zerophase=not causal,
             )

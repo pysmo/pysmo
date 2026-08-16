@@ -33,6 +33,8 @@ from matplotlib.widgets import (
     SpanSelector,
 )
 
+from pysmo.tools.signal import causal_band
+
 from ._defaults import IccsDefaults
 from ._iccs import ICCS
 
@@ -83,6 +85,50 @@ def _variant_suffix(apply: bool, causal: bool) -> str:
     if not apply:
         return ""
     return " (causal)" if causal else " (zero-phase)"
+
+
+def _apply_bandpass_params(
+    iccs: ICCS, apply: bool, fmin: float, fmax: float, corners: int
+) -> bool:
+    """Apply new bandpass_apply/bandpass_fmin/bandpass_fmax/corners without spurious rejections.
+
+    ICCS's per-field validators check each new value against the *other*
+    fields' current values, so setting bandpass_fmin, bandpass_fmax, and
+    corners one at a time in a fixed order can spuriously reject a
+    combination that's valid once all three are set together (e.g. a step
+    checked against a stale, narrower band left over from a previous
+    update).
+
+    Avoided by validating the full target via
+    [`causal_band`][pysmo.tools.signal.causal_band] first, then writing
+    fields moving in the *permissive* direction (`bandpass_fmin` down,
+    `bandpass_fmax` up, `corners` up) before the *restrictive* ones — a
+    permissive write can only make an already-valid combination more valid,
+    and by the time a restrictive field is written the others are already
+    at their validated target, so it succeeds too.
+
+    Returns:
+        `True` if the target combination was valid and applied (cache
+        cleared). `False` if invalid — `iccs` is left unchanged.
+    """
+    if fmin >= fmax:
+        return False
+    try:
+        causal_band(fmin, fmax, corners)
+    except ValueError:
+        return False
+
+    iccs.bandpass_apply = apply
+
+    fields = [
+        ("bandpass_fmin", fmin, fmin <= iccs.bandpass_fmin),
+        ("bandpass_fmax", fmax, fmax >= iccs.bandpass_fmax),
+        ("corners", corners, corners >= iccs.corners),
+    ]
+    for name, value, permissive in sorted(fields, key=lambda f: not f[2]):
+        setattr(iccs, name, value)
+
+    return True
 
 
 def _left_margin(use_matrix_image: bool) -> float:
@@ -279,7 +325,8 @@ def _draw_stack_initial(
     colorbar = fig.colorbar(
         scalar_mappable,
         ax=ax,
-        label="|Correlation coefficient|",
+        # ccs is always zero-phase-based, regardless of the preview toggle.
+        label=f"|Correlation coefficient|{_variant_suffix(iccs.bandpass_apply, False)}",
         fraction=0.05,
         pad=0.02,
     )
@@ -359,7 +406,11 @@ def _draw_matrix_image_initial(
     ax.set_xlabel(
         f"Time relative to pick [s]{_variant_suffix(iccs.bandpass_apply, causal)}"
     )
-    ax.set_ylabel("Seismograms sorted by correlation coefficient")
+    # Row order comes from ccs, which is always zero-phase-based.
+    ax.set_ylabel(
+        "Seismograms sorted by correlation coefficient"
+        f"{_variant_suffix(iccs.bandpass_apply, False)}"
+    )
     axes_image = ax.imshow(
         seismogram_matrix,
         extent=(tmin, tmax, 0, len(seismogram_matrix)),
@@ -808,7 +859,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
-    causal: bool = True,
+    causal: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
 
@@ -819,7 +870,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
-    causal: bool = True,
+    causal: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -830,7 +881,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
-    causal: bool = True,
+    causal: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
     """Pick new time window limits.
@@ -851,10 +902,16 @@ def update_timewindow(
             instead of the [stack][pysmo.tools.iccs.plot_stack].
         causal: Determines the filter phase behaviour:
             - `True`: causally-filtered (single-pass) seismograms are used.
-              This is the default for this function, since placing window
-              boundaries relative to the true onset location is exactly what
-              zero-phase filtering's acausal precursor smearing distorts.
-            - `False`: zero-phase filtered seismograms are used.
+            - `False`: zero-phase filtered seismograms are used. This is
+              the default for this function: `window_pre`/`window_post`
+              crop [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
+              (zero-phase), which is what cross-correlation, stacking, and
+              MCCC actually run on regardless of what's displayed here.
+              Picking the window against the causal display risks
+              misjudging the pre-arrival margin: the causal view's clean
+              quiet period before the onset doesn't reflect that the
+              zero-phase data being cropped may already carry acausal
+              precursor energy inside that same interval.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -1288,10 +1345,8 @@ def update_bandpass(
             if key not in _matrix_cache:
                 if len(_matrix_cache) >= _BANDPASS_CACHE_SIZE:
                     _matrix_cache.popitem(last=False)
-                iccs.bandpass_apply = apply
-                iccs.bandpass_fmin = fmin
-                iccs.bandpass_fmax = fmax
-                iccs.corners = corners
+                if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+                    return
                 if context:
                     seismograms = (
                         iccs.context_seismograms_causal
@@ -1310,6 +1365,10 @@ def update_bandpass(
                 _matrix_cache.move_to_end(key)
             axes_image.set_data(_matrix_cache[key])
             ax.set_xlabel(f"Time relative to pick [s]{_variant_suffix(apply, causal)}")
+            ax.set_ylabel(
+                "Seismograms sorted by correlation coefficient"
+                f"{_variant_suffix(apply, False)}"
+            )
             fig.canvas.draw_idle()
 
         update_fn = _update_matrix
@@ -1339,10 +1398,8 @@ def update_bandpass(
             if key not in _stack_cache:
                 if len(_stack_cache) >= _BANDPASS_CACHE_SIZE:
                     _stack_cache.popitem(last=False)
-                iccs.bandpass_apply = apply
-                iccs.bandpass_fmin = fmin
-                iccs.bandpass_fmax = fmax
-                iccs.corners = corners
+                if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+                    return
                 if context:
                     seismograms = (
                         iccs.context_seismograms_causal
@@ -1370,6 +1427,9 @@ def update_bandpass(
             stack_line.set_ydata(stack_data)
             scalar_mappable.set_norm(new_norm)
             colorbar.update_normal(scalar_mappable)
+            colorbar.set_label(
+                f"|Correlation coefficient|{_variant_suffix(apply, False)}"
+            )
             ax.set_ylabel(f"Normalised amplitude{_variant_suffix(apply, causal)}")
             fig.canvas.draw_idle()
 
@@ -1378,18 +1438,27 @@ def update_bandpass(
     ax.set_title("Update bandpass filter parameters.")
 
     gs_widgets = _widget_gridspec(
-        fig, height_ratios=[1, 1, 1, 1, 1.8], top=bottom_margin - 0.07, bottom=0.02
+        fig, height_ratios=[1, 1, 1, 1.8], top=bottom_margin - 0.07, bottom=0.02
     )
     ax_fmin = fig.add_subplot(gs_widgets[0, 1:11])
     ax_fmax = fig.add_subplot(gs_widgets[1, 1:11])
     ax_corners = fig.add_subplot(gs_widgets[2, 1:11])
-    ax_check = fig.add_subplot(gs_widgets[3, 1:5])
-    ax_radio = fig.add_subplot(gs_widgets[3, 6:11])
-    ax_save = fig.add_subplot(gs_widgets[4, 8:10])
-    ax_cancel = fig.add_subplot(gs_widgets[4, 10:12])
+    ax_check = fig.add_subplot(gs_widgets[3, 1:4])
+    ax_radio = fig.add_subplot(gs_widgets[3, 4:8])
+    ax_save = fig.add_subplot(gs_widgets[3, 8:10])
+    ax_cancel = fig.add_subplot(gs_widgets[3, 10:12])
+
+    # Align left edges with the main plot's y-axis, not the grid's column 1.
+    check_pos = ax_check.get_position()
+    shift = _left_margin(use_matrix_image) - check_pos.x0
+    ax_check.set_position(check_pos.translated(shift, 0))
+    radio_pos = ax_radio.get_position()
+    ax_radio.set_position(radio_pos.translated(shift, 0))
 
     _fg = plt.rcParams.get("text.color", "black")
-    ax_check.set_frame_on(False)
+    ax_check.set_frame_on(True)
+    for spine in ax_check.spines.values():
+        spine.set_edgecolor(_fg)
     check = CheckButtons(
         ax_check,
         ["Apply bandpass"],
@@ -1398,14 +1467,51 @@ def update_bandpass(
         frame_props={"edgecolor": _fg, "s": 200},
         check_props={"color": _fg, "s": 200},
     )
-    ax_radio.set_frame_on(False)
+    ax_radio.set_frame_on(True)
+    ax_radio.set_xticks([])
+    ax_radio.set_yticks([])
+    for spine in ax_radio.spines.values():
+        spine.set_edgecolor(_fg)
+    ax_radio.text(
+        0.5,
+        0.85,
+        "Preview as (not saved)",
+        ha="center",
+        va="top",
+        fontsize=9,
+        color=_fg,
+        transform=ax_radio.transAxes,
+    )
+    # Give RadioButtons its own axes covering only the box's lower portion,
+    # so it doesn't centre itself over the label above. fig.add_axes, not
+    # ax_radio.inset_axes: an inset axes' locator recomputes its position
+    # from the parent on every redraw, discarding set_position() below.
+    radio_box_pos = ax_radio.get_position()
+    ax_radio_toggles = fig.add_axes(
+        (
+            radio_box_pos.x0,
+            radio_box_pos.y0,
+            radio_box_pos.width,
+            radio_box_pos.height * 0.55,
+        )
+    )
+    ax_radio_toggles.set_frame_on(False)
     radio = RadioButtons(
-        ax_radio,
+        ax_radio_toggles,
         ["Zero-phase", "Causal"],
         active=0,
         layout="horizontal",
         label_props={"color": [_fg, _fg], "fontsize": [11, 11]},
     )
+    # RadioButtons has no option to centre the group — measure how much
+    # width it actually used, once rendered, and shift to centre it.
+    fig.canvas.draw()
+    content_right = radio.labels[-1].get_window_extent().x1
+    toggles_bbox = ax_radio_toggles.get_window_extent()
+    content_fraction = (content_right - toggles_bbox.x0) / toggles_bbox.width
+    toggles_pos = ax_radio_toggles.get_position()
+    offset = (1 - content_fraction) / 2 * toggles_pos.width
+    ax_radio_toggles.set_position(toggles_pos.translated(offset, 0))
     slider_fmin = Slider(
         ax_fmin, "fmin [Hz]", _log_min, _log_max, valinit=np.log(iccs.bandpass_fmin)
     )
@@ -1430,6 +1536,7 @@ def update_bandpass(
     if not iccs.bandpass_apply:
         slider_fmin.set_active(False)
         slider_fmax.set_active(False)
+        slider_corners.set_active(False)
 
     def _schedule_update() -> None:
         if _debounce_timer[0] is not None:
@@ -1473,6 +1580,7 @@ def update_bandpass(
         apply = check.get_status()[0]
         slider_fmin.set_active(apply)
         slider_fmax.set_active(apply)
+        slider_corners.set_active(apply)
         _schedule_update()
 
     def _on_radio_change(_label: str | None) -> None:
@@ -1487,10 +1595,12 @@ def update_bandpass(
     def on_save(_: Event) -> None:
         if _debounce_timer[0] is not None:
             _debounce_timer[0].stop()
-        iccs.bandpass_apply = check.get_status()[0]
-        iccs.bandpass_fmin = float(np.exp(slider_fmin.val))
-        iccs.bandpass_fmax = float(np.exp(slider_fmax.val))
-        iccs.corners = int(slider_corners.val)
+        fmin = float(np.exp(slider_fmin.val))
+        fmax = float(np.exp(slider_fmax.val))
+        corners = int(slider_corners.val)
+        apply = check.get_status()[0]
+        if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+            return
         if not return_fig:
             plt.close(fig)
 
