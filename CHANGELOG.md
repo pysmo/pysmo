@@ -73,6 +73,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(classes)** [**breaking**] Add SAC.fetch()/fetch_sac(), remove SacIO.fetch()/from_iris()
 - **(classes)** Add SAC.from_zip()/all_from_zip() for offline/multi-segment parsing
 - **(classes)** Add write support for GeoCsvSeismogram and SacPZ
+- **(iccs)** [**breaking**] Add causal-filtered variant for ICCS picking tools
+- **(signal)** Add causal/zero-phase -3dB frequency correction
 
 ### 🧪 Testing
 
