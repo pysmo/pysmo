@@ -67,7 +67,12 @@ pysmo, the following parameters are required:
 
 As the ICCS algorithm operates on a window around the targeted phase arrival,
 only a small portion of the input seismogram data are used. These smaller
-portions are generated on the fly in two ways:
+portions are generated on the fly in two ways, each with a causally-filtered
+counterpart used by picking-oriented tools. The ICCS algorithm itself
+always runs on the zero-phase variant, as does MCCC, regardless of which
+one is currently displayed — see
+[`ICCS.corners`][pysmo.tools.iccs.ICCS.corners], which sets the zero-phase
+filter's order and from which the causal variant's own order is derived:
 
 - **Cross-correlation seismograms** are used for the execution of the ICCS
   algorithm. They consist of the windowed portion around the phase arrival and
