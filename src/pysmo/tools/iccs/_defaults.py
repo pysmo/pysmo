@@ -22,6 +22,7 @@ class _IccsDefaults:
     bandpass_apply: bool = False
     bandpass_fmin: float = 0.05
     bandpass_fmax: float = 2
+    corners: int = 2
 
     # ------------------------------------------------------------------------
     # ICCS __call__ defaults
