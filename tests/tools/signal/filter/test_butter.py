@@ -6,10 +6,19 @@ Each function is tested for both clone modes, parameter validation, and zerophas
 
 import numpy as np
 import pytest
+from scipy.signal import iirfilter, sosfreqz
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import MiniSeismogram, Seismogram
-from pysmo.tools.signal._filter._butter import bandpass, bandstop, highpass, lowpass
+from pysmo.tools.signal._filter._butter import (
+    _zerophase_causal_ratio,
+    bandpass,
+    bandstop,
+    causal_band,
+    highpass,
+    lowpass,
+    zerophase_band,
+)
 from tests.test_helpers import assert_seismogram_modification
 
 
@@ -453,3 +462,191 @@ class TestBandstop(BaseButterFilterTest):
             corners,
             expected_data=snapshot,
         )
+
+
+def _find_3db_crossing(
+    sos: np.ndarray, zerophase: bool, fs: float, edge_freq: float, margin: float = 0.6
+) -> float:
+    """Find a Butterworth filter's actual -3dB crossing nearest edge_freq.
+
+    Used only by the tests below to independently verify causal_band's
+    correction against a real magnitude response, rather than trusting the
+    formula's own algebra.
+    """
+    target_db = -20 * np.log10(2**0.5)
+    w, h = sosfreqz(sos, worN=200_000, fs=fs)
+    mag = np.abs(h) ** 2 if zerophase else np.abs(h)
+    db = 20 * np.log10(mag + 1e-300)
+    mask = (w > edge_freq * (1 - margin)) & (w < edge_freq * (1 + margin))
+    seg_w, seg_d = w[mask], db[mask] - target_db
+    crossings = np.where(np.diff(np.sign(seg_d)) != 0)[0]
+    best = crossings[np.argmin(np.abs(seg_w[crossings] - edge_freq))]
+    frac = -seg_d[best] / (seg_d[best + 1] - seg_d[best])
+    return float(seg_w[best] + frac * (seg_w[best + 1] - seg_w[best]))
+
+
+def _residual_pct(freqmin: float, freqmax: float, corners: int, fs: float) -> float:
+    """Percentage residual between the corrected-causal and zero-phase actual -3dB points at freqmax."""
+    freqmin_causal, freqmax_causal = causal_band(freqmin, freqmax, corners)
+    nyquist = fs / 2
+    sos_zerophase = iirfilter(
+        corners,
+        [freqmin / nyquist, freqmax / nyquist],
+        btype="band",
+        ftype="butter",
+        output="sos",
+    )
+    sos_causal_corrected = iirfilter(
+        2 * corners,
+        [freqmin_causal / nyquist, freqmax_causal / nyquist],
+        btype="band",
+        ftype="butter",
+        output="sos",
+    )
+    zerophase_edge = _find_3db_crossing(sos_zerophase, True, fs, freqmax)
+    causal_corrected_edge = _find_3db_crossing(sos_causal_corrected, False, fs, freqmax)
+    return abs(causal_corrected_edge - zerophase_edge) / zerophase_edge * 100
+
+
+class TestZerophaseCausalRatio:
+    """Tests for _zerophase_causal_ratio."""
+
+    def test_exact_values(self) -> None:
+        """Verify the closed-form ratio at a few representative corners values."""
+        assert _zerophase_causal_ratio(1) == pytest.approx(0.6435942529055827)
+        assert _zerophase_causal_ratio(2) == pytest.approx(0.8022432629231502)
+        assert _zerophase_causal_ratio(4) == pytest.approx(0.8956803352330285)
+
+    def test_monotonic_increase_towards_one(self) -> None:
+        """Verify the ratio increases monotonically towards 1 as corners grows."""
+        ratios = [_zerophase_causal_ratio(c) for c in range(1, 33)]
+        assert all(a < b for a, b in zip(ratios, ratios[1:]))
+        assert ratios[-1] < 1
+
+    @pytest.mark.parametrize("corners", [1, 2, 4, 8, 16, 32])
+    def test_stays_between_zero_and_one(self, corners: int) -> None:
+        """Verify the ratio is strictly inside (0, 1) for any positive corners."""
+        ratio = _zerophase_causal_ratio(corners)
+        assert 0 < ratio < 1
+
+
+class TestCausalBand:
+    """Tests for causal_band."""
+
+    def test_edges_move_inward(self) -> None:
+        """Verify freqmin moves up and freqmax moves down from the nominal band."""
+        freqmin, freqmax = causal_band(0.05, 2.0, corners=2)
+        assert freqmin > 0.05
+        assert freqmax < 2.0
+
+    def test_matches_ratio_composed_manually(self) -> None:
+        """Verify causal_band matches _zerophase_causal_ratio composed by hand."""
+        freqmin, freqmax, corners = 0.05, 2.0, 2
+        ratio = _zerophase_causal_ratio(corners)
+        expected = (freqmin / ratio, freqmax * ratio)
+        assert causal_band(freqmin, freqmax, corners) == pytest.approx(expected)
+
+    def test_raises_when_correction_would_invert_band(self) -> None:
+        """A narrow band combined with low corners inverts the corrected band."""
+        with pytest.raises(ValueError, match="would invert the band"):
+            causal_band(0.5, 1.0, corners=1)
+
+    def test_does_not_raise_on_valid_band(self) -> None:
+        """The same band stays valid at a high enough corners."""
+        causal_band(0.5, 1.0, corners=2)
+
+
+class TestZerophaseBand:
+    """Tests for zerophase_band."""
+
+    def test_edges_move_outward(self) -> None:
+        """Verify freqmin moves down and freqmax moves up from the input band."""
+        freqmin, freqmax = zerophase_band(0.05, 2.0, corners=2)
+        assert freqmin < 0.05
+        assert freqmax > 2.0
+
+    def test_matches_ratio_composed_manually(self) -> None:
+        """Verify zerophase_band matches _zerophase_causal_ratio composed by hand."""
+        freqmin, freqmax, corners = 0.05, 2.0, 2
+        ratio = _zerophase_causal_ratio(corners)
+        expected = (freqmin * ratio, freqmax / ratio)
+        assert zerophase_band(freqmin, freqmax, corners) == pytest.approx(expected)
+
+
+class TestCausalZerophaseRoundTrip:
+    """Round-trip tests between causal_band and zerophase_band.
+
+    The two directions are distinct compositions sharing the same ratio, so
+    both are verified rather than treating one as implied by the other.
+    """
+
+    @pytest.mark.parametrize("corners", [1, 2, 4, 8])
+    @pytest.mark.parametrize(
+        "band",
+        [
+            (0.05, 2.0),  # IccsDefaults
+            (0.5, 2.0),  # narrowband
+        ],
+    )
+    def test_causal_then_zerophase_recovers_band(
+        self, band: tuple[float, float], corners: int
+    ) -> None:
+        """causal_band then zerophase_band recovers the original nominal band."""
+        recovered = zerophase_band(*causal_band(*band, corners), corners)
+        assert recovered == pytest.approx(band)
+
+    @pytest.mark.parametrize("corners", [1, 2, 4, 8])
+    @pytest.mark.parametrize(
+        "band",
+        [
+            (0.05, 2.0),
+            (0.5, 2.0),
+        ],
+    )
+    def test_zerophase_then_causal_recovers_band(
+        self, band: tuple[float, float], corners: int
+    ) -> None:
+        """zerophase_band then causal_band recovers the original causal design band."""
+        recovered = causal_band(*zerophase_band(*band, corners), corners)
+        assert recovered == pytest.approx(band)
+
+
+class TestCausalBand3dbMatching:
+    """Numerical verification that causal_band's correction closes the -3dB gap
+    between causal and zero-phase Butterworth bandpass filters.
+
+    The residual is a non-negligible effect (bandpass edge interaction,
+    compounded at low sample rates by Nyquist proximity), not numerical
+    noise -- see `causal_band`'s own docstring for the full
+    characterisation.
+    """
+
+    def test_wide_band_at_broadband_sample_rate(self) -> None:
+        """A wide band at a sample rate comfortably above Nyquist gives a small residual.
+
+        The residual here is ~1.36%; rel=0.02 covers it with margin while
+        staying tight enough to catch a broken correction.
+        """
+        residual = _residual_pct(freqmin=0.05, freqmax=2.0, corners=2, fs=100.0)
+        assert residual == pytest.approx(1.36, rel=0.2)
+        assert residual < 2.0
+
+    def test_lower_corners_same_wide_band(self) -> None:
+        """Lowering corners on the same wide band grows the residual, but the correction still dominates.
+
+        The residual is ~3.30% (vs. ~50% for the uncorrected causal filter
+        at the same configuration).
+        """
+        residual = _residual_pct(freqmin=0.05, freqmax=2.0, corners=1, fs=100.0)
+        assert residual == pytest.approx(3.30, rel=0.2)
+        assert residual < 5.0
+
+    def test_low_sample_rate_grows_residual(self) -> None:
+        """A low sample rate relative to freqmax compounds a Nyquist-proximity effect onto the residual.
+
+        The residual grows from ~1.36% (broadband) to ~2.37% at fs=20 Hz for
+        the same band/corners.
+        """
+        residual = _residual_pct(freqmin=0.05, freqmax=2.0, corners=2, fs=20.0)
+        assert residual == pytest.approx(2.37, rel=0.2)
+        assert residual < 3.0

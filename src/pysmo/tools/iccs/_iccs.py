@@ -21,12 +21,13 @@ from pysmo.functions import (
     window,
 )
 from pysmo.lib.validators import convert_to_timedelta
-from pysmo.tools.signal import bandpass, mccc, multi_delay
+from pysmo.tools.signal import bandpass, causal_band, mccc, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
 from pysmo.typing import (
     NegativeTimedelta,
     NonNegativeNumber,
     NonNegativeTimedelta,
+    PositiveInt,
     PositiveTimedelta,
 )
 
@@ -105,6 +106,13 @@ def _validate_bandpass_fmin(
         raise ValueError("bandpass_fmin must be positive.")
     if value >= instance.bandpass_fmax:
         raise ValueError("bandpass_fmin must be less than bandpass_fmax.")
+    try:
+        causal_band(value, instance.bandpass_fmax, instance.corners)
+    except ValueError:
+        raise ValueError(
+            "bandpass_fmin is too close to bandpass_fmax for the causal "
+            "variant's corrected passband at the current corners."
+        ) from None
 
 
 def _validate_bandpass_fmax(
@@ -119,6 +127,26 @@ def _validate_bandpass_fmax(
             raise ValueError(
                 f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
             )
+    try:
+        causal_band(instance.bandpass_fmin, value, instance.corners)
+    except ValueError:
+        raise ValueError(
+            "bandpass_fmax is too close to bandpass_fmin for the causal "
+            "variant's corrected passband at the current corners."
+        ) from None
+
+
+def _validate_corners_causal_band(
+    instance: "ICCS", attribute: Attribute, value: int
+) -> None:
+    """Ensure corners doesn't invert the causal variant's corrected passband."""
+    try:
+        causal_band(instance.bandpass_fmin, instance.bandpass_fmax, value)
+    except ValueError:
+        raise ValueError(
+            "corners is too low for the causal variant's corrected "
+            "passband at the current bandpass_fmin/bandpass_fmax."
+        ) from None
 
 
 def _validate_bandpass_apply(
@@ -159,6 +187,10 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     stacking. The data in these seismograms are modified on the fly when the
     picks and time windows are updated, but they are not intended to be modified
     directly by users.
+
+    When `bandpass_apply` is `False`, the `*_causal` properties return the
+    exact same objects as their zero-phase counterparts, not copies — an
+    in-place mutation through one name would be visible through the other.
     """
 
     parent_seismogram: IccsSeismogram
@@ -286,6 +318,11 @@ class ICCS:
     [`bandpass`][pysmo.tools.signal.bandpass] filter (with `zerophase` set to
     [`True`][]) to the [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
     and [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms].
+    It also gates whether a causal (single-pass) counterpart is produced for
+    [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal] and
+    [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal] —
+    see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the two variants
+    relate.
 
     As the [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] may have already
     been pre-processed (i.e. already filtered) the default value for this
@@ -324,6 +361,79 @@ class ICCS:
     `0.5 / max_delta.total_seconds()`.
     """
 
+    corners: PositiveInt = field(
+        default=IccsDefaults.corners,
+        converter=int,
+        validator=[
+            validators.instance_of(int),
+            validators.gt(0),
+            _validate_corners_causal_band,
+        ],
+        on_setattr=setters.pipe(
+            setters.convert, setters.validate, _on_setattr_clear_cache
+        ),
+    )
+    r"""Number of corners (poles) for the zero-phase bandpass filter applied to
+    [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]/
+    [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] when
+    [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
+
+    The causal counterparts
+    ([`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal],
+    [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal])
+    use `2 * corners` poles, matching the rolloff steepness of the zero-phase
+    filter ([`sosfiltfilt`][scipy.signal.sosfiltfilt] effectively doubles
+    filter order by applying it twice). Their design `freqmin`/`freqmax`
+    passed to [`bandpass`][pysmo.tools.signal.bandpass] are corrected via
+    [`causal_band`][pysmo.tools.signal.causal_band] so the causal variant's
+    actual -3dB point matches the zero-phase variant's actual (inward-shifted)
+    -3dB point closely — not exactly. See
+    [`causal_band`][pysmo.tools.signal.causal_band] for the correction
+    itself and its derivation; in short, the residual comes
+    from real Butterworth bandpass edges interacting with each other (not
+    behaving as two independent single-edge filters, which is what the
+    correction formula assumes). At `ICCS`'s own defaults
+    (`corners=2`, `freqmax/freqmin=40`) the residual settles at **≈1.33%**
+    at typical broadband seismic sample rates, shrinking further with wider
+    relative bandwidth or higher `corners` and growing with narrower
+    bandwidth or lower `corners`; at low sample rates relative to
+    `bandpass_fmax` (e.g. 20 Hz) a second, otherwise-negligible effect
+    compounds with it and the residual grows to **≈2.37%** (worked example
+    and exact figures: [`causal_band`][pysmo.tools.signal.causal_band]'s own
+    docstring).
+
+    Because the correction moves both corrected edges inward from the
+    nominal band, `corners` is no longer independent of `bandpass_fmin`/
+    `bandpass_fmax`: lowering `corners` while they stay fixed (or narrowing
+    them while `corners` stays fixed) can raise `ValueError` if the corrected
+    band would invert — the ratio `causal_band` applies is monotonically
+    increasing in `corners`, so *raising* `corners` can only
+    move a combination towards validity, never away from it; only lowering
+    it (or narrowing the nominal band) can break a previously-valid one. See
+    [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin]/
+    [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax] for the coupled
+    validation. This is a distinct, *frequency-validity* constraint from the
+    numerical-stability finding below — there is still no cap on `corners`
+    for numerical-stability reasons; the new `ValueError` is a different
+    mechanism entirely.
+
+    The causal variant also has non-zero, frequency-dependent group delay
+    (unlike the zero-phase variant, which has none by construction): a
+    causal filter only pushes energy forward in time, so a pick made on
+    [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal] is
+    systematically biased later than the true onset by an amount that
+    depends on `corners`, `bandpass_fmin`, and `bandpass_fmax` — this is the
+    trade-off for avoiding zero-phase's backward precursor smearing, not
+    something corrected here. Compute
+    [`group_delay`][scipy.signal.group_delay] on the same `corners`/frequency
+    combination if an exact per-configuration correction is needed.
+
+    Raising `corners` well above typical seismological values has no
+    dedicated guard: filtering stays numerically well-behaved even at
+    extreme orders, with no warning (from scipy or otherwise) on the code
+    path [`bandpass`][pysmo.tools.signal.bandpass] actually uses.
+    """
+
     min_cc: float = field(
         default=IccsDefaults.min_cc,
         converter=float,
@@ -359,6 +469,18 @@ class ICCS:
     """Cached stack of the prepared seismograms for cross-correlation."""
     _context_stack_cache: MiniSeismogram | None = field(default=None, init=False)
     """Cached stack of the prepared seismograms with context padding."""
+    _cc_seismograms_causal_cache: list[_EphemeralSeismogram] | None = field(
+        default=None, init=False
+    )
+    """Cached list of the causally-filtered prepared seismograms for cross-correlation."""
+    _context_seismograms_causal_cache: list[_EphemeralSeismogram] | None = field(
+        default=None, init=False
+    )
+    """Cached list of the causally-filtered prepared seismograms with context padding."""
+    _cc_stack_causal_cache: MiniSeismogram | None = field(default=None, init=False)
+    """Cached stack of the causally-filtered prepared seismograms for cross-correlation."""
+    _context_stack_causal_cache: MiniSeismogram | None = field(default=None, init=False)
+    """Cached stack of the causally-filtered prepared seismograms with context padding."""
     _max_td_pre_cache: pd.Timedelta | None = field(default=None, init=False)
     """Cached maximum negative time delta between pick and seismogram begin_time."""
     _min_td_post_cache: pd.Timedelta | None = field(default=None, init=False)
@@ -370,9 +492,10 @@ class ICCS:
     def clear_cache(self) -> None:
         """Clear all cached ephemeral seismograms, stacks, and derived results.
 
-        Ephemeral seismograms (both cross-correlation and context variants),
-        their stacks, cross-correlation norms, and the valid pick and window
-        ranges are all computed on demand and cached to avoid redundant work.
+        Ephemeral seismograms (cross-correlation, context, and their causal
+        counterparts), their stacks, cross-correlation norms, and the valid
+        pick and window ranges are all computed on demand and cached to
+        avoid redundant work.
         The cache is invalidated automatically when a controlling attribute
         such as [`window_pre`][pysmo.tools.iccs.ICCS.window_pre],
         [`window_post`][pysmo.tools.iccs.ICCS.window_post], or
@@ -388,6 +511,10 @@ class ICCS:
         self._ccs_cache = None
         self._cc_stack_cache = None
         self._context_stack_cache = None
+        self._cc_seismograms_causal_cache = None
+        self._context_seismograms_causal_cache = None
+        self._cc_stack_causal_cache = None
+        self._context_stack_causal_cache = None
         self._max_td_pre_cache = None
         self._min_td_post_cache = None
         self._valid_pick_range_cache = None
@@ -554,6 +681,102 @@ class ICCS:
         if self._context_stack_cache is None:
             self._context_stack_cache = _create_stack(self.context_seismograms)
         return self._context_stack_cache
+
+    @property
+    def cc_seismograms_causal(self) -> list[_EphemeralSeismogram]:
+        """Return the seismograms as used for cross-correlation, causally filtered.
+
+        Mirrors [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms],
+        with a causal (single-pass) rather than zero-phase bandpass filter —
+        see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the filter
+        order and passband of the two variants relate. Intended for
+        picking-oriented tools, since a causal filter avoids the acausal
+        precursor smearing a zero-phase filter introduces before the true
+        onset. Never used by the ICCS algorithm itself (cross-correlation,
+        stacking, MCCC), which continues to run on
+        [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
+        unconditionally.
+
+        When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+        `False`, this returns the same object as
+        [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] (not a copy).
+        """
+
+        if not self.bandpass_apply:
+            return self.cc_seismograms
+        if self._cc_seismograms_causal_cache is None:
+            self._cc_seismograms_causal_cache = _prepare_seismograms(
+                self, add_context=False, causal=True
+            )
+        return self._cc_seismograms_causal_cache
+
+    @property
+    def context_seismograms_causal(self) -> list[_EphemeralSeismogram]:
+        """Return the seismograms with extra context for plotting, causally filtered.
+
+        Mirrors [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms],
+        with a causal (single-pass) rather than zero-phase bandpass filter —
+        see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the filter
+        order and passband of the two variants relate.
+
+        The context padding
+        ([`context_width`][pysmo.tools.iccs.ICCS.context_width]) exists to
+        show pre-arrival "quiet" alongside the time window, but a causal
+        filter's group delay pushes energy from the true onset forward in
+        time — some of what the padding shows as pre-arrival quiet may
+        actually contain the filter's response to the onset itself, not the
+        true unfiltered signal before it. This is expected behaviour (see
+        [`corners`][pysmo.tools.iccs.ICCS.corners]), not a bug.
+
+        When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+        `False`, this returns the same object as
+        [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms]
+        (not a copy).
+        """
+
+        if not self.bandpass_apply:
+            return self.context_seismograms
+        if self._context_seismograms_causal_cache is None:
+            self._context_seismograms_causal_cache = _prepare_seismograms(
+                self, add_context=True, causal=True
+            )
+        return self._context_seismograms_causal_cache
+
+    @property
+    def stack_causal(self) -> MiniSeismogram:
+        """Return the stacked [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal].
+
+        When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+        `False`, this returns the same object as
+        [`stack`][pysmo.tools.iccs.ICCS.stack] (not a copy).
+
+        Returns:
+            Stacked causally-filtered input seismograms.
+        """
+        if not self.bandpass_apply:
+            return self.stack
+        if self._cc_stack_causal_cache is None:
+            self._cc_stack_causal_cache = _create_stack(self.cc_seismograms_causal)
+        return self._cc_stack_causal_cache
+
+    @property
+    def context_stack_causal(self) -> MiniSeismogram:
+        """Return the stacked [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal].
+
+        When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+        `False`, this returns the same object as
+        [`context_stack`][pysmo.tools.iccs.ICCS.context_stack] (not a copy).
+
+        Returns:
+            Stacked causally-filtered input seismograms with context padding.
+        """
+        if not self.bandpass_apply:
+            return self.context_stack
+        if self._context_stack_causal_cache is None:
+            self._context_stack_causal_cache = _create_stack(
+                self.context_seismograms_causal
+            )
+        return self._context_stack_causal_cache
 
     def validate_pick(self, pick: pd.Timedelta) -> bool:
         """Check whether a new pick is valid given all seismograms in the instance.
@@ -810,7 +1033,7 @@ def _update_seismogram(
 
 
 def _prepare_seismograms(
-    instance: ICCS, add_context: bool = False
+    instance: ICCS, add_context: bool = False, causal: bool = False
 ) -> list[_EphemeralSeismogram]:
     """Prepare cc_seismograms or context_seismograms."""
 
@@ -829,11 +1052,18 @@ def _prepare_seismograms(
         ephemeral_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
 
         if instance.bandpass_apply:
+            if causal:
+                freqmin, freqmax = causal_band(
+                    instance.bandpass_fmin, instance.bandpass_fmax, instance.corners
+                )
+            else:
+                freqmin, freqmax = instance.bandpass_fmin, instance.bandpass_fmax
             bandpass(
                 ephemeral_seismogram,
-                instance.bandpass_fmin,
-                instance.bandpass_fmax,
-                zerophase=True,
+                freqmin,
+                freqmax,
+                corners=instance.corners * 2 if causal else instance.corners,
+                zerophase=not causal,
             )
 
         if not np.isclose(

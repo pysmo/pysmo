@@ -13,6 +13,9 @@ from annotated_types import Ge, Gt, Interval, Lt, Predicate, Timezone
 type UnitFloat = Annotated[float | int, Interval(ge=0, le=1)]
 """Float between 0.0 and 1.0, or int that is 0 or 1."""
 
+type PositiveInt = Annotated[int, Gt(0)]
+"""Positive Integers greater than 0."""
+
 type PositiveNumber = Annotated[int | float, Gt(0)]
 """Positive Numbers (Float or Int) greater than 0."""
 

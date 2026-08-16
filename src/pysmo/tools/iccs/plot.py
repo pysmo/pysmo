@@ -21,9 +21,19 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import PowerNorm
 from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
-from matplotlib.widgets import Button, CheckButtons, Cursor, Slider, SpanSelector
+from matplotlib.widgets import (
+    Button,
+    CheckButtons,
+    Cursor,
+    RadioButtons,
+    Slider,
+    SpanSelector,
+)
+
+from pysmo.tools.signal import causal_band
 
 from ._defaults import IccsDefaults
 from ._iccs import ICCS
@@ -58,18 +68,143 @@ def _make_mask(iccs: ICCS, all_seismograms: bool) -> list[bool]:
     return [s.select for s in iccs.seismograms]
 
 
-def _add_save_cancel_buttons(
+def _variant_suffix(apply: bool, causal: bool) -> str:
+    """Return a label suffix identifying the causal/zero-phase filter variant.
+
+    Only shown when `apply` is `True` — when it's `False`, causal and
+    zero-phase preparation are identical, so labelling one as "(causal)"
+    would be misleading.
+
+    Takes `apply` explicitly rather than reading `ICCS.bandpass_apply`
+    directly: `update_bandpass`'s live preview only writes
+    `iccs.bandpass_apply` on a cache miss (see `_update_matrix`/
+    `_update_stack`), so it can lag behind the widget's actual current
+    state on a cache hit — callers there must pass the freshly-read
+    checkbox state instead of the (possibly stale) `iccs` attribute.
+    """
+    if not apply:
+        return ""
+    return " (causal)" if causal else " (zero-phase)"
+
+
+def _apply_bandpass_params(
+    iccs: ICCS, apply: bool, fmin: float, fmax: float, corners: int
+) -> bool:
+    """Apply new bandpass_apply/bandpass_fmin/bandpass_fmax/corners without spurious rejections.
+
+    ICCS's per-field validators check each new value against the *other*
+    fields' current values, so setting bandpass_fmin, bandpass_fmax, and
+    corners one at a time in a fixed order can spuriously reject a
+    combination that's valid once all three are set together (e.g. a step
+    checked against a stale, narrower band left over from a previous
+    update).
+
+    Avoided by validating the full target via
+    [`causal_band`][pysmo.tools.signal.causal_band] first, then writing
+    fields moving in the *permissive* direction (`bandpass_fmin` down,
+    `bandpass_fmax` up, `corners` up) before the *restrictive* ones — a
+    permissive write can only make an already-valid combination more valid,
+    and by the time a restrictive field is written the others are already
+    at their validated target, so it succeeds too.
+
+    Returns:
+        `True` if the target combination was valid and applied (cache
+        cleared). `False` if invalid — `iccs` is left unchanged.
+    """
+    if fmin >= fmax:
+        return False
+    try:
+        causal_band(fmin, fmax, corners)
+    except ValueError:
+        return False
+
+    iccs.bandpass_apply = apply
+
+    fields = [
+        ("bandpass_fmin", fmin, fmin <= iccs.bandpass_fmin),
+        ("bandpass_fmax", fmax, fmax >= iccs.bandpass_fmax),
+        ("corners", corners, corners >= iccs.corners),
+    ]
+    for name, value, permissive in sorted(fields, key=lambda f: not f[2]):
+        setattr(iccs, name, value)
+
+    return True
+
+
+def _left_margin(use_matrix_image: bool) -> float:
+    """Return the main axes' left margin for the given rendering mode.
+
+    The matrix image has no numeric y-tick labels (`ax.set_yticks([])` in
+    `_draw_matrix_image_initial`), so it needs less left margin than the
+    stack plot, which does. Centralised here rather than repeated as a
+    magic number at every `fig.subplots_adjust` call site.
+    """
+    return 0.05 if use_matrix_image else 0.09
+
+
+def _draw_stack_or_matrix(
+    ax: Axes,
+    iccs: ICCS,
+    context: bool,
+    all_seismograms: bool,
+    causal: bool,
+    use_matrix_image: bool,
+) -> None:
+    """Draw the stack or matrix-image plot.
+
+    For dialogs that don't need the returned artist references back (i.e.
+    no live-updating preview — see `update_bandpass` for the one dialog
+    that does and can't use this).
+    """
+    if use_matrix_image:
+        draw_common_matrix_image(ax, iccs, context, all_seismograms, causal)
+    else:
+        draw_common_stack(ax, iccs, context, all_seismograms, causal)
+
+
+def _widget_gridspec(
     fig: Figure,
+    height_ratios: list[float],
+    top: float,
+    bottom: float,
+    hspace: float = 0.8,
+) -> GridSpec:
+    """Build a GridSpec for the widget area below a dialog's main plot axes.
+
+    Each entry in `height_ratios` becomes its own row (as *relative* weights
+    within the `[bottom, top]` span, matplotlib's normal `GridSpec` meaning —
+    not absolute fractions), stacked top-to-bottom — the last entry is
+    conventionally the Save/Cancel buttons row. Rows are separate GridSpec
+    cells, so widgets placed in different rows can never visually overlap
+    (unlike hand-placed `fig.add_axes` rectangles, which have no such
+    guarantee), regardless of how many rows a given dialog needs. Twelve
+    columns give enough resolution to place narrower widgets (e.g. Save/
+    Cancel side by side) within a row without needing a different `ncols`
+    per dialog.
+    """
+    return fig.add_gridspec(
+        nrows=len(height_ratios),
+        ncols=12,
+        height_ratios=height_ratios,
+        hspace=hspace,
+        left=0.1,
+        right=0.95,
+        top=top,
+        bottom=bottom,
+    )
+
+
+def _add_save_cancel_buttons(
+    ax_save: Axes,
+    ax_cancel: Axes,
     on_save: Callable[[Event], None],
     on_cancel: Callable[[Event], None],
 ) -> tuple[Button, Button]:
-    """Add Save and Cancel buttons to an interactive figure.
+    """Add Save and Cancel buttons to the given axes.
 
     Returns:
         Tuple of (save_button, cancel_button). Must be stored to prevent garbage collection.
     """
-    ax_save = fig.add_axes((0.7, 0.05, 0.1, 0.075))
-    ax_cancel = fig.add_axes((0.81, 0.05, 0.1, 0.075))
     b_save = Button(ax_save, "Save", color="darkgreen", hovercolor="green")
     b_save.on_clicked(on_save)
     b_cancel = Button(ax_cancel, "Cancel", color="darkred", hovercolor="red")
@@ -113,7 +248,7 @@ class _ScrollIndexTracker:
 
 
 def _draw_stack_initial(
-    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
 ) -> tuple[list[Line2D], Line2D, ScalarMappable, Colorbar]:
     """Draw the stack plot and return artist references for live updates.
 
@@ -125,13 +260,22 @@ def _draw_stack_initial(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
 
     Returns:
         Tuple of (seis_lines, stack_line, scalar_mappable, colorbar).
     """
 
-    seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
-    stack = iccs.context_stack if context else iccs.stack
+    if context:
+        seismograms = (
+            iccs.context_seismograms_causal if causal else iccs.context_seismograms
+        )
+        stack = iccs.context_stack_causal if causal else iccs.context_stack
+    else:
+        seismograms = iccs.cc_seismograms_causal if causal else iccs.cc_seismograms
+        stack = iccs.stack_causal if causal else iccs.stack
 
     tmin, tmax = iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()
 
@@ -166,7 +310,7 @@ def _draw_stack_initial(
         linewidth=2,
         label="Stack",
     )
-    ax.set_ylabel("Normalised amplitude")
+    ax.set_ylabel(f"Normalised amplitude{_variant_suffix(iccs.bandpass_apply, causal)}")
     ax.set_xlabel("Time relative to pick [s]")
     ax.set_xlim(tmin, tmax)
     ax.legend(loc="upper left")
@@ -174,13 +318,24 @@ def _draw_stack_initial(
     fig = ax.get_figure()
     assert fig is not None
     scalar_mappable = ScalarMappable(norm=norm, cmap=IccsDefaults.stack_cmap)
-    colorbar = fig.colorbar(scalar_mappable, ax=ax, label="|Correlation coefficient|")
+    # Explicit fraction/pad reserve a fixed width for the colorbar regardless
+    # of the caller's `right` margin, so callers can use the same `right`
+    # for both the stack and matrix-image branches instead of needing to
+    # separately compensate for the colorbar's shrink each time.
+    colorbar = fig.colorbar(
+        scalar_mappable,
+        ax=ax,
+        # ccs is always zero-phase-based, regardless of the preview toggle.
+        label=f"|Correlation coefficient|{_variant_suffix(iccs.bandpass_apply, False)}",
+        fraction=0.05,
+        pad=0.02,
+    )
 
     return seis_lines, stack_line, scalar_mappable, colorbar
 
 
 def draw_common_stack(
-    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
 ) -> None:
     """Return a basic stack plot for use in other plots.
 
@@ -192,12 +347,15 @@ def draw_common_stack(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
     """
-    _draw_stack_initial(ax, iccs, context, all_seismograms)
+    _draw_stack_initial(ax, iccs, context, all_seismograms, causal)
 
 
 def _draw_matrix_image_initial(
-    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
 ) -> tuple[AxesImage, np.ndarray]:
     """Draw the matrix image plot and return artist references for live updates.
 
@@ -209,12 +367,20 @@ def _draw_matrix_image_initial(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
 
     Returns:
         Tuple of (axes_image, seismogram_matrix).
     """
 
-    seismograms = iccs.context_seismograms if context else iccs.cc_seismograms
+    if context:
+        seismograms = (
+            iccs.context_seismograms_causal if causal else iccs.context_seismograms
+        )
+    else:
+        seismograms = iccs.cc_seismograms_causal if causal else iccs.cc_seismograms
     mask = _make_mask(iccs, all_seismograms)
     ccs = np.abs(np.compress(mask, iccs.ccs))
     seismogram_matrix = np.array(
@@ -237,8 +403,14 @@ def _draw_matrix_image_initial(
 
     ax.set_ylim((0, len(seismogram_matrix)))
     ax.set_yticks([])
-    ax.set_xlabel("Time relative to pick [s]")
-    ax.set_ylabel("Seismograms sorted by correlation coefficient")
+    ax.set_xlabel(
+        f"Time relative to pick [s]{_variant_suffix(iccs.bandpass_apply, causal)}"
+    )
+    # Row order comes from ccs, which is always zero-phase-based.
+    ax.set_ylabel(
+        "Seismograms sorted by correlation coefficient"
+        f"{_variant_suffix(iccs.bandpass_apply, False)}"
+    )
     axes_image = ax.imshow(
         seismogram_matrix,
         extent=(tmin, tmax, 0, len(seismogram_matrix)),
@@ -253,7 +425,7 @@ def _draw_matrix_image_initial(
 
 
 def draw_common_matrix_image(
-    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool
+    ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
 ) -> np.ndarray:
     """Return a basic matrix image plot for use in other plots.
 
@@ -265,12 +437,15 @@ def draw_common_matrix_image(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
 
     Returns:
         Sorted seismogram matrix used for the plot.
     """
     _, seismogram_matrix = _draw_matrix_image_initial(
-        ax, iccs, context, all_seismograms
+        ax, iccs, context, all_seismograms, causal
     )
     return seismogram_matrix
 
@@ -285,6 +460,7 @@ def plot_stack(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes]: ...
 
@@ -294,6 +470,7 @@ def plot_stack(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -303,6 +480,7 @@ def plot_stack(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes] | None:
     """Plot the ICCS stack.
@@ -314,6 +492,9 @@ def plot_stack(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -379,9 +560,20 @@ def plot_stack(
 
         ![View the cc stack](../../../images/sybil/iccs_cc_stack.png#only-light){ loading=lazy }
         ![View the cc stack](../../../images/sybil/iccs_cc_stack-dark.png#only-dark){ loading=lazy }
+
+        To view the causally-filtered variant used by picking-oriented tools
+        (avoiding the acausal precursor smearing a zero-phase filter
+        introduces before the true onset), set `causal` to `True`:
+
+        ```python
+        >>> fig, ax = plot_stack(iccs, context=False, causal=True)
+        >>> # fig.show() # or integrate into your own application
+        >>>
+        ```
     """
-    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    draw_common_stack(ax, iccs, context, all_seismograms)
+    fig, ax = plt.subplots(figsize=(10, 5.4))
+    fig.subplots_adjust(bottom=0.12, left=0.09, right=0.95, top=0.93)
+    draw_common_stack(ax, iccs, context, all_seismograms, causal)
     if return_fig:
         return fig, ax
     plt.show()
@@ -393,6 +585,7 @@ def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes]: ...
 
@@ -402,6 +595,7 @@ def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -411,6 +605,7 @@ def plot_matrix_image(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes] | None:
     """Plot the selected ICCS seismograms as a matrix image.
@@ -422,6 +617,9 @@ def plot_matrix_image(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -484,9 +682,20 @@ def plot_matrix_image(
 
         ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image.png#only-light){ loading=lazy }
         ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image-dark.png#only-dark){ loading=lazy }
+
+        To view the causally-filtered variant used by picking-oriented tools
+        (avoiding the acausal precursor smearing a zero-phase filter
+        introduces before the true onset), set `causal` to `True`:
+
+        ```python
+        >>> fig, ax = plot_matrix_image(iccs, context=False, causal=True)
+        >>> # fig.show() # or integrate into your own application
+        >>>
+        ```
     """
-    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
-    draw_common_matrix_image(ax, iccs, context, all_seismograms)
+    fig, ax = plt.subplots(figsize=(10, 5.4))
+    fig.subplots_adjust(bottom=0.12, left=0.05, right=0.95, top=0.93)
+    draw_common_matrix_image(ax, iccs, context, all_seismograms, causal)
     if return_fig:
         return fig, ax
     plt.show()
@@ -499,6 +708,7 @@ def update_pick(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = True,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]]: ...
 
@@ -509,6 +719,7 @@ def update_pick(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = True,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -519,6 +730,7 @@ def update_pick(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = True,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
     """Manually pick [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] and apply it to all seismograms.
@@ -536,6 +748,12 @@ def update_pick(
         use_matrix_image: Use the
             [matrix image][pysmo.tools.iccs.plot_matrix_image]
             instead of the [stack][pysmo.tools.iccs.plot_stack].
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+              This is the default for this function, since locating a phase
+              onset by eye is exactly what zero-phase filtering's acausal
+              precursor smearing distorts.
+            - `False`: zero-phase filtered seismograms are used.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -572,12 +790,14 @@ def update_pick(
         ![Picking a new T1](../../../images/sybil/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    if use_matrix_image:
-        draw_common_matrix_image(ax, iccs, context, all_seismograms)
-        fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
-    else:
-        draw_common_stack(ax, iccs, context, all_seismograms)
-        fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
+    _draw_stack_or_matrix(ax, iccs, context, all_seismograms, causal, use_matrix_image)
+    fig.subplots_adjust(
+        bottom=0.2, left=_left_margin(use_matrix_image), right=0.95, top=0.93
+    )
+
+    gs_widgets = _widget_gridspec(fig, height_ratios=[1], top=0.125, bottom=0.05)
+    ax_save = fig.add_subplot(gs_widgets[0, 8:10])
+    ax_cancel = fig.add_subplot(gs_widgets[0, 10:12])
 
     ax.set_title("Update t1 for all seismograms.")
     pending_pick = [0.0]
@@ -625,7 +845,7 @@ def update_pick(
         if not return_fig:
             plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
+    b_save, b_cancel = _add_save_cancel_buttons(ax_save, ax_cancel, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (cursor, pick_line, b_save, b_cancel)
@@ -639,6 +859,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]]: ...
 
@@ -649,6 +870,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -659,6 +881,7 @@ def update_timewindow(
     context: bool = True,
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
+    causal: bool = False,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[SpanSelector, Button, Button]] | None:
     """Pick new time window limits.
@@ -677,6 +900,18 @@ def update_timewindow(
         use_matrix_image: Use the
             [matrix image][pysmo.tools.iccs.plot_matrix_image]
             instead of the [stack][pysmo.tools.iccs.plot_stack].
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used. This is
+              the default for this function: `window_pre`/`window_post`
+              crop [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms]
+              (zero-phase), which is what cross-correlation, stacking, and
+              MCCC actually run on regardless of what's displayed here.
+              Picking the window against the causal display risks
+              misjudging the pre-arrival margin: the causal view's clean
+              quiet period before the onset doesn't reflect that the
+              zero-phase data being cropped may already carry acausal
+              precursor energy inside that same interval.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -718,12 +953,14 @@ def update_timewindow(
         ![Picking a new time window](../../../images/sybil/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    if use_matrix_image:
-        draw_common_matrix_image(ax, iccs, context, all_seismograms)
-        fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
-    else:
-        draw_common_stack(ax, iccs, context, all_seismograms)
-        fig.subplots_adjust(bottom=0.2, left=0.09, right=1.05, top=0.93)
+    _draw_stack_or_matrix(ax, iccs, context, all_seismograms, causal, use_matrix_image)
+    fig.subplots_adjust(
+        bottom=0.2, left=_left_margin(use_matrix_image), right=0.95, top=0.93
+    )
+
+    gs_widgets = _widget_gridspec(fig, height_ratios=[1], top=0.125, bottom=0.05)
+    ax_save = fig.add_subplot(gs_widgets[0, 8:10])
+    ax_cancel = fig.add_subplot(gs_widgets[0, 10:12])
 
     ax.set_title("Pick a new time window.")
     pending_window = [iccs.window_pre.total_seconds(), iccs.window_post.total_seconds()]
@@ -772,7 +1009,7 @@ def update_timewindow(
         if not return_fig:
             plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
+    b_save, b_cancel = _add_save_cancel_buttons(ax_save, ax_cancel, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (span, b_save, b_cancel)
@@ -785,6 +1022,7 @@ def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: Literal[True] = True,
 ) -> tuple[
     Figure, Axes, tuple[Cursor, Line2D, Button, Button, _ScrollIndexTracker]
@@ -796,6 +1034,7 @@ def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     *,
     return_fig: Literal[False],
 ) -> None: ...
@@ -805,6 +1044,7 @@ def update_min_cc(
     iccs: ICCS,
     context: bool = True,
     all_seismograms: bool = False,
+    causal: bool = False,
     return_fig: bool = True,
 ) -> (
     tuple[
@@ -828,6 +1068,13 @@ def update_min_cc(
             - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
+        causal: Determines the filter phase behaviour:
+            - `True`: causally-filtered (single-pass) seismograms are used.
+            - `False`: zero-phase filtered seismograms are used. This is the
+              default for this function — it sorts/thresholds by correlation
+              coefficient, and zero-phase is what's actually used for the
+              correlation being thresholded, so it's the more representative
+              view.
         return_fig: If `True`, the [`Figure`][matplotlib.figure.Figure] and
             [`Axes`][matplotlib.axes.Axes] objects are returned instead of
             shown.
@@ -863,8 +1110,12 @@ def update_min_cc(
         ![Picking a new min_cc in matrix image](../../../images/sybil/iccs_update_min_cc-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
-    matrix = draw_common_matrix_image(ax, iccs, context, all_seismograms)
+    matrix = draw_common_matrix_image(ax, iccs, context, all_seismograms, causal)
     fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95, top=0.93)
+
+    gs_widgets = _widget_gridspec(fig, height_ratios=[1], top=0.125, bottom=0.05)
+    ax_save = fig.add_subplot(gs_widgets[0, 8:10])
+    ax_cancel = fig.add_subplot(gs_widgets[0, 10:12])
 
     ax.set_title("Pick a new minimal cross-correlation coefficient.")
     pending_val = [iccs.min_cc]
@@ -933,7 +1184,7 @@ def update_min_cc(
         if not return_fig:
             plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
+    b_save, b_cancel = _add_save_cancel_buttons(ax_save, ax_cancel, on_save, on_cancel)
 
     if return_fig:
         return fig, ax, (cursor, pick_line, b_save, b_cancel, tracker)
@@ -948,7 +1199,11 @@ def update_bandpass(
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
     return_fig: Literal[True] = True,
-) -> tuple[Figure, Axes, tuple[CheckButtons, Slider, Slider, Button, Button]]: ...
+) -> tuple[
+    Figure,
+    Axes,
+    tuple[CheckButtons, Slider, Slider, Slider, RadioButtons, Button, Button],
+]: ...
 
 
 @overload
@@ -968,13 +1223,24 @@ def update_bandpass(
     all_seismograms: bool = False,
     use_matrix_image: bool = False,
     return_fig: bool = True,
-) -> tuple[Figure, Axes, tuple[CheckButtons, Slider, Slider, Button, Button]] | None:
+) -> (
+    tuple[
+        Figure,
+        Axes,
+        tuple[CheckButtons, Slider, Slider, Slider, RadioButtons, Button, Button],
+    ]
+    | None
+):
     """Interactively update the bandpass filter parameters.
 
     This function launches an interactive figure to adjust
     [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply],
-    [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin], and
-    [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax] with a live preview.
+    [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin],
+    [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax], and
+    [`corners`][pysmo.tools.iccs.ICCS.corners] with a live preview. A radio
+    button toggles the preview between the causal and zero-phase variants —
+    this is UI-only, not a saved parameter, since both renderings are
+    relevant while tuning rather than there being a default to pick.
 
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
@@ -1025,6 +1291,7 @@ def update_bandpass(
     _orig_apply = iccs.bandpass_apply
     _orig_fmin = iccs.bandpass_fmin
     _orig_fmax = iccs.bandpass_fmax
+    _orig_corners = iccs.corners
 
     _BANDPASS_CACHE_SIZE = 8
 
@@ -1042,16 +1309,25 @@ def update_bandpass(
     # constraints safely within the global slider range.
     _log_max = np.log(nyquist - 2 * _freq_eps)
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(10, 7.7))
 
     _debounce_timer: list[TimerBase | None] = [None]
     _updating: list[bool] = [False]
     update_fn: Callable[[], None]
 
+    def _current_causal() -> bool:
+        return radio.value_selected == "Causal"
+
+    bottom_margin = 0.38 if use_matrix_image else 0.35
+
     if use_matrix_image:
-        axes_image, _ = _draw_matrix_image_initial(ax, iccs, context, all_seismograms)
-        fig.subplots_adjust(bottom=0.32, left=0.05, right=0.95, top=0.93)
-        _matrix_cache: OrderedDict[tuple[bool, float, float], np.ndarray] = (
+        axes_image, _ = _draw_matrix_image_initial(
+            ax, iccs, context, all_seismograms, False
+        )
+        fig.subplots_adjust(
+            bottom=bottom_margin, left=_left_margin(True), right=0.95, top=0.93
+        )
+        _matrix_cache: OrderedDict[tuple[bool, float, float, bool, int], np.ndarray] = (
             OrderedDict()
         )
 
@@ -1063,16 +1339,24 @@ def update_bandpass(
             )
             if fmin >= fmax:
                 return
-            key = (apply, fmin, fmax)
+            causal = _current_causal()
+            corners = int(slider_corners.val)
+            key = (apply, fmin, fmax, causal, corners)
             if key not in _matrix_cache:
                 if len(_matrix_cache) >= _BANDPASS_CACHE_SIZE:
                     _matrix_cache.popitem(last=False)
-                iccs.bandpass_apply = apply
-                iccs.bandpass_fmin = fmin
-                iccs.bandpass_fmax = fmax
-                seismograms = (
-                    iccs.context_seismograms if context else iccs.cc_seismograms
-                )
+                if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+                    return
+                if context:
+                    seismograms = (
+                        iccs.context_seismograms_causal
+                        if causal
+                        else iccs.context_seismograms
+                    )
+                else:
+                    seismograms = (
+                        iccs.cc_seismograms_causal if causal else iccs.cc_seismograms
+                    )
                 mask = _make_mask(iccs, all_seismograms)
                 ccs = np.abs(np.compress(mask, iccs.ccs))
                 matrix = np.array([s.data for s, m in zip(seismograms, mask) if m])
@@ -1080,16 +1364,24 @@ def update_bandpass(
             else:
                 _matrix_cache.move_to_end(key)
             axes_image.set_data(_matrix_cache[key])
+            ax.set_xlabel(f"Time relative to pick [s]{_variant_suffix(apply, causal)}")
+            ax.set_ylabel(
+                "Seismograms sorted by correlation coefficient"
+                f"{_variant_suffix(apply, False)}"
+            )
             fig.canvas.draw_idle()
 
         update_fn = _update_matrix
     else:
         seis_lines, stack_line, scalar_mappable, colorbar = _draw_stack_initial(
-            ax, iccs, context, all_seismograms
+            ax, iccs, context, all_seismograms, False
         )
-        fig.subplots_adjust(bottom=0.29, left=0.09, right=1.05, top=0.93)
+        fig.subplots_adjust(
+            bottom=bottom_margin, left=_left_margin(False), right=0.95, top=0.93
+        )
         _stack_cache: OrderedDict[
-            tuple[bool, float, float], tuple[list[np.ndarray], np.ndarray, np.ndarray]
+            tuple[bool, float, float, bool, int],
+            tuple[list[np.ndarray], np.ndarray, np.ndarray],
         ] = OrderedDict()
 
         def _update_stack() -> None:
@@ -1100,17 +1392,26 @@ def update_bandpass(
             )
             if fmin >= fmax:
                 return
-            key = (apply, fmin, fmax)
+            causal = _current_causal()
+            corners = int(slider_corners.val)
+            key = (apply, fmin, fmax, causal, corners)
             if key not in _stack_cache:
                 if len(_stack_cache) >= _BANDPASS_CACHE_SIZE:
                     _stack_cache.popitem(last=False)
-                iccs.bandpass_apply = apply
-                iccs.bandpass_fmin = fmin
-                iccs.bandpass_fmax = fmax
-                seismograms = (
-                    iccs.context_seismograms if context else iccs.cc_seismograms
-                )
-                stack = iccs.context_stack if context else iccs.stack
+                if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+                    return
+                if context:
+                    seismograms = (
+                        iccs.context_seismograms_causal
+                        if causal
+                        else iccs.context_seismograms
+                    )
+                    stack = iccs.context_stack_causal if causal else iccs.context_stack
+                else:
+                    seismograms = (
+                        iccs.cc_seismograms_causal if causal else iccs.cc_seismograms
+                    )
+                    stack = iccs.stack_causal if causal else iccs.stack
                 mask = _make_mask(iccs, all_seismograms)
                 ccs = np.abs(np.compress(mask, iccs.ccs))
                 seis_data = [s.data.copy() for s, m in zip(seismograms, mask) if m]
@@ -1126,18 +1427,38 @@ def update_bandpass(
             stack_line.set_ydata(stack_data)
             scalar_mappable.set_norm(new_norm)
             colorbar.update_normal(scalar_mappable)
+            colorbar.set_label(
+                f"|Correlation coefficient|{_variant_suffix(apply, False)}"
+            )
+            ax.set_ylabel(f"Normalised amplitude{_variant_suffix(apply, causal)}")
             fig.canvas.draw_idle()
 
         update_fn = _update_stack
 
     ax.set_title("Update bandpass filter parameters.")
 
-    ax_fmin = fig.add_axes((0.2, 0.18, 0.6, 0.04))
-    ax_fmax = fig.add_axes((0.2, 0.14, 0.6, 0.04))
+    gs_widgets = _widget_gridspec(
+        fig, height_ratios=[1, 1, 1, 1.8], top=bottom_margin - 0.07, bottom=0.02
+    )
+    ax_fmin = fig.add_subplot(gs_widgets[0, 1:11])
+    ax_fmax = fig.add_subplot(gs_widgets[1, 1:11])
+    ax_corners = fig.add_subplot(gs_widgets[2, 1:11])
+    ax_check = fig.add_subplot(gs_widgets[3, 1:4])
+    ax_radio = fig.add_subplot(gs_widgets[3, 4:8])
+    ax_save = fig.add_subplot(gs_widgets[3, 8:10])
+    ax_cancel = fig.add_subplot(gs_widgets[3, 10:12])
+
+    # Align left edges with the main plot's y-axis, not the grid's column 1.
+    check_pos = ax_check.get_position()
+    shift = _left_margin(use_matrix_image) - check_pos.x0
+    ax_check.set_position(check_pos.translated(shift, 0))
+    radio_pos = ax_radio.get_position()
+    ax_radio.set_position(radio_pos.translated(shift, 0))
 
     _fg = plt.rcParams.get("text.color", "black")
-    ax_check = fig.add_axes((0.13, 0.08, 0.3, 0.04))
-    ax_check.set_frame_on(False)
+    ax_check.set_frame_on(True)
+    for spine in ax_check.spines.values():
+        spine.set_edgecolor(_fg)
     check = CheckButtons(
         ax_check,
         ["Apply bandpass"],
@@ -1146,11 +1467,64 @@ def update_bandpass(
         frame_props={"edgecolor": _fg, "s": 200},
         check_props={"color": _fg, "s": 200},
     )
+    ax_radio.set_frame_on(True)
+    ax_radio.set_xticks([])
+    ax_radio.set_yticks([])
+    for spine in ax_radio.spines.values():
+        spine.set_edgecolor(_fg)
+    ax_radio.text(
+        0.5,
+        0.85,
+        "Preview as (not saved)",
+        ha="center",
+        va="top",
+        fontsize=9,
+        color=_fg,
+        transform=ax_radio.transAxes,
+    )
+    # Give RadioButtons its own axes covering only the box's lower portion,
+    # so it doesn't centre itself over the label above. fig.add_axes, not
+    # ax_radio.inset_axes: an inset axes' locator recomputes its position
+    # from the parent on every redraw, discarding set_position() below.
+    radio_box_pos = ax_radio.get_position()
+    ax_radio_toggles = fig.add_axes(
+        (
+            radio_box_pos.x0,
+            radio_box_pos.y0,
+            radio_box_pos.width,
+            radio_box_pos.height * 0.55,
+        )
+    )
+    ax_radio_toggles.set_frame_on(False)
+    radio = RadioButtons(
+        ax_radio_toggles,
+        ["Zero-phase", "Causal"],
+        active=0,
+        layout="horizontal",
+        label_props={"color": [_fg, _fg], "fontsize": [11, 11]},
+    )
+    # RadioButtons has no option to centre the group — measure how much
+    # width it actually used, once rendered, and shift to centre it.
+    fig.canvas.draw()
+    content_right = radio.labels[-1].get_window_extent().x1
+    toggles_bbox = ax_radio_toggles.get_window_extent()
+    content_fraction = (content_right - toggles_bbox.x0) / toggles_bbox.width
+    toggles_pos = ax_radio_toggles.get_position()
+    offset = (1 - content_fraction) / 2 * toggles_pos.width
+    ax_radio_toggles.set_position(toggles_pos.translated(offset, 0))
     slider_fmin = Slider(
         ax_fmin, "fmin [Hz]", _log_min, _log_max, valinit=np.log(iccs.bandpass_fmin)
     )
     slider_fmax = Slider(
         ax_fmax, "fmax [Hz]", _log_min, _log_max, valinit=np.log(iccs.bandpass_fmax)
+    )
+    slider_corners = Slider(
+        ax_corners,
+        "corners",
+        valmin=1,
+        valmax=max(8, iccs.corners),
+        valinit=iccs.corners,
+        valstep=1,
     )
     # Show Hz values rather than the internal log values
     slider_fmin.valtext.set_text(f"{iccs.bandpass_fmin:.3f}")
@@ -1162,6 +1536,7 @@ def update_bandpass(
     if not iccs.bandpass_apply:
         slider_fmin.set_active(False)
         slider_fmax.set_active(False)
+        slider_corners.set_active(False)
 
     def _schedule_update() -> None:
         if _debounce_timer[0] is not None:
@@ -1198,22 +1573,34 @@ def update_bandpass(
         slider_fmax.valtext.set_text(f"{fmax:.3f}")
         _schedule_update()
 
+    def _on_corners_change(_: float) -> None:
+        _schedule_update()
+
     def _on_check(_label: str | None) -> None:
         apply = check.get_status()[0]
         slider_fmin.set_active(apply)
         slider_fmax.set_active(apply)
+        slider_corners.set_active(apply)
+        _schedule_update()
+
+    def _on_radio_change(_label: str | None) -> None:
         _schedule_update()
 
     slider_fmin.on_changed(_on_fmin_change)
     slider_fmax.on_changed(_on_fmax_change)
+    slider_corners.on_changed(_on_corners_change)
     check.on_clicked(_on_check)
+    radio.on_clicked(_on_radio_change)
 
     def on_save(_: Event) -> None:
         if _debounce_timer[0] is not None:
             _debounce_timer[0].stop()
-        iccs.bandpass_apply = check.get_status()[0]
-        iccs.bandpass_fmin = float(np.exp(slider_fmin.val))
-        iccs.bandpass_fmax = float(np.exp(slider_fmax.val))
+        fmin = float(np.exp(slider_fmin.val))
+        fmax = float(np.exp(slider_fmax.val))
+        corners = int(slider_corners.val)
+        apply = check.get_status()[0]
+        if not _apply_bandpass_params(iccs, apply, fmin, fmax, corners):
+            return
         if not return_fig:
             plt.close(fig)
 
@@ -1223,12 +1610,17 @@ def update_bandpass(
         iccs.bandpass_apply = _orig_apply
         iccs.bandpass_fmin = _orig_fmin
         iccs.bandpass_fmax = _orig_fmax
+        iccs.corners = _orig_corners
         if not return_fig:
             plt.close(fig)
 
-    b_save, b_cancel = _add_save_cancel_buttons(fig, on_save, on_cancel)
+    b_save, b_cancel = _add_save_cancel_buttons(ax_save, ax_cancel, on_save, on_cancel)
 
     if return_fig:
-        return fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel)
+        return (
+            fig,
+            ax,
+            (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+        )
     plt.show()
     return None
