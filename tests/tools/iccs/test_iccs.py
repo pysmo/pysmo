@@ -416,6 +416,17 @@ class TestICCSParameters(TestICCSBase):
         ):
             self.iccs.bandpass_fmax = nyquist
 
+        # corners: positive int, converted, no upper bound
+        self.iccs.corners = "4"  # type: ignore
+        assert self.iccs.corners == 4
+        with pytest.raises(ValueError):
+            self.iccs.corners = 0
+        with pytest.raises(ValueError):
+            self.iccs.corners = -1
+        self.iccs.corners = 64  # no upper bound enforced
+        assert self.iccs.corners == 64
+        self.iccs.corners = 2
+
         # Test cache clearing
         self.iccs.cc_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
@@ -427,6 +438,39 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs._cc_seismograms_cache is not None
         self.iccs.bandpass_apply = True
         assert self.iccs._cc_seismograms_cache is None
+
+        # corners also clears the cache, including the causal caches
+        self.iccs.cc_seismograms_causal  # Populate cache
+        assert self.iccs._cc_seismograms_causal_cache is not None
+        self.iccs.corners = 3
+        assert self.iccs._cc_seismograms_causal_cache is None
+        self.iccs.corners = 2
+
+    def test_causal_seismograms_short_circuit_when_apply_false(self) -> None:
+        """cc_seismograms_causal aliases cc_seismograms when bandpass_apply is False."""
+        self.iccs.bandpass_apply = False
+        assert self.iccs.cc_seismograms_causal is self.iccs.cc_seismograms
+        assert self.iccs.context_seismograms_causal is self.iccs.context_seismograms
+        assert self.iccs.stack_causal is self.iccs.stack
+        assert self.iccs.context_stack_causal is self.iccs.context_stack
+
+    def test_causal_seismograms_differ_when_apply_true(self) -> None:
+        """cc_seismograms_causal is causally (not zero-phase) filtered when applied."""
+        self.iccs.bandpass_apply = True
+        cc = self.iccs.cc_seismograms
+        cc_causal = self.iccs.cc_seismograms_causal
+        assert cc_causal is not cc
+        assert not np.array_equal(cc_causal[0].data, cc[0].data)
+
+    def test_causal_corners_doubling_wired_through(self) -> None:
+        """The causal variant's order tracks corners (2 * corners poles)."""
+        self.iccs.bandpass_apply = True
+        self.iccs.corners = 2
+        low_order = self.iccs.cc_seismograms_causal[0].data.copy()
+        self.iccs.corners = 4
+        high_order = self.iccs.cc_seismograms_causal[0].data.copy()
+        assert not np.array_equal(low_order, high_order)
+        self.iccs.corners = 2
 
     def test_min_iccs_seismogram_validation(self) -> None:
         """Test validation on MiniIccsSeismogram attributes."""

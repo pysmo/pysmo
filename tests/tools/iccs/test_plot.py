@@ -18,6 +18,8 @@ from pysmo.tools.iccs.plot import (
     _ScrollIndexTracker,
     draw_common_matrix_image,
     draw_common_stack,
+    plot_matrix_image,
+    plot_stack,
     update_bandpass,
     update_min_cc,
     update_pick,
@@ -777,6 +779,107 @@ def test_update_min_cc_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
 
 
 # ======================================================================
+# Tests for the causal parameter
+# ======================================================================
+
+
+def test_draw_common_stack_causal_labels_variant(iccs_instance: ICCS) -> None:
+    """The y-label identifies the causal variant, only when bandpass_apply=True."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    fig, ax = plt.subplots()
+    draw_common_stack(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    assert "(causal)" in ax.get_ylabel()
+    plt.close(fig)
+
+    fig, ax = plt.subplots()
+    draw_common_stack(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=False
+    )
+    assert "(zero-phase)" in ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_draw_common_stack_causal_unlabelled_when_apply_false(
+    iccs_instance: ICCS,
+) -> None:
+    """No variant suffix is shown when bandpass_apply=False (variants are identical)."""
+    iccs_instance()
+    assert iccs_instance.bandpass_apply is False
+
+    fig, ax = plt.subplots()
+    draw_common_stack(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    assert "(causal)" not in ax.get_ylabel()
+    assert "(zero-phase)" not in ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_draw_common_matrix_image_causal_labels_variant(iccs_instance: ICCS) -> None:
+    """The x-label identifies the causal variant, only when bandpass_apply=True."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    fig, ax = plt.subplots()
+    draw_common_matrix_image(
+        ax, iccs_instance, context=False, all_seismograms=False, causal=True
+    )
+    assert "(causal)" in ax.get_xlabel()
+    plt.close(fig)
+
+
+def test_plot_stack_causal_smoke(iccs_instance: ICCS) -> None:
+    """plot_stack accepts causal=True and draws without error."""
+    iccs_instance()
+    fig, ax = plot_stack(iccs_instance, context=False, causal=True, return_fig=True)
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    plt.close(fig)
+
+
+def test_plot_matrix_image_causal_smoke(iccs_instance: ICCS) -> None:
+    """plot_matrix_image accepts causal=True and draws without error."""
+    iccs_instance()
+    fig, ax = plot_matrix_image(
+        iccs_instance, context=False, causal=True, return_fig=True
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    plt.close(fig)
+
+
+def test_update_pick_defaults_to_causal(iccs_instance: ICCS) -> None:
+    """update_pick defaults to causal=True (the point of the feature)."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    fig, ax, _ = update_pick(iccs_instance, return_fig=True)
+    assert "(causal)" in ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_update_timewindow_defaults_to_causal(iccs_instance: ICCS) -> None:
+    """update_timewindow defaults to causal=True (the point of the feature)."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    fig, ax, _ = update_timewindow(iccs_instance, return_fig=True)
+    assert "(causal)" in ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_update_min_cc_defaults_to_zerophase(iccs_instance: ICCS) -> None:
+    """update_min_cc defaults to causal=False (thresholds the zero-phase correlation)."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    fig, ax, _ = update_min_cc(iccs_instance, return_fig=True)
+    assert "(zero-phase)" in ax.get_xlabel()
+    plt.close(fig)
+
+
+# ======================================================================
 # Tests for update_bandpass
 # ======================================================================
 
@@ -786,7 +889,7 @@ def test_update_bandpass_returns_types(iccs_instance: ICCS) -> None:
     iccs_instance()
     result = update_bandpass(iccs_instance, return_fig=True)
     fig, ax, widgets = result
-    _, _, _, _, _ = widgets
+    _, _, _, _, _, _, _ = widgets
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
     plt.close(fig)
@@ -809,9 +912,19 @@ def test_update_bandpass_save_applies_values(iccs_instance: ICCS) -> None:
     orig_fmin = iccs_instance.bandpass_fmin
     orig_fmax = iccs_instance.bandpass_fmax
 
-    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
-        iccs_instance, return_fig=True
-    )
+    (
+        fig,
+        ax,
+        (
+            check,
+            slider_fmin,
+            slider_fmax,
+            slider_corners,
+            radio,
+            b_save,
+            b_cancel,
+        ),
+    ) = update_bandpass(iccs_instance, return_fig=True)
 
     new_fmin = orig_fmin + 0.1
     new_fmax = orig_fmax - 0.1
@@ -833,9 +946,19 @@ def test_update_bandpass_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
     orig_fmin = iccs_instance.bandpass_fmin
     orig_fmax = iccs_instance.bandpass_fmax
 
-    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
-        iccs_instance, return_fig=True
-    )
+    (
+        fig,
+        ax,
+        (
+            check,
+            slider_fmin,
+            slider_fmax,
+            slider_corners,
+            radio,
+            b_save,
+            b_cancel,
+        ),
+    ) = update_bandpass(iccs_instance, return_fig=True)
 
     slider_fmin.set_val(np.log(orig_fmin + 0.1))
     slider_fmax.set_val(np.log(orig_fmax - 0.1))
@@ -853,9 +976,19 @@ def test_update_bandpass_save_with_apply_false(iccs_instance: ICCS) -> None:
     iccs_instance()
     iccs_instance.bandpass_apply = True
 
-    fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
-        iccs_instance, return_fig=True
-    )
+    (
+        fig,
+        ax,
+        (
+            check,
+            slider_fmin,
+            slider_fmax,
+            slider_corners,
+            radio,
+            b_save,
+            b_cancel,
+        ),
+    ) = update_bandpass(iccs_instance, return_fig=True)
 
     # Toggle the checkbox off
     check.set_active(0)
@@ -908,9 +1041,19 @@ def test_update_bandpass_live_preview_stack(iccs_instance: ICCS) -> None:
     new_fmin = iccs_instance.bandpass_fmin + 0.05
 
     with _immediate_timer_patch():
-        fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
-            iccs_instance, return_fig=True
-        )
+        (
+            fig,
+            ax,
+            (
+                check,
+                slider_fmin,
+                slider_fmax,
+                slider_corners,
+                radio,
+                b_save,
+                b_cancel,
+            ),
+        ) = update_bandpass(iccs_instance, return_fig=True)
         slider_fmin.set_val(np.log(new_fmin))
 
     assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
@@ -924,10 +1067,151 @@ def test_update_bandpass_live_preview_matrix(iccs_instance: ICCS) -> None:
     new_fmin = iccs_instance.bandpass_fmin + 0.05
 
     with _immediate_timer_patch():
-        fig, ax, (check, slider_fmin, slider_fmax, b_save, b_cancel) = update_bandpass(
-            iccs_instance, use_matrix_image=True, return_fig=True
-        )
+        (
+            fig,
+            ax,
+            (
+                check,
+                slider_fmin,
+                slider_fmax,
+                slider_corners,
+                radio,
+                b_save,
+                b_cancel,
+            ),
+        ) = update_bandpass(iccs_instance, use_matrix_image=True, return_fig=True)
         slider_fmin.set_val(np.log(new_fmin))
 
     assert iccs_instance.bandpass_fmin == pytest.approx(new_fmin)
+    plt.close(fig)
+
+
+def test_update_bandpass_label_correct_on_cache_hit_after_apply_toggle(
+    iccs_instance: ICCS,
+) -> None:
+    """Regression test: the variant label must reflect the current widget
+    state even on a cache hit, not a possibly-stale `iccs.bandpass_apply`.
+
+    `iccs.bandpass_apply` is only reassigned inside `_update_matrix`'s/
+    `_update_stack`'s cache-*miss* branch. Revisiting an already-cached key
+    is a cache *hit*, which never touches `iccs.bandpass_apply` — before
+    this fix, the label suffix was computed from that (possibly stale)
+    attribute instead of the widget's actual current state, so it could
+    show the wrong suffix (or wrongly omit/include it) purely because of
+    what the *previous* toggle happened to leave behind, not what's
+    currently selected.
+
+    Needs three toggles, not two: the first two are cache *misses* (correct
+    under both the old and new code, since a miss always writes
+    `iccs.bandpass_apply` correctly) — only the third revisits an
+    already-cached key and actually exercises the hit path where the bug
+    lived.
+    """
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    with _immediate_timer_patch():
+        (
+            fig,
+            ax,
+            (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+        ) = update_bandpass(iccs_instance, return_fig=True)
+
+        check.set_active(0)  # apply=False: cache miss, populates that key
+        assert "(zero-phase)" not in ax.get_ylabel()
+        check.set_active(0)  # apply=True: cache miss (first time), populates that key
+        assert "(zero-phase)" in ax.get_ylabel()
+        check.set_active(0)  # apply=False again: cache HIT on the first key
+        assert "(zero-phase)" not in ax.get_ylabel()
+
+    plt.close(fig)
+
+
+def test_update_bandpass_radio_default_is_zerophase(iccs_instance: ICCS) -> None:
+    """The causal/zero-phase radio defaults to Zero-phase."""
+    iccs_instance()
+    fig, ax, (_, _, _, _, radio, _, _) = update_bandpass(iccs_instance, return_fig=True)
+    assert radio.value_selected == "Zero-phase"
+    plt.close(fig)
+
+
+def test_update_bandpass_radio_toggle_updates_preview(iccs_instance: ICCS) -> None:
+    """Toggling the radio button re-renders the preview without error."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    with _immediate_timer_patch():
+        fig, ax, (_, _, _, _, radio, _, _) = update_bandpass(
+            iccs_instance, return_fig=True
+        )
+        radio.set_active(1)  # "Causal"
+
+    assert radio.value_selected == "Causal"
+    plt.close(fig)
+
+
+def test_update_bandpass_corners_save_applies_value(iccs_instance: ICCS) -> None:
+    """Clicking Save propagates the corners slider value to iccs.corners."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+
+    slider_corners.set_val(4)
+    _click_button(b_save)
+
+    assert iccs_instance.corners == 4
+    plt.close(fig)
+
+
+def test_update_bandpass_corners_cancel_leaves_unchanged(iccs_instance: ICCS) -> None:
+    """Clicking Cancel restores the original corners value."""
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    orig_corners = iccs_instance.corners
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+
+    slider_corners.set_val(orig_corners + 2)
+    _click_button(b_cancel)
+
+    assert iccs_instance.corners == orig_corners
+    plt.close(fig)
+
+
+def test_update_bandpass_corners_slider_not_clamped_above_default_max(
+    iccs_instance: ICCS,
+) -> None:
+    """Regression test: corners above the slider's default valmax=8 must not be
+    silently clamped and overwritten on an untouched save.
+
+    `matplotlib.widgets.Slider` silently clamps `valinit` to `valmax` when
+    out of range — with a fixed `valmax=8`, setting `iccs.corners=12` before
+    opening this dialog would previously mean the slider displayed (and, on
+    an untouched Save, wrote back) 8 instead of 12. `valmax` must be computed
+    as `max(8, iccs.corners)`.
+    """
+    iccs_instance()
+    iccs_instance.bandpass_apply = True
+    iccs_instance.corners = 12
+
+    (
+        fig,
+        ax,
+        (check, slider_fmin, slider_fmax, slider_corners, radio, b_save, b_cancel),
+    ) = update_bandpass(iccs_instance, return_fig=True)
+
+    assert slider_corners.val == 12
+
+    # Save without touching the corners slider must not overwrite the value.
+    _click_button(b_save)
+    assert iccs_instance.corners == 12
     plt.close(fig)
