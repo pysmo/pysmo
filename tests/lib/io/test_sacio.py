@@ -9,6 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pysmo.lib.io import SacIO
 
@@ -196,110 +197,95 @@ def test_write_to_file(empty_file: Path) -> None:
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_read_headers(sacfile: Path) -> None:
-    """Read all SacIO headers from a test file."""
+def test_read_header_types(sacfile: Path) -> None:
+    """Verify that reading headers from a file satisfies type contracts."""
     sac = SacIO.from_file(sacfile)
+
+    for header, _ in _FLOAT_HEADERS:
+        value = getattr(sac, header)
+        assert value is None or isinstance(value, float | int), (
+            f"Header '{header}' should be float|None, got {type(value)}"
+        )
+
+    for header, _ in _INT_HEADERS:
+        value = getattr(sac, header)
+        assert value is None or isinstance(value, int), (
+            f"Header '{header}' should be int|None, got {type(value)}"
+        )
+
+    for header, _, _ in _STR_HEADERS:
+        value = getattr(sac, header)
+        assert value is None or isinstance(value, str), (
+            f"Header '{header}' should be str|None, got {type(value)}"
+        )
+
+    for header in _BOOL_HEADERS:
+        value = getattr(sac, header)
+        assert value is None or isinstance(value, bool), (
+            f"Header '{header}' should be bool|None, got {type(value)}"
+        )
+
+    for header, _ in _ENUM_HEADERS:
+        value = getattr(sac, header)
+        assert value is None or isinstance(value, str), (
+            f"Header '{header}' should be str|None, got {type(value)}"
+        )
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_headers_semantic(sacfile: Path) -> None:
+    """Verify key header values that have seismological semantic significance."""
+    sac = SacIO.from_file(sacfile)
+
+    # Core timing & metadata
     assert sac.npts == 57465
-    assert sac.b == pytest.approx(0.0005380000220611691)
-    assert sac.e == pytest.approx(2873.2005808140384)
+    assert sac.delta == pytest.approx(0.05)
     assert sac.iftype == "time"
     assert sac.leven is True
-    assert pytest.approx(sac.delta) == 0.05
-    assert sac.odelta is None
-    assert sac.idep == "unkn"
-    assert sac.depmin == -4431611
-    assert sac.depmax == 4836434
-    assert sac.depmen == pytest.approx(-48617.323240233185)
-    assert sac.o == pytest.approx(-594.5390014648438)
-    assert sac.a is None
-    assert sac.t0 is None
-    assert sac.t1 is None
-    assert sac.t2 is None
-    assert sac.t3 is None
-    assert sac.t4 is None
-    assert sac.t5 is None
-    assert sac.t6 is None
-    assert sac.t7 is None
-    assert sac.t8 is None
-    assert sac.t9 is None
-    assert sac.f is None
-    assert sac.kzdate == "2010-02-27"
-    assert sac.kztime == "06:44:06.069"
-    assert sac.iztype == "unkn"
-    assert sac.kinst == "Geotech"
-    assert sac.resp0 is None
-    assert sac.resp1 is None
-    assert sac.resp2 is None
-    assert sac.resp3 is None
-    assert sac.resp4 is None
-    assert sac.resp5 is None
-    assert sac.resp6 is None
-    assert sac.resp7 is None
-    assert sac.resp8 is None
-    assert sac.resp9 is None
-    assert sac.kdatrd is None
     assert sac.kstnm == "ANMO"
-    assert sac.cmpaz == 0
-    assert sac.cmpinc == 0
-    assert sac.istreg is None
+    assert sac.knetwk == "IU"
+    assert sac.kcmpnm == "BHZ"
+
+    # Station & Event coordinates
     assert sac.stla == pytest.approx(34.945980072021484)
     assert sac.stlo == pytest.approx(-106.4571304321289)
-    assert sac.stel == pytest.approx(1671.0)
-    assert sac.stdp == pytest.approx(145.0)
-    assert sac.kevnm == "-12345  -12345"
-    assert sac.ievreg is None
     assert sac.evla == pytest.approx(-36.12200164794922)
     assert sac.evlo == pytest.approx(-72.89800262451172)
-    assert sac.evel is None
-    assert sac.evdp == pytest.approx(22.899999618530273)
-    assert sac.ievtyp == "unkn"
-    assert sac.khole == "00"
+
+    # Computed / derived values
     assert sac.dist == pytest.approx(8603.325124418385)
-    assert sac.az == pytest.approx(152.67365966211173)
-    assert sac.baz == pytest.approx(332.23754008191094)
     assert sac.gcarc == pytest.approx(77.63835363183948)
-    assert sac.lovrok is True
-    assert sac.iqual is None
-    assert sac.isynth is None
-    assert sac.user0 is None
-    assert sac.user1 is None
-    assert sac.user2 is None
-    assert sac.user3 is None
-    assert sac.user4 is None
-    assert sac.user5 is None
-    assert sac.user6 is None
-    assert sac.user7 is None
-    assert sac.user8 is None
-    assert sac.user9 is None
-    assert sac.kuser0 is None
-    assert sac.kuser1 is None
-    assert sac.kuser2 is None
-    assert sac.nxsize is None
-    assert sac.xminimum is None
-    assert sac.xmaximum is None
-    assert sac.nysize is None
-    assert sac.yminimum is None
-    assert sac.ymaximum is None
-    assert sac.nvhdr == 6
-    assert sac.norid is None
-    assert sac.nevid is None
-    assert sac.nwfid is None
-    assert sac.iinst is None
-    assert sac.lpspol is None
-    assert sac.lcalda is True
-    assert sac.kcmpnm == "BHZ"
-    assert sac.knetwk == "IU"
-    assert sac.mag is None
-    assert sac.imagtyp is None
-    assert sac.imagsrc is None
-    assert sac.nzyear == 2010
-    assert sac.nzjday == 58
-    assert sac.nzhour == 6
-    assert sac.nzmin == 44
-    assert sac.nzsec == 6
-    assert sac.nzmsec == 69
+
     with pytest.raises(AttributeError):
         _ = sac.nonexistingheader  # type: ignore[attr-defined]
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_headers_snapshot(sacfile: Path, snapshot: SnapshotAssertion) -> None:
+    """Full header snapshot — catches regressions in SAC header reading."""
+    sac = SacIO.from_file(sacfile)
+    headers: dict[str, object] = {}
+    for header, _ in _FLOAT_HEADERS:
+        headers[header] = getattr(sac, header)
+    for header, _ in _INT_HEADERS:
+        headers[header] = getattr(sac, header)
+    for header, _, _ in _STR_HEADERS:
+        headers[header] = getattr(sac, header)
+    for header in _BOOL_HEADERS:
+        headers[header] = getattr(sac, header)
+    for header, _ in _ENUM_HEADERS:
+        headers[header] = getattr(sac, header)
+    for attr in _READONLY_ATTRS:
+        headers[attr] = getattr(sac, attr)
+
+    # Round floating-point values to 6 decimal places to ensure cross-platform
+    # snapshot stability (e.g. calculated spherical trig headers dist, gcarc).
+    headers = {
+        k: round(float(v), 6) if isinstance(v, (float, np.floating)) else v
+        for k, v in headers.items()
+    }
+
+    assert headers == snapshot
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
@@ -498,7 +484,7 @@ def test_readonly_attr(sacfile: Path, attr: str) -> None:
 # ─────────────────────────── Misc behaviour ────────────────────────────────
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_data(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     newdata = np.array([132, 232, 3465, 111])
@@ -509,7 +495,7 @@ def test_change_data(sacfile: Path) -> None:
     assert sac.depmen == sum(newdata) / sac.npts
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_iztype_prevents_zero_time_change() -> None:
     """Cannot change the header nominated as zero-time to a non-zero value."""
     sac = SacIO(iztype="o")
@@ -518,7 +504,7 @@ def test_iztype_prevents_zero_time_change() -> None:
         sac.o = 123.0
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_iztype_is_read_only(sacfile: Path) -> None:
     """iztype can only be changed via change_ref_time."""
     sac = SacIO.from_file(sacfile)
@@ -526,7 +512,7 @@ def test_iztype_is_read_only(sacfile: Path) -> None:
         sac.iztype = "o"
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     old_ref = sac.ref_datetime
@@ -553,14 +539,14 @@ def test_change_ref_time(sacfile: Path) -> None:
     assert new_ref + timedelta(seconds=new_b) == old_ref + timedelta(seconds=old_b)
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_invalid_header(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     with pytest.raises(ValueError):
         sac.change_ref_time("e")
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_requires_ref_datetime() -> None:
     sac = SacIO()
     sac.o = 10.0
@@ -568,7 +554,7 @@ def test_change_ref_time_requires_ref_datetime() -> None:
         sac.change_ref_time("o")
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_requires_header_value(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert sac.a is None
@@ -576,7 +562,7 @@ def test_change_ref_time_requires_header_value(sacfile: Path) -> None:
         sac.change_ref_time("a")
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_read_after_change_ref_time(sacfile: Path) -> None:
     """Reloading a file must not raise because of a stale iztype-pinned
     header value left over from before the reload."""
@@ -590,7 +576,7 @@ def test_read_after_change_ref_time(sacfile: Path) -> None:
     assert sac.o == pytest.approx(-594.5390014648438)
 
 
-@pytest.mark.depends(on=["test_read_headers"])
+@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     """A header this file doesn't define must not keep a stale value from
     a previously loaded file when reusing an existing instance."""
@@ -603,7 +589,7 @@ def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     assert sac.a is None
 
 
-@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
+@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_pickling(sacfile: Path, empty_file: Path) -> None:
     sac = SacIO.from_file(sacfile)
     picklefile = empty_file
@@ -615,7 +601,7 @@ def test_pickling(sacfile: Path, empty_file: Path) -> None:
     assert sac.b == sac2.b
 
 
-@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
+@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_deepcopy(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     sac2 = copy.deepcopy(sac)
@@ -626,7 +612,7 @@ def test_deepcopy(sacfile: Path) -> None:
     assert sac.e != sac2.e
 
 
-@pytest.mark.depends(on=["test_read_headers", "test_read_data"])
+@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_file_and_buffer(sacfile: Path) -> None:
     from_file = SacIO.from_file(sacfile)
     with open(sacfile, "rb") as f:
