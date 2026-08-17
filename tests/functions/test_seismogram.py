@@ -5,12 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 from matplotlib.figure import Figure
 from syrupy.assertion import SnapshotAssertion
 
-from pysmo import Seismogram
+from pysmo import MiniSeismogram, Seismogram
 from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
+from tests.conftest import contiguous_seismogram_pairs, mini_seismograms
 from tests.test_helpers import assert_seismogram_modification
 
 
@@ -843,3 +846,157 @@ class TestWindowRampValidation:
                 window_end_time=window_end,
                 ramp_width=5.0,  # ramp = 50 s; only 5 s available before window
             )
+
+
+# ─────────────────────── Property-based tests ───────────────────────────────
+
+
+@settings(deadline=None)
+@given(
+    seis=mini_seismograms(),
+    k=st.integers(min_value=0, max_value=499),
+)
+def test_time2index_in_bounds(seis: MiniSeismogram, k: int) -> None:
+    from pysmo.functions import time2index
+
+    assume(k < len(seis.data))
+    t = seis.begin_time + k * seis.delta
+    idx = time2index(seis, t)
+    assert 0 <= idx < len(seis.data)
+
+
+@settings(deadline=None)
+@given(seis=mini_seismograms())
+def test_time2index_endpoints(seis: MiniSeismogram) -> None:
+    from pysmo.functions import time2index
+
+    assert time2index(seis, seis.begin_time) == 0
+    assert time2index(seis, seis.end_time) == len(seis.data) - 1
+
+
+@settings(deadline=None)
+@given(
+    seis=mini_seismograms(),
+    k1=st.integers(min_value=0, max_value=50),
+    k2=st.integers(min_value=0, max_value=50),
+)
+def test_crop_randomised_window(seis: MiniSeismogram, k1: int, k2: int) -> None:
+    from pysmo.functions import crop
+
+    assume(len(seis.data) > (k1 + k2 + 1))
+    t1 = seis.begin_time + k1 * seis.delta
+    t2 = seis.end_time - k2 * seis.delta
+    assume(t1 <= t2)
+
+    cropped = crop(seis, t1, t2, clone=True)
+    assert len(cropped.data) <= len(seis.data)
+    assert cropped.begin_time >= t1
+    assert cropped.end_time <= t2 + seis.delta
+
+
+@settings(deadline=None)
+@given(seis=mini_seismograms())
+def test_crop_identity(seis: MiniSeismogram) -> None:
+    from pysmo.functions import crop
+
+    cropped = crop(seis, seis.begin_time, seis.end_time, clone=True)
+    np.testing.assert_array_equal(cropped.data, seis.data)
+    assert cropped.begin_time == seis.begin_time
+    assert cropped.delta == seis.delta
+
+
+@settings(deadline=None)
+@given(seis=mini_seismograms())
+def test_normalize_peak_is_one(seis: MiniSeismogram) -> None:
+    from pysmo.functions import normalize
+
+    assume(np.max(np.abs(seis.data)) > 1e-10)
+    result = normalize(seis, clone=True)
+    assert np.max(np.abs(result.data)) == pytest.approx(1.0)
+
+
+@settings(deadline=None)
+@given(
+    seis=mini_seismograms(),
+    scalar=st.floats(
+        min_value=0.01, max_value=100.0, allow_nan=False, allow_infinity=False
+    ),
+)
+def test_normalize_scaling_invariance(seis: MiniSeismogram, scalar: float) -> None:
+    from pysmo.functions import normalize
+
+    assume(np.max(np.abs(seis.data)) > 1e-10)
+    scaled_seis = MiniSeismogram(
+        data=seis.data * scalar,
+        delta=seis.delta,
+        begin_time=seis.begin_time,
+    )
+    norm1 = normalize(seis, clone=True)
+    norm2 = normalize(scaled_seis, clone=True)
+    np.testing.assert_allclose(norm1.data, norm2.data, rtol=1e-5, atol=1e-8)
+
+
+@settings(deadline=None)
+@given(
+    seis=mini_seismograms(),
+    pre_pad=st.integers(min_value=0, max_value=20),
+    post_pad=st.integers(min_value=0, max_value=20),
+)
+def test_pad_preserves_data(seis: MiniSeismogram, pre_pad: int, post_pad: int) -> None:
+    from pysmo.functions import pad
+
+    new_begin = seis.begin_time - pre_pad * seis.delta
+    new_end = seis.end_time + post_pad * seis.delta
+    padded = pad(seis, new_begin, new_end, clone=True)
+    assert len(padded.data) == len(seis.data) + pre_pad + post_pad
+    # Original data sits at the exact pre_pad offset
+    np.testing.assert_array_equal(
+        padded.data[pre_pad : pre_pad + len(seis.data)],
+        seis.data,
+    )
+
+
+@settings(deadline=None)
+@given(pair=contiguous_seismogram_pairs())
+def test_merge_contiguous_data_conservation(
+    pair: tuple[MiniSeismogram, MiniSeismogram],
+) -> None:
+    from pysmo.functions import merge
+
+    seis1, seis2 = pair
+    merged = merge([seis1, seis2], clone=True)
+    assert merged is not None
+    assert len(merged.data) == len(seis1.data) + len(seis2.data)
+    np.testing.assert_array_equal(
+        merged.data,
+        np.concatenate([seis1.data, seis2.data]),
+    )
+    assert merged.begin_time == seis1.begin_time
+    assert merged.end_time == seis2.end_time
+
+
+@settings(deadline=None)
+@given(pair=contiguous_seismogram_pairs())
+def test_merge_chronological_sorting(
+    pair: tuple[MiniSeismogram, MiniSeismogram],
+) -> None:
+    from pysmo.functions import merge
+
+    seis1, seis2 = pair
+    merged_forward = merge([seis1, seis2], clone=True)
+    merged_reversed = merge([seis2, seis1], clone=True)
+    assert merged_forward is not None and merged_reversed is not None
+    np.testing.assert_array_equal(merged_forward.data, merged_reversed.data)
+    assert merged_forward.begin_time == merged_reversed.begin_time
+
+
+@settings(deadline=None)
+@given(seis=mini_seismograms())
+def test_merge_single_input_identity(seis: MiniSeismogram) -> None:
+    from pysmo.functions import merge
+
+    merged = merge([seis], clone=True)
+    assert merged is not None
+    np.testing.assert_array_equal(merged.data, seis.data)
+    assert merged.begin_time == seis.begin_time
+    assert merged.delta == seis.delta
