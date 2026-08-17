@@ -3,10 +3,13 @@ import random
 import numpy as np
 import pandas as pd
 import pytest
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 from pysmo import MiniSeismogram, Seismogram
 from pysmo.functions import clone_to_mini, detrend
 from pysmo.tools.signal import delay, mccc, multi_delay, multi_multi_delay
+from tests.conftest import mini_seismograms
 
 
 def test_delay_basic() -> None:
@@ -799,3 +802,44 @@ def test_multi_multi_delay_constant_seismogram_warns() -> None:
     ]
     with pytest.warns(UserWarning, match="zero standard deviation"):
         multi_multi_delay(seismograms, abs_max=False)
+
+
+# ─────────────────────── Property-based tests ───────────────────────────────
+
+
+@settings(deadline=None)
+@given(seis=mini_seismograms(min_length=100, max_length=300))
+def test_delay_self_is_zero(seis: MiniSeismogram) -> None:
+    from pysmo.tools.signal import delay
+
+    assume(np.std(seis.data) > 1e-2)
+    cc_delay, cc_coeff = delay(seis, seis)
+    assert cc_delay.total_seconds() == pytest.approx(0.0)
+    assert cc_coeff == pytest.approx(1.0)
+
+
+@settings(deadline=None)
+@given(
+    seis=mini_seismograms(min_length=200, max_length=500),
+    shift=st.integers(min_value=1, max_value=20),
+)
+def test_delay_shift_recovery(seis: MiniSeismogram, shift: int) -> None:
+    from pysmo.tools.signal import delay
+
+    assume(np.std(seis.data) > 1e-2)
+    L = len(seis.data) - shift - 10
+    assume(L >= 100)
+    data1 = seis.data[shift : shift + L]
+    data2 = seis.data[:L]
+    assume(np.std(data1) > 1e-2 and np.std(data2) > 1e-2)
+
+    s1 = MiniSeismogram(data=data1, delta=seis.delta, begin_time=seis.begin_time)
+    s2 = MiniSeismogram(data=data2, delta=seis.delta, begin_time=seis.begin_time)
+
+    cc_delay, cc_coeff = delay(s1, s2)
+    assert cc_delay == shift * seis.delta
+    assert cc_coeff == pytest.approx(1.0, abs=0.01)
+
+    cc_delay_rev, cc_coeff_rev = delay(s2, s1)
+    assert cc_delay_rev == -shift * seis.delta
+    assert cc_coeff_rev == pytest.approx(1.0, abs=0.01)

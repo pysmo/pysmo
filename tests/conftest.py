@@ -1,8 +1,15 @@
+import os
 import shutil
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
+from hypothesis import settings as hypothesis_settings
+from hypothesis import strategies as st
+from hypothesis.strategies import composite
 
 from pysmo import (
     LocationWithDepth,
@@ -148,3 +155,79 @@ def pytest_collection_modifyitems(
     for item in items:
         if "real_web_request" in item.keywords:
             item.add_marker(skip_real_web_request)
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    hypothesis_settings.register_profile("ci", max_examples=100, deadline=None)
+    hypothesis_settings.register_profile("dev", max_examples=50, deadline=None)
+    hypothesis_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
+
+
+# Realistic sampling intervals in seconds
+_DELTA_STRATEGY = st.sampled_from(
+    [0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0]
+)
+
+
+@composite
+def mini_seismograms(
+    draw: st.DrawFn,
+    min_length: int = 10,
+    max_length: int = 500,
+) -> MiniSeismogram:
+    """Draw a valid MiniSeismogram with bounded random data, begin_time, and delta."""
+    length = draw(st.integers(min_value=min_length, max_value=max_length))
+    data = draw(
+        st.lists(
+            st.floats(
+                min_value=-1e6,
+                max_value=1e6,
+                allow_nan=False,
+                allow_infinity=False,
+            ),
+            min_size=length,
+            max_size=length,
+        )
+    )
+    delta = draw(_DELTA_STRATEGY)
+    begin_time = draw(
+        st.datetimes(
+            min_value=datetime(1970, 1, 1),
+            max_value=datetime(2030, 1, 1),
+            timezones=st.just(timezone.utc),
+        )
+    )
+    return MiniSeismogram(
+        data=np.array(data, dtype=np.float64),
+        delta=pd.Timedelta(seconds=delta),
+        begin_time=pd.Timestamp(begin_time),
+    )
+
+
+@composite
+def contiguous_seismogram_pairs(
+    draw: st.DrawFn,
+    min_length: int = 10,
+    max_length: int = 250,
+) -> tuple[MiniSeismogram, MiniSeismogram]:
+    """Draw two contiguous MiniSeismograms sharing the same delta without gaps."""
+    seis1 = draw(mini_seismograms(min_length=min_length, max_length=max_length))
+    length2 = draw(st.integers(min_value=min_length, max_value=max_length))
+    data2 = draw(
+        st.lists(
+            st.floats(
+                min_value=-1e6,
+                max_value=1e6,
+                allow_nan=False,
+                allow_infinity=False,
+            ),
+            min_size=length2,
+            max_size=length2,
+        )
+    )
+    seis2 = MiniSeismogram(
+        data=np.array(data2, dtype=np.float64),
+        delta=seis1.delta,
+        begin_time=seis1.end_time + seis1.delta,
+    )
+    return seis1, seis2
