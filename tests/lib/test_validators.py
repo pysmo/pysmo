@@ -1,8 +1,11 @@
-from datetime import datetime, timedelta
+import zoneinfo
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from pysmo.lib.validators import (
     convert_to_ndarray,
@@ -63,3 +66,39 @@ def test_convert_to_ndarray_passthrough() -> None:
     original = np.array([1, 2, 3])
     arr = convert_to_ndarray(original)
     assert arr is original
+
+
+# ─────────────────────── Property-based tests ───────────────────────────────
+
+
+@given(
+    dt=st.datetimes(
+        min_value=datetime(1970, 1, 1),
+        max_value=datetime(2030, 1, 1),
+        timezones=st.sampled_from(
+            [
+                timezone.utc,
+                zoneinfo.ZoneInfo("US/Eastern"),
+                zoneinfo.ZoneInfo("Europe/Berlin"),
+                zoneinfo.ZoneInfo("Asia/Tokyo"),
+            ]
+        ),
+    )
+)
+def test_convert_to_utc_timestamp_always_utc(dt: datetime) -> None:
+    result = convert_to_utc_timestamp(dt)
+    assert result.tzinfo is not None
+    assert str(result.tzinfo) == "UTC"
+    assert result.timestamp() == pytest.approx(pd.Timestamp(dt).timestamp())
+
+
+@given(
+    values=st.lists(
+        st.floats(min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False),
+        min_size=1,
+    )
+)
+def test_convert_to_ndarray_preserves_values(values: list[float]) -> None:
+    result = convert_to_ndarray(values)
+    assert isinstance(result, np.ndarray)
+    np.testing.assert_array_equal(result, np.array(values))
