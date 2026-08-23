@@ -239,7 +239,7 @@ Strip away the docstrings and this looks much like the common structure of
 is declared but not implemented — [`Protocol`][typing.Protocol] classes provide
 type information only and cannot be instantiated directly.
 
-!!! note
+!!! note "Why we say 'types', not 'protocols'"
 
     Python [`Protocol`][typing.Protocol] classes are used almost exclusively in type
     annotations. We will therefore refer to the ones shipped with pysmo as *types*

@@ -44,12 +44,12 @@ on the third-party package you are using. By this we mean factors such as:
 
 Often it boils down to a trade-off between convenience and transparency, and
 which side of it you find yourself on more. With that said, the core of pysmo is
-considered to be very much a library. Outside the core part, there are some
-extra bits that fall more on the framework side of things. To accommodate for
-that, pysmo organises things into different namespaces. More application-like
-modules are found in [`pysmo.tools`][], while everything else is library-like.
+considered to be a library. Outside the core part, there are some extra bits
+that fall more on the framework side of things. To accommodate for that, pysmo
+organises things into different namespaces. More application-like modules are
+found in [`pysmo.tools`][], while everything else is library-like.
 
-!!! note
+!!! note "Tools are reusable too"
 
     Even [`pysmo.tools`][] are written in a way that makes them easy to reuse
     outside of pysmo.

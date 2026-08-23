@@ -46,7 +46,7 @@ with [`pip`](https://pip.pypa.io/en/stable/):
     $ python3 -m pip install git+https://github.com/pysmo/pysmo
     ```
 
-!!! tip
+!!! tip "Install stable and development side by side"
 
     The stable release can be installed alongside the development version. See the
     [development documentation](../development/index.md) for instructions.
@@ -67,7 +67,7 @@ To remove pysmo from the system run:
 python3 -m pip uninstall pysmo
 ```
 
-!!! note
+!!! note "Uninstalling leaves dependencies behind"
 
     `pip` does not remove dependencies that were automatically installed. Run
     `pip list` to see what is installed, then remove any unwanted packages with

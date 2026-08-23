@@ -90,7 +90,7 @@ cannot be detected, adding or removing seismograms from the list will _not_
 trigger regeneration. In that case, clearing the cache must be done manually by
 calling [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache].
 
-!!! tip
+!!! tip "Both types support interactive picking"
 
     Both types can be used for visualisation purposes. It is therefore possible
     to e.g. pick an updated arrival in the cross-correlation seismograms, and
