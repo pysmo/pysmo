@@ -28,14 +28,27 @@ from the surface) — many seismological tools use kilometres instead.
 
 ## Time
 
-Pysmo uses pandas datetime types throughout. They behave similarly to built-in
-datetime objects but integrate better with numpy arrays. Points in time are
-always [`pandas.Timestamp`][pandas.Timestamp] objects with
+Pysmo uses pandas datetime types throughout rather than the built-in
+[`datetime`][datetime.datetime] module. Unlike `datetime`, pandas timestamps and
+time intervals are backed by the same array machinery as [`numpy`][], so
+operations across many values at once — shifting every pick time in an array by
+a fixed offset, for example — run as a single array operation instead of a
+Python loop over individual objects, and are correspondingly faster.
+[`pysmo.tools.noise.NoiseModel`][] stores its period axis this way, as a
+[`pandas.TimedeltaIndex`][] built in one call to [`pandas.to_timedelta`][]
+rather than one [`pandas.Timedelta`][] at a time.
+
+Points in time are always [`pandas.Timestamp`][] objects with
 [`tzinfo`][pandas.Timestamp.tzinfo] set to
 [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). All times are
 absolute — relative offsets from some reference point are avoided. Time
-intervals such as the sampling interval are always
-[`pandas.Timedelta`][pandas.Timedelta] objects.
+intervals such as the sampling interval are always [`pandas.Timedelta`][]
+objects, not bare floats: a float has no fixed unit attached (seconds? samples?
+days?), and converting between units or across calendar boundaries by hand —
+leap years, variable month lengths, leap seconds — is a common source of bugs.
+[`pandas.Timestamp`][] and [`pandas.Timedelta`][] handle that arithmetic
+internally, storing values as integer nanoseconds and avoiding the rounding
+error that floating-point seconds accumulate under repeated arithmetic.
 
 Many seismological data formats and tools store absolute times without recording
 a timezone, even though the values are effectively UTC. In keeping with "trust

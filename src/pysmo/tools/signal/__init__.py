@@ -17,7 +17,7 @@ Functions that modify seismogram data follow the same `clone` convention as
 [`pysmo.functions`][]: without `clone` they operate in place
 and return `None`; with `clone=True` they return a modified copy.
 
-!!! note
+!!! note "No unit tracking"
 
     The [`Seismogram`][pysmo.Seismogram] type carries no unit label for
     `data`. Functions in this module do not track or convert physical
