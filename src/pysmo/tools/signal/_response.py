@@ -256,7 +256,7 @@ def remove_response[T: Seismogram](
         >>>
         ```
 
-        !!! tip
+        !!! tip "Check the data, not just the instrument"
 
             $f_1$–$f_4$ above are chosen from the instrument and the
             sampling rate — but deconvolution divides by the response

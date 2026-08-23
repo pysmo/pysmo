@@ -69,7 +69,7 @@ pysmo-specific; they are part of modern Python and are widely used across the
 broader Python ecosystem. Learning to use them effectively will improve your
 Python skills in general, regardless of whether you continue using pysmo.
 
-!!! tip
+!!! tip "Pysmo uses advanced typing features"
 
     Pysmo does make use of typing features that go beyond basic type annotations.
     Python's type system has progressed considerably in recent versions, and pysmo
@@ -78,7 +78,7 @@ Python skills in general, regardless of whether you continue using pysmo.
     before you even run your code. The [first steps](index.md) page and the
     [tutorial](tutorial.md) walk through these ideas step by step.
 
-## When does pysmo really shine?
+## When is pysmo the best fit?
 
 Pysmo is at its best when you are writing *new* code and want it to be reusable
 across different projects, data sources, or storage formats. If the
@@ -103,7 +103,7 @@ but a type checker will warn you before you ever run the code. If you need
 runtime validation, consider pairing pysmo with a library like
 [attrs](https://www.attrs.org) or [pydantic](https://docs.pydantic.dev).
 
-!!! note
+!!! note "Static types vs runtime validation"
 
     While pysmo *types* do not perform runtime checks, some of the classes and
     functions shipped with pysmo do validate their inputs at runtime. The

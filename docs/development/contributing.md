@@ -6,9 +6,8 @@ tags:
 
 # Contributing
 
-Thank you for considering contributing to pysmo. We welcome your contribution!
-To make the process as seamless as possible, please read through this guide
-carefully.
+Thank you for considering contributing to pysmo. Please read through this
+guide carefully before you start.
 
 ## Ways to contribute
 
@@ -22,11 +21,11 @@ There are several ways to contribute, and not all of them involve writing code:
   [issue](https://github.com/pysmo/pysmo/issues) or a
   [discussion](https://github.com/pysmo/pysmo/discussions). Feel free to
   answer questions from other users as well (including your own, should you
-  figure it out!).
-- *Bug reports*: if something needs fixing, we want to hear about it! Please
-  create a new [issue](https://github.com/pysmo/pysmo/issues), or add
-  information to an existing one if the bug has already been reported. Bonus
-  points if you also provide a patch that fixes it!
+  figure it out).
+- *Bug reports*: if something needs fixing, please create a new
+  [issue](https://github.com/pysmo/pysmo/issues), or add information to an
+  existing one if the bug has already been reported. A patch that fixes the
+  bug is also welcome.
 - *Enhancements*: if you can use pysmo, you can also write code that becomes
   part of it — whether that is a useful function, a new pysmo type, or a tool
   you built using pysmo.
@@ -56,7 +55,7 @@ configure git to sync your fork with the upstream repository, and then create
 a feature branch for your changes:
 
 ```bash
-git checkout -b my_cool_feature
+git checkout -b my_feature
 ```
 
 Before submitting a pull request from your feature branch, please make sure
@@ -84,5 +83,5 @@ Once a pull request is submitted:
 - A documentation build is also triggered automatically. Follow the link that
   appears in the pull request on GitHub and verify the documentation looks as
   expected.
-- We will then review your submission and hopefully be able to include it in
-  pysmo!
+- We will then review your submission and, all being well, include it in
+  pysmo.
