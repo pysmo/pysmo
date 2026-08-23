@@ -14,13 +14,13 @@ be, and what to consider if you want to write some types of your own.
 ## Use patterns
 
 Defining arbitrarily complex types using [`Protocol`][typing.Protocol] classes
-is straightforward, and you may be (or perhaps should be!) tempted to use them
+is straightforward, and you may be (or perhaps should be) tempted to use them
 everywhere. However, precisely because it is so easy to write types, you may
 want to take a moment to contemplate what exactly should go into the type you
 are defining. For this it may be worth looking at different use patterns that
 exist for custom types.
 
-!!! note
+!!! note "Attributes only, for simplicity"
 
     For simplicity, we will assume classes only contain attributes in the examples
     shown here. In a real-world situation, classes (and types) may of course contain
@@ -145,9 +145,9 @@ flowchart TD
     e2@{ animate: true }
 ```
 
-With these types we can seamlessly use `f2` with `SomeClass` as well as
-`SomeOtherClass`, while `f4` works with `SomeOtherClass`. Using `T1` and `T2` as
-input types for two parameters in yet another function `f5` looks like this:
+With these types we can use `f2` with `SomeClass` as well as `SomeOtherClass`,
+while `f4` works with `SomeOtherClass`. Using `T1` and `T2` as input types for
+two parameters in yet another function `f5` looks like this:
 
 ```mermaid
 flowchart TD
@@ -252,7 +252,7 @@ In summary, the strategy for determining types can be summarised as follows:
 1. Keep types as simple as possible.
 2. Reuse simple types whenever possible in more complex types.
 
-!!! tip
+!!! tip "Avoid overly specific attribute names"
 
     If you ever find yourself contemplating a type with attribute names like
     `station_latitude` or `station_longitude`, you are likely defining a type that
@@ -366,7 +366,7 @@ pysmo types. Crucially, these types inherit from the basic pysmo types, and
 therefore can still be used the same way as e.g. a basic
 [`Seismogram`][pysmo.Seismogram].
 
-!!! tip
+!!! tip "Mini classes for specialised types"
 
     These specialised types all have a corresponding [mini class](mini-classes.md).
     Thus, if you are working with a class that matches e.g. the

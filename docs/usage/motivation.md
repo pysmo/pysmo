@@ -12,7 +12,7 @@ changed how we write code, helped prevent errors, and improved the experience of
 working with modern editors. Pysmo brings these features to the field of
 seismology.
 
-!!! tip
+!!! tip "'Class' vs 'type'"
 
     <a id="type-tip"></a> In the paragraphs below we use the terms "class" and
     "type" a lot. We can explore the relationship between these terms in more detail
@@ -39,10 +39,10 @@ seismology.
 Anyone who has taken a course on programming (in any language) will most likely
 first have been taught about the different data types available. These typically
 consist of simple types like integers, floats, and strings, as well as the more
-complicated arrays, dictionaries, etc. These types are typically very clearly
-defined and intuitive to use. For example, we don't need to think very hard
-whether or not it makes sense to pass the string "hello world" as input to a
-program that calculates the square root of a number.
+complicated arrays, dictionaries, etc. These types are typically clearly defined
+and intuitive to use. For example, it's immediately obvious whether or not it
+makes sense to pass the string "hello world" as input to a program that
+calculates the square root of a number.
 
 As one moves from general-purpose programming towards more specialised problem
 solving (e.g. within a particular scientific field), the expected input and
@@ -60,8 +60,7 @@ defining a type, we are again more at risk of losing the intuitive feeling for
 our type while writing code. This kind of seismogram type would just be an
 abstract construct, rather than having any meaningful connection with how we
 experience a seismogram in nature or when treating it mathematically (and still
-wouldn't be able to guarantee it would work with all possible future use
-cases!).
+wouldn't be able to guarantee it would work with all possible future use cases).
 
 ??? example "File formats in seismology"
 
@@ -78,7 +77,7 @@ cases!).
     - The majority of SAC headers are optional (only 6 are mandatory), so there is
         no guarantee they are actually set to a value. To prevent this from causing
         errors, checks need to be built into code to ensure they are actually set.
-    - The large number of headers (over 150!) requires intricate knowledge of the
+    - The large number of headers (over 150) requires intricate knowledge of the
         file format. Even so, using SAC files probably feels far from intuitive.
     - SAC files are limited to the headers defined in the format. The only way to
         store custom data is via the "user defined headers", or if those run out,
@@ -142,7 +141,7 @@ These kinds of warnings are not just for catching typos. They will also catch
 programming errors such as trying to set the value of `delta` to a string
 instead of a float.
 
-!!! tip
+!!! tip "Check types without editor support"
 
     Should your editor for some reason be unable to parse type hints, testing your
     code for typing errors can still be done with

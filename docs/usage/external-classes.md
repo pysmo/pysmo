@@ -15,15 +15,15 @@ chapter discusses this scenario.
 
 ## Does a class work with pysmo?
 
-Before answering this question, remember that pysmo types are typically very
-simple. Most likely an individual type will contain way fewer attributes than
-any third-party class. You must therefore decide which types you want to use
-with the class. Some may work out-of-the-box, others may require some extra work
+Before answering this question, remember that pysmo types are typically simple.
+Most likely an individual type will contain way fewer attributes than any
+third-party class. You must therefore decide which types you want to use with
+the class. Some may work out-of-the-box, others may require some extra work
 (e.g. because the attribute name or data format are different), and some will
 never work (perhaps because the necessary data are not in the class to begin
 with).
 
-!!! warning
+!!! warning "Interface only, not implementation"
 
     Keep in mind that pysmo types merely define the interface, not the
     implementation. If the external class does something internally that differs
@@ -287,7 +287,7 @@ that lives in ObsPy's separate `Inventory` hierarchy, not on `Trace` itself — 
 [`Station`][pysmo.Station]. Supply station/event metadata separately, the same
 way [`GeoCsvSeismogram.fetch()`][pysmo.classes.GeoCsvSeismogram.fetch] does.
 
-!!! tip
+!!! tip "Method vs function"
 
     Notice `detrend` is available in two different shapes above: ObsPy exposes it as
     a method on `Trace` (`trace.detrend(...)`), while pysmo exposes the same
@@ -376,12 +376,12 @@ oddly-populated header fields that are confusing to decode later, if you ever
 come across one.) Current AIMBAT solves the same problem properly instead: its
 seismogram objects are backed by a SQL database, with `begin_time` and `delta`
 stored as ordinary table columns and `data` fetched from a separate table only
-when it's actually needed. That split pays off in a very concrete way too:
-changing a pick or a sampling interval is a small database update, not a read of
-the whole waveform file. Do the same thing with a SAC file being read directly,
-and there's no such distinction available — updating one value means touching
-the entire seismogram. None of that is something you can plan for up front, and
-it doesn't need to be. The protocol boundary doesn't ask the rich side to stay
+when it's actually needed. That split pays off concretely too: changing a pick
+or a sampling interval is a small database update, not a read of the whole
+waveform file. Do the same thing with a SAC file being read directly, and
+there's no such distinction available — updating one value means touching the
+entire seismogram. None of that is something you can plan for up front, and it
+doesn't need to be. The protocol boundary doesn't ask the rich side to stay
 simple, or to stay anything in particular — only that
 [`begin_time`][pysmo.Seismogram.begin_time], [`data`][pysmo.Seismogram.data],
 and [`delta`][pysmo.Seismogram.delta] keep meaning what they always meant. The
