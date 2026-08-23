@@ -12,7 +12,7 @@ protocol-based design possible. The concepts are not specific to pysmo, and are
 worth understanding in their own right. Those already comfortable with typing in
 Python can skip ahead to the [next section](installation.md).
 
-!!! tip
+!!! tip "Use a modern editor"
 
     Python's type system only pays off in full when your editor understands it too.
     A modern editor or IDE such as [VSCode](https://code.visualstudio.com/),
@@ -34,7 +34,7 @@ offending code is actually executed. Consider this simple function:
 With numeric arguments it works as expected(1):
 { .annotate }
 
-1. :material-lightbulb: In Python, dividing two integers always creates a float!
+1. :material-lightbulb: In Python, dividing two integers always creates a float.
 
 ```python
 >>> division(5, 2)

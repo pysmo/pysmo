@@ -43,7 +43,7 @@ Cloning into 'pysmo'...
 $ cd pysmo
 ```
 
-!!! note
+!!! note "Why clone over SSH"
     We used
     [SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
     to clone the repository here. With an _ssh-agent_ running, this saves you
@@ -80,7 +80,7 @@ development environment. Uv creates a Python virtual environment and handles
 package installation, so you can develop and test pysmo without affecting your
 system-wide Python installation.
 
-!!! note
+!!! note "uv installs Python too"
     uv can also be used to install Python itself.
 
 ## Makefile
