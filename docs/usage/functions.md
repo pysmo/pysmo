@@ -216,7 +216,7 @@ at the declarations from *bottom to top* we read it as follows:
     this function declaration, it doesn't make much sense to use a type variable
     in the first place.
 
-!!! tip
+!!! tip "Overloads get easier"
 
     This may seem a bit overwhelming at first, but you will quickly find that the
     patterns frequently repeat themselves, and that you can simply copy-paste a lot
