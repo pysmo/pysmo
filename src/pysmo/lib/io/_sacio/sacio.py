@@ -394,6 +394,10 @@ class SacIO(SacIOBase):
                 file_handle.seek(start)
                 file_handle.write(struct.pack(header_format, value))
 
+            has_second_block = self.iftype.lower() in ("rlim", "amph") or (
+                not self.leven
+            )
+
             # write data (if npts > 0)
             data_1_start = 632
             data_1_end = data_1_start + self.npts * 4
@@ -403,10 +407,19 @@ class SacIO(SacIOBase):
                 for x in self.data:
                     file_handle.write(struct.pack("f", x))
 
+            data_end = data_1_end
+            if has_second_block:
+                data_2_end = data_1_end + len(self.data2) * 4
+                if len(self.data2) > 0:
+                    file_handle.seek(data_1_end)
+                    for x in self.data2:
+                        file_handle.write(struct.pack("f", x))
+                data_end = data_2_end
+
             if self.nvhdr == 7:
                 for footer, footer_metadata in SAC_FOOTERS.items():
                     undefined = -12345.0
-                    start = footer_metadata.start + data_1_end
+                    start = footer_metadata.start + data_end
                     value = None
                     try:
                         if hasattr(self, footer):
@@ -478,12 +491,32 @@ class SacIO(SacIOBase):
         # raise. iztype itself goes through object.__setattr__ throughout,
         # since it is frozen (see change_ref_time) independently of this
         # guard.
+        # DELTA has no meaningful nominal value for unevenly-spaced files,
+        # and real SAC writes it as undefined for them - so its "required"
+        # header flag only actually holds when LEVEN is True. Peek at
+        # LEVEN's raw byte before the reset/parse loops below need it,
+        # since delta (word 0) is read before leven (word 105) in file
+        # order.
+        leven_header = SAC_HEADERS["leven"]
+        leven_end = leven_header.start + leven_header.length
+        file_leven = (
+            struct.unpack(
+                file_byteorder + leven_header.format,
+                buffer[leven_header.start : leven_end],
+            )[0]
+            if leven_end < len(buffer)
+            else True
+        )
+
         with self.raw():
             # Reset optional headers to their defaults first, so a header
             # this file doesn't define ends up unset rather than keeping a
             # stale value from a previously loaded file.
             for header, header_metadata in SAC_HEADERS.items():
-                if header_metadata.required:
+                required = header_metadata.required and not (
+                    header == "delta" and not file_leven
+                )
+                if required:
                     continue
                 default = getattr(SacIODefaults, header, None)
                 if header == "iztype":
@@ -504,7 +537,9 @@ class SacIO(SacIOBase):
             npts = 0
             for header, header_metadata in SAC_HEADERS.items():
                 header_type = header_metadata.type
-                header_required = header_metadata.required
+                header_required = header_metadata.required and not (
+                    header == "delta" and not file_leven
+                )
                 header_undefined = HEADER_TYPES[header_type].undefined
                 start = header_metadata.start
                 length = header_metadata.length
@@ -552,23 +587,19 @@ class SacIO(SacIOBase):
                 if header not in _READ_ONLY_HEADERS:
                     setattr(self, header, value)
 
-            # Only accept IFTYPE = ITIME, LEVEN = True SAC files. Other
-            # IFTYPE values and unevenly-spaced ITIME files use a second
-            # data block, which is something we don't support for now.
-            if self.iftype.lower() != "time":
-                raise NotImplementedError(
-                    f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported."  # noqa: E501
-                )
-            if not self.leven:
-                raise NotImplementedError(
-                    "Reading unevenly-spaced (LEVEN=False) SAC files is not supported."
-                )
+            # Spectral files (IRLIM/IAMPH) and unevenly-spaced data (LEVEN =
+            # False, which IXY implies) carry a second NPTS-length data
+            # section straight after the first.
+            has_second_block = self.iftype.lower() in ("rlim", "amph") or (
+                not self.leven
+            )
 
             # Read first data block
             start = 632
             length = npts * 4
             data_end = start + length
             self.data = np.array([])
+            self.data2 = np.array([])
             if length > 0:
                 data_end = start + length
                 data_format = file_byteorder + str(npts) + "f"
@@ -577,6 +608,16 @@ class SacIO(SacIOBase):
                 content = buffer[start:data_end]
                 data = struct.unpack(data_format, content)
                 self.data = np.array(data)
+
+                if has_second_block:
+                    block2_start = data_end
+                    block2_end = block2_start + length
+                    if block2_end > len(buffer):
+                        raise EOFError()
+                    content = buffer[block2_start:block2_end]
+                    data2 = struct.unpack(data_format, content)
+                    self.data2 = np.array(data2)
+                    data_end = block2_end
 
             if self.nvhdr == 7:
                 for footer, footer_metadata in SAC_FOOTERS.items():
