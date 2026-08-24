@@ -268,7 +268,7 @@ def write_sacpz(
         ValueError: If *responses* is an empty sequence.
         OSError: If the file cannot be written.
 
-    Note:
+    Note: Formatting matches EarthScope's SACPZ convention
         Records are separated by a single blank line. Poles, zeros, and
         `CONSTANT` are written at 6 decimal digits (`.6e`), matching the
         EarthScope SACPZ web service's own output convention — a real SAC
