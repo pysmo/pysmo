@@ -20,9 +20,7 @@ dependencies = [
   "pyproj>=3.7.2",
   "attrs>=25.4.0",
   "cattrs>=25.3.0",
-  "scipy-stubs>=1.16.2.3",
   "scipy>=1.16.2",
-  "pandas-stubs>=3.0.0.260204",
   "pandas>=3.0.1",
   "annotated-types>=0.7.0",
 ]
@@ -36,6 +34,8 @@ dev = [
   "jinja2>=3.1.6",
   "pyyaml>=6.0.3",
   "types-pyyaml>=6.0.12.20250915",
+  "scipy-stubs>=1.16.2.3",
+  "pandas-stubs>=3.0.0.260204",
 ]
 test = [
   "pytest>=9",
