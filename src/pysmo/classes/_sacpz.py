@@ -200,7 +200,7 @@ class SacPZ:
             urllib3.exceptions.ResponseError: If the web service returns an
                 HTTP error.
 
-        Tip:
+        Tip: Prefer StationXML for live fetches
             When fetching live from EarthScope rather than reading an
             existing SAC PZ file, prefer
             [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: the

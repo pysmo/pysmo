@@ -764,7 +764,7 @@ def taper[T: Seismogram](
     window to the first quarter of the seismogram, while the "ramp down" portion
     of the window is applied to the last quarter.
 
-    Warning:
+    Warning: Window-shape compatibility
         The scipy [`get_window()`][scipy.signal.windows.get_window] function
         is a helper function that calculates a large variety of window shapes,
         which do not all make sense in this application (e.g. boxcar or tukey).
@@ -783,7 +783,7 @@ def taper[T: Seismogram](
     Returns:
         Tapered [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
-    Note:
+    Note: No taper below 2 samples
         If `taper_width` resolves to fewer than 2 samples, no taper is applied.
         This can occur when a very small [`Timedelta`][pandas.Timedelta] is
         provided.
@@ -923,7 +923,7 @@ def window[T: Seismogram](
     while also (optionally) preserving the original seismogram length and
     tapering the signal before and after the window.
 
-    Tip:
+    Tip: Total length exceeds the requested window
         Note that the window defined by `window_begin_time` and
         `window_end_time` *excludes* the tapered sections, so the total length
         of the window will be the provided window length plus the tapered

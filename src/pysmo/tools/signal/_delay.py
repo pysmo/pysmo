@@ -48,7 +48,7 @@ def delay(
     seismogram data used for the cross-correlation is then set such that the
     calculated delay lies within +/- `max_shift`.
 
-    Note:
+    Note: `max_shift` ignores begin times
         `max_shift` intentionally does *not* take the begin times of the
         seismograms into consideration. Thus, calling `#!py delay()` with
         `#!py total_delay=True` may return a delay that is larger than
@@ -252,7 +252,7 @@ def multi_delay(
         ValueError: If any seismogram has a different sampling rate than the template.
         ValueError: If `max_shift` is negative.
 
-    Note:
+    Note: Differs from `delay()`
         Unlike [`delay`][pysmo.tools.signal.delay], `max_shift` here does not
         require the seismograms to be of equal length, and does not speed up
         the calculation (the full cross-correlation is always computed; only
@@ -261,7 +261,7 @@ def multi_delay(
         to (and typically found at the edge of) that range, and its
         correlation coefficient will usually be low.
 
-    Note:
+    Note: Constant-data seismograms cannot be normalised
         Seismograms with zero standard deviation (i.e. constant data) cannot be
         meaningfully normalised. A `UserWarning` is issued for each such trace and
         its normalised values are treated as zero, which results in a correlation
@@ -414,7 +414,7 @@ def multi_multi_delay(
     seismogram `i` (treating `i` as the reference). The delay matrix is
     antisymmetric: `delays[i, j] == -delays[j, i]`, and the diagonal is zero.
 
-    Note:
+    Note: Returns `numpy.timedelta64`, not `Timedelta`
         Unlike most pysmo functions, this returns `numpy.timedelta64` values
         rather than [`Timedelta`][pandas.Timedelta]. This avoids the overhead
         of an object array and allows efficient vectorised arithmetic in
@@ -434,7 +434,7 @@ def multi_multi_delay(
     Raises:
         ValueError: If any seismogram has a different sampling rate than the others.
 
-    Note:
+    Note: Constant-data seismograms cannot be normalised
         Seismograms with zero standard deviation (i.e. constant data) cannot be
         meaningfully normalised. A `UserWarning` is issued for each such trace and
         its normalised values are treated as zero, resulting in correlation

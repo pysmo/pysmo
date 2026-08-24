@@ -43,7 +43,7 @@ def register_filter[F: Callable[..., Any]](func: F) -> F:
     Registered functions are added to the `_FILTER_REGISTRY` and become available
     for use through the `pysmo.tools.signal.filter` convenience wrapper.
 
-    Note:
+    Note: Also update `FilterName`
         When adding a new filter, you must also add its name to the `FilterName`
         type alias in `pysmo.tools.signal._filter._filter` to ensure type safety
         and passing registry tests.

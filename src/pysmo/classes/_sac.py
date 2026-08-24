@@ -56,7 +56,7 @@ class _SacNested:
     def _ref_datetime(self) -> UtcTimestamp:
         """The SAC file's reference date and time.
 
-        Note:
+        Note: Fallback when no reference time is set
             If the SAC instance has no reference time, this function
             assumes that it is equal to `SeismogramDefaults.begin_time`.
         """
@@ -313,7 +313,7 @@ class SacEvent(_SacNested):
         >>>
         ```
 
-    Note:
+    Note: Event information is optional
         Not all SAC files contain event information.
     """
 
@@ -357,7 +357,7 @@ class SacEvent(_SacNested):
     def time(self) -> UtcTimestamp:
         """Event origin time (UTC).
 
-        Important:
+        Important: Fixed when iztype is "o"
             This property uses the [`SacIO.o`][pysmo.lib.io.SacIO.o] time
             header. If [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is `"o"`,
             `SacIO.o` is the reference-time equivalence and is fixed at 0,
@@ -638,7 +638,7 @@ class SAC:
         >>>
         ```
 
-    Tip:
+    Tip: A curated surface, not the full header set
         [`SAC`][pysmo.classes.SAC] only exposes a small, curated surface
         directly (file I/O, and the pysmo-typed
         [`station`][pysmo.classes.SAC.station],

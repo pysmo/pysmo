@@ -242,14 +242,14 @@ class ICCS:
     [`window_pre`][pysmo.tools.iccs.ICCS.window_pre] or
     [`window_post`][pysmo.tools.iccs.ICCS.window_post] changes.
 
-    Warning:
+    Warning: In-place mutation bypasses the cache
         Assigning a new list to this attribute clears the cache automatically.
         *Mutating* the list in place (e.g. with `append`, `remove`, or direct
         index assignment) bypasses the setter and does **not** clear the cache.
         Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache] manually after
         any such in-place mutation.
 
-    Tip:
+    Tip: Remove poor-quality seismograms, don't just deselect them
         When a seismogram is of sufficiently poor quality that it should play no
         further role in the analysis, consider *removing* it from this list rather
         than simply setting its
@@ -285,7 +285,7 @@ class ICCS:
     )
     """Width of taper ramp up and down.
 
-    Warning:
+    Warning: Interpretation depends on the type
         Can be either a timedelta or a float, but they mean slightly different
         things. A float is interpreted as a fraction of the window duration,
         while a timedelta is an absolute duration. See the documentation of

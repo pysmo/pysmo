@@ -25,13 +25,13 @@ operates on the input directly or first creates a clone (via
 >>>
 ```
 
-Note:
-    Avoid `sac_seis = resample(sac_seis, new_delta, clone=True)` when you intend
-    to modify `sac_seis` in place. The [`deepcopy`][copy.deepcopy] operation is
-    computationally expensive and unnecessary — use `resample(sac_seis, new_delta)`
-    instead.
+Note: Needless deepcopy
+    Reassigning the clone back to the same name — `sac_seis = resample(sac_seis,
+    new_delta, clone=True)` — ends up equivalent to modifying `sac_seis` in
+    place, but pays for a [`deepcopy`][copy.deepcopy] to get there. Call
+    `resample(sac_seis, new_delta)` directly instead.
 
-Hint:
+Hint: More functions live in `pysmo.tools`
     Additional functions may be found in [`pysmo.tools`][].
 """
 
