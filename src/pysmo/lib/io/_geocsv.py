@@ -369,7 +369,7 @@ def write_geocsv(
         ValueError: If *seismograms* is an empty sequence.
         OSError: If the file cannot be written.
 
-    Note:
+    Note: Formatting and precision conventions
         Dataset blocks are separated by a single blank line. The
         `sample_rate_hz` header value is derived from
         `1_000_000_000 / delta.value` (integer nanoseconds, to preserve

@@ -1,7 +1,7 @@
 # flake8: noqa: E402
 """Iterative Cross-Correlation and Stack (ICCS).
 
-Warning:
+Warning: Under active development
     This module is being developed alongside a complete rewrite of
     [AIMBAT](https://github.com/pysmo/aimbat). Expect major changes until
     the rewrite is complete.

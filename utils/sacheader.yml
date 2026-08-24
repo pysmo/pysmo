@@ -453,8 +453,8 @@ header_fields:
     header_type: n
     required: true
 
-  internal80:
-    description: Internal.
+  nsnpts:
+    description: Number of points of original time series file (Stored NPTS). Only meaningful when NVHDR=7 (this word is unused/internal otherwise).
     start: 320
     header_type: n
 
