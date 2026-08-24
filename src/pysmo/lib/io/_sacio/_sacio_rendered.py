@@ -277,7 +277,7 @@ SAC_HEADERS = dict(
     norid=Header(start=308, length=4, format="i", type="n", required=False),
     nevid=Header(start=312, length=4, format="i", type="n", required=False),
     npts=Header(start=316, length=4, format="i", type="n", required=True),
-    internal80=Header(start=320, length=4, format="i", type="n", required=False),
+    nsnpts=Header(start=320, length=4, format="i", type="n", required=False),
     nwfid=Header(start=324, length=4, format="i", type="n", required=False),
     nxsize=Header(start=328, length=4, format="i", type="n", required=False),
     nysize=Header(start=332, length=4, format="i", type="n", required=False),
@@ -938,6 +938,14 @@ class SacIOBase:
         ),
     )
     """Event ID (CSS 3.0)."""
+
+    nsnpts: int | None = field(
+        default=None,
+        validator=validators.optional(
+            validators.instance_of(int),
+        ),
+    )
+    """Number of points of original time series file (Stored NPTS). Only meaningful when NVHDR=7 (this word is unused/internal otherwise)."""
 
     nwfid: int | None = field(
         default=None,
