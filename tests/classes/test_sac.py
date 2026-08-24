@@ -14,6 +14,16 @@ from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
 
+# Real SAC-generated fixtures (see tests/lib/io/conftest.py's sacfile_irlim
+# and sacfile_uneven) - not reachable as pytest fixtures here since they're
+# scoped to tests/lib/io/, so referenced directly by path.
+IRLIM_FIXTURE = (
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "funcgen_irlim_v7.sac"
+)
+UNEVEN_FIXTURE = (
+    Path(__file__).parent.parent / "lib" / "io" / "assets" / "funcgen_uneven_v6.sac"
+)
+
 
 def _zip_of(entries: dict[str, bytes]) -> bytes:
     buffer = BytesIO()
@@ -84,6 +94,33 @@ class TestSAC:
         assert sac.event._parent is sac.native
         assert sac.seismogram._parent is sac.native
         assert sac.timestamps._parent is sac.native
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_from_file_rejects_incompatible_native(self) -> None:
+        """SacIO can read spectral/unevenly-spaced files, but SAC must not
+        silently expose them through `seismogram` as if they were a normal,
+        evenly-spaced `Seismogram`."""
+        with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
+            SAC.from_file(IRLIM_FIXTURE)
+        with pytest.raises(NotImplementedError, match="LEVEN=True"):
+            SAC.from_file(UNEVEN_FIXTURE)
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_from_buffer_rejects_incompatible_native(self) -> None:
+        with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
+            SAC.from_buffer(IRLIM_FIXTURE.read_bytes())
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_read_rejects_incompatible_native(self, sacfile: Path) -> None:
+        sac = SAC.from_file(sacfile)
+        with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
+            sac.read(IRLIM_FIXTURE)
+
+    @pytest.mark.depends(on=["test_create_instance_from_file"])
+    def test_read_buffer_rejects_incompatible_native(self, sacfile: Path) -> None:
+        sac = SAC.from_file(sacfile)
+        with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
+            sac.read_buffer(IRLIM_FIXTURE.read_bytes())
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:
