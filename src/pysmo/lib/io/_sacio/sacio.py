@@ -409,8 +409,13 @@ class SacIO(SacIOBase):
 
             data_end = data_1_end
             if has_second_block:
-                data_2_end = data_1_end + len(self.data2) * 4
-                if len(self.data2) > 0:
+                if len(self.data2) != self.npts:
+                    raise ValueError(
+                        f"data2 must have the same length as data ({self.npts=}), "
+                        f"got {len(self.data2)}."
+                    )
+                data_2_end = data_1_end + self.npts * 4
+                if self.npts > 0:
                     file_handle.seek(data_1_end)
                     for x in self.data2:
                         file_handle.write(struct.pack("f", x))
@@ -504,7 +509,7 @@ class SacIO(SacIOBase):
                 file_byteorder + leven_header.format,
                 buffer[leven_header.start : leven_end],
             )[0]
-            if leven_end < len(buffer)
+            if leven_end <= len(buffer)
             else True
         )
 

@@ -381,6 +381,19 @@ def test_two_block_v6_write_read_roundtrip(sacfile_uneven: Path) -> None:
     npt.assert_allclose(reread.data2, sac.data2)
 
 
+@pytest.mark.depends(on=["test_read_irlim"])
+def test_write_mismatched_data2_length_raises(
+    sacfile_irlim: Path, empty_file: Path
+) -> None:
+    """read_buffer() always reads a second block of exactly npts samples,
+    so writing one of a different length would silently produce a file
+    that's either truncated or has its footer misplaced."""
+    sac = SacIO.from_file(sacfile_irlim)
+    sac.data2 = sac.data2[:-1]
+    with pytest.raises(ValueError, match="data2 must have the same length"):
+        sac.write(empty_file)
+
+
 def _patch_header(buffer: bytes, start: int, fmt: str, value: object) -> bytes:
     """Overwrite one header field's raw bytes in a SAC buffer.
 
