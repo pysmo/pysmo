@@ -41,11 +41,11 @@ class SacIO(SacIOBase):
     (for example the begin time [`b`][pysmo.lib.io.SacIO.b]) are checked for a
     valid format before being saved in the `SacIO` instance.
 
-    Tip:
+    Tip: For advanced use cases only
         This class should typically never be used directly. Instead use the
         [`SAC`][pysmo.classes.SAC] class, which wraps a `SacIO` instance
-        (reachable as [`SAC.native`][pysmo.classes.SAC.native]) and exposes
-        it through pysmo types.
+        (reachable as [`SAC.native`][pysmo.classes.SAC.native]) and exposes it
+        through pysmo types.
 
     Examples:
         Create a new instance from a file and print seismogram data:
@@ -87,7 +87,7 @@ class SacIO(SacIOBase):
     )
     """Begin value of the original time series file (Stored B).
 
-    Note:
+    Note: Only present in v7 spectral files
         Only present in v7 files, and only meaningful for spectral
         (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
         corresponding header field of its own; it exists only in the v7
@@ -102,7 +102,7 @@ class SacIO(SacIOBase):
     )
     """Time increment in the original time series file (Stored DELTA).
 
-    Note:
+    Note: Only present in v7 spectral files
         Only present in v7 files, and only meaningful for spectral
         (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
         corresponding header field of its own; it exists only in the v7
@@ -127,7 +127,7 @@ class SacIO(SacIOBase):
         manager internally to move or replace the zero-time header before
         the restriction holds again.
 
-        Note:
+        Note: Only cross-field restrictions are relaxed
             Only cross-field restrictions like this are relaxed, and only
             on this instance. Other checks (type, enum membership,
             numeric bounds, string length) still apply.
@@ -292,7 +292,7 @@ class SacIO(SacIOBase):
     def lcalda(self) -> Literal[True]:
         """TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and event coordinates.
 
-        Note:
+        Note: Always calculated, never stored
             Above fields are all read only properties in this class, so
             they are always calculated.
         """
@@ -656,7 +656,7 @@ class SacIO(SacIOBase):
         other time header are shifted by the exact same amount, so the
         absolute (UTC) time each of them represents is unchanged.
 
-        Note:
+        Note: Rounded to millisecond precision
             [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] only has
             millisecond precision, so the shift actually applied is rounded
             to the nearest millisecond. `header` therefore ends up within

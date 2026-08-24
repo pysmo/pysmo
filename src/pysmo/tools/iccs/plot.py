@@ -919,7 +919,7 @@ def update_timewindow(
     Returns:
         Figure of the stack with the picker if `return_fig` is `True`.
 
-    Info:
+    Info: Window is clamped around the pick
         The new time window may not be chosen such that the pick lies
         outside the window. The picker will therefore automatically correct
         itself for invalid window choices.
