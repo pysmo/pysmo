@@ -306,6 +306,81 @@ def test_sacfile_IB(sacfile_IB: Path) -> None:
     assert sac.iztype == "b"
 
 
+# Two-block fixtures (funcgen_irlim_v7.sac etc.) were generated with real SAC
+# 102.0 (FFT for the spectral pair, wsac2/wsac0 for the uneven/xy pair), not
+# by pysmo, per the no-round-trip fixture rule.
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_irlim(sacfile_irlim: Path) -> None:
+    sac = SacIO.from_file(sacfile_irlim)
+    assert sac.iftype == "rlim"
+    assert sac.leven is True
+    assert sac.npts == 1024
+    assert sac.nvhdr == 7
+    npt.assert_allclose(sac.data[:3], [-0.985472, 0.023442, 0.018689], atol=1e-6)
+    npt.assert_allclose(sac.data2[:3], [0.0, -0.004745, 0.023622], atol=1e-6)
+    assert sac.sb == pytest.approx(9.459999, abs=1e-5)
+    assert sac.sdelta == pytest.approx(0.01, abs=1e-6)
+    assert sac.nsnpts == 1000
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_iamph(sacfile_iamph: Path) -> None:
+    sac = SacIO.from_file(sacfile_iamph)
+    assert sac.iftype == "amph"
+    assert sac.leven is True
+    assert sac.npts == 1024
+    npt.assert_allclose(sac.data[:3], [0.985472, 0.023917, 0.030121], atol=1e-6)
+    npt.assert_allclose(sac.data2[:3], [3.141593, -0.199703, 0.90148], atol=1e-5)
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_uneven(sacfile_uneven: Path) -> None:
+    sac = SacIO.from_file(sacfile_uneven)
+    assert sac.iftype == "time"
+    assert sac.leven is False
+    assert sac.nvhdr == 6
+    assert sac.npts == 1000
+    npt.assert_allclose(sac.data[:3], [1e-6, 0.031412, 0.062792], atol=1e-6)
+    npt.assert_allclose(sac.data2[:3], [10.0, 10.01, 10.02], atol=1e-6)
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_ixy(sacfile_ixy: Path) -> None:
+    sac = SacIO.from_file(sacfile_ixy)
+    assert sac.iftype == "xy"
+    assert sac.leven is False
+    assert sac.npts == 1000
+    npt.assert_allclose(sac.data[:3], [1e-6, 0.031412, 0.062792], atol=1e-6)
+    npt.assert_allclose(sac.data2[:3], [10.0, 10.01, 10.02], atol=1e-6)
+
+
+@pytest.mark.depends(on=["test_read_irlim"])
+def test_two_block_v7_write_read_roundtrip(sacfile_irlim: Path) -> None:
+    """Also exercises the footer-offset fix: a two-block v7 file's footer
+    must land after data2, not right after data1."""
+    sac = SacIO.from_file(sacfile_irlim)
+    sac.write(sacfile_irlim)
+
+    reread = SacIO.from_file(sacfile_irlim)
+    npt.assert_allclose(reread.data, sac.data)
+    npt.assert_allclose(reread.data2, sac.data2)
+    assert reread.sb == sac.sb
+    assert reread.sdelta == sac.sdelta
+    assert reread.nsnpts == sac.nsnpts
+
+
+@pytest.mark.depends(on=["test_read_uneven"])
+def test_two_block_v6_write_read_roundtrip(sacfile_uneven: Path) -> None:
+    sac = SacIO.from_file(sacfile_uneven)
+    sac.write(sacfile_uneven)
+
+    reread = SacIO.from_file(sacfile_uneven)
+    npt.assert_allclose(reread.data, sac.data)
+    npt.assert_allclose(reread.data2, sac.data2)
+
+
 def _patch_header(buffer: bytes, start: int, fmt: str, value: object) -> bytes:
     """Overwrite one header field's raw bytes in a SAC buffer.
 
@@ -319,16 +394,19 @@ def _patch_header(buffer: bytes, start: int, fmt: str, value: object) -> bytes:
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_read_iftype_not_time_raises(sacfile: Path) -> None:
-    buffer = _patch_header(sacfile.read_bytes(), start=340, fmt="i", value=2)  # IRLIM
-    with pytest.raises(NotImplementedError, match="IFTYPE"):
+def test_read_invalid_iftype_raises(sacfile: Path) -> None:
+    buffer = _patch_header(sacfile.read_bytes(), start=340, fmt="i", value=99)
+    with pytest.raises(ValueError, match="IFTYPE"):
         SacIO.from_buffer(buffer)
 
 
 @pytest.mark.depends(on=["test_create_instance_from_file"])
-def test_read_leven_false_raises(sacfile: Path) -> None:
+def test_read_truncated_second_block_raises(sacfile: Path) -> None:
+    """A LEVEN=False/spectral file must carry a second NPTS-length data
+    section; a buffer claiming one but missing it is truncated, not just
+    unsupported."""
     buffer = _patch_header(sacfile.read_bytes(), start=420, fmt="?", value=False)
-    with pytest.raises(NotImplementedError, match="LEVEN"):
+    with pytest.raises(EOFError):
         SacIO.from_buffer(buffer)
 
 
@@ -615,6 +693,23 @@ def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     sac.read(sacfile)
 
     assert sac.a is None
+
+
+@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_uneven"])
+def test_read_resets_stale_delta_for_uneven_file(
+    sacfile: Path, sacfile_uneven: Path
+) -> None:
+    """DELTA is undefined in unevenly-spaced files, but its "required" flag
+    still holds for evenly-spaced ones, so it's skipped by the generic
+    optional-header reset loop and needs its own staleness check."""
+    default_delta = SacIO().delta
+
+    sac = SacIO.from_file(sacfile)
+    assert sac.delta != default_delta
+
+    sac.read(sacfile_uneven)
+
+    assert sac.delta == default_delta
 
 
 def test_sb_sdelta_set_and_clear() -> None:

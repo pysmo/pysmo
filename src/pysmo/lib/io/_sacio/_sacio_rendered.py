@@ -1335,6 +1335,15 @@ class SacIOBase:
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram data."""
+    data2: np.ndarray = field(
+        factory=lambda: np.array([]),
+        converter=convert_to_ndarray,
+        validator=validators.instance_of(np.ndarray),
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Second data section (real/imaginary, amplitude/phase, or independent
+    variable, depending on IFTYPE). Empty for evenly-spaced ITIME files,
+    which have only one data section."""
     x: np.ndarray = field(
         factory=lambda: np.array([]),
         converter=convert_to_ndarray,
