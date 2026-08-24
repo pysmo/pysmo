@@ -26,6 +26,9 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Treat missing SAC location code as empty string, not an error
 - **(tools-signal)** Honour max_shift in multi_delay and ICCS
 - Broaden HTTP retry policy for transient failures
+- Replace crude read-only-header detection in SacIO, add LEVEN guard
+- Reject non-evenly-spaced SAC data at the SAC class boundary
+- Address copilot review findings on two-block write/read
 
 ### 📚 Documentation
 
@@ -33,6 +36,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(external-classes)** Add ObsPy Trace adapter recipe and protocol discussion
 - **(types)** Explain why pysmo protocols exist
 - Improve conventions, tutorial, and other usage/dev pages
+- Add titles to admonitions across docstrings
 
 ### 📦 Miscellaneous
 
@@ -78,6 +82,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(classes)** Add write support for GeoCsvSeismogram and SacPZ
 - **(iccs)** [**breaking**] Add causal-filtered variant for ICCS picking tools
 - **(signal)** Add causal/zero-phase -3dB frequency correction
+- Support two-data-block SAC files (IRLIM/IAMPH/IXY/uneven ITIME)
 
 ### 🧪 Testing
 
