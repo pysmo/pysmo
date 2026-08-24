@@ -7,6 +7,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### ⚙️ DevOps & Infrastructure
 
 - Auto-update CHANGELOG.md unreleased section on push to master
+- Move type stubs to dev dependency group
 
 ### 🎨 Styling
 
@@ -24,6 +25,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Set explicit permissions on workflow-calling jobs
 - Treat missing SAC location code as empty string, not an error
 - **(tools-signal)** Honour max_shift in multi_delay and ICCS
+- Broaden HTTP retry policy for transient failures
 
 ### 📚 Documentation
 
