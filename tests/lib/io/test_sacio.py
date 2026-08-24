@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+import struct
 from datetime import timedelta, timezone
 from pathlib import Path
 
@@ -75,6 +76,7 @@ _INT_HEADERS: list[tuple[str, int]] = [
     ("norid", 1),
     ("nevid", 42),
     ("nwfid", 7),
+    ("nsnpts", 12345),
 ]
 
 # (header, valid_str_value, max_len)
@@ -304,6 +306,32 @@ def test_sacfile_IB(sacfile_IB: Path) -> None:
     assert sac.iztype == "b"
 
 
+def _patch_header(buffer: bytes, start: int, fmt: str, value: object) -> bytes:
+    """Overwrite one header field's raw bytes in a SAC buffer.
+
+    Detects file byte order the same way `SacIO.read_buffer` does, so the
+    patched value round-trips through the same endianness as the rest of the
+    file.
+    """
+    byteorder = "<" if struct.unpack("<f", buffer[276:280])[-1] == -12345.0 else ">"
+    packed = struct.pack(byteorder + fmt, value)
+    return buffer[:start] + packed + buffer[start + len(packed) :]
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_iftype_not_time_raises(sacfile: Path) -> None:
+    buffer = _patch_header(sacfile.read_bytes(), start=340, fmt="i", value=2)  # IRLIM
+    with pytest.raises(NotImplementedError, match="IFTYPE"):
+        SacIO.from_buffer(buffer)
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_read_leven_false_raises(sacfile: Path) -> None:
+    buffer = _patch_header(sacfile.read_bytes(), start=420, fmt="?", value=False)
+    with pytest.raises(NotImplementedError, match="LEVEN"):
+        SacIO.from_buffer(buffer)
+
+
 @pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_data(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
@@ -350,7 +378,7 @@ def test_set_int_header(header: str, value: int) -> None:
     assert getattr(sac, header) == value
 
 
-@pytest.mark.parametrize("header", ["nwfid"])
+@pytest.mark.parametrize("header", ["nwfid", "nsnpts"])
 def test_clear_optional_int_header(header: str) -> None:
     sac = SacIO()
     setattr(sac, header, None)
@@ -587,6 +615,52 @@ def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     sac.read(sacfile)
 
     assert sac.a is None
+
+
+def test_sb_sdelta_set_and_clear() -> None:
+    sac = SacIO()
+    assert sac.sb is None
+    assert sac.sdelta is None
+
+    sac.sb = 12.0
+    sac.sdelta = 0.05
+    assert sac.sb == 12.0
+    assert sac.sdelta == 0.05
+
+    sac.sb = None
+    sac.sdelta = None
+    assert sac.sb is None
+    assert sac.sdelta is None
+
+
+@pytest.mark.depends(on=["test_read_headers_semantic"])
+def test_read_resets_stale_sb_sdelta(sacfile: Path) -> None:
+    """sb/sdelta have no primary-header slot, so they aren't covered by the
+    SAC_HEADERS-driven reset loop and need their own reset on reload."""
+    sac = SacIO.from_file(sacfile)
+    sac.sb = 12.0
+    sac.sdelta = 0.05
+
+    sac.read(sacfile)
+
+    assert sac.sb is None
+    assert sac.sdelta is None
+
+
+@pytest.mark.depends(on=["test_create_instance_from_file"])
+def test_sb_sdelta_write_read_roundtrip(sacfile_v7: Path) -> None:
+    """sb/sdelta only exist in the v7 footer, so a plain assignment check
+    doesn't confirm they're actually serialized there."""
+    sac = SacIO.from_file(sacfile_v7)
+    assert sac.nvhdr == 7
+
+    sac.sb = 12.0
+    sac.sdelta = 0.05
+    sac.write(sacfile_v7)
+
+    reread = SacIO.from_file(sacfile_v7)
+    assert reread.sb == 12.0
+    assert reread.sdelta == 0.05
 
 
 @pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])

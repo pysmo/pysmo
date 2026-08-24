@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 import numpy as np
-from attrs import define
+from attrs import converters, define, field, validators
 
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
@@ -78,6 +78,36 @@ class SacIO(SacIOBase):
         0.05
         >>>
         ```
+    """
+
+    sb: float | None = field(
+        default=None,
+        converter=converters.optional(float),
+        validator=validators.optional(validators.instance_of(float)),
+    )
+    """Begin value of the original time series file (Stored B).
+
+    Note:
+        Only present in v7 files, and only meaningful for spectral
+        (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
+        corresponding header field of its own; it exists only in the v7
+        footer, unlike headers such as [`b`][pysmo.lib.io.SacIO.b] that also
+        have a single-precision header slot.
+    """
+
+    sdelta: float | None = field(
+        default=None,
+        converter=converters.optional(float),
+        validator=validators.optional(validators.instance_of(float)),
+    )
+    """Time increment in the original time series file (Stored DELTA).
+
+    Note:
+        Only present in v7 files, and only meaningful for spectral
+        (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
+        corresponding header field of its own; it exists only in the v7
+        footer, unlike headers such as [`delta`][pysmo.lib.io.SacIO.delta]
+        that also have a single-precision header slot.
     """
 
     @contextmanager
@@ -459,11 +489,15 @@ class SacIO(SacIOBase):
                 if header == "iztype":
                     object.__setattr__(self, header, default)
                     continue
-                try:
+                if header not in _READ_ONLY_HEADERS:
                     setattr(self, header, default)
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        pass
+
+            # sb/sdelta have no header slot of their own (only a v7-footer
+            # one), so the SAC_HEADERS reset loop above never touches them.
+            # Reset explicitly to avoid a previous file's footer values
+            # leaking through a reused instance.
+            self.sb = None
+            self.sdelta = None
 
             # Loop over all header fields and store them in the SAC object under their
             # respective private names.
@@ -489,14 +523,18 @@ class SacIO(SacIOBase):
                 if header == "npts":
                     npts = int(value)
 
+                # Logical headers have no "undefined" state distinct from
+                # False, so the checks below don't apply to type "l".
+                is_undefined = header_type != "l" and value == header_undefined
+
                 # raise error if header is undefined AND required
-                if value == header_undefined and header_required:
+                if is_undefined and header_required:
                     raise RuntimeError(
                         f"Required {header=} is undefined - invalid SAC file!"
                     )
 
                 # skip if undefined (value == -12345...) and not required
-                if value == header_undefined and not header_required:
+                if is_undefined and not header_required:
                     continue
 
                 # convert enumerated header to string and format others
@@ -509,20 +547,21 @@ class SacIO(SacIOBase):
                     object.__setattr__(self, header, value)
                     continue
 
-                # SAC file has headers fields which are read only attributes in this
-                # class. We skip them with this try/except.
-                # TODO: This is a bit crude, should maybe be a bit more specific.
-                try:
+                # SAC file has headers fields which are read only attributes
+                # in this class (computed rather than stored). Skip them.
+                if header not in _READ_ONLY_HEADERS:
                     setattr(self, header, value)
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        pass
 
-            # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks,
-            # which is something we don't support for now.
+            # Only accept IFTYPE = ITIME, LEVEN = True SAC files. Other
+            # IFTYPE values and unevenly-spaced ITIME files use a second
+            # data block, which is something we don't support for now.
             if self.iftype.lower() != "time":
                 raise NotImplementedError(
                     f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported."  # noqa: E501
+                )
+            if not self.leven:
+                raise NotImplementedError(
+                    "Reading unevenly-spaced (LEVEN=False) SAC files is not supported."
                 )
 
             # Read first data block
@@ -556,14 +595,11 @@ class SacIO(SacIOBase):
                     if value == undefined:
                         continue
 
-                    # SAC file has headers fields which are read only attributes in this
-                    # class. We skip them with this try/except.
-                    # TODO: This is a bit crude, should maybe be a bit more specific.
-                    try:
+                    # SAC file has headers fields which are read only
+                    # attributes in this class (computed rather than
+                    # stored). Skip them.
+                    if footer not in _READ_ONLY_HEADERS:
                         setattr(self, footer, value)
-                    except AttributeError as e:
-                        if "object has no setter" in str(e):
-                            pass
 
     def change_ref_time(self, header: str) -> None:
         """Re-point the reference time to a different time header.
@@ -616,15 +652,38 @@ class SacIO(SacIOBase):
 
         with self.raw():
             for time_header in SAC_TIME_HEADERS:
+                if time_header in _READ_ONLY_HEADERS:
+                    continue
                 try:
                     setattr(
                         self, time_header, getattr(self, time_header) - actual_dtime
                     )
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        continue
                 except TypeError as e:
                     if "unsupported operand type(s) for" in str(e):
                         continue
 
         object.__setattr__(self, "iztype", header)
+
+
+def _is_settable(name: str) -> bool:
+    """Whether `setattr(SacIO(), name, ...)` would succeed.
+
+    True for stored attrs fields. False for computed `@property` attributes
+    with no setter, and for header/footer names with no corresponding
+    attribute at all (the "unused"/"internal" reserved header words, which
+    are deliberately excluded from field generation).
+    """
+    member = getattr(SacIO, name, None)
+    if member is None:
+        return False
+    if isinstance(member, property):
+        return member.fset is not None
+    return True
+
+
+# Header/footer names read_buffer()/change_ref_time() must skip rather than
+# setattr. Built by introspection rather than hardcoded so it can't drift
+# out of sync with the actual property/field definitions above.
+_READ_ONLY_HEADERS = frozenset(
+    name for name in {**SAC_HEADERS, **SAC_FOOTERS} if not _is_settable(name)
+)
