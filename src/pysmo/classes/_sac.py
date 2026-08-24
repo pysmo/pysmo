@@ -28,6 +28,23 @@ __all__ = [
 ]
 
 
+def _check_seismogram_compatible(native: SacIO) -> None:
+    """Raise if `native` isn't evenly-spaced time-series data.
+
+    `SacSeismogram` always reads `native.data`/`native.delta` as if the file
+    were evenly-spaced ITIME data - SacIO itself can also read spectral and
+    unevenly-spaced files, but exposing those through `SAC.seismogram`
+    would silently misrepresent them as a normal `Seismogram`.
+    """
+    if native.iftype.lower() != "time" or not native.leven:
+        raise NotImplementedError(
+            "SAC only supports evenly-spaced time-series data "
+            f"(IFTYPE=ITIME, LEVEN=True); got IFTYPE={native.iftype.upper()}, "
+            f"LEVEN={native.leven}. Use SacIO directly (SAC.native) for "
+            "other SAC file types."
+        )
+
+
 @define(kw_only=True)
 class _SacNested:
     """Base class for nested SAC classes."""
@@ -39,7 +56,7 @@ class _SacNested:
     def _ref_datetime(self) -> UtcTimestamp:
         """The SAC file's reference date and time.
 
-        Note:
+        Note: Fallback when no reference time is set
             If the SAC instance has no reference time, this function
             assumes that it is equal to `SeismogramDefaults.begin_time`.
         """
@@ -296,7 +313,7 @@ class SacEvent(_SacNested):
         >>>
         ```
 
-    Note:
+    Note: Event information is optional
         Not all SAC files contain event information.
     """
 
@@ -340,7 +357,7 @@ class SacEvent(_SacNested):
     def time(self) -> UtcTimestamp:
         """Event origin time (UTC).
 
-        Important:
+        Important: Fixed when iztype is "o"
             This property uses the [`SacIO.o`][pysmo.lib.io.SacIO.o] time
             header. If [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is `"o"`,
             `SacIO.o` is the reference-time equivalence and is fixed at 0,
@@ -621,7 +638,7 @@ class SAC:
         >>>
         ```
 
-    Tip:
+    Tip: A curated surface, not the full header set
         [`SAC`][pysmo.classes.SAC] only exposes a small, curated surface
         directly (file I/O, and the pysmo-typed
         [`station`][pysmo.classes.SAC.station],
@@ -681,8 +698,16 @@ class SAC:
 
         Returns:
             A new SAC instance.
+
+        Raises:
+            NotImplementedError: If the file isn't evenly-spaced time-series
+                data (IFTYPE=ITIME, LEVEN=True). Use
+                [`SacIO.from_file`][pysmo.lib.io.SacIO.from_file] directly
+                for other SAC file types.
         """
-        return cls(native=SacIO.from_file(filename))
+        native = SacIO.from_file(filename)
+        _check_seismogram_compatible(native)
+        return cls(native=native)
 
     @classmethod
     def from_buffer(cls, buffer: bytes) -> Self:
@@ -693,24 +718,42 @@ class SAC:
 
         Returns:
             A new SAC instance.
+
+        Raises:
+            NotImplementedError: If the buffer isn't evenly-spaced
+                time-series data (IFTYPE=ITIME, LEVEN=True). Use
+                [`SacIO.from_buffer`][pysmo.lib.io.SacIO.from_buffer]
+                directly for other SAC file types.
         """
-        return cls(native=SacIO.from_buffer(buffer))
+        native = SacIO.from_buffer(buffer)
+        _check_seismogram_compatible(native)
+        return cls(native=native)
 
     def read(self, filename: str | PathLike) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
 
         Args:
             filename: Name of the SAC file to read.
+
+        Raises:
+            NotImplementedError: If the file isn't evenly-spaced time-series
+                data (IFTYPE=ITIME, LEVEN=True).
         """
         self.native.read(filename)
+        _check_seismogram_compatible(self.native)
 
     def read_buffer(self, buffer: bytes) -> None:
         """Read data and headers from a SAC byte buffer into an existing SAC instance.
 
         Args:
             buffer: Buffer containing SAC file content.
+
+        Raises:
+            NotImplementedError: If the buffer isn't evenly-spaced
+                time-series data (IFTYPE=ITIME, LEVEN=True).
         """
         self.native.read_buffer(buffer)
+        _check_seismogram_compatible(self.native)
 
     def write(self, filename: str | PathLike) -> None:
         """Write data and header values to a SAC file.

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 import numpy as np
-from attrs import define
+from attrs import converters, define, field, validators
 
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
@@ -41,11 +41,11 @@ class SacIO(SacIOBase):
     (for example the begin time [`b`][pysmo.lib.io.SacIO.b]) are checked for a
     valid format before being saved in the `SacIO` instance.
 
-    Tip:
+    Tip: For advanced use cases only
         This class should typically never be used directly. Instead use the
         [`SAC`][pysmo.classes.SAC] class, which wraps a `SacIO` instance
-        (reachable as [`SAC.native`][pysmo.classes.SAC.native]) and exposes
-        it through pysmo types.
+        (reachable as [`SAC.native`][pysmo.classes.SAC.native]) and exposes it
+        through pysmo types.
 
     Examples:
         Create a new instance from a file and print seismogram data:
@@ -80,6 +80,36 @@ class SacIO(SacIOBase):
         ```
     """
 
+    sb: float | None = field(
+        default=None,
+        converter=converters.optional(float),
+        validator=validators.optional(validators.instance_of(float)),
+    )
+    """Begin value of the original time series file (Stored B).
+
+    Note: Only present in v7 spectral files
+        Only present in v7 files, and only meaningful for spectral
+        (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
+        corresponding header field of its own; it exists only in the v7
+        footer, unlike headers such as [`b`][pysmo.lib.io.SacIO.b] that also
+        have a single-precision header slot.
+    """
+
+    sdelta: float | None = field(
+        default=None,
+        converter=converters.optional(float),
+        validator=validators.optional(validators.instance_of(float)),
+    )
+    """Time increment in the original time series file (Stored DELTA).
+
+    Note: Only present in v7 spectral files
+        Only present in v7 files, and only meaningful for spectral
+        (IRLIM/IAMPH) files produced by a forward Fourier transform. Has no
+        corresponding header field of its own; it exists only in the v7
+        footer, unlike headers such as [`delta`][pysmo.lib.io.SacIO.delta]
+        that also have a single-precision header slot.
+    """
+
     @contextmanager
     def raw(self) -> Iterator[None]:
         """Temporarily relax cross-field header restrictions on this instance.
@@ -97,7 +127,7 @@ class SacIO(SacIOBase):
         manager internally to move or replace the zero-time header before
         the restriction holds again.
 
-        Note:
+        Note: Only cross-field restrictions are relaxed
             Only cross-field restrictions like this are relaxed, and only
             on this instance. Other checks (type, enum membership,
             numeric bounds, string length) still apply.
@@ -262,7 +292,7 @@ class SacIO(SacIOBase):
     def lcalda(self) -> Literal[True]:
         """TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and event coordinates.
 
-        Note:
+        Note: Always calculated, never stored
             Above fields are all read only properties in this class, so
             they are always calculated.
         """
@@ -364,6 +394,10 @@ class SacIO(SacIOBase):
                 file_handle.seek(start)
                 file_handle.write(struct.pack(header_format, value))
 
+            has_second_block = self.iftype.lower() in ("rlim", "amph") or (
+                not self.leven
+            )
+
             # write data (if npts > 0)
             data_1_start = 632
             data_1_end = data_1_start + self.npts * 4
@@ -373,10 +407,24 @@ class SacIO(SacIOBase):
                 for x in self.data:
                     file_handle.write(struct.pack("f", x))
 
+            data_end = data_1_end
+            if has_second_block:
+                if len(self.data2) != self.npts:
+                    raise ValueError(
+                        f"data2 must have the same length as data ({self.npts=}), "
+                        f"got {len(self.data2)}."
+                    )
+                data_2_end = data_1_end + self.npts * 4
+                if self.npts > 0:
+                    file_handle.seek(data_1_end)
+                    for x in self.data2:
+                        file_handle.write(struct.pack("f", x))
+                data_end = data_2_end
+
             if self.nvhdr == 7:
                 for footer, footer_metadata in SAC_FOOTERS.items():
                     undefined = -12345.0
-                    start = footer_metadata.start + data_1_end
+                    start = footer_metadata.start + data_end
                     value = None
                     try:
                         if hasattr(self, footer):
@@ -448,29 +496,55 @@ class SacIO(SacIOBase):
         # raise. iztype itself goes through object.__setattr__ throughout,
         # since it is frozen (see change_ref_time) independently of this
         # guard.
+        # DELTA has no meaningful nominal value for unevenly-spaced files,
+        # and real SAC writes it as undefined for them - so its "required"
+        # header flag only actually holds when LEVEN is True. Peek at
+        # LEVEN's raw byte before the reset/parse loops below need it,
+        # since delta (word 0) is read before leven (word 105) in file
+        # order.
+        leven_header = SAC_HEADERS["leven"]
+        leven_end = leven_header.start + leven_header.length
+        file_leven = (
+            struct.unpack(
+                file_byteorder + leven_header.format,
+                buffer[leven_header.start : leven_end],
+            )[0]
+            if leven_end <= len(buffer)
+            else True
+        )
+
         with self.raw():
             # Reset optional headers to their defaults first, so a header
             # this file doesn't define ends up unset rather than keeping a
             # stale value from a previously loaded file.
             for header, header_metadata in SAC_HEADERS.items():
-                if header_metadata.required:
+                required = header_metadata.required and not (
+                    header == "delta" and not file_leven
+                )
+                if required:
                     continue
                 default = getattr(SacIODefaults, header, None)
                 if header == "iztype":
                     object.__setattr__(self, header, default)
                     continue
-                try:
+                if header not in _READ_ONLY_HEADERS:
                     setattr(self, header, default)
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        pass
+
+            # sb/sdelta have no header slot of their own (only a v7-footer
+            # one), so the SAC_HEADERS reset loop above never touches them.
+            # Reset explicitly to avoid a previous file's footer values
+            # leaking through a reused instance.
+            self.sb = None
+            self.sdelta = None
 
             # Loop over all header fields and store them in the SAC object under their
             # respective private names.
             npts = 0
             for header, header_metadata in SAC_HEADERS.items():
                 header_type = header_metadata.type
-                header_required = header_metadata.required
+                header_required = header_metadata.required and not (
+                    header == "delta" and not file_leven
+                )
                 header_undefined = HEADER_TYPES[header_type].undefined
                 start = header_metadata.start
                 length = header_metadata.length
@@ -489,14 +563,18 @@ class SacIO(SacIOBase):
                 if header == "npts":
                     npts = int(value)
 
+                # Logical headers have no "undefined" state distinct from
+                # False, so the checks below don't apply to type "l".
+                is_undefined = header_type != "l" and value == header_undefined
+
                 # raise error if header is undefined AND required
-                if value == header_undefined and header_required:
+                if is_undefined and header_required:
                     raise RuntimeError(
                         f"Required {header=} is undefined - invalid SAC file!"
                     )
 
                 # skip if undefined (value == -12345...) and not required
-                if value == header_undefined and not header_required:
+                if is_undefined and not header_required:
                     continue
 
                 # convert enumerated header to string and format others
@@ -509,27 +587,24 @@ class SacIO(SacIOBase):
                     object.__setattr__(self, header, value)
                     continue
 
-                # SAC file has headers fields which are read only attributes in this
-                # class. We skip them with this try/except.
-                # TODO: This is a bit crude, should maybe be a bit more specific.
-                try:
+                # SAC file has headers fields which are read only attributes
+                # in this class (computed rather than stored). Skip them.
+                if header not in _READ_ONLY_HEADERS:
                     setattr(self, header, value)
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        pass
 
-            # Only accept IFTYPE = ITIME SAC files. Other IFTYPE use two data blocks,
-            # which is something we don't support for now.
-            if self.iftype.lower() != "time":
-                raise NotImplementedError(
-                    f"Reading SAC files with IFTYPE=(I){self.iftype.upper()} is not supported."  # noqa: E501
-                )
+            # Spectral files (IRLIM/IAMPH) and unevenly-spaced data (LEVEN =
+            # False, which IXY implies) carry a second NPTS-length data
+            # section straight after the first.
+            has_second_block = self.iftype.lower() in ("rlim", "amph") or (
+                not self.leven
+            )
 
             # Read first data block
             start = 632
             length = npts * 4
             data_end = start + length
             self.data = np.array([])
+            self.data2 = np.array([])
             if length > 0:
                 data_end = start + length
                 data_format = file_byteorder + str(npts) + "f"
@@ -538,6 +613,16 @@ class SacIO(SacIOBase):
                 content = buffer[start:data_end]
                 data = struct.unpack(data_format, content)
                 self.data = np.array(data)
+
+                if has_second_block:
+                    block2_start = data_end
+                    block2_end = block2_start + length
+                    if block2_end > len(buffer):
+                        raise EOFError()
+                    content = buffer[block2_start:block2_end]
+                    data2 = struct.unpack(data_format, content)
+                    self.data2 = np.array(data2)
+                    data_end = block2_end
 
             if self.nvhdr == 7:
                 for footer, footer_metadata in SAC_FOOTERS.items():
@@ -556,14 +641,11 @@ class SacIO(SacIOBase):
                     if value == undefined:
                         continue
 
-                    # SAC file has headers fields which are read only attributes in this
-                    # class. We skip them with this try/except.
-                    # TODO: This is a bit crude, should maybe be a bit more specific.
-                    try:
+                    # SAC file has headers fields which are read only
+                    # attributes in this class (computed rather than
+                    # stored). Skip them.
+                    if footer not in _READ_ONLY_HEADERS:
                         setattr(self, footer, value)
-                    except AttributeError as e:
-                        if "object has no setter" in str(e):
-                            pass
 
     def change_ref_time(self, header: str) -> None:
         """Re-point the reference time to a different time header.
@@ -574,7 +656,7 @@ class SacIO(SacIOBase):
         other time header are shifted by the exact same amount, so the
         absolute (UTC) time each of them represents is unchanged.
 
-        Note:
+        Note: Rounded to millisecond precision
             [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] only has
             millisecond precision, so the shift actually applied is rounded
             to the nearest millisecond. `header` therefore ends up within
@@ -616,15 +698,38 @@ class SacIO(SacIOBase):
 
         with self.raw():
             for time_header in SAC_TIME_HEADERS:
+                if time_header in _READ_ONLY_HEADERS:
+                    continue
                 try:
                     setattr(
                         self, time_header, getattr(self, time_header) - actual_dtime
                     )
-                except AttributeError as e:
-                    if "object has no setter" in str(e):
-                        continue
                 except TypeError as e:
                     if "unsupported operand type(s) for" in str(e):
                         continue
 
         object.__setattr__(self, "iztype", header)
+
+
+def _is_settable(name: str) -> bool:
+    """Whether `setattr(SacIO(), name, ...)` would succeed.
+
+    True for stored attrs fields. False for computed `@property` attributes
+    with no setter, and for header/footer names with no corresponding
+    attribute at all (the "unused"/"internal" reserved header words, which
+    are deliberately excluded from field generation).
+    """
+    member = getattr(SacIO, name, None)
+    if member is None:
+        return False
+    if isinstance(member, property):
+        return member.fset is not None
+    return True
+
+
+# Header/footer names read_buffer()/change_ref_time() must skip rather than
+# setattr. Built by introspection rather than hardcoded so it can't drift
+# out of sync with the actual property/field definitions above.
+_READ_ONLY_HEADERS = frozenset(
+    name for name in {**SAC_HEADERS, **SAC_FOOTERS} if not _is_settable(name)
+)
