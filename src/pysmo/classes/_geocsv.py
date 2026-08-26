@@ -178,6 +178,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
                 returns an HTTP error.
 
         Examples:
+            <!-- skip: start if(not run_real_web_requests) -->
             ```python
             >>> import pandas as pd
             >>> from pysmo import MiniStation
@@ -190,9 +191,10 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             ...     station=station,
             ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
             ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
-            ... )  # doctest: +SKIP
+            ... )
             >>>
             ```
+            <!-- skip: end -->
         """
         starttime = convert_to_utc_timestamp(starttime)
         endtime = convert_to_utc_timestamp(endtime)
