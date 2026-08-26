@@ -83,6 +83,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** [**breaking**] Add causal-filtered variant for ICCS picking tools
 - **(signal)** Add causal/zero-phase -3dB frequency correction
 - Support two-data-block SAC files (IRLIM/IAMPH/IXY/uneven ITIME)
+- Add PysmoProject and SqliteArchiveFetcher for on-demand FDSN data
 
 ### 🧪 Testing
 
