@@ -168,6 +168,33 @@ class TestFetchSacpz:
 
         assert len(responses) == 9
 
+    def test_sub_second_time_truncated_with_warning(
+        self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
+    ) -> None:
+        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        with pytest.warns(UserWarning, match="sub-second precision"):
+            fetch_sacpz(station=station, time=pd.Timestamp("2010-02-27T06:37:51.0936Z"))
+
+        (_, fields) = fake.calls[0]
+        assert fields["time"] == "2010-02-27T06:37:51+00:00"
+
+    def test_whole_second_time_not_truncated_no_warning(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        station: MiniStation,
+        recwarn: pytest.WarningsRecorder,
+    ) -> None:
+        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        fetch_sacpz(station=station, time=pd.Timestamp("2010-02-27T06:37:51Z"))
+
+        assert len(recwarn) == 0
+        (_, fields) = fake.calls[0]
+        assert fields["time"] == "2010-02-27T06:37:51+00:00"
+
 
 class TestFetchSac:
     def test_returns_raw_bytes(

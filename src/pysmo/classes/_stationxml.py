@@ -265,6 +265,7 @@ class StationXML:
                 returns an HTTP error.
 
         Examples:
+            <!-- skip: start if(not run_real_web_requests) -->
             ```python
             >>> from pysmo import MiniStation
             >>> from pysmo.classes import StationXML
@@ -272,9 +273,10 @@ class StationXML:
             ...     name="ANMO", network="IU", location="00", channel="BHZ",
             ...     latitude=34.945981, longitude=-106.457133,
             ... )
-            >>> response = StationXML.fetch(station=station)  # doctest: +SKIP
+            >>> response = StationXML.fetch(station=station)
             >>>
             ```
+            <!-- skip: end -->
         """
         xml = fetch_stationxml(station=station)
         return cls.from_bytes(xml, time=time)

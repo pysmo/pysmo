@@ -12,6 +12,7 @@ from sybil import Sybil
 from sybil.evaluators.doctest import NUMBER
 from sybil.parsers.codeblock import PythonCodeBlockParser
 from sybil.parsers.doctest import DocTestParser
+from sybil.parsers.markdown.skip import SkipParser
 
 from pysmo.classes import SAC
 from pysmo.functions import clone_to_mini
@@ -42,6 +43,38 @@ def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
 def mpl_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MPLBACKEND", "Agg")
     matplotlib.use("Agg")
+
+
+_run_real_web_requests = False
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    global _run_real_web_requests
+    # `--run-real-web-requests` is only registered by tests/conftest.py's
+    # pytest_addoption, which isn't guaranteed to load for an invocation
+    # scoped to a path outside tests/ (e.g. `pytest src/pysmo/tools/x.py`).
+    _run_real_web_requests = bool(
+        config.getoption("--run-real-web-requests", default=False)
+    )
+
+
+@pytest.fixture()
+def run_real_web_requests() -> bool:
+    """Whether `--run-real-web-requests` was passed, for gating a doctest example on it.
+
+    Takes no fixture arguments deliberately: `SybilItem` (Sybil's custom
+    `pytest.Item`) requests every fixture named in `Sybil(fixtures=[...])`
+    for every collected example, and requesting the built-in `request`
+    fixture from one of those breaks `tmp_path` teardown for *all* of
+    them — confirmed directly, not assumed. Reading a module-level flag set
+    once in `pytest_configure` sidesteps that entirely.
+
+    Pair with a `<!-- skip: next if(not run_real_web_requests) -->` comment
+    (invisible in rendered docs) immediately before a docstring example that
+    hits live web services, mirroring `tests/conftest.py`'s
+    `real_web_request` marker for ordinary test functions.
+    """
+    return _run_real_web_requests
 
 
 @pytest.fixture()
@@ -88,6 +121,7 @@ pytest_collect_file = Sybil(
     parsers=[
         DocTestParser(optionflags=ELLIPSIS + NORMALIZE_WHITESPACE + NUMBER),
         PythonCodeBlockParser(future_imports=["print_function"]),
+        SkipParser(),
     ],
     pattern="*.py",
     fixtures=[
@@ -96,6 +130,7 @@ pytest_collect_file = Sybil(
         "savedir",
         "mpl_backend",
         "mock_uuid4",
+        "run_real_web_requests",
         "_syrupy_apply_ide_patches",
     ],
 ).pytest()

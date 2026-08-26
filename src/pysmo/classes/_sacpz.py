@@ -188,7 +188,10 @@ class SacPZ:
                 protocol. Provides the network, station code, location, and
                 channel for the request.
             time: Timestamp used to select the response epoch. If `None`,
-                the currently-open epoch is selected.
+                the currently-open epoch is selected. See
+                [`fetch_sacpz`][pysmo.tools.web.fetch_sacpz] for the
+                sub-second-precision truncation applied before the request
+                is sent.
 
         Returns:
             A new SacPZ instance for the response epoch active at *time*
@@ -209,6 +212,7 @@ class SacPZ:
             `SacPZ`.
 
         Examples:
+            <!-- skip: start if(not run_real_web_requests) -->
             ```python
             >>> from pysmo import MiniStation
             >>> from pysmo.classes import SacPZ
@@ -216,9 +220,10 @@ class SacPZ:
             ...     name="ANMO", network="IU", location="00", channel="BHZ",
             ...     latitude=34.945981, longitude=-106.457133,
             ... )
-            >>> response = SacPZ.fetch(station=station)  # doctest: +SKIP
+            >>> response = SacPZ.fetch(station=station)
             >>>
             ```
+            <!-- skip: end -->
         """
         text = fetch_sacpz(station=station, time=time)
         return cls.from_text(text)
