@@ -13,6 +13,7 @@ exception: it has no class counterpart and returns an already-parsed
 from __future__ import annotations
 
 import json
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Self
@@ -127,13 +128,19 @@ def fetch_travel_times(
         ...     event.depth / 1000.0, dist, ["P"], travel_time_backend=backend
         ... )
         >>> predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
-        >>> seismogram = GeoCsvSeismogram.fetch(  # doctest: +SKIP
+        >>>
+        ```
+
+        <!-- skip: start if(not run_real_web_requests) -->
+        ```python
+        >>> seismogram = GeoCsvSeismogram.fetch(
         ...     station=station,
         ...     starttime=predicted_p - pd.Timedelta(minutes=2),
         ...     endtime=predicted_p + pd.Timedelta(minutes=8),
         ... )
         >>>
         ```
+        <!-- skip: end -->
     """
     if travel_time_backend is not None:
         return travel_time_backend(depth_km, dist_deg, phases)
@@ -183,6 +190,7 @@ def fetch_stationxml(*, station: Station) -> bytes:
             an HTTP error.
 
     Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
         ```python
         >>> from pathlib import Path
         >>> from pysmo import MiniStation
@@ -191,10 +199,11 @@ def fetch_stationxml(*, station: Station) -> bytes:
         ...     name="ANMO", network="IU", location="00", channel="BHZ",
         ...     latitude=34.945981, longitude=-106.457133,
         ... )
-        >>> xml = fetch_stationxml(station=station)  # doctest: +SKIP
-        >>> Path("ANMO.xml").write_bytes(xml)  # doctest: +SKIP
+        >>> xml = fetch_stationxml(station=station)
+        >>> _ = Path("ANMO.xml").write_bytes(xml)
         >>>
         ```
+        <!-- skip: end -->
     """
     return http_get(
         _EarthScopeDefaults.station_url,
@@ -227,7 +236,11 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
             channel for the request.
         time: Timestamp used to select the response epoch server-side, so
             exactly one epoch is returned. If `None`, the SACPZ web
-            service defaults to the currently-open epoch.
+            service defaults to the currently-open epoch. Truncated to
+            whole seconds before the request is sent — the web service
+            returns an HTTP error for a `time` with sub-second precision
+            (confirmed against the live service, not documented by
+            EarthScope) — with a `UserWarning` if that changes the value.
 
     Returns:
         Raw SAC PZ text.
@@ -237,6 +250,7 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
             error.
 
     Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
         ```python
         >>> from pathlib import Path
         >>> from pysmo import MiniStation
@@ -245,10 +259,11 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         ...     name="ANMO", network="IU", location="00", channel="BHZ",
         ...     latitude=34.945981, longitude=-106.457133,
         ... )
-        >>> text = fetch_sacpz(station=station)  # doctest: +SKIP
-        >>> Path("ANMO.pz").write_text(text)  # doctest: +SKIP
+        >>> text = fetch_sacpz(station=station)
+        >>> _ = Path("ANMO.pz").write_text(text)
         >>>
         ```
+        <!-- skip: end -->
     """
     params = {
         "net": station.network,
@@ -257,7 +272,16 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         "cha": station.channel,
     }
     if time is not None:
-        params["time"] = convert_to_utc_timestamp(time).isoformat()
+        time = convert_to_utc_timestamp(time)
+        floored = time.floor("s")
+        if floored != time:
+            warnings.warn(
+                "SACPZ web service rejects sub-second precision in "
+                f"'time'; truncating {time} to {floored}.",
+                stacklevel=2,
+            )
+            time = floored
+        params["time"] = time.isoformat()
     return http_get(
         _EarthScopeDefaults.sacpz_url,
         params,
@@ -293,6 +317,7 @@ def fetch_geocsvseismogram(
             returns an HTTP error.
 
     Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
         ```python
         >>> import pandas as pd
         >>> from pathlib import Path
@@ -302,14 +327,15 @@ def fetch_geocsvseismogram(
         ...     name="ANMO", network="IU", location="00", channel="LHZ",
         ...     latitude=34.945981, longitude=-106.457133,
         ... )
-        >>> data = fetch_geocsvseismogram(  # doctest: +SKIP
+        >>> data = fetch_geocsvseismogram(
         ...     station=station,
         ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
         ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
         ... )
-        >>> Path("ANMO.geocsv").write_bytes(data)  # doctest: +SKIP
+        >>> _ = Path("ANMO.geocsv").write_bytes(data)
         >>>
         ```
+        <!-- skip: end -->
     """
     starttime = convert_to_utc_timestamp(starttime)
     endtime = convert_to_utc_timestamp(endtime)
@@ -358,6 +384,7 @@ def fetch_sac(
             returns an HTTP error.
 
     Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
         ```python
         >>> import pandas as pd
         >>> from pathlib import Path
@@ -367,14 +394,15 @@ def fetch_sac(
         ...     name="ANMO", network="IU", location="00", channel="LHZ",
         ...     latitude=34.945981, longitude=-106.457133,
         ... )
-        >>> data = fetch_sac(  # doctest: +SKIP
+        >>> data = fetch_sac(
         ...     station=station,
         ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
         ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
         ... )
-        >>> Path("ANMO.sac.zip").write_bytes(data)  # doctest: +SKIP
+        >>> _ = Path("ANMO.sac.zip").write_bytes(data)
         >>>
         ```
+        <!-- skip: end -->
     """
     starttime = convert_to_utc_timestamp(starttime)
     endtime = convert_to_utc_timestamp(endtime)
