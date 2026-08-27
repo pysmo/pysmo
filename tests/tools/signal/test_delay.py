@@ -543,14 +543,15 @@ def test_mccc_single_seismogram() -> None:
     """
     Test `mccc` with a single seismogram.
 
-    Verifies that the function returns zero relative time, zero error, and zero
-    RMSE for a single input, as there are no other signals to compare against.
+    Verifies that the function returns zero relative time and zero RMSE for
+    a single input, but an undefined (None) error, since there are no other
+    signals to compare against and therefore no precision to estimate.
     """
     seis = MiniSeismogram(data=np.sin(np.linspace(0, 4 * np.pi, 500)))
     times, errors, rmse, cc_means, cc_stds = mccc([seis])
     assert len(times) == 1
     assert times[0].total_seconds() == 0
-    assert errors[0].total_seconds() == 0
+    assert errors[0] is None
     assert rmse.total_seconds() == 0
     assert cc_means == [1.0]
     assert cc_stds == [0.0]
@@ -669,6 +670,7 @@ def test_mccc_errors_are_nonnegative() -> None:
     _, errors, _, _, _ = mccc(seismograms)
 
     for e in errors:
+        assert e is not None
         assert e.total_seconds() >= 0
 
 

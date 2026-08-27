@@ -389,6 +389,18 @@ class SacIO(SacIOBase):
                 # Encode strings to bytes
                 if isinstance(value, str):
                     value = value.encode()
+                    # struct.pack silently truncates a "Ns" field to N bytes
+                    # rather than raising. header_metadata.length validators
+                    # (e.g. max_len) only bound the *character* count, so a
+                    # string using multi-byte UTF-8 characters can still
+                    # overflow the header's byte width and get corrupted on
+                    # write without warning.
+                    if len(value) > header_metadata.length:
+                        raise ValueError(
+                            f"{header!r} value {value.decode()!r} is "
+                            f"{len(value)} bytes when encoded, exceeding the "
+                            f"{header_metadata.length}-byte SAC header limit."
+                        )
 
                 # write to file
                 file_handle.seek(start)
@@ -549,7 +561,7 @@ class SacIO(SacIOBase):
                 start = header_metadata.start
                 length = header_metadata.length
                 end = start + length
-                if end >= len(buffer):
+                if end > len(buffer):
                     continue
                 content = buffer[start:end]
                 value = struct.unpack(file_byteorder + header_metadata.format, content)[
@@ -700,13 +712,10 @@ class SacIO(SacIOBase):
             for time_header in SAC_TIME_HEADERS:
                 if time_header in _READ_ONLY_HEADERS:
                     continue
-                try:
-                    setattr(
-                        self, time_header, getattr(self, time_header) - actual_dtime
-                    )
-                except TypeError as e:
-                    if "unsupported operand type(s) for" in str(e):
-                        continue
+                current = getattr(self, time_header)
+                if current is None:
+                    continue
+                setattr(self, time_header, current - actual_dtime)
 
         object.__setattr__(self, "iztype", header)
 

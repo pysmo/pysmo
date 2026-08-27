@@ -11,14 +11,14 @@ __all__ = ["differentiate", "integrate"]
 
 
 @overload
-def differentiate(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
+def differentiate(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
 
 
 @overload
-def differentiate[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+def differentiate[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
 
 
-def differentiate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None:
+def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
     r"""Differentiate a seismogram in the frequency domain.
 
     Multiplies the FFT of `seismogram.data` by $i\omega$ at each
@@ -36,6 +36,7 @@ def differentiate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None
 
     Raises:
         ValueError: If `seismogram.data` is empty.
+        ValueError: If `seismogram.delta` is not positive.
 
     Examples:
         A synthetic sine wave with a known closed-form derivative
@@ -64,6 +65,8 @@ def differentiate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot differentiate an empty seismogram.")
+    if seismogram.delta.total_seconds() <= 0:
+        raise ValueError("Seismogram delta must be positive.")
 
     if clone:
         seismogram = deepcopy(seismogram)
@@ -81,14 +84,14 @@ def differentiate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None
 
 
 @overload
-def integrate(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
+def integrate(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
 
 
 @overload
-def integrate[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+def integrate[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
 
 
-def integrate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None:
+def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
     r"""Integrate a seismogram in the frequency domain.
 
     Divides the FFT of `seismogram.data` by $i\omega$ at each
@@ -107,6 +110,7 @@ def integrate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None:
 
     Raises:
         ValueError: If `seismogram.data` is empty.
+        ValueError: If `seismogram.delta` is not positive.
 
     Examples:
         A synthetic cosine wave with a known closed-form integral
@@ -135,6 +139,8 @@ def integrate[T: Seismogram](seismogram: T, clone: bool = False) -> T | None:
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot integrate an empty seismogram.")
+    if seismogram.delta.total_seconds() <= 0:
+        raise ValueError("Seismogram delta must be positive.")
 
     if clone:
         seismogram = deepcopy(seismogram)

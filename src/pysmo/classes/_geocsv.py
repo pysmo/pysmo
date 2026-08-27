@@ -5,7 +5,7 @@ from typing import Self
 
 import numpy as np
 import pandas as pd
-from attrs import define, field, setters, validators
+from attrs import cmp_using, define, field, setters, validators
 
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
@@ -97,6 +97,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         converter=convert_to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
+        eq=cmp_using(eq=np.array_equal),
     )
     """Seismogram data."""
 

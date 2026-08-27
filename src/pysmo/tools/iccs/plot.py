@@ -1607,10 +1607,13 @@ def update_bandpass(
     def on_cancel(_: Event) -> None:
         if _debounce_timer[0] is not None:
             _debounce_timer[0].stop()
-        iccs.bandpass_apply = _orig_apply
-        iccs.bandpass_fmin = _orig_fmin
-        iccs.bandpass_fmax = _orig_fmax
-        iccs.corners = _orig_corners
+        # Restore via _apply_bandpass_params, not direct field assignment:
+        # the live preview only writes iccs's bandpass_*/corners fields on a
+        # cache miss, so they can be an arbitrary previously-visited slider
+        # combination at this point, and restoring the original values in a
+        # fixed order can spuriously fail the same way a fixed-order update
+        # can (see _apply_bandpass_params's docstring).
+        _apply_bandpass_params(iccs, _orig_apply, _orig_fmin, _orig_fmax, _orig_corners)
         if not return_fig:
             plt.close(fig)
 

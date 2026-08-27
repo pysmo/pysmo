@@ -1,6 +1,18 @@
+from collections.abc import Sequence
 from typing import Any
 
 from attrs import AttrsInstance, fields
+
+
+def as_sequence[T](value: T | Sequence[T]) -> Sequence[T]:
+    """Normalise a single item or a sequence of items to a sequence, always.
+
+    A bare `str`/`bytes` value is treated as one item, not iterated
+    character-by-character, even though both satisfy `Sequence` themselves.
+    """
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        return value
+    return [value]
 
 
 def export_module_names(globals_dict: dict, module_name: str) -> None:
