@@ -42,10 +42,15 @@ def _safe_check(obj: object, proto: type) -> bool:
             return issubclass(obj, proto)
         return isinstance(obj, proto)
     except TypeError:
-        # Fallback: Structural check using annotations
+        # Fallback: Structural check using annotations. Merged across the
+        # whole MRO, not just target.__annotations__ (which holds only the
+        # class's own annotations) - otherwise a subclass that doesn't
+        # redeclare an inherited field would spuriously fail to match.
         proto_anns = getattr(proto, "__annotations__", {})
         target = obj if isinstance(obj, type) else type(obj)
-        target_anns = getattr(target, "__annotations__", {})
+        target_anns: dict[str, object] = {}
+        for klass in reversed(target.__mro__):
+            target_anns.update(getattr(klass, "__annotations__", {}))
         return all(key in target_anns for key in proto_anns)
 
 

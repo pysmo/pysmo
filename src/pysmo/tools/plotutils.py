@@ -156,9 +156,14 @@ def plotseis(
         ```
     """
     fig = plt.figure()
+    any_labelled = False
     for seis in seismograms:
         time = time_array(seis)
-        plt.plot(time, seis.data, scalex=True, scaley=True, **kwargs)
+        plot_kwargs = dict(kwargs)
+        if "label" not in plot_kwargs:
+            plot_kwargs["label"] = getattr(seis, "label", None)
+        any_labelled = any_labelled or bool(plot_kwargs["label"])
+        plt.plot(time, seis.data, scalex=True, scaley=True, **plot_kwargs)
     plt.xlabel("Time")
     plt.gcf().autofmt_xdate()
     fmt = mdates.DateFormatter("%H:%M:%S")
@@ -167,6 +172,8 @@ def plotseis(
         left, _ = plt.xlim()
         title = mdates.num2date(left).strftime("%Y-%m-%d %H:%M:%S")
     plt.title(title)
+    if any_labelled:
+        plt.legend()
     if outfile:
         plt.savefig(outfile)
     if showfig:

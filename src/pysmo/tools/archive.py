@@ -47,6 +47,7 @@ Examples:
     <!-- skip: end -->
 """
 
+import json
 import sqlite3
 import threading
 import zlib
@@ -59,6 +60,7 @@ from attrs import define, field
 
 from pysmo import Seismogram, Station
 from pysmo._utils import attrs_getstate, attrs_setstate
+from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = ["RawFetcher", "RawParser", "SqliteArchiveFetcher"]
 
@@ -227,7 +229,18 @@ class SqliteArchiveFetcher:
 
     @staticmethod
     def _key(station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp) -> str:
-        return (
-            f"{station.network}.{station.name}.{station.location}."
-            f"{station.channel}_{starttime.isoformat()}_{endtime.isoformat()}"
+        # json.dumps rather than an f-string join: unambiguously escapes each
+        # field, so a field value containing the join delimiter can't collide
+        # with a different station/window's key. Timestamps are normalised
+        # to UTC first so two representations of the same instant (e.g.
+        # +00:00 vs +01:00) hash to the same key.
+        return json.dumps(
+            [
+                station.network,
+                station.name,
+                station.location,
+                station.channel,
+                convert_to_utc_timestamp(starttime).isoformat(),
+                convert_to_utc_timestamp(endtime).isoformat(),
+            ]
         )

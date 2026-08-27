@@ -4,7 +4,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 import pandas as pd
-from attrs import converters, define, field, setters, validators
+from attrs import cmp_using, converters, define, field, setters, validators
 
 from pysmo import Seismogram
 from pysmo._types.seismogram import SeismogramEndtimeMixin
@@ -41,8 +41,11 @@ class McccResult:
     picks: list[pd.Timestamp]
     """Final absolute arrival times for each seismogram."""
 
-    errors: list[pd.Timedelta]
-    """Per-seismogram timing precision (standard error from covariance matrix)."""
+    errors: list[pd.Timedelta | None]
+    """Per-seismogram timing precision (standard error from covariance
+    matrix), or `None` where the underlying system was singular and
+    precision could not be estimated at all.
+    """
 
     rmse: pd.Timedelta
     """Root-mean-square error of the inversion fit across the whole array."""
@@ -71,7 +74,13 @@ class IccsSeismogram(Seismogram, Protocol):
     """Initial pick."""
 
     t1: pd.Timestamp | None
-    """Updated pick."""
+    """Updated pick.
+
+    Setting this directly on a seismogram already in an
+    [`ICCS`][pysmo.tools.iccs.ICCS] instance's
+    [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] list bypasses that
+    instance's cache — see the warning there.
+    """
 
     flip: bool
     """Whether the seismogram data should be flipped for ICCS."""
@@ -132,6 +141,7 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
         converter=convert_to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
+        eq=cmp_using(eq=np.array_equal),
     )
     """Seismogram data."""
 

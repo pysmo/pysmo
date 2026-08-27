@@ -14,8 +14,9 @@ def bandpass(
     seismogram: Seismogram,
     freqmin: float = ...,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -25,7 +26,7 @@ def bandpass[T: Seismogram](
     seismogram: T,
     freqmin: float = ...,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
     clone: Literal[True],
@@ -37,8 +38,9 @@ def bandpass[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,
     freqmax: float = 0.5,
-    corners: int = 2,
+    corners: PositiveInt = 2,
     zerophase: bool = False,
+    *,
     clone: bool = False,
 ) -> T | None:
     """Apply a bandpass filter to the input seismogram.
@@ -357,8 +359,9 @@ def zerophase_band(
 def highpass(
     seismogram: Seismogram,
     freqmin: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -367,7 +370,7 @@ def highpass(
 def highpass[T: Seismogram](
     seismogram: T,
     freqmin: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
     clone: Literal[True],
@@ -378,8 +381,9 @@ def highpass[T: Seismogram](
 def highpass[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,
-    corners: int = 2,
+    corners: PositiveInt = 2,
     zerophase: bool = False,
+    *,
     clone: bool = False,
 ) -> T | None:
     """Apply a highpass filter to the input seismogram.
@@ -421,8 +425,9 @@ def highpass[T: Seismogram](
 def lowpass(
     seismogram: Seismogram,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -431,8 +436,9 @@ def lowpass(
 def lowpass[T: Seismogram](
     seismogram: T,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
+    *,
     clone: Literal[True] = ...,
 ) -> T: ...
 
@@ -441,8 +447,9 @@ def lowpass[T: Seismogram](
 def lowpass[T: Seismogram](
     seismogram: T,
     freqmax: float = 0.5,
-    corners: int = 2,
+    corners: PositiveInt = 2,
     zerophase: bool = False,
+    *,
     clone: bool = False,
 ) -> T | None:
     """Apply a lowpass filter to the input seismogram.
@@ -485,8 +492,9 @@ def bandstop(
     seismogram: Seismogram,
     freqmin: float = ...,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -496,7 +504,7 @@ def bandstop[T: Seismogram](
     seismogram: T,
     freqmin: float = ...,
     freqmax: float = ...,
-    corners: int = ...,
+    corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
     clone: Literal[True],
@@ -508,8 +516,9 @@ def bandstop[T: Seismogram](
     seismogram: T,
     freqmin: float = 0.1,
     freqmax: float = 0.5,
-    corners: int = 2,
+    corners: PositiveInt = 2,
     zerophase: bool = False,
+    *,
     clone: bool = False,
 ) -> T | None:
     """Apply a bandstop filter to the input seismogram.

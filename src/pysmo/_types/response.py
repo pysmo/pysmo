@@ -3,7 +3,7 @@ from typing import Protocol, runtime_checkable
 import pandas as pd
 from attrs import define, field, setters, validators
 
-from pysmo.lib.validators import validate_nonzero
+from pysmo.lib.validators import convert_to_complex_list, validate_nonzero
 from pysmo.typing import NonZeroNumber, PositiveNumber
 
 __all__ = [
@@ -16,11 +16,6 @@ __all__ = [
 ]
 
 
-def _convert_complex_list(value: list[complex]) -> list[complex]:
-    """Convert an iterable of numbers to a list of `complex` values."""
-    return [complex(item) for item in value]
-
-
 def _convert_float_list(value: list[float]) -> list[float]:
     """Convert an iterable of numbers to a list of `float` values."""
     return [float(item) for item in value]
@@ -29,6 +24,18 @@ def _convert_float_list(value: list[float]) -> list[float]:
 def _convert_optional_float(value: float | None) -> float | None:
     """Convert `value` to `float`, passing `None` through unchanged."""
     return None if value is None else float(value)
+
+
+def _convert_strict_int(value: int) -> int:
+    """Convert `value` to `int`, raising if it isn't a whole number.
+
+    Unlike a bare `int()` converter, this rejects a fractional value (e.g.
+    `2.5`) instead of silently discarding its fractional part.
+    """
+    as_float = float(value)
+    if not as_float.is_integer():
+        raise ValueError(f"{value!r} is not a whole number.")
+    return int(as_float)
 
 
 @runtime_checkable
@@ -191,7 +198,7 @@ class MiniResponse:
     """
 
     poles: list[complex] = field(
-        converter=_convert_complex_list,
+        converter=convert_to_complex_list,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Response poles.
@@ -200,7 +207,7 @@ class MiniResponse:
     """
 
     zeros: list[complex] = field(
-        converter=_convert_complex_list,
+        converter=convert_to_complex_list,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Response zeros.
@@ -274,7 +281,7 @@ class MiniResponseStage:
     """
 
     decimation_factor: int = field(
-        converter=int,
+        converter=_convert_strict_int,
         validator=validators.gt(0),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
