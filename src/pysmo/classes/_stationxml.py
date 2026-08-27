@@ -3,11 +3,15 @@
 from typing import Self
 
 import pandas as pd
-from attrs import define, field, validators
+from attrs import converters, define, field, validators
 
 from pysmo import MiniResponseStage, ResponseStage, Station
 from pysmo.lib.io._stationxml import _RawResponse, parse_stationxml
-from pysmo.lib.validators import convert_to_utc_timestamp, validate_nonzero
+from pysmo.lib.validators import (
+    convert_to_complex_list,
+    convert_to_utc_timestamp,
+    validate_nonzero,
+)
 from pysmo.tools.web import fetch_stationxml
 from pysmo.typing import NonZeroNumber
 
@@ -111,13 +115,13 @@ class StationXML:
         ```
     """
 
-    poles: list[complex] = field()
+    poles: list[complex] = field(converter=convert_to_complex_list)
     """Response poles.
 
     See [`Response.poles`][pysmo.Response.poles] for more details.
     """
 
-    zeros: list[complex] = field()
+    zeros: list[complex] = field(converter=convert_to_complex_list)
     """Response zeros.
 
     See [`Response.zeros`][pysmo.Response.zeros] for more details.
@@ -171,10 +175,12 @@ class StationXML:
     channel: str = field(validator=validators.instance_of(str))
     """Channel code parsed from the StationXML document."""
 
-    start_date: pd.Timestamp = field()
+    start_date: pd.Timestamp = field(converter=convert_to_utc_timestamp)
     """Start of the epoch this response applies to."""
 
-    end_date: pd.Timestamp | None = field(default=None)
+    end_date: pd.Timestamp | None = field(
+        default=None, converter=converters.optional(convert_to_utc_timestamp)
+    )
     """End of the epoch this response applies to, or `None` if still open."""
 
     @classmethod

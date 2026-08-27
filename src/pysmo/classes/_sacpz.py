@@ -4,11 +4,15 @@ from os import PathLike
 from typing import Self
 
 import pandas as pd
-from attrs import define, field, validators
+from attrs import converters, define, field, validators
 
 from pysmo import Station
 from pysmo.lib.io._sacpz import _RawSacPzResponse, parse_sacpz, write_sacpz
-from pysmo.lib.validators import validate_nonzero
+from pysmo.lib.validators import (
+    convert_to_complex_list,
+    convert_to_utc_timestamp,
+    validate_nonzero,
+)
 from pysmo.tools.web import fetch_sacpz
 from pysmo.typing import NonZeroNumber
 
@@ -68,13 +72,13 @@ class SacPZ:
         ```
     """
 
-    poles: list[complex] = field()
+    poles: list[complex] = field(converter=convert_to_complex_list)
     """Response poles.
 
     See [`Response.poles`][pysmo.Response.poles] for more details.
     """
 
-    zeros: list[complex] = field()
+    zeros: list[complex] = field(converter=convert_to_complex_list)
     """Response zeros.
 
     See [`Response.zeros`][pysmo.Response.zeros] for more details.
@@ -122,10 +126,12 @@ class SacPZ:
     channel: str = field(validator=validators.instance_of(str))
     """Channel code parsed from the SAC PZ file's comment header."""
 
-    start_date: pd.Timestamp = field()
+    start_date: pd.Timestamp = field(converter=convert_to_utc_timestamp)
     """Start of the epoch this response applies to."""
 
-    end_date: pd.Timestamp | None = field(default=None)
+    end_date: pd.Timestamp | None = field(
+        default=None, converter=converters.optional(convert_to_utc_timestamp)
+    )
     """End of the epoch this response applies to, or `None` if still open."""
 
     @classmethod

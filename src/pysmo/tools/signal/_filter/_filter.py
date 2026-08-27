@@ -16,6 +16,7 @@ __all__ = ["filter"]
 def filter(
     seismogram: Seismogram,
     filter_name: FilterName,
+    *,
     clone: Literal[False] = ...,
     **filter_options: bool | int | float,
 ) -> None: ...
@@ -25,6 +26,7 @@ def filter(
 def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
+    *,
     clone: Literal[True],
     **filter_options: bool | int | float,
 ) -> T: ...
@@ -33,6 +35,7 @@ def filter[T: Seismogram](
 def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
+    *,
     clone: bool = False,
     **filter_options: bool | int | float,
 ) -> T | None:

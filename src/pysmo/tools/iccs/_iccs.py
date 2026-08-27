@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from attrs import Attribute, define, field, setters, validate, validators
+from attrs import Attribute, cmp_using, define, field, setters, validate, validators
 from numpy.linalg import norm
 from scipy.stats.mstats import pearsonr
 
@@ -61,7 +61,9 @@ def _compute_ramp(
 def _on_setattr_clear_cache[T](instance: "ICCS", attribute: Attribute, value: T) -> T:
     """Setter that causes cached attributes to be cleared when their value changes."""
 
-    if (current := getattr(instance, attribute.name)) is value:
+    current = getattr(instance, attribute.name)
+
+    if current is value:
         return value
 
     if isinstance(current, np.ndarray) and isinstance(value, np.ndarray):
@@ -75,7 +77,13 @@ def _on_setattr_clear_cache[T](instance: "ICCS", attribute: Attribute, value: T)
 
     if attribute.name == "seismograms":
         object.__setattr__(instance, "seismograms", value)
-        validate(instance)
+        try:
+            validate(instance)
+        except Exception:
+            # Roll back so a failed reassignment doesn't leave the instance
+            # holding the (invalid) new value despite the raised exception.
+            object.__setattr__(instance, "seismograms", current)
+            raise
 
     return value
 
@@ -202,7 +210,7 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     delta: pd.Timedelta = field(init=False)
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(init=False)
+    data: np.ndarray = field(init=False, eq=cmp_using(eq=np.array_equal))
     """Seismogram data."""
 
     def __attrs_post_init__(self) -> None:
@@ -245,9 +253,14 @@ class ICCS:
     Warning: In-place mutation bypasses the cache
         Assigning a new list to this attribute clears the cache automatically.
         *Mutating* the list in place (e.g. with `append`, `remove`, or direct
-        index assignment) bypasses the setter and does **not** clear the cache.
-        Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache] manually after
-        any such in-place mutation.
+        index assignment) bypasses the setter and does **not** clear the cache
+        — and neither does mutating an *individual* seismogram already in the
+        list, such as setting its
+        [`t1`][pysmo.tools.iccs.IccsSeismogram.t1],
+        [`flip`][pysmo.tools.iccs.IccsSeismogram.flip], or
+        [`select`][pysmo.tools.iccs.IccsSeismogram.select] attribute
+        directly. Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache]
+        manually after any such in-place mutation.
 
     Tip: Remove poor-quality seismograms, don't just deselect them
         When a seismogram is of sufficiently poor quality that it should play no
@@ -1162,11 +1175,14 @@ def _calc_convergence(
         covr, _ = pearsonr(current_stack.data, prev_stack.data)
         return 1 - float(covr)
     elif method == ConvergenceMethod.change:
-        return float(
-            norm(current_stack.data - prev_stack.data, 1)
-            / norm(current_stack.data, 2)
-            / len(current_stack.data)
-        )
+        change = norm(current_stack.data - prev_stack.data, 1)
+        denominator = norm(current_stack.data, 2)
+        if denominator == 0:
+            # A degenerate (all-zero) stack has no meaningful relative
+            # change: 0.0 if it didn't actually change, otherwise treat it
+            # as unconverged rather than raising/returning NaN.
+            return 0.0 if change == 0 else float("inf")
+        return float(change / denominator / len(current_stack.data))
     raise ValueError(f"Unknown convergence method: {method}.")
 
 
