@@ -68,6 +68,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add more output to mccc and iccs
 - **(classes)** [**breaking**] Change SAC from a SacIO subclass to composition
 - **(types)** Unexport and privatise EpochProvenance
+- **(io)** Delegate http_get retry policy to urllib3.util.Retry
 
 ### 🚀 New Features
 
