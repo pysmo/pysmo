@@ -17,6 +17,7 @@ EarthScope FDSN dataselect service (`SID`, `start_time`, `sample_rate_hz`,
 
 import csv
 import re
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -26,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 from pysmo import MiniSeismogram, Seismogram
+from pysmo._utils import as_sequence
 from pysmo.functions._seismogram import merge
 from pysmo.typing import NonNegativeNumber
 
@@ -119,6 +121,13 @@ def parse_geocsv(text: str) -> list[GeoCsvDataset]:
             if keyword == "dataset" or current is None:
                 current = GeoCsvDataset()
                 datasets.append(current)
+            elif keyword in current.headers:
+                warnings.warn(
+                    f"Duplicate {keyword!r} keyword line in GeoCSV dataset; "
+                    f"{current.headers[keyword]!r} is replaced by {value!r}.",
+                    UserWarning,
+                    stacklevel=2,
+                )
             current.headers[keyword] = value
             continue
         if stripped.startswith("#"):
@@ -411,7 +420,7 @@ def write_geocsv(
         >>>
         ```
     """
-    items = seismograms if isinstance(seismograms, Sequence) else [seismograms]
+    items = as_sequence(seismograms)
     if not items:
         raise ValueError("seismograms must not be an empty sequence.")
 
