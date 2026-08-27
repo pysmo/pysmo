@@ -1,10 +1,9 @@
 """Shared HTTP helper for pysmo web-service requests."""
 
-import random
-import time
 from typing import Any
 
 import urllib3
+from urllib3.util.retry import Retry
 
 __all__ = [
     "http_get",
@@ -29,11 +28,6 @@ _MAX_BACKOFF_SECONDS = 120
 _pool = urllib3.PoolManager()
 
 
-def _sleep_with_backoff(base_delay_seconds: int | float, attempt: int) -> None:
-    delay = min(base_delay_seconds * (2**attempt), _MAX_BACKOFF_SECONDS)
-    time.sleep(random.uniform(0, delay))
-
-
 def http_get(
     url: str,
     fields: dict[str, Any],
@@ -46,17 +40,20 @@ def http_get(
     """Perform an HTTP GET request, retrying transient failures.
 
     Connection failures, timeouts, and responses with a transient status
-    (429, 500, 502, 503, or 504) are retried up to `request_retries` times,
-    with exponential backoff and jitter between attempts using
-    `retry_delay_seconds` as the base delay. Any other HTTP error status
-    raises immediately.
+    (429, 500, 502, 503, or 504) are retried up to `request_retries` times.
+    The first retry is immediate; retry `n` thereafter waits
+    `retry_delay_seconds * 2 ** (n - 1)` seconds plus a random jitter of up
+    to `retry_delay_seconds`, capped at 120 seconds total. A `Retry-After`
+    header on a 429 or 503 response replaces that wait, clamped to 6 hours.
+    Any other HTTP error status raises immediately.
 
     Args:
         url: URL to request.
         fields: Query parameters to send with the request.
         timeout_seconds: Timeout in seconds for each request attempt.
         request_retries: Maximum number of request attempts (must be at least 1).
-        retry_delay_seconds: Base delay in seconds between retries.
+        retry_delay_seconds: Base delay for the backoff schedule, and the
+            width of the random jitter added to each wait.
         redirect: Whether to automatically follow HTTP redirects.
 
     Returns:
@@ -73,28 +70,25 @@ def http_get(
     if request_retries < 1:
         raise ValueError("request_retries must be at least 1.")
 
-    attempt = 0
-    while True:
-        last_attempt = attempt >= request_retries - 1
-        try:
-            response = _pool.request(
-                "GET",
-                url,
-                fields=fields,
-                timeout=timeout_seconds,
-                redirect=redirect,
-            )
-        except urllib3.exceptions.HTTPError:
-            if last_attempt:
-                raise
-            _sleep_with_backoff(retry_delay_seconds, attempt)
-            attempt += 1
-            continue
-
-        if response.status in _RETRYABLE_STATUSES and not last_attempt:
-            _sleep_with_backoff(retry_delay_seconds, attempt)
-            attempt += 1
-            continue
-        if response.status >= 400:
-            raise urllib3.exceptions.ResponseError(f"HTTP {response.status}")
-        return response.data
+    # raise_on_status=False: hand the exhausted response back so the status
+    # check below raises a consistent ResponseError for any error status.
+    retries = Retry(
+        total=request_retries - 1,
+        status_forcelist=_RETRYABLE_STATUSES,
+        backoff_factor=retry_delay_seconds,
+        backoff_max=_MAX_BACKOFF_SECONDS,
+        backoff_jitter=retry_delay_seconds,
+        respect_retry_after_header=True,
+        raise_on_status=False,
+    )
+    response = _pool.request(
+        "GET",
+        url,
+        fields=fields,
+        timeout=timeout_seconds,
+        redirect=redirect,
+        retries=retries,
+    )
+    if response.status >= 400:
+        raise urllib3.exceptions.ResponseError(f"HTTP {response.status}")
+    return response.data
