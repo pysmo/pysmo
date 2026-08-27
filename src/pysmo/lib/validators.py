@@ -41,3 +41,8 @@ def convert_to_timedelta(
 def convert_to_ndarray(value: np.ndarray | list | tuple) -> np.ndarray:
     """Convert a value to a [`ndarray`][numpy.ndarray] object."""
     return np.asanyarray(value)
+
+
+def convert_to_complex_list(value: list[complex]) -> list[complex]:
+    """Convert an iterable of numbers to a list of [`complex`][] values."""
+    return [complex(item) for item in value]

@@ -65,6 +65,7 @@ def remove_response(
     seismogram: Seismogram,
     response: Response,
     pre_filt: tuple[float, float, float, float] | None = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -83,6 +84,7 @@ def remove_response[T: Seismogram](
     seismogram: T,
     response: Response,
     pre_filt: tuple[float, float, float, float] | None = None,
+    *,
     clone: bool = False,
 ) -> T | None:
     r"""Remove an instrument response from a seismogram.
@@ -190,9 +192,10 @@ def remove_response[T: Seismogram](
     Raises:
         ValueError: If `seismogram.data` is empty; if `pre_filt` is `None`
             and `response.reference_sensitivity` is also `None`; or, when
-            `pre_filt` is given, if its lower corner $f_1$ is not above 0, its
-            corners are not strictly increasing ($f_1 < f_2 \le f_3 < f_4$), or
-            its upper corner exceeds the seismogram's Nyquist frequency.
+            `pre_filt` is given, if `seismogram.delta` is not positive, its
+            lower corner $f_1$ is not above 0, its corners are not strictly
+            increasing ($f_1 < f_2 \le f_3 < f_4$), or its upper corner
+            exceeds the seismogram's Nyquist frequency.
 
     Warns:
         UserWarning: If `pre_filt` is given and `response`'s `stages` is
@@ -349,6 +352,8 @@ def remove_response[T: Seismogram](
         return seismogram if clone else None
 
     dt = seismogram.delta.total_seconds()
+    if dt <= 0:
+        raise ValueError("Seismogram delta must be positive.")
     nyquist = 0.5 / dt
 
     f1, f2, f3, f4 = pre_filt

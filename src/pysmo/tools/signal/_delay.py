@@ -16,6 +16,27 @@ from pysmo.typing import NonNegativeTimedelta
 __all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
 
 
+def _pearson_at_lag(reference: np.ndarray, other: np.ndarray, lag: int) -> float:
+    """Pearson correlation restricted to the actual overlap at `lag` samples.
+
+    `lag` follows the same sign convention as `delay()`'s returned shift:
+    positive means `other` lags `reference` (`other[n] ~ reference[n - lag]`).
+    Used to compute an exact correlation coefficient at a single, already
+    chosen lag, unlike the fixed-length-normalised approximation used to
+    search across all lags in `multi_delay`/`multi_multi_delay`, which
+    underestimates correlation at large lags (partial overlap).
+    """
+    if lag < 0:
+        reference = reference[-lag:]
+    elif lag > 0:
+        other = other[lag:]
+    n = min(len(reference), len(other))
+    if n == 0 or np.std(reference[:n]) == 0 or np.std(other[:n]) == 0:
+        return 0.0
+    cc, _ = _pearsonr(reference[:n], other[:n])
+    return float(cc)
+
+
 def _check_same_delta(
     seismogram1: Seismogram, seismogram2: Seismogram | Sequence[Seismogram]
 ) -> None:
@@ -85,6 +106,9 @@ def delay(
             ranges from -1 to 1, with 1 indicating a perfect correlation, 0
             indicating no correlation, and -1 indicating a perfect
             anti-correlation.
+
+    Raises:
+        ValueError: If either seismogram has no data.
 
     Examples:
         To illustrate the `delay()` function: this reads a seismogram from a
@@ -177,6 +201,9 @@ def delay(
 
     _check_same_delta(seismogram1, seismogram2)
 
+    if len(seismogram1.data) == 0 or len(seismogram2.data) == 0:
+        raise ValueError("Cannot compute delay for an empty seismogram.")
+
     if max_shift is not None and len(seismogram1.data) != len(seismogram2.data):
         raise ValueError(
             "Input seismograms must be of equal length when using `max_shift`."
@@ -251,6 +278,7 @@ def multi_delay(
     Raises:
         ValueError: If any seismogram has a different sampling rate than the template.
         ValueError: If `max_shift` is negative.
+        ValueError: If the template or any seismogram has no data.
 
     Note: Differs from `delay()`
         Unlike [`delay`][pysmo.tools.signal.delay], `max_shift` here does not
@@ -326,6 +354,9 @@ def multi_delay(
 
     _check_same_delta(template, seismograms)
 
+    if len(template.data) == 0 or any(len(s.data) == 0 for s in seismograms):
+        raise ValueError("Cannot compute delay for an empty seismogram.")
+
     # setup dimensions & FFT length
     n_traces = len(seismograms)
     len_t = len(template.data)
@@ -394,7 +425,15 @@ def multi_delay(
     signed_lags = np.where(max_indices <= mid_point, max_indices, max_indices - n_fft)
     delta = template.delta
     delays = [int(lag) * delta for lag in signed_lags]
-    ccs: list[float] = cc_matrix[np.arange(n_traces), max_indices].tolist()
+
+    # Recompute each cc exactly (overlap-restricted Pearson), rather than
+    # using the fixed-length-normalised search value, which underestimates
+    # correlation at large lags where template and seismogram only
+    # partially overlap.
+    ccs: list[float] = [
+        _pearson_at_lag(t_data, seismograms[i].data, int(lag))
+        for i, lag in enumerate(signed_lags)
+    ]
 
     return delays, ccs
 
@@ -433,6 +472,7 @@ def multi_multi_delay(
 
     Raises:
         ValueError: If any seismogram has a different sampling rate than the others.
+        ValueError: If any seismogram has no data.
 
     Note: Constant-data seismograms cannot be normalised
         Seismograms with zero standard deviation (i.e. constant data) cannot be
@@ -476,6 +516,9 @@ def multi_multi_delay(
         return np.empty((n, n), dtype="timedelta64[ns]"), np.empty((n, n), dtype=float)
 
     _check_same_delta(seismograms[0], seismograms)
+
+    if any(len(s.data) == 0 for s in seismograms):
+        raise ValueError("Cannot compute delay for an empty seismogram.")
 
     lengths = np.array([len(s.data) for s in seismograms])
     max_len = int(lengths.max())
@@ -521,9 +564,21 @@ def multi_multi_delay(
     # Array multiplication converts pandas.Timedelta to numpy.timedelta64
     delays = signed_lags * seismograms[0].delta
 
-    # extract coefficients at max indices
-    i_idx, j_idx = np.meshgrid(np.arange(n), np.arange(n), indexing="ij")
-    ccs = cc_matrix[i_idx, j_idx, max_indices]
+    # Recompute each cc exactly (overlap-restricted Pearson) at the chosen
+    # lag, rather than using the fixed-length-normalised search value, which
+    # underestimates correlation at large lags where the pair only
+    # partially overlaps. Only the upper triangle is computed: cc(i, j) at
+    # lag L equals cc(j, i) at lag -L (verified: Pearson correlation over
+    # the same overlap is order-invariant), and signed_lags is itself
+    # antisymmetric, so the lower triangle is a mirror, not new work.
+    all_data = [s.data for s in seismograms]
+    ccs = np.empty((n, n), dtype=float)
+    for i in range(n):
+        ccs[i, i] = _pearson_at_lag(all_data[i], all_data[i], 0)
+        for j in range(i + 1, n):
+            cc = _pearson_at_lag(all_data[i], all_data[j], int(signed_lags[i, j]))
+            ccs[i, j] = cc
+            ccs[j, i] = cc
 
     return delays, ccs
 
@@ -534,7 +589,11 @@ def mccc(
     damping: float = 0.1,
     abs_max: bool = False,
 ) -> tuple[
-    list[pd.Timedelta], list[pd.Timedelta], pd.Timedelta, list[float], list[float]
+    list[pd.Timedelta],
+    list[pd.Timedelta | None],
+    pd.Timedelta,
+    list[float],
+    list[float],
 ]:
     """Multi-Channel Cross-Correlation (MCCC) for relative arrival times.
 
@@ -559,7 +618,11 @@ def mccc(
 
     Returns:
         times: List of relative arrival times.
-        errors: List of standard errors.
+        errors: List of standard errors. If the weighted normal-equations
+            matrix is singular (e.g. too few correlated pairs relative to
+            `n_traces`, with `damping=0`), every entry is `None` to signal
+            "undefined/unconstrained" rather than a misleadingly precise
+            zero.
         rmse: Root-mean-square error of the fit.
         cc_means: Mean correlation coefficient for each seismogram.
         cc_stds: Standard deviation of correlation coefficients for each seismogram.
@@ -641,7 +704,7 @@ def mccc(
     if n_traces < 2:
         return (
             [zero_delta] * n_traces,
-            [zero_delta] * n_traces,
+            [None] * n_traces,
             zero_delta,
             [1.0] * n_traces,
             [0.0] * n_traces,
@@ -684,7 +747,7 @@ def mccc(
     if not rows:
         return (
             [zero_delta] * n_traces,
-            [zero_delta] * n_traces,
+            [None] * n_traces,
             zero_delta,
             cc_means,
             cc_stds,
@@ -694,12 +757,16 @@ def mccc(
     d = np.array(data_vec)
     w = np.array(weights)
 
-    # Apply weights
-    g_weighted = g * w[:, np.newaxis]
-    d_weighted = d * w
+    # Apply weights. Rows are scaled by sqrt(w), not w: minimising the
+    # least-squares residual of sqrt(w)-scaled rows minimises sum(w * r^2),
+    # i.e. the intended CC^2-weighted objective. Scaling by w directly would
+    # instead minimise sum(w^2 * r^2), an effective CC^4 weighting.
+    sqrt_w = np.sqrt(w)
+    g_weighted = g * sqrt_w[:, np.newaxis]
+    d_weighted = d * sqrt_w
 
     # Zero-mean constraint (sum of times = 0)
-    constraint_weight = np.sum(w)
+    constraint_weight = np.sum(sqrt_w)
     g_system = np.vstack([g_weighted, np.ones(n_traces) * constraint_weight])
     d_system = np.concatenate([d_weighted, [0.0]])
 
@@ -718,14 +785,20 @@ def mccc(
     dof = max(len(d) - n_traces, 1)
     sigma_squared = sse / dof
 
+    errors: list[pd.Timedelta | None]
     try:
         cov_matrix = sigma_squared * inv(g_system.T @ g_system)
         std_errors = np.sqrt(np.abs(np.diag(cov_matrix)))
+        errors = [pd.Timedelta(seconds=float(e)) for e in std_errors]
     except np.linalg.LinAlgError:
-        std_errors = np.zeros(n_traces)
+        # Undefined, not zero and not a large-but-real Timedelta: a
+        # singular system means timing precision cannot be estimated at
+        # all. None is a value callers can actually check for, unlike a
+        # sentinel Timedelta that silently participates in downstream
+        # arithmetic (e.g. an unfiltered mean) as if it were real.
+        errors = [None] * n_traces
 
     times = [pd.Timedelta(seconds=float(t)) for t in solution]
-    errors = [pd.Timedelta(seconds=float(e)) for e in std_errors]
     rmse = pd.Timedelta(seconds=float(np.sqrt(sse / len(d))))
 
     return times, errors, rmse, cc_means, cc_stds

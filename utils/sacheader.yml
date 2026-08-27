@@ -243,7 +243,7 @@ header_fields:
     header_type: f
 
   evdp:
-    description: Event depth below surface (kilometres -- previously metres).
+    description: Event depth below surface (kilometres — previously metres).
     start: 152
     header_type: f
 
