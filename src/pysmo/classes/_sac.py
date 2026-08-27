@@ -3,12 +3,13 @@ from __future__ import annotations
 import warnings
 from io import BytesIO
 from os import PathLike
+from types import SimpleNamespace
 from typing import Self, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas as pd
-from attrs import define, field, setters
+from attrs import define, field, setters, validators
 
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
@@ -18,6 +19,23 @@ from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS, SAC_REQUIRED_TIME_HEA
 from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.web import fetch_sac
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
+
+# Same validator objects (and hence bounds/wording) as MiniLocation.longitude
+# and friends in pysmo._types.location, reused directly here since
+# SacStation/SacEvent.longitude are plain properties, not attrs fields, so
+# they can't pick this validator up via `field(validator=...)` themselves.
+_LONGITUDE_VALIDATORS = (validators.gt(-180.0), validators.le(180.0))
+_LONGITUDE_ATTR = SimpleNamespace(name="longitude")
+
+
+def _validate_longitude(value: float) -> None:
+    for validator in _LONGITUDE_VALIDATORS:
+        # These validators don't use the instance argument, only value and
+        # attribute.name (for the error message), so a real attrs Attribute
+        # (an internal-use class with many unrelated required fields) isn't
+        # needed here - a plain stand-in with just .name is enough.
+        validator(None, _LONGITUDE_ATTR, value)  # type: ignore[arg-type]
+
 
 __all__ = [
     "SAC",
@@ -49,8 +67,14 @@ def _check_seismogram_compatible(native: SacIO) -> None:
 class _SacNested:
     """Base class for nested SAC classes."""
 
-    _parent: SacIO = field(repr=False)
-    """Parent SacIO instance."""
+    _parent: SacIO = field(repr=False, on_setattr=setters.frozen)
+    """Parent SacIO instance.
+
+    Frozen after construction: reassigning it (rather than mutating the
+    referenced SacIO in place) would silently desynchronise this nested
+    helper's cached reference from [`SAC.native`][pysmo.classes.SAC.native]
+    and any sibling nested helper.
+    """
 
     @property
     def _ref_datetime(self) -> UtcTimestamp:
@@ -89,6 +113,11 @@ class _SacNested:
         seconds = getattr(self._parent, sac_time_header)
 
         if seconds is None:
+            if isinstance(sac_time_header, SAC_REQUIRED_TIME_HEADERS):
+                raise ValueError(
+                    f"Required SAC header {sac_time_header!r} is missing or "
+                    f"None on {type(self).__name__}."
+                )
             return None
 
         return self._ref_datetime + pd.Timedelta(seconds=seconds)
@@ -170,6 +199,8 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
 
     @delta.setter
     def delta(self, value: pd.Timedelta) -> None:
+        if value <= pd.Timedelta(0):
+            raise ValueError("delta must be a positive Timedelta.")
         self._parent.delta = value.total_seconds()
 
     @property
@@ -279,6 +310,7 @@ class SacStation(_SacNested):
 
     @longitude.setter
     def longitude(self, value: int | float) -> None:
+        _validate_longitude(value)
         setattr(self._parent, "stlo", value)
 
     @property
@@ -339,6 +371,7 @@ class SacEvent(_SacNested):
 
     @longitude.setter
     def longitude(self, value: int | float) -> None:
+        _validate_longitude(value)
         setattr(self._parent, "evlo", value)
 
     @property
@@ -403,23 +436,13 @@ class RequiredSacTimestamp:
         if instance is None:
             return self
 
-        seconds = getattr(instance._parent, self._name)
-
-        if seconds is None:
-            raise ValueError(
-                f"Required SAC header '{self._name}' is missing or None "
-                f"on {type(instance).__name__}."
-            )
-
-        return instance._ref_datetime + pd.Timedelta(seconds=seconds)
+        return instance._get_timestamp_from_sac(self._name)
 
     def __set__(self, obj: "_SacNested", value: pd.Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
 
-        aware_value = convert_to_utc_timestamp(value)
-        seconds = (aware_value - obj._ref_datetime).total_seconds()
-        setattr(obj._parent, self._name, seconds)
+        obj._set_sac_from_timestamp(self._name, value)
 
 
 class OptionalSacTimestamp:
@@ -450,25 +473,13 @@ class OptionalSacTimestamp:
         if instance is None:
             return self
 
-        seconds = getattr(instance._parent, self._name)
-
-        # Handle standard Python None or traditional SAC null float
-        if seconds is None or seconds == -12345.0:
-            return None
-
-        return instance._ref_datetime + pd.Timedelta(seconds=seconds)
+        return instance._get_timestamp_from_sac(self._name)
 
     def __set__(self, obj: "_SacNested", value: pd.Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
 
-        if value is None:
-            # Set to None (or -12345.0 if your SacIO requires the SAC null value)
-            setattr(obj._parent, self._name, None)
-        else:
-            aware_value = convert_to_utc_timestamp(value)
-            seconds = (aware_value - obj._ref_datetime).total_seconds()
-            setattr(obj._parent, self._name, seconds)
+        obj._set_sac_from_timestamp(self._name, value)
 
 
 class SacTimestamps(_SacNested):

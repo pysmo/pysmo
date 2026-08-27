@@ -70,6 +70,18 @@ for header, header_dict in headers.items():
         default_length_for_type = header_types[header_type]["length"]
         headers[header]["length"] = default_length_for_type
 
+    # Whether setting this header to SAC's raw 'undefined' sentinel value
+    # should be nulled to None (with a warning) rather than stored literally.
+    # Reserved for headers whose own validators can't already reject the
+    # sentinel as out-of-range on their own merits (see the override below
+    # for headers where they can) - a real ValueError from an existing
+    # bounds check is preferable to silently substituting None. Logical
+    # ('l') and enumerated headers never need this: False is a legitimate
+    # logical value, and an enum header's value is never numeric.
+    headers[header]["warn_on_sentinel"] = (
+        header_type != "l" and "allowed_vals" not in header_dict
+    )
+
     if "allowed_vals" in header_dict:  # this means we are an enum header
         headers[header]["python_type"] = "str"
         headers[header]["is_enum"] = True
@@ -124,6 +136,12 @@ headers["evlo"]["validators"] = [
     "validators.ge(-180)",
     "validators.le(180)",
 ]
+
+# These headers' own ge/le bounds already reject SAC's undefined sentinel
+# (-12345) as out of range, so let that existing ValueError surface instead
+# of silently nulling the value to None.
+for _bounded_header in ("stla", "stlo", "evla", "evlo"):
+    headers[_bounded_header]["warn_on_sentinel"] = False
 
 # iztype must only change together with the time headers it references, so
 # it is frozen here and can only be changed via SacIO.change_ref_time().

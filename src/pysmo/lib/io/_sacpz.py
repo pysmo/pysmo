@@ -32,6 +32,7 @@ import pandas as pd
 
 from pysmo import Response
 from pysmo._types.response import _EpochProvenance
+from pysmo._utils import as_sequence
 from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = ["parse_sacpz", "write_sacpz", "ResponseWithEpoch"]
@@ -83,8 +84,8 @@ class _RawSacPzResponse:
 def _parse_headers(lines: list[str], index: int) -> tuple[dict[str, str], int]:
     """Parse consecutive `* KEY: value` comment header lines starting at `index`."""
     headers: dict[str, str] = {}
-    while index < len(lines) and lines[index].strip().startswith("*"):
-        if match := _HEADER_PATTERN.match(lines[index]):
+    while index < len(lines) and (stripped := lines[index].strip()).startswith("*"):
+        if match := _HEADER_PATTERN.match(stripped):
             headers[match.group(1).strip()] = match.group(2).strip()
         index += 1
     return headers, index
@@ -105,7 +106,22 @@ def _parse_complex_block(
         raise ValueError(
             f"Expected '{keyword}' block at line {index + 1}, found {stripped!r}."
         )
-    count = int(stripped.split()[1])
+    tokens = stripped.split()
+    if len(tokens) < 2:
+        raise ValueError(
+            f"'{keyword}' block at line {index + 1} is missing its count: {stripped!r}."
+        )
+    try:
+        count = int(tokens[1])
+    except ValueError as error:
+        raise ValueError(
+            f"'{keyword}' block at line {index + 1} has a non-integer count: "
+            f"{tokens[1]!r}."
+        ) from error
+    if count < 0:
+        raise ValueError(
+            f"'{keyword}' block at line {index + 1} has a negative count: {count}."
+        )
     index += 1
     values: list[complex] = []
     for _ in range(count):
@@ -191,11 +207,18 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
             raise ValueError(
                 f"Expected 'CONSTANT' at line {index + 1}, found {constant_line!r}."
             )
-        overall_sensitivity = _parse_float(constant_line.split()[1])
+        constant_tokens = constant_line.split()
+        if len(constant_tokens) < 2:
+            raise ValueError(
+                f"'CONSTANT' at line {index + 1} is missing its value: "
+                f"{constant_line!r}."
+            )
+        overall_sensitivity = _parse_float(constant_tokens[1])
         index += 1
 
         end_date_text = headers.get("END", "")
         sensitivity_text = headers.get("SENSITIVITY", "")
+        sensitivity_tokens = sensitivity_text.split()
         records.append(
             _RawSacPzResponse(
                 network=headers["NETWORK"],
@@ -210,9 +233,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
                 zeros=zeros,
                 overall_sensitivity=overall_sensitivity,
                 reference_sensitivity=(
-                    _parse_float(sensitivity_text.split()[0])
-                    if sensitivity_text
-                    else None
+                    _parse_float(sensitivity_tokens[0]) if sensitivity_tokens else None
                 ),
                 input_units=headers["INPUT UNIT"],
             )
@@ -301,7 +322,7 @@ def write_sacpz(
         >>>
         ```
     """
-    items = responses if isinstance(responses, Sequence) else [responses]
+    items = as_sequence(responses)
     if not items:
         raise ValueError("responses must not be an empty sequence.")
 

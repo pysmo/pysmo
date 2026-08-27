@@ -10,19 +10,19 @@ from ._registry import register_filter
 
 @overload
 def envelope(
-    seismogram: Seismogram, fc: float, alpha: float, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, *, clone: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def envelope[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, *, clone: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def envelope[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, clone: bool = False
+    seismogram: T, fc: float, alpha: float, *, clone: bool = False
 ) -> T | None:
     """Calculates the envelope of a gaussian filtered seismogram.
 
@@ -35,6 +35,10 @@ def envelope[T: Seismogram](
 
     Returns:
         Seismogram containing the envelope.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, or `seismogram.delta` is
+            not positive.
 
     Examples:
         ```python
@@ -55,19 +59,19 @@ def envelope[T: Seismogram](
 
 @overload
 def gauss(
-    seismogram: Seismogram, fc: float, alpha: float, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, *, clone: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def gauss[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, *, clone: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def gauss[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, clone: bool = False
+    seismogram: T, fc: float, alpha: float, *, clone: bool = False
 ) -> T | None:
     """Returns a gaussian filtered seismogram.
 
@@ -80,6 +84,10 @@ def gauss[T: Seismogram](
 
     Returns:
         Gaussian filtered seismogram.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, or `seismogram.delta` is
+            not positive.
 
     Examples:
         ```python
@@ -109,22 +117,37 @@ def _gauss(
         waves. *Bulletin of the Seismological Society of America*, 63(2), 663–671.
 
     Variable names follow the paper's notation:
-        W:  Frequency axis (Hz), 0 to Nyquist.
+        W:  Frequency axis (Hz) for each FFT bin, including negative
+            frequencies. The Gaussian window is applied to |W| so that Hn
+            stays conjugate-symmetric (hn is real).
         Hn: Gaussian-filtered spectrum — input spectrum multiplied by the
             Gaussian window centred at fc.
         hn: Filtered seismogram in the time domain (inverse FFT of Hn).
-        Qn: Spectrum of the Hilbert-transformed filtered signal, constructed
-            by rotating Hn by 90° (real → imaginary, imaginary → −real).
-        qn: Hilbert transform of hn in the time domain (inverse FFT of Qn).
+        qn: Hilbert transform of hn, obtained as the imaginary part of the
+            analytic signal built from Hn (zero negative frequencies,
+            double positive ones — the standard FFT-domain Hilbert
+            transform).
         an: Instantaneous amplitude (envelope) — sqrt(hn² + qn²).
     """
-    Nyq = 0.5 / seismogram.delta.total_seconds()
+    if len(seismogram.data) == 0:
+        raise ValueError("Cannot apply a Gaussian filter to an empty seismogram.")
+    dt = seismogram.delta.total_seconds()
+    if dt <= 0:
+        raise ValueError("Seismogram delta must be positive.")
     npts = len(seismogram.data)
     spec = np.fft.fft(seismogram.data)
-    W = np.array(np.linspace(0, Nyq, npts))
-    Hn = spec * np.exp(-1 * alpha * ((W - fc) / fc) ** 2)
-    Qn = complex(0, 1) * Hn.real - Hn.imag
+    W = np.fft.fftfreq(npts, d=dt)
+    Hn = spec * np.exp(-1 * alpha * ((np.abs(W) - fc) / fc) ** 2)
     hn = np.fft.ifft(Hn).real
-    qn = np.fft.ifft(Qn).real
-    an = np.sqrt(hn**2 + qn**2)  # envelope
+
+    analytic_weights = np.zeros(npts)
+    analytic_weights[0] = 1
+    half = npts // 2
+    if npts % 2 == 0:
+        analytic_weights[1:half] = 2
+        analytic_weights[half] = 1
+    else:
+        analytic_weights[1 : half + 1] = 2
+    analytic_signal = np.fft.ifft(Hn * analytic_weights)
+    an = np.abs(analytic_signal)  # envelope
     return (an, hn)

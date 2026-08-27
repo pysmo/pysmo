@@ -42,6 +42,7 @@ def crop(
     seismogram: Seismogram,
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 @overload
@@ -49,12 +50,17 @@ def crop[T: Seismogram](
     seismogram: T,
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
+    *,
     clone: Literal[True],
 ) -> T: ...
 
 
 def crop[T: Seismogram](
-    seismogram: T, begin_time: pd.Timestamp, end_time: pd.Timestamp, clone: bool = False
+    seismogram: T,
+    begin_time: pd.Timestamp,
+    end_time: pd.Timestamp,
+    *,
+    clone: bool = False,
 ) -> None | T:
     """Shorten a seismogram by providing new begin and end times.
 
@@ -105,14 +111,14 @@ def crop[T: Seismogram](
 
 # --8<-- [start:detrend]
 @overload
-def detrend(seismogram: Seismogram, clone: Literal[False] = ...) -> None: ...
+def detrend(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
 
 
 @overload
-def detrend[T: Seismogram](seismogram: T, clone: Literal[True]) -> T: ...
+def detrend[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
 
 
-def detrend[T: Seismogram](seismogram: T, clone: bool = False) -> None | T:
+def detrend[T: Seismogram](seismogram: T, *, clone: bool = False) -> None | T:
     """Remove linear and/or constant trends from a seismogram.
 
     Args:
@@ -155,6 +161,7 @@ def normalize(
     seismogram: Seismogram,
     t1: pd.Timestamp | None = ...,
     t2: pd.Timestamp | None = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 @overload
@@ -171,6 +178,7 @@ def normalize[T: Seismogram](
     seismogram: T,
     t1: pd.Timestamp | None = None,
     t2: pd.Timestamp | None = None,
+    *,
     clone: bool = False,
 ) -> None | T:
     """Normalise a seismogram with its absolute max value.
@@ -209,7 +217,9 @@ def normalize[T: Seismogram](
         start_index = time2index(seismogram, t1)
 
     if t2 is not None:
-        end_index = time2index(seismogram, t2)
+        # +1 because time2index returns the sample nearest t2, which should
+        # be included in the search window (matches crop()'s convention).
+        end_index = time2index(seismogram, t2) + 1
 
     abs_max = np.max(np.abs(seismogram.data[start_index:end_index]))
     if abs_max == 0:
@@ -248,6 +258,7 @@ def pad(
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
+    *,
     clone: Literal[False] = False,
     **kwargs: Any,
 ) -> None: ...
@@ -258,6 +269,7 @@ def pad[T: Seismogram](
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
+    *,
     clone: bool = False,
     **kwargs: Any,
 ) -> None | T:
@@ -333,18 +345,18 @@ def pad[T: Seismogram](
 
 @overload
 def resample(
-    seismogram: Seismogram, delta: PositiveTimedelta, clone: Literal[False] = ...
+    seismogram: Seismogram, delta: PositiveTimedelta, *, clone: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def resample[T: Seismogram](
-    seismogram: T, delta: PositiveTimedelta, clone: Literal[True]
+    seismogram: T, delta: PositiveTimedelta, *, clone: Literal[True]
 ) -> T: ...
 
 
 def resample[T: Seismogram](
-    seismogram: T, delta: PositiveTimedelta, clone: bool = False
+    seismogram: T, delta: PositiveTimedelta, *, clone: bool = False
 ) -> None | T:
     """Resample Seismogram data using the Fourier method.
 
@@ -528,7 +540,8 @@ def merge[T: Seismogram](
             seismograms with
             [`estimate_delta`][pysmo.functions.estimate_delta] instead of
             requiring an exact match. Mutually exclusive with `delta`; type
-            checkers reject passing both.
+            checkers reject passing both, and passing both raises at
+            runtime too.
         gap_tolerance_factor: Maximum allowed boundary timestamp jitter between
             consecutive seismograms, as a fraction of the sampling interval.
         clone: Operate on a clone of the first input seismogram.
@@ -538,12 +551,13 @@ def merge[T: Seismogram](
         `clone=True`.
 
     Raises:
-        ValueError: If `seismograms` is empty, contains no non-empty
-            seismograms, the sampling intervals of the non-empty seismograms
-            differ and neither `delta` nor `auto_delta` is provided, the
-            boundary between consecutive non-empty seismograms contains a
-            gap or overlap exceeding the allowed tolerance, overlapping
-            samples do not match, or `gap_tolerance_factor` is negative.
+        ValueError: If both `delta` and `auto_delta` are given, `seismograms`
+            is empty, contains no non-empty seismograms, the sampling
+            intervals of the non-empty seismograms differ and neither
+            `delta` nor `auto_delta` is provided, the boundary between
+            consecutive non-empty seismograms contains a gap or overlap
+            exceeding the allowed tolerance, overlapping samples do not
+            match, or `gap_tolerance_factor` is negative.
 
     Examples:
         ```python
@@ -634,6 +648,9 @@ def merge[T: Seismogram](
         beforehand, to confirm the estimate is the value expected rather
         than assuming it silently.
     """
+    if delta is not None and auto_delta:
+        raise ValueError("delta and auto_delta are mutually exclusive.")
+
     if gap_tolerance_factor < 0:
         raise ValueError("gap_tolerance_factor must be non-negative.")
 
@@ -724,6 +741,7 @@ def taper(
     seismogram: Seismogram,
     taper_width: NonNegativeTimedelta | UnitFloat,
     window_type: _WindowType = ...,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -742,6 +760,7 @@ def taper[T: Seismogram](
     seismogram: T,
     taper_width: NonNegativeTimedelta | UnitFloat,
     window_type: _WindowType = "hann",
+    *,
     clone: bool = False,
 ) -> None | T:
     """Apply a symmetric taper to the ends of a Seismogram.
@@ -862,9 +881,13 @@ def time2index(
     # Calculate the fractional index position
     index_float = (time - seismogram.begin_time) / seismogram.delta
 
-    # Snap to nearest integer if within a tiny tolerance (1e-3 samples)
+    # Snap to nearest integer if within a tiny tolerance (1e-3 samples).
     # This prevents 2.999999999 from being floored to 2 instead of 3.
-    if np.isclose(index_float, np.round(index_float), atol=1e-3):
+    # rtol=0 is required: np.isclose's default rtol scales the tolerance
+    # with the rounded index's magnitude, so beyond ~50,000 samples the
+    # tolerance alone would exceed 0.5 and this branch would always fire,
+    # silently overriding the "0.5 rounds up" rule below at exact ties.
+    if np.isclose(index_float, np.round(index_float), atol=1e-3, rtol=0):
         index = int(np.round(index_float))
     # Standard rounding within the trace (0.5 rounds up)
     else:
@@ -888,6 +911,7 @@ def window(
     ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     window_type: _WindowType = ...,
     same_shape: bool = False,
+    *,
     clone: Literal[False] = ...,
 ) -> None: ...
 
@@ -912,6 +936,7 @@ def window[T: Seismogram](
     ramp_width: NonNegativeTimedelta | NonNegativeNumber,
     window_type: _WindowType = "hann",
     same_shape: bool = False,
+    *,
     clone: bool = False,
 ) -> None | T:
     """Returns an optionally padded and tapered window of a seismogram.

@@ -21,6 +21,25 @@ __all__ = ["parse_stationxml"]
 
 _NS = {"fdsn": "http://www.fdsn.org/xml/station/1"}
 
+
+class _DoctypeRejectingTreeBuilder(ET.TreeBuilder):
+    """Rejects any `<!DOCTYPE` declaration, guarding against entity expansion.
+
+    `xml.etree.ElementTree` has no built-in way to disable DTD-defined
+    entity expansion, so this is the module's defence against a
+    "billion laughs"-style payload. Rejecting via the parser's own
+    doctype callback (rather than a byte-string search on the raw,
+    possibly non-UTF-8-encoded input) means the check applies to the
+    document expat actually parses, regardless of its declared encoding.
+    """
+
+    def doctype(self, name: str, pubid: str | None, system: str | None) -> None:
+        raise ValueError(
+            "Refusing to parse StationXML containing a <!DOCTYPE declaration "
+            "(possible entity-expansion payload)."
+        )
+
+
 _ANALOG_PZ_TYPE = "LAPLACE (RADIANS/SECOND)"
 """The only `PzTransferFunctionType` supported for the analog stage."""
 
@@ -168,7 +187,14 @@ def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
     if decimation is None:
         raise ValueError(f"Stage {stage.get('number')} has no <Decimation> element.")
     input_sample_rate = float(_child_text(decimation, "InputSampleRate"))
-    decimation_factor = int(float(_child_text(decimation, "Factor")))
+    factor_text = _child_text(decimation, "Factor")
+    factor = float(factor_text)
+    if not factor.is_integer():
+        raise ValueError(
+            f"Stage {stage.get('number')}'s <Decimation>/<Factor> "
+            f"{factor_text!r} is not a whole number."
+        )
+    decimation_factor = int(factor)
     # <Offset> (which input sample the decimated output is aligned to) has no
     # effect on the frequency response and is not read.
     #
@@ -374,10 +400,12 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
         ValueError: If `xml` contains a `<!DOCTYPE` declaration (rejected
             unconditionally, since `xml.etree.ElementTree` has no way to
             disable DTD-defined entity expansion and this input may come
-            from an untrusted network response), a `<Channel>` has no
-            `<Response>` element, a required sub-element is missing, or a
-            `<Stage>` uses an unrecognised or unsupported (e.g. digital
-            `PolesZeros`) encoding.
+            from an untrusted network response), a `<Network>`, `<Station>`
+            or `<Channel>` element has no `code` attribute, a `<Channel>`
+            has no `startDate` attribute or no `<Response>` element, a
+            required sub-element is missing, or a `<Stage>` uses an
+            unrecognised or unsupported (e.g. digital `PolesZeros`)
+            encoding.
 
     Examples:
         ```python
@@ -428,23 +456,32 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
         >>>
         ```
     """
-    if b"<!DOCTYPE" in xml:
-        raise ValueError(
-            "Refusing to parse StationXML containing a <!DOCTYPE declaration "
-            "(possible entity-expansion payload)."
-        )
-    root = ET.fromstring(xml)
+    parser = ET.XMLParser(target=_DoctypeRejectingTreeBuilder())
+    root = ET.fromstring(xml, parser=parser)
     results: list[_RawResponse] = []
 
     for network_elem in root.findall("fdsn:Network", _NS):
-        network_code = network_elem.get("code", "")
+        network_code = network_elem.get("code")
+        if network_code is None:
+            raise ValueError("<Network> element has no code attribute.")
         for station_elem in network_elem.findall("fdsn:Station", _NS):
-            station_code = station_elem.get("code", "")
+            station_code = station_elem.get("code")
+            if station_code is None:
+                raise ValueError(
+                    f"<Station> element in network {network_code!r} has no "
+                    "code attribute."
+                )
             for channel in station_elem.findall("fdsn:Channel", _NS):
+                channel_code = channel.get("code")
+                if channel_code is None:
+                    raise ValueError(
+                        f"<Channel> element in station {network_code}.{station_code} "
+                        "has no code attribute."
+                    )
                 response = channel.find("fdsn:Response", _NS)
                 if response is None:
                     raise ValueError(
-                        f"Channel {channel.get('code')!r} has no <Response> "
+                        f"Channel {channel_code!r} has no <Response> "
                         "element; ensure the StationXML query used "
                         "level=response."
                     )
@@ -460,7 +497,7 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
                 start_date = _parse_timestamp(channel.get("startDate"))
                 if start_date is None:
                     raise ValueError(
-                        f"Channel {channel.get('code')!r} has no startDate attribute."
+                        f"Channel {channel_code!r} has no startDate attribute."
                     )
 
                 results.append(
@@ -468,7 +505,7 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
                         network=network_code,
                         station=station_code,
                         location=channel.get("locationCode", ""),
-                        channel=channel.get("code", ""),
+                        channel=channel_code,
                         start_date=start_date,
                         end_date=_parse_timestamp(channel.get("endDate")),
                         poles=poles,
