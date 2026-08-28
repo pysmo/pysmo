@@ -4,14 +4,19 @@ from attrs import converters, define, field, setters, validators
 
 from .location import Location
 
-__all__ = ["Station", "MiniStation"]
+__all__ = ["StationCode", "Station", "MiniStationCode", "MiniStation"]
 
 # --8<-- [start:station-protocol]
 
 
 @runtime_checkable
-class Station(Location, Protocol):
-    """Protocol class to define the `Station` type."""
+class StationCode(Protocol):
+    """Protocol class to define the `StationCode` type.
+
+    Network/station/location/channel (NSLC) identity for a data stream,
+    independent of geographic location — the subset of `Station` a format
+    like miniSEED can provide without coordinates.
+    """
 
     name: str
     """Station name or identifier.
@@ -42,6 +47,11 @@ class Station(Location, Protocol):
     3. Orientation of the sensor.
     """
 
+
+@runtime_checkable
+class Station(Location, StationCode, Protocol):
+    """Protocol class to define the `Station` type."""
+
     elevation: int | float | None
     """Station elevation in metres."""
 
@@ -51,6 +61,59 @@ class Station(Location, Protocol):
 
 def _pad_string(x: str) -> str:
     return f"{x:>2}"
+
+
+@define(kw_only=True)
+class MiniStationCode:
+    """Minimal class for use with the [`StationCode`][pysmo.StationCode] type.
+
+    Examples:
+        ```python
+        >>> from pysmo import MiniStationCode, StationCode
+        >>> code = MiniStationCode(name="CACB", network="BL", channel="BHZ", location="00")
+        >>> isinstance(code, StationCode)
+        True
+        >>>
+        ```
+    """
+
+    name: str = field(
+        validator=[validators.min_len(1), validators.max_len(5)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Station name.
+
+    See [`StationCode.name`][pysmo.StationCode.name] for more details.
+    """
+
+    network: str = field(
+        validator=[validators.min_len(1), validators.max_len(2)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Network name.
+
+    See [`StationCode.network`][pysmo.StationCode.network] for more details.
+    """
+
+    location: str = field(
+        default="  ",
+        validator=[validators.min_len(2), validators.max_len(2)],
+        converter=_pad_string,
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Location ID.
+
+    See [`StationCode.location`][pysmo.StationCode.location] for more details.
+    """
+
+    channel: str = field(
+        validator=[validators.min_len(3), validators.max_len(3)],
+        on_setattr=setters.pipe(setters.convert, setters.validate),
+    )
+    """Channel code.
+
+    See [`StationCode.channel`][pysmo.StationCode.channel] for more details.
+    """
 
 
 @define(kw_only=True)
