@@ -170,12 +170,12 @@ def fetch_stationxml(*, station: Station) -> bytes:
     """Fetch raw StationXML response metadata bytes for a station/channel.
 
     A lower-level counterpart to
-    [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: returns the
+    [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch]: returns the
     StationXML document unparsed and uninterpreted, covering every response
     epoch on record for the requested channel. Save it to disk to defer
     parsing to later — offline, without another network request — via
-    [`StationXML.from_bytes`][pysmo.classes.StationXML.from_bytes] or
-    [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes].
+    [`StationXMLResponse.from_bytes`][pysmo.classes.StationXMLResponse.from_bytes] or
+    [`StationXMLResponse.all_from_bytes`][pysmo.classes.StationXMLResponse.all_from_bytes].
 
     Args:
         station: Any object satisfying the [`Station`][pysmo.Station]

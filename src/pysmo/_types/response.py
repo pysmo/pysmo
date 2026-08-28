@@ -155,7 +155,7 @@ class _EpochProvenance(Protocol):
     only so `pysmo.lib.io.write_sacpz` (via `ResponseWithEpoch`) can
     type-check, not to be implemented by third-party code directly. Real
     callers already satisfy it structurally as part of a bigger object
-    (`SacPZ`, `StationXML`), so it is deliberately not exported at the
+    (`SacPZ`, `StationXMLResponse`), so it is deliberately not exported at the
     `pysmo` root namespace.
     """
 
