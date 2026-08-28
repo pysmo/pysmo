@@ -23,8 +23,8 @@ Mismatched units are a common source of errors and tedious format conversions.
 Pysmo assumes [SI](https://en.wikipedia.org/wiki/International_System_of_Units)
 units throughout, even where other conventions are common in seismology. This is
 also consistent with e.g. [`scipy.constants`][]. A notable example is
-[`depth`][pysmo.LocationWithDepth.depth], which is in metres (positive downward
-from the surface) — many seismological tools use kilometres instead.
+[`depth`][pysmo.LocationWithDepth.depth], which is in metres (positive
+downwards) — many seismological tools use kilometres instead.
 
 ## Time
 
