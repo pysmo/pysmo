@@ -40,7 +40,7 @@ block:
 >>> import pandas as pd
 >>> from attrs import define
 >>> from pysmo import MiniEvent, MiniStation, Seismogram
->>> from pysmo.classes import StationXML
+>>> from pysmo.classes import StationXMLResponse
 >>> from pysmo.functions import clone_to_mini
 >>> from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
 >>> from pysmo.tools.project import FetchContext, ProjectEntry, PysmoProject
@@ -74,7 +74,7 @@ configurable per instance:
 ...     def __call__(
 ...         self, seismogram: Seismogram, context: FetchContext
 ...     ) -> MiniIccsSeismogram:
-...         response = StationXML.fetch(
+...         response = StationXMLResponse.fetch(
 ...             station=context.entry.station, time=context.starttime
 ...         )
 ...         corrected = remove_response(
@@ -131,7 +131,7 @@ rather than re-fetched — recommended for real analysis work, over the
 always-fresh default used above.
 
 This only pins the waveform, though. `to_mini_iccs_seismogram` (reused
-below unchanged) still fetches `StationXML` itself on every call, cached
+below unchanged) still fetches a `StationXMLResponse` itself on every call, cached
 or not — an archive-backed `fetch_seismogram` says nothing about whatever
 `transform` independently fetches:
 

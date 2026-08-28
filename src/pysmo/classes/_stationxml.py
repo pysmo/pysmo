@@ -15,7 +15,7 @@ from pysmo.lib.validators import (
 from pysmo.tools.web import fetch_stationxml
 from pysmo.typing import NonZeroNumber
 
-__all__ = ["StationXML"]
+__all__ = ["StationXMLResponse"]
 
 
 def _convert_optional_float(value: float | None) -> float | None:
@@ -52,7 +52,7 @@ def _matching_epochs(
 
 
 @define(kw_only=True)
-class StationXML:
+class StationXMLResponse:
     r"""Import class for FDSN StationXML response metadata.
 
     Reads an instrument response from a
@@ -60,21 +60,21 @@ class StationXML:
     returned by e.g. the EarthScope station web service with
     `level=response`) and exposes it as a
     [`Response`][pysmo.Response]-compatible object. Unlike
-    [`SacPZ`][pysmo.classes.SacPZ], `StationXML` always satisfies
+    [`SacPZ`][pysmo.classes.SacPZ], `StationXMLResponse` always satisfies
     [`StagedResponse`][pysmo.StagedResponse] too — `stages` is simply empty
     if the document has no digital FIR/IIR decimation stages.
 
     A StationXML document commonly covers a channel's full instrument
     history, i.e. several response epochs (e.g. after a sensor swap).
-    [`from_bytes`][pysmo.classes.StationXML.from_bytes] narrows this to a
+    [`from_bytes`][pysmo.classes.StationXMLResponse.from_bytes] narrows this to a
     single epoch (matching a given time, or the currently-open one);
-    [`all_from_bytes`][pysmo.classes.StationXML.all_from_bytes] returns
+    [`all_from_bytes`][pysmo.classes.StationXMLResponse.all_from_bytes] returns
     every epoch found, for callers who want to do their own selection.
 
     Examples:
         ```python
         >>> from pysmo import Response, StagedResponse
-        >>> from pysmo.classes import StationXML
+        >>> from pysmo.classes import StationXMLResponse
         >>> xml = b'''\
         ... <?xml version="1.0"?>
         ... <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
@@ -110,7 +110,7 @@ class StationXML:
         ...     </Station>
         ...   </Network>
         ... </FDSNStationXML>'''
-        >>> response = StationXML.from_bytes(xml)
+        >>> response = StationXMLResponse.from_bytes(xml)
         >>> isinstance(response, Response)
         True
         >>> isinstance(response, StagedResponse)
@@ -225,7 +225,7 @@ class StationXML:
                 one channel. If `None`, channel is not filtered.
 
         Returns:
-            A new StationXML instance for the response epoch active at
+            A new StationXMLResponse instance for the response epoch active at
             *time* (or currently open, if `time` is `None`).
 
         Raises:
@@ -235,7 +235,7 @@ class StationXML:
                 `time` is `None`).
 
         Tip: See Also
-            [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes]:
+            [`StationXMLResponse.all_from_bytes`][pysmo.classes.StationXMLResponse.all_from_bytes]:
             Parse every epoch in the document without narrowing to one.
         """
         epochs = parse_stationxml(xml)
@@ -269,11 +269,11 @@ class StationXML:
         the epoch active at *time* if given, otherwise the one currently
         open (no `endDate`). Fetches the full response history in one
         request and narrows client-side (like
-        [`from_bytes`][pysmo.classes.StationXML.from_bytes]); to fetch once
+        [`from_bytes`][pysmo.classes.StationXMLResponse.from_bytes]); to fetch once
         and interpret later (e.g. offline, or without repeating the network
         request), use [`pysmo.tools.web.fetch_stationxml`][] and
-        [`from_bytes`][pysmo.classes.StationXML.from_bytes] /
-        [`all_from_bytes`][pysmo.classes.StationXML.all_from_bytes] directly
+        [`from_bytes`][pysmo.classes.StationXMLResponse.from_bytes] /
+        [`all_from_bytes`][pysmo.classes.StationXMLResponse.all_from_bytes] directly
         instead.
 
         Args:
@@ -284,7 +284,7 @@ class StationXML:
                 the currently-open epoch (no end date) is selected.
 
         Returns:
-            A new StationXML instance for the response epoch active at
+            A new StationXMLResponse instance for the response epoch active at
             *time* (or currently open, if `time` is `None`).
 
         Raises:
@@ -297,12 +297,12 @@ class StationXML:
             <!-- skip: start if(not run_real_web_requests) -->
             ```python
             >>> from pysmo import MiniStation
-            >>> from pysmo.classes import StationXML
+            >>> from pysmo.classes import StationXMLResponse
             >>> station = MiniStation(
             ...     name="ANMO", network="IU", location="00", channel="BHZ",
             ...     latitude=34.945981, longitude=-106.457133,
             ... )
-            >>> response = StationXML.fetch(station=station)
+            >>> response = StationXMLResponse.fetch(station=station)
             >>>
             ```
             <!-- skip: end -->
@@ -314,7 +314,7 @@ class StationXML:
     def all_from_bytes(cls, xml: bytes) -> list[Self]:
         """Create one instance per response epoch in a StationXML document.
 
-        Unlike [`from_bytes`][pysmo.classes.StationXML.from_bytes], this
+        Unlike [`from_bytes`][pysmo.classes.StationXMLResponse.from_bytes], this
         does not narrow to a single epoch — a document covering a channel's
         full instrument history returns several, each with its own
         `network`/`station`/`location`/`channel`/`start_date`/`end_date`
@@ -324,7 +324,7 @@ class StationXML:
             xml: Raw StationXML document bytes.
 
         Returns:
-            One StationXML instance per response epoch found, in document
+            One StationXMLResponse instance per response epoch found, in document
             order.
         """
         return [cls._from_raw(raw) for raw in parse_stationxml(xml)]

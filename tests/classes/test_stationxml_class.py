@@ -1,4 +1,4 @@
-"""Tests for pysmo.classes.StationXML."""
+"""Tests for pysmo.classes.StationXMLResponse."""
 
 from pathlib import Path
 
@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from pysmo import MiniStation, Response, StagedResponse
-from pysmo.classes import StationXML
+from pysmo.classes import StationXMLResponse
 
 SINGLE_EPOCH_FIXTURE = (
     Path(__file__).parent.parent
@@ -193,7 +193,7 @@ MULTIPLE_STATIONS = _document(
 
 class TestFromBytes:
     def test_single_epoch_fixture(self) -> None:
-        response = StationXML.from_bytes(
+        response = StationXMLResponse.from_bytes(
             SINGLE_EPOCH_FIXTURE.read_bytes(), time=pd.Timestamp("2016-01-01T00:00:00Z")
         )
 
@@ -211,7 +211,7 @@ class TestFromBytes:
         value, distinct from overall_sensitivity (which has the analog
         stage's A0 normalisation factor folded in) — otherwise
         remove_response's sensitivity-only path mis-scales by A0."""
-        response = StationXML.from_bytes(
+        response = StationXMLResponse.from_bytes(
             SINGLE_EPOCH_FIXTURE.read_bytes(), time=pd.Timestamp("2016-01-01T00:00:00Z")
         )
 
@@ -220,14 +220,14 @@ class TestFromBytes:
         assert response.reference_sensitivity == pytest.approx(3.40413e9)
 
     def test_selects_currently_open_epoch(self) -> None:
-        response = StationXML.from_bytes(BULK_FIXTURE.read_bytes())
+        response = StationXMLResponse.from_bytes(BULK_FIXTURE.read_bytes())
 
         assert isinstance(response, StagedResponse)
         assert len(response.poles) == 13
         assert len(response.stages) == 2
 
     def test_selects_historical_epoch_by_time(self) -> None:
-        response = StationXML.from_bytes(
+        response = StationXMLResponse.from_bytes(
             BULK_FIXTURE.read_bytes(), time=pd.Timestamp("1999-01-01T00:00:00Z")
         )
 
@@ -236,13 +236,13 @@ class TestFromBytes:
 
     def test_no_matching_epoch_raises(self) -> None:
         with pytest.raises(ValueError, match="found 0"):
-            StationXML.from_bytes(
+            StationXMLResponse.from_bytes(
                 BULK_FIXTURE.read_bytes(), time=pd.Timestamp("1990-01-01T00:00:00Z")
             )
 
     def test_overlapping_epochs_raise(self) -> None:
         with pytest.raises(ValueError, match="found 2"):
-            StationXML.from_bytes(
+            StationXMLResponse.from_bytes(
                 OVERLAPPING_EPOCHS, time=pd.Timestamp("2010-01-01T00:00:00Z")
             )
 
@@ -252,14 +252,16 @@ class TestFromBytes:
         # without location/channel narrowing this is as ambiguous as
         # overlapping epochs.
         with pytest.raises(ValueError, match="found 3"):
-            StationXML.from_bytes(MULTIPLE_LOCATIONS_AND_CHANNELS)
+            StationXMLResponse.from_bytes(MULTIPLE_LOCATIONS_AND_CHANNELS)
 
     def test_channel_alone_narrows_but_may_still_be_ambiguous(self) -> None:
         with pytest.raises(ValueError, match="found 2"):
-            StationXML.from_bytes(MULTIPLE_LOCATIONS_AND_CHANNELS, channel="BHZ")
+            StationXMLResponse.from_bytes(
+                MULTIPLE_LOCATIONS_AND_CHANNELS, channel="BHZ"
+            )
 
     def test_location_and_channel_narrow_to_one_epoch(self) -> None:
-        response = StationXML.from_bytes(
+        response = StationXMLResponse.from_bytes(
             MULTIPLE_LOCATIONS_AND_CHANNELS, location="10", channel="BHZ"
         )
 
@@ -269,10 +271,10 @@ class TestFromBytes:
 
     def test_multiple_networks_raise_without_network_narrowing(self) -> None:
         with pytest.raises(ValueError, match="found 2"):
-            StationXML.from_bytes(MULTIPLE_NETWORKS)
+            StationXMLResponse.from_bytes(MULTIPLE_NETWORKS)
 
     def test_network_narrows_to_one_epoch(self) -> None:
-        response = StationXML.from_bytes(MULTIPLE_NETWORKS, network="II")
+        response = StationXMLResponse.from_bytes(MULTIPLE_NETWORKS, network="II")
 
         assert response.network == "II"
         assert response.station == "ANMO"
@@ -280,22 +282,22 @@ class TestFromBytes:
 
     def test_multiple_stations_raise_without_station_narrowing(self) -> None:
         with pytest.raises(ValueError, match="found 2"):
-            StationXML.from_bytes(MULTIPLE_STATIONS)
+            StationXMLResponse.from_bytes(MULTIPLE_STATIONS)
 
     def test_station_narrows_to_one_epoch(self) -> None:
-        response = StationXML.from_bytes(MULTIPLE_STATIONS, station="COLA")
+        response = StationXMLResponse.from_bytes(MULTIPLE_STATIONS, station="COLA")
 
         assert response.station == "COLA"
         assert response.reference_sensitivity == pytest.approx(2.0e9)
 
     def test_error_message_lists_network_and_station_narrowing(self) -> None:
         with pytest.raises(ValueError, match="network 'XX', station 'YY'"):
-            StationXML.from_bytes(MULTIPLE_NETWORKS, network="XX", station="YY")
+            StationXMLResponse.from_bytes(MULTIPLE_NETWORKS, network="XX", station="YY")
 
 
 class TestAllFromBytes:
     def test_real_bulk_fixture(self) -> None:
-        responses = StationXML.all_from_bytes(BULK_FIXTURE.read_bytes())
+        responses = StationXMLResponse.all_from_bytes(BULK_FIXTURE.read_bytes())
         assert len(responses) == 9
         for response in responses:
             assert isinstance(response, Response)
@@ -307,7 +309,7 @@ class TestAllFromBytes:
         assert responses[-1].end_date is None
 
     def test_single_epoch_still_returns_a_list(self) -> None:
-        responses = StationXML.all_from_bytes(SINGLE_EPOCH_FIXTURE.read_bytes())
+        responses = StationXMLResponse.all_from_bytes(SINGLE_EPOCH_FIXTURE.read_bytes())
         assert len(responses) == 1
 
 
@@ -336,7 +338,7 @@ class TestFetch:
 
         monkeypatch.setattr("pysmo.tools.web.http_get", fake_http_get)
 
-        response = StationXML.fetch(
+        response = StationXMLResponse.fetch(
             station=station, time=pd.Timestamp("2016-01-01T00:00:00Z")
         )
 
@@ -360,7 +362,7 @@ class TestFetch:
             lambda *args, **kwargs: BULK_FIXTURE.read_bytes(),
         )
 
-        response = StationXML.fetch(station=station)
+        response = StationXMLResponse.fetch(station=station)
 
         assert isinstance(response, StagedResponse)
         assert len(response.poles) == 13
@@ -374,7 +376,7 @@ class TestFetch:
             lambda *args, **kwargs: BULK_FIXTURE.read_bytes(),
         )
 
-        response = StationXML.fetch(
+        response = StationXMLResponse.fetch(
             station=station, time=pd.Timestamp("1999-01-01T00:00:00Z")
         )
 
@@ -390,7 +392,9 @@ class TestFetch:
         )
 
         with pytest.raises(ValueError, match="found 0"):
-            StationXML.fetch(station=station, time=pd.Timestamp("1990-01-01T00:00:00Z"))
+            StationXMLResponse.fetch(
+                station=station, time=pd.Timestamp("1990-01-01T00:00:00Z")
+            )
 
     def test_overlapping_epochs_raise(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
@@ -401,4 +405,6 @@ class TestFetch:
         )
 
         with pytest.raises(ValueError, match="found 2"):
-            StationXML.fetch(station=station, time=pd.Timestamp("2010-01-01T00:00:00Z"))
+            StationXMLResponse.fetch(
+                station=station, time=pd.Timestamp("2010-01-01T00:00:00Z")
+            )

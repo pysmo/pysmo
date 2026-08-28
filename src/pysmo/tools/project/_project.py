@@ -156,7 +156,7 @@ class PysmoProject[T]:
     conversion to `T`, since it is the one place every fetch already passes
     through. Free to do anything else it needs — including its own
     additional fetches (e.g. instrument response metadata via
-    [`StationXML.fetch`][pysmo.classes.StationXML.fetch], demonstrated in
+    [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch], demonstrated in
     the [module documentation][pysmo.tools.project]'s own example — this
     design doesn't fetch or know about response data itself, deliberately).
     Must be a top-level function in an importable module — not a lambda or

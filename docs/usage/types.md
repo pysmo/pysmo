@@ -293,7 +293,7 @@ way [`Seismogram`][pysmo.Seismogram] is, just extended differently in practice.
 The third is an **internal-refactor type**: it exists purely to let a pysmo
 function type-check, not because anything outside pysmo needed naming.
 `_EpochProvenance` (`src/pysmo/_types/response.py`) is the current example: both
-[`SacPZ`][pysmo.classes.SacPZ] and [`StationXML`][pysmo.classes.StationXML]
+[`SacPZ`][pysmo.classes.SacPZ] and [`StationXMLResponse`][pysmo.classes.StationXMLResponse]
 carry the same six fields — network, station, location, and channel code, plus a
 start and (optional) end date for the response epoch — because
 [`write_sacpz`][pysmo.lib.io.write_sacpz] needed a name for that overlap to
@@ -317,7 +317,7 @@ correlate with origin without being defined by it.
 A `Mini*` class exists only when some real code path needs to construct a bare
 instance of exactly that type's fields on its own. `_EpochProvenance` has no
 `MiniEpochProvenance` because nothing does: every real caller already has a
-[`SacPZ`][pysmo.classes.SacPZ] or [`StationXML`][pysmo.classes.StationXML]
+[`SacPZ`][pysmo.classes.SacPZ] or [`StationXMLResponse`][pysmo.classes.StationXMLResponse]
 object carrying those six fields as part of something bigger. That is a fact
 about how the type is actually used, not a consequence of it being an
 internal-refactor type — a future internal-refactor type whose callers *do* need

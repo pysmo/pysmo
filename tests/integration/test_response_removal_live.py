@@ -7,7 +7,7 @@ computing a phase-relative window (via
 function's own Examples), fetching a real waveform for it
 ([`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch]) and its
 real instrument response
-([`StationXML.fetch`][pysmo.classes.StationXML.fetch]),
+([`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch]),
 detrending/tapering it ([`pysmo.functions`][pysmo.functions]), then removing
 the response via both the sensitivity-only and full-deconvolution paths
 ([`remove_response`][pysmo.tools.signal.remove_response]) and plotting the
@@ -36,7 +36,7 @@ from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
 from pysmo import MiniEvent, MiniStation
-from pysmo.classes import GeoCsvSeismogram, StationXML
+from pysmo.classes import GeoCsvSeismogram, StationXMLResponse
 from pysmo.functions import detrend, taper
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
@@ -85,7 +85,7 @@ def test_remove_response_pipeline_live(
         starttime=predicted_p - pd.Timedelta(minutes=2),
         endtime=predicted_p + pd.Timedelta(minutes=15),
     )
-    response = StationXML.fetch(station=station, time=seismogram.begin_time)
+    response = StationXMLResponse.fetch(station=station, time=seismogram.begin_time)
 
     assert response.network == "IU"
     assert response.station == "ANMO"
