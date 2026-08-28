@@ -91,6 +91,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Support two-data-block SAC files (IRLIM/IAMPH/IXY/uneven ITIME)
 - Add PysmoProject and SqliteArchiveFetcher for on-demand FDSN data
 - **(stationxml)** Narrow from_bytes epochs by network and station
+- [**breaking**] QuakeML support; flatten FDSN trinity to format-named classes ([#303](https://github.com/pysmo/pysmo/issues/303))
 
 ### 🧪 Testing
 
