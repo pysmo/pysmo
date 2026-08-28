@@ -291,15 +291,14 @@ ships readers for those. This type is still physically meaningful in the same
 way [`Seismogram`][pysmo.Seismogram] is, just extended differently in practice.
 
 The third is an **internal-refactor type**: it exists purely to let a pysmo
-function type-check, not because anything outside pysmo needed naming.
-`_EpochProvenance` (`src/pysmo/_types/response.py`) is the current example: both
-[`SacPZ`][pysmo.classes.SacPZ] and [`StationXMLResponse`][pysmo.classes.StationXMLResponse]
-carry the same six fields — network, station, location, and channel code, plus a
-start and (optional) end date for the response epoch — because
-[`write_sacpz`][pysmo.lib.io.write_sacpz] needed a name for that overlap to
-type-check its input. Nobody has a competing `_EpochProvenance` design in the
-wild; this is about avoiding duplication in pysmo's own code, not a response to
-anything external.
+function type-check, or to name a slice of behaviour pysmo's own code shares,
+not because anything outside pysmo needed naming.
+[`StationCode`][pysmo.StationCode] is an example — the network/station/
+location/channel identity common to [`Station`][pysmo.Station] and to
+format records like [`StationXML`][pysmo.classes.StationXML] that carry NSLC
+codes without necessarily carrying coordinates. Nobody has a competing
+`StationCode` design in the wild; extracting it is about avoiding duplication
+in pysmo's own code, not a response to anything external.
 
 The [`Location`][pysmo.Location]-in-[`Station`][pysmo.Station] inheritance
 described above is the same "reuse simple types" instinct, applied one step
@@ -315,34 +314,23 @@ Neither follows. Both are separate, need-based questions that happen to
 correlate with origin without being defined by it.
 
 A `Mini*` class exists only when some real code path needs to construct a bare
-instance of exactly that type's fields on its own. `_EpochProvenance` has no
-`MiniEpochProvenance` because nothing does: every real caller already has a
-[`SacPZ`][pysmo.classes.SacPZ] or [`StationXMLResponse`][pysmo.classes.StationXMLResponse]
-object carrying those six fields as part of something bigger. That is a fact
-about how the type is actually used, not a consequence of it being an
-internal-refactor type — a future internal-refactor type whose callers *do* need
-a bare, standalone instance would get a `Mini*` class the same as any other.
-
-The same applies to membership of the internal `_BaseProto`/`_BaseMini`
-type-alias unions (`src/pysmo/__init__.py`), which exist to make pysmo's generic
-Mini-conversion machinery ([`proto2mini`][pysmo.lib.mini_utils.proto2mini],
+instance of exactly that type's fields on its own — and membership of the
+internal `_BaseProto`/`_BaseMini` type-alias unions (`src/pysmo/__init__.py`),
+which drive pysmo's generic Mini-conversion machinery
+([`proto2mini`][pysmo.lib.mini_utils.proto2mini],
 [`matching_pysmo_types`][pysmo.lib.mini_utils.matching_pysmo_types],
 [`clone_to_mini`][pysmo.functions.clone_to_mini],
-[`copy_from_mini`][pysmo.functions.copy_from_mini]) work. A type is only useful
-to that machinery if a `Mini*` counterpart exists to convert to or from, so
-`_EpochProvenance` — having no `Mini*` class — has no reason to be in
-`_BaseProto` either. This is not a separate judgement call about importance; it
-follows mechanically from the same need-based rule.
+[`copy_from_mini`][pysmo.functions.copy_from_mini]), only makes sense once a
+`Mini*` counterpart exists to convert to or from. An internal-refactor type
+whose callers never need a bare, standalone instance stays out of both, and
+that is a fact about how it is used rather than about its origin.
 
 Whether a type is exported at the `pysmo` root namespace (importable as
 `from pysmo import X`, and therefore listed on the
-[API reference](../api/pysmo.md)) is a third, again independent, question. An
-internal-refactor type usually shouldn't be: `_EpochProvenance` is private for
-exactly this reason, following the precedent set by other internal-only types
-such as `SeismogramEndtimeMixin`. Code that needs to reference the composed
-result from outside `src/pysmo/_types/response.py` uses
-[`ResponseWithEpoch`][pysmo.lib.io.ResponseWithEpoch] instead — the actual
-public type built from it.
+[API reference](../api/pysmo.md)) is a third, again independent, question. A
+type that exists only to type-check one internal call site usually stays
+private, following the precedent set by other internal-only helpers such as
+`SeismogramEndtimeMixin`.
 
 One more pattern is worth flagging before moving on, because it sits next to
 these three without being a fourth origin:
