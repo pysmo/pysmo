@@ -9,14 +9,13 @@ pysmo function or tool that operates on pysmo types.
 
 Each class is designed with the protocol(s) it implements in mind, not to
 reproduce its native format's full specification. The scope isn't strictly
-limited to protocol attributes — [`pysmo.classes.StationXMLResponse`][], for
-example, also carries epoch bookkeeping (network/station/location/channel/
-start_date/end_date) needed to select the right response from a document —
-but the protocol is the organising goal, not fidelity to the format.
-Reconstructing a complete file for every supported format is explicitly not
-a goal: where a class supports writing, the guarantee is only that the
-output round-trips through that same class's own reader, not that it
-satisfies the format's full external specification.
+limited to protocol attributes — [`pysmo.classes.StationXML`][], for
+example, also carries epoch bookkeeping (`start_date`/`end_date`) and a
+nested instrument `response` — but the protocol is the organising goal, not
+fidelity to the format. Reconstructing a complete file for every supported
+format is explicitly not a goal: where a class supports writing, the
+guarantee is only that the output round-trips through that same class's own
+reader, not that it satisfies the format's full external specification.
 """
 
 from .._utils import export_module_names
@@ -24,6 +23,7 @@ from .._utils import export_module_names
 _internal_names = set(dir())
 
 from ._geocsv import *  # noqa: F403
+from ._quakeml import *  # noqa: F403
 from ._sac import *  # noqa: F403
 from ._sacpz import *  # noqa: F403
 from ._stationxml import *  # noqa: F403

@@ -3,22 +3,31 @@
 
 A [`PysmoProject`][pysmo.tools.project.PysmoProject] holds a list of
 [`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects — station +
-optional event + optional explicit window — plus a `transform` callable
-applied to each freshly downloaded [`Seismogram`][pysmo.Seismogram]. This is
-the place for whatever data preparation a downstream tool needs — removing
-the instrument response, detrending, resampling — as well as converting the
+optional event + optional explicit window — plus a `seismogram_transform`
+callable applied to each freshly downloaded
+[`Seismogram`][pysmo.Seismogram]. It defaults to returning the raw trace as
+a [`MiniSeismogram`][pysmo.MiniSeismogram]; a custom transform is the place
+for whatever data preparation a downstream tool needs — removing the
+instrument response, detrending, resampling — as well as converting the
 result into the target type that tool expects (e.g.
 [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram], for
 [`ICCS`][pysmo.tools.iccs.ICCS]). Results are cached in memory for the life
 of the object; nothing is ever written to disk by `PysmoProject` itself. The
 `PysmoProject` instance is the reproducible, shareable artefact — pickled,
-not serialised to a bespoke config format, so `transform` and
+not serialised to a bespoke config format, so `seismogram_transform` and
 `fetch_seismogram` must be real top-level functions in an importable module
 rather than lambdas or closures (pickle serialises functions by reference,
 not by value). A callable `attrs` class with only picklable fields — see the
-example below — is the alternative once `transform` needs its own
+example below — is the alternative once the transform needs its own
 configuration (e.g. filter corner frequencies): it pickles by value, so it
 has no such restriction.
+
+Build `entries` with
+[`build_entries`][pysmo.tools.project.build_entries] from already-narrowed
+lists of events and stations — a filtered cross product. The project is
+generic over the event and station types it is built from, so
+`project.events` / `project.stations` return those concrete types, not the
+bare [`Event`][pysmo.Event] / [`Station`][pysmo.Station] protocols.
 
 Pair `PysmoProject` with
 [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] as its
@@ -40,7 +49,7 @@ block:
 >>> import pandas as pd
 >>> from attrs import define
 >>> from pysmo import MiniEvent, MiniStation, Seismogram
->>> from pysmo.classes import StationXMLResponse
+>>> from pysmo.classes import StationXML
 >>> from pysmo.functions import clone_to_mini
 >>> from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
 >>> from pysmo.tools.project import FetchContext, ProjectEntry, PysmoProject
@@ -57,7 +66,7 @@ block:
 >>>
 ```
 
-This `transform` removes the instrument response — data preparation
+This `seismogram_transform` removes the instrument response — data preparation
 `ICCS` itself assumes has already happened, per its own
 [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] docstring — then
 converts the result into a `MiniIccsSeismogram`, using the predicted
@@ -74,9 +83,9 @@ configurable per instance:
 ...     def __call__(
 ...         self, seismogram: Seismogram, context: FetchContext
 ...     ) -> MiniIccsSeismogram:
-...         response = StationXMLResponse.fetch(
+...         response = StationXML.fetch(
 ...             station=context.entry.station, time=context.starttime
-...         )
+...         ).response
 ...         corrected = remove_response(
 ...             seismogram, response, pre_filt=self.pre_filt, clone=True
 ...         )
@@ -89,9 +98,9 @@ configurable per instance:
 ...     # the instrument's own corner and below the 0.5 Hz Nyquist.
 ...     pre_filt=(0.01, 0.02, 0.2, 0.3),
 ... )
->>> project: PysmoProject[MiniIccsSeismogram] = PysmoProject(
+>>> project = PysmoProject(
 ...     entries=[ProjectEntry(station=station_anmo, event=event_maule)],
-...     transform=to_mini_iccs_seismogram,
+...     seismogram_transform=to_mini_iccs_seismogram,
 ... )
 >>>
 ```
@@ -107,8 +116,8 @@ Discovery methods only inspect `entries` — no network access needed:
 ```
 
 Fetching a seismogram uses `PysmoProject`'s default `fetch_seismogram` for
-the waveform, and `transform`'s own fetch for the instrument response —
-both download real data from EarthScope's FDSN web services:
+the waveform, and `seismogram_transform`'s own fetch for the instrument
+response — both download real data from EarthScope's FDSN web services:
 
 <!-- skip: start if(not run_real_web_requests) -->
 ```python
@@ -131,9 +140,9 @@ rather than re-fetched — recommended for real analysis work, over the
 always-fresh default used above.
 
 This only pins the waveform, though. `to_mini_iccs_seismogram` (reused
-below unchanged) still fetches a `StationXMLResponse` itself on every call, cached
+below unchanged) still fetches a `StationXML` response itself on every call, cached
 or not — an archive-backed `fetch_seismogram` says nothing about whatever
-`transform` independently fetches:
+`seismogram_transform` independently fetches:
 
 <!-- skip: start if(not run_real_web_requests) -->
 ```python
@@ -147,9 +156,9 @@ or not — an archive-backed `fetch_seismogram` says nothing about whatever
 >>> archive = SqliteArchiveFetcher(
 ...     path="project_cache.sqlite3", fetch_raw=fetch_sac, parse=parse_sac_zip
 ... )
->>> cached_project: PysmoProject[MiniIccsSeismogram] = PysmoProject(
+>>> cached_project = PysmoProject(
 ...     entries=[ProjectEntry(station=station_anmo, event=event_maule)],
-...     transform=to_mini_iccs_seismogram,
+...     seismogram_transform=to_mini_iccs_seismogram,
 ...     fetch_seismogram=archive,
 ... )
 >>> one = cached_project.seismogram(station_anmo, event_maule)  # waveform miss: fetches, stores
@@ -159,12 +168,82 @@ True
 >>>
 ```
 <!-- skip: end -->
+
+## Project as code
+
+The recommended workflow: fetch broadly once (or load an inventory file),
+parse each document to a flat list, narrow it with plain comprehensions you
+can print and check, pair events with stations via
+[`build_entries`][pysmo.tools.project.build_entries], then hand the result
+to the one `PysmoProject` constructor. Everything after the initial fetch is
+offline.
+
+```python
+>>> from pysmo import Event, Station
+>>> from pysmo.classes import QuakeML, StationXML, resolve_epochs
+>>> from pysmo.tools.azdist import haversine
+>>> from pysmo.tools.project import build_entries
+>>>
+>>> catalogue = b'''<?xml version="1.0"?>
+... <q:quakeml xmlns="http://quakeml.org/xmlns/bed/1.2"
+...            xmlns:q="http://quakeml.org/xmlns/quakeml/1.2">
+...   <eventParameters publicID="smi:example/catalogue">
+...     <event publicID="smi:example/maule">
+...       <origin publicID="smi:example/o1">
+...         <time><value>2010-02-27T06:34:11.53Z</value></time>
+...         <latitude><value>-36.122</value></latitude>
+...         <longitude><value>-72.898</value></longitude>
+...         <depth><value>22900</value></depth>
+...       </origin>
+...       <magnitude publicID="smi:example/m1"><mag><value>8.8</value></mag></magnitude>
+...     </event>
+...   </eventParameters>
+... </q:quakeml>'''
+>>> inventory = b'''<?xml version="1.0"?>
+... <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
+...   <Network code="IU"><Station code="ANMO" startDate="1989-01-01T00:00:00">
+...     <Latitude>34.945981</Latitude><Longitude>-106.457133</Longitude>
+...     <Channel code="BHZ" locationCode="00" startDate="2008-06-30T20:00:00"
+...              endDate="2011-02-18T19:11:00">
+...       <Latitude>34.945981</Latitude><Longitude>-106.457133</Longitude>
+...     </Channel>
+...   </Station></Network>
+... </FDSNStationXML>'''
+>>>
+>>> events = QuakeML.all_from_bytes(catalogue)
+>>> strong = [e for e in events if (e.magnitude or 0) >= 8.0]
+>>> bhz = [e for e in StationXML.all_from_bytes(inventory) if e.channel == "BHZ"]
+>>> stations = resolve_epochs(bhz, strong[0].time)
+>>> len(strong), len(stations)
+(1, 1)
+>>>
+>>> def teleseismic_p(station: Station, event: Event) -> bool:
+...     return haversine(event, station) <= 95.0
+...
+>>> entries = build_entries(stations, strong, teleseismic_p)
+>>> project_as_code = PysmoProject(entries=entries)
+>>> [type(e).__name__ for e in project_as_code.events]
+['QuakeML']
+>>> [type(s).__name__ for s in project_as_code.stations]
+['StationXML']
+>>>
+```
+
+Grow it later without rebuilding — a plain `extend`, since the fetch cache
+is keyed by entry content, not list position:
+
+```python
+>>> project_as_code.entries.extend(build_entries(stations, strong, teleseismic_p))
+>>> len(project_as_code.entries)
+2
+>>>
+```
 """
 
 from ..._utils import export_module_names
-from ._entry import ProjectEntry
+from ._entry import ProjectEntry, build_entries
 from ._project import FetchContext, PysmoProject
 
-__all__ = ["FetchContext", "ProjectEntry", "PysmoProject"]
+__all__ = ["FetchContext", "ProjectEntry", "PysmoProject", "build_entries"]
 
 export_module_names(globals(), __name__)

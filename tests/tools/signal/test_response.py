@@ -16,7 +16,7 @@ from pysmo import (
     MiniStagedResponse,
     Seismogram,
 )
-from pysmo.lib.io import parse_stationxml
+from pysmo.classes import StationXML
 from pysmo.tools.signal import remove_response
 from tests.test_helpers import assert_seismogram_modification
 
@@ -713,28 +713,10 @@ class TestSnapshot:
         """Regression guard alongside the round-trip correctness tests above:
         a snapshot can't catch a systematically wrong transfer function, but
         it does catch accidental behaviour changes in the full pipeline."""
-        epochs = parse_stationxml(reference_event_assets["stationxml_bhz"].read_bytes())
-        raw = next(
-            epoch
-            for epoch in epochs
-            if epoch.start_date <= seismogram.begin_time
-            and (epoch.end_date is None or epoch.end_date > seismogram.begin_time)
-        )
-        response = MiniStagedResponse(
-            poles=raw.poles,
-            zeros=raw.zeros,
-            overall_sensitivity=raw.normalization_factor * raw.sensitivity_value,
-            input_units=raw.sensitivity_input_units,
-            stages=[
-                MiniResponseStage(
-                    input_sample_rate=stage.input_sample_rate,
-                    decimation_factor=stage.decimation_factor,
-                    numerator=stage.numerator,
-                    denominator=stage.denominator,
-                )
-                for stage in raw.digital_stages
-            ],
-        )
+        response = StationXML.from_bytes(
+            reference_event_assets["stationxml_bhz"].read_bytes(),
+            time=seismogram.begin_time,
+        ).response
         nyquist = 0.5 / seismogram.delta.total_seconds()
         f4 = 0.8 * nyquist
         f3 = f4 * 0.9
