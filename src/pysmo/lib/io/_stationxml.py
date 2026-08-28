@@ -5,7 +5,7 @@ This module implements the parsing side of the response-relevant subset of
 `_RawResponse` instances — one per `<Channel>` epoch — without constructing
 any `pysmo` type. Interpretation into a
 [`Response`][pysmo.Response]-compatible object happens one layer up, in
-[`pysmo.classes.StationXML`][].
+[`pysmo.classes.StationXMLResponse`][].
 """
 
 import warnings
