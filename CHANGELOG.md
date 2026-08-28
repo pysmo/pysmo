@@ -71,6 +71,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(classes)** [**breaking**] Change SAC from a SacIO subclass to composition
 - **(types)** Unexport and privatise EpochProvenance
 - **(io)** Delegate http_get retry policy to urllib3.util.Retry
+- **(types)** Extract StationCode protocol from Station
 
 ### 🚀 New Features
 
