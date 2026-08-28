@@ -9,7 +9,7 @@ pysmo function or tool that operates on pysmo types.
 
 Each class is designed with the protocol(s) it implements in mind, not to
 reproduce its native format's full specification. The scope isn't strictly
-limited to protocol attributes — [`pysmo.classes.StationXML`][], for
+limited to protocol attributes — [`pysmo.classes.StationXMLResponse`][], for
 example, also carries epoch bookkeeping (network/station/location/channel/
 start_date/end_date) needed to select the right response from a document —
 but the protocol is the organising goal, not fidelity to the format.

@@ -45,7 +45,7 @@ class ResponseWithEpoch(Response, _EpochProvenance, Protocol):
     A [`Response`][pysmo.Response] with `_EpochProvenance` (channel identity plus a
     validity window) — what [`write_sacpz`][pysmo.lib.io.write_sacpz] requires. Any
     object satisfying both protocols (e.g. [`SacPZ`][pysmo.classes.SacPZ] or
-    [`StationXML`][pysmo.classes.StationXML]) already satisfies this one structurally;
+    [`StationXMLResponse`][pysmo.classes.StationXMLResponse]) already satisfies this one structurally;
     there is usually no need to reference it directly unless type-annotating a variable
     meant to hold whatever `write_sacpz` accepts.
     """
@@ -281,7 +281,7 @@ def write_sacpz(
         responses: A single object satisfying
             [`ResponseWithEpoch`][pysmo.lib.io.ResponseWithEpoch] (e.g.
             [`SacPZ`][pysmo.classes.SacPZ] or
-            [`StationXML`][pysmo.classes.StationXML]), or a non-empty
+            [`StationXMLResponse`][pysmo.classes.StationXMLResponse]), or a non-empty
             sequence of them.
         path: Destination file path; written in UTF-8 text mode.
 
@@ -297,7 +297,7 @@ def write_sacpz(
         [`SacPZ`][pysmo.classes.SacPZ] instance (which was itself parsed
         from `.6e`-formatted text) back out loses nothing. Writing a
         higher-precision source instead — e.g. a
-        [`StationXML`][pysmo.classes.StationXML] instance, whose XML
+        [`StationXMLResponse`][pysmo.classes.StationXMLResponse] instance, whose XML
         `<Real>`/`<Imaginary>` elements are not limited to 6 decimals —
         does round to this format's conventional precision; that is
         expected when converting into SAC PZ, not a bug to work around
