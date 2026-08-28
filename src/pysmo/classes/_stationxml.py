@@ -27,9 +27,15 @@ def _matching_epochs(
     epochs: list[_RawResponse],
     time: pd.Timestamp | None,
     *,
+    network: str | None = None,
+    station: str | None = None,
     location: str | None = None,
     channel: str | None = None,
 ) -> list[_RawResponse]:
+    if network is not None:
+        epochs = [epoch for epoch in epochs if epoch.network == network]
+    if station is not None:
+        epochs = [epoch for epoch in epochs if epoch.station == station]
     if location is not None:
         epochs = [epoch for epoch in epochs if epoch.location == location]
     if channel is not None:
@@ -189,23 +195,30 @@ class StationXML:
         xml: bytes,
         *,
         time: pd.Timestamp | None = None,
+        network: str | None = None,
+        station: str | None = None,
         location: str | None = None,
         channel: str | None = None,
     ) -> Self:
         """Create a new instance from a StationXML document, selecting one epoch.
 
-        A document is not guaranteed to cover a single channel — a
-        station-level query (or one saved for later, offline use) commonly
-        returns every location/channel combination on record, each with its
-        own epoch history. `location`/`channel` narrow to one before `time`
-        is applied; without them, a multi-channel document raises the same
-        "more than one epoch" error as an ambiguous *time*.
+        A document is not guaranteed to cover a single channel — a bulk or
+        wildcard query (or one saved for later, offline use) can cover
+        several networks and stations, each with every location/channel
+        combination on record and its own epoch history.
+        `network`/`station`/`location`/`channel` narrow to one before *time*
+        is applied; without them, a document covering more than one raises
+        the same "more than one epoch" error as an ambiguous *time*.
 
         Args:
             xml: Raw StationXML document bytes (as returned by the FDSN
                 station web service with `level=response`).
             time: Timestamp used to select the response epoch. If `None`,
                 the currently-open epoch (no end date) is selected.
+            network: Network code to narrow to, if `xml` covers more than
+                one network. If `None`, network is not filtered.
+            station: Station code to narrow to, if `xml` covers more than
+                one station. If `None`, station is not filtered.
             location: Location code to narrow to, if `xml` covers more than
                 one location. If `None`, location is not filtered.
             channel: Channel code to narrow to, if `xml` covers more than
@@ -216,21 +229,31 @@ class StationXML:
             *time* (or currently open, if `time` is `None`).
 
         Raises:
-            ValueError: If, after narrowing by `location`/`channel`, zero or
-                more than one response epoch matches *time* (or "currently
-                open", if `time` is `None`).
+            ValueError: If, after narrowing by
+                `network`/`station`/`location`/`channel`, zero or more than
+                one response epoch matches *time* (or "currently open", if
+                `time` is `None`).
 
         Tip: See Also
             [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes]:
             Parse every epoch in the document without narrowing to one.
         """
         epochs = parse_stationxml(xml)
-        matches = _matching_epochs(epochs, time, location=location, channel=channel)
+        matches = _matching_epochs(
+            epochs,
+            time,
+            network=network,
+            station=station,
+            location=location,
+            channel=channel,
+        )
         if len(matches) != 1:
             raise ValueError(
                 f"Expected exactly one response epoch in the given "
                 f"StationXML at "
                 f"{'the currently open epoch' if time is None else time}"
+                f"{f', network {network!r}' if network is not None else ''}"
+                f"{f', station {station!r}' if station is not None else ''}"
                 f"{f', location {location!r}' if location is not None else ''}"
                 f"{f', channel {channel!r}' if channel is not None else ''}, "
                 f"found {len(matches)}."
