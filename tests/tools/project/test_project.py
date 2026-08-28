@@ -422,6 +422,12 @@ class TestCacheInvalidation:
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 1
 
+    def test_clear_cache_bumps_generation(self, project: PysmoProject) -> None:
+        assert project._cache_generation == 0
+        project.clear_cache()
+        project.clear_cache()
+        assert project._cache_generation == 2
+
 
 class TestSeismogramsFor:
     def test_one_result_per_station_in_order(
@@ -463,8 +469,12 @@ class TestPickling:
         project.seismogram(station_anmo, event_maule)
         assert len(project._cache) == 1
 
+        project.clear_cache()
+        assert project._cache_generation == 1
+
         restored: PysmoProject = pickle.loads(pickle.dumps(project))
         assert len(restored._cache) == 0
+        assert restored._cache_generation == 0
         assert isinstance(restored._lock, type(threading.Lock()))
 
         restored.seismogram(station_anmo, event_maule)
@@ -524,6 +534,43 @@ class TestThreadSafety:
         assert len(results) == 8
         assert all(result is results[0] for result in results)
         assert len(project._cache) == 1
+
+    def test_parameter_change_mid_fetch_returns_result_uncached(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        fetch_started = threading.Event()
+        may_finish = threading.Event()
+
+        def blocking_fetch(
+            station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+        ) -> Seismogram:
+            fetch_started.set()
+            may_finish.wait(timeout=5)
+            return fake_fetch_seismogram(station, starttime, endtime)
+
+        project: PysmoProject = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            transform=identity_transform,
+            fetch_seismogram=blocking_fetch,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        results: list[Seismogram] = []
+
+        def worker() -> None:
+            results.append(project.seismogram(station_anmo, event_maule))
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        assert fetch_started.wait(timeout=5)
+        project.phase = "S"  # clears the cache and bumps the generation
+        may_finish.set()
+        thread.join(timeout=5)
+
+        assert len(results) == 1  # the in-flight fetch still returned a result
+        assert project._cache == {}  # but it was not cached under the stale key
+
+        project.seismogram(station_anmo, event_maule)
+        assert len(FETCH_CALLS) == 2  # so the next call re-fetches
 
 
 class TestChecksum:
