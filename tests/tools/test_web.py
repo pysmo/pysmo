@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pandas as pd
 import pytest
@@ -240,7 +241,9 @@ class TestFetchQuakeml:
 
         assert data == QUAKEML_BYTES
         (url, fields) = fake.calls[0]
-        assert "earthquake.usgs.gov" in url
+        parsed_url = urlparse(url)
+        assert parsed_url.hostname == "earthquake.usgs.gov"
+        assert "event" in parsed_url.path
         assert fields == {"format": "xml", "nodata": "404"}
 
     def test_parameter_assembly(self, monkeypatch: pytest.MonkeyPatch) -> None:
