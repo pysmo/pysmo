@@ -1,11 +1,13 @@
-"""Low-level parsing of the FDSN StationXML format (response metadata only).
+"""Low-level parsing of the FDSN StationXML format.
 
-This module implements the parsing side of the response-relevant subset of
-[FDSN StationXML](http://www.fdsn.org/xml/station/). It returns uninterpreted
-`_RawResponse` instances — one per `<Channel>` epoch — without constructing
-any `pysmo` type. Interpretation into a
-[`Response`][pysmo.Response]-compatible object happens one layer up, in
-[`pysmo.classes.StationXMLResponse`][].
+[`parse_stationxml`][pysmo.lib.io.parse_stationxml] walks a
+[FDSN StationXML](http://www.fdsn.org/xml/station/) document once and returns
+one uninterpreted `_RawStationEpoch` per `<Channel>` epoch (or per
+`<Station>` for a channel-less `level=station` document): NSLC identity,
+coordinates, the validity window, and — when the document carried one — the
+instrument `_RawResponse`. Interpretation into a
+[`Station`][pysmo.Station]-compatible object with a nested response happens
+one layer up, in [`pysmo.classes.StationXML`][].
 """
 
 import warnings
@@ -20,24 +22,6 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 __all__ = ["parse_stationxml"]
 
 _NS = {"fdsn": "http://www.fdsn.org/xml/station/1"}
-
-
-class _DoctypeRejectingTreeBuilder(ET.TreeBuilder):
-    """Rejects any `<!DOCTYPE` declaration, guarding against entity expansion.
-
-    `xml.etree.ElementTree` has no built-in way to disable DTD-defined
-    entity expansion, so this is the module's defence against a
-    "billion laughs"-style payload. Rejecting via the parser's own
-    doctype callback (rather than a byte-string search on the raw,
-    possibly non-UTF-8-encoded input) means the check applies to the
-    document expat actually parses, regardless of its declared encoding.
-    """
-
-    def doctype(self, name: str, pubid: str | None, system: str | None) -> None:
-        raise ValueError(
-            "Refusing to parse StationXML containing a <!DOCTYPE declaration "
-            "(possible entity-expansion payload)."
-        )
 
 
 _ANALOG_PZ_TYPE = "LAPLACE (RADIANS/SECOND)"
@@ -64,7 +48,19 @@ class _RawDigitalStage:
 
 @dataclass
 class _RawResponse:
-    """A single uninterpreted `<Channel>` epoch's response."""
+    """A single uninterpreted instrument response (no channel/epoch identity)."""
+
+    poles: list[complex]
+    zeros: list[complex]
+    normalization_factor: float
+    sensitivity_value: float
+    sensitivity_input_units: str
+    digital_stages: list[_RawDigitalStage] = field(default_factory=list)
+
+
+@dataclass
+class _RawStationEpoch:
+    """One uninterpreted `<Channel>` (or channel-less `<Station>`) epoch."""
 
     network: str
     station: str
@@ -72,12 +68,10 @@ class _RawResponse:
     channel: str
     start_date: pd.Timestamp
     end_date: pd.Timestamp | None
-    poles: list[complex]
-    zeros: list[complex]
-    normalization_factor: float
-    sensitivity_value: float
-    sensitivity_input_units: str
-    digital_stages: list[_RawDigitalStage] = field(default_factory=list)
+    latitude: float
+    longitude: float
+    elevation: float | None
+    response: _RawResponse | None
 
 
 def _parse_timestamp(value: str | None) -> pd.Timestamp | None:
@@ -93,6 +87,14 @@ def _child_text(elem: ET.Element, tag: str) -> str:
     if child is None or child.text is None:
         raise ValueError(f"Missing required <{tag}> element.")
     return child.text
+
+
+def _optional_child_float(elem: ET.Element, tag: str) -> float | None:
+    """Return `elem`'s `<tag>` child as a float, or `None` if absent/empty."""
+    child = elem.find(f"fdsn:{tag}", _NS)
+    if child is None or child.text is None or not child.text.strip():
+        return None
+    return float(child.text)
 
 
 def _parse_pz_values(pz: ET.Element, tag: str) -> list[complex]:
@@ -318,10 +320,8 @@ def _parse_stage(stage: ET.Element) -> _StageParseResult:
     )
 
 
-def _parse_response(
-    response: ET.Element,
-) -> tuple[list[complex], list[complex], float, float, str, list[_RawDigitalStage]]:
-    """Parse a `<Response>` element into `(poles, zeros, normalization_factor, sensitivity_value, sensitivity_input_units, digital_stages)`."""
+def _parse_response(response: ET.Element) -> _RawResponse:
+    """Parse a `<Response>` element into a `_RawResponse`."""
     sensitivity = response.find("fdsn:InstrumentSensitivity", _NS)
     if sensitivity is None:
         raise ValueError("Response has no <InstrumentSensitivity> element.")
@@ -369,43 +369,56 @@ def _parse_response(
     if normalization_factor is None:
         raise ValueError("Response has no analog PolesZeros stage.")
 
-    return (
-        poles,
-        zeros,
-        normalization_factor,
-        sensitivity_value,
-        sensitivity_input_units,
-        digital_stages,
+    return _RawResponse(
+        poles=poles,
+        zeros=zeros,
+        normalization_factor=normalization_factor,
+        sensitivity_value=sensitivity_value,
+        sensitivity_input_units=sensitivity_input_units,
+        digital_stages=digital_stages,
     )
 
 
-def parse_stationxml(xml: bytes) -> list[_RawResponse]:
-    """Parse response metadata from a StationXML document.
+def _epoch_coords(
+    elem: ET.Element, fallback: tuple[float | None, float | None, float | None]
+) -> tuple[float | None, float | None, float | None]:
+    """Return `elem`'s lat/lon/elevation, each falling back to `fallback` when absent."""
+    latitude = _optional_child_float(elem, "Latitude")
+    longitude = _optional_child_float(elem, "Longitude")
+    elevation = _optional_child_float(elem, "Elevation")
+    return (
+        fallback[0] if latitude is None else latitude,
+        fallback[1] if longitude is None else longitude,
+        fallback[2] if elevation is None else elevation,
+    )
 
-    Returns one entry per `<Channel>` epoch found — the FDSN station web
-    service does not default to a single "current" epoch, so a query
-    covering a channel's full instrument history returns several. Epoch
-    *selection* (matching a specific time, or finding the currently-open
-    one) is left to the caller.
+
+def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
+    """Parse station identity, coordinates and response from a StationXML document.
+
+    Walks the document once and returns one entry per `<Channel>` epoch (or
+    per `<Station>` for a channel-less `level=station` document), in document
+    order — the FDSN station web service does not default to a single
+    "current" epoch, so a query covering a channel's full history returns
+    several. Epoch *selection* is left to the caller. `<Response>` is read
+    when present (`level=response`) and left as `None` otherwise;
+    channel-level coordinates take precedence over station-level ones.
 
     Args:
-        xml: Raw StationXML document bytes (as returned by the FDSN station
-            web service with `level=response`).
+        xml: Raw StationXML document bytes (any `level` that carries
+            coordinates — `channel`, `station` or `response`).
 
     Returns:
-        One uninterpreted response per `<Channel>` epoch found, in document
-        order.
+        One uninterpreted epoch per `<Channel>` (or `<Station>`) found, in
+        document order.
 
     Raises:
-        ValueError: If `xml` contains a `<!DOCTYPE` declaration (rejected
-            unconditionally, since `xml.etree.ElementTree` has no way to
-            disable DTD-defined entity expansion and this input may come
-            from an untrusted network response), a `<Network>`, `<Station>`
-            or `<Channel>` element has no `code` attribute, a `<Channel>`
-            has no `startDate` attribute or no `<Response>` element, a
-            required sub-element is missing, or a `<Stage>` uses an
-            unrecognised or unsupported (e.g. digital `PolesZeros`)
-            encoding.
+        ValueError: If `xml` is not well-formed XML, a `<Network>`,
+            `<Station>` or `<Channel>` element has no `code` attribute, a
+            `<Channel>` (or channel-less `<Station>`) has no `startDate`, an
+            epoch has neither channel-level nor station-level
+            latitude/longitude, or a `<Response>` that is present uses an
+            unrecognised or unsupported encoding.
 
     Examples:
         ```python
@@ -414,52 +427,31 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
         ... <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
         ...   <Network code="IU">
         ...     <Station code="ANMO">
+        ...       <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
         ...       <Channel code="BHZ" locationCode="00"
         ...                startDate="2018-07-09T20:45:00.0000">
-        ...         <Response>
-        ...           <InstrumentSensitivity>
-        ...             <Value>1.98475E9</Value>
-        ...             <Frequency>0.02</Frequency>
-        ...             <InputUnits><Name>m/s</Name></InputUnits>
-        ...             <OutputUnits><Name>counts</Name></OutputUnits>
-        ...           </InstrumentSensitivity>
-        ...           <Stage number="1">
-        ...             <PolesZeros>
-        ...               <InputUnits><Name>m/s</Name></InputUnits>
-        ...               <OutputUnits><Name>V</Name></OutputUnits>
-        ...               <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
-        ...               <NormalizationFactor>5.03773E14</NormalizationFactor>
-        ...               <NormalizationFrequency>0.02</NormalizationFrequency>
-        ...               <Zero number="0"><Real>0.0</Real><Imaginary>0.0</Imaginary></Zero>
-        ...               <Pole number="0"><Real>-0.037</Real><Imaginary>0.037</Imaginary></Pole>
-        ...             </PolesZeros>
-        ...             <Decimation>
-        ...               <InputSampleRate>40.0</InputSampleRate>
-        ...               <Factor>1</Factor>
-        ...             </Decimation>
-        ...             <StageGain><Value>1183.0</Value><Frequency>0.02</Frequency></StageGain>
-        ...           </Stage>
-        ...         </Response>
+        ...         <Latitude>34.95</Latitude><Longitude>-106.46</Longitude>
+        ...         <Elevation>1632.7</Elevation>
         ...       </Channel>
         ...     </Station>
         ...   </Network>
         ... </FDSNStationXML>'''
-        >>> responses = parse_stationxml(xml)
-        >>> len(responses)
+        >>> epochs = parse_stationxml(xml)
+        >>> len(epochs)
         1
-        >>> responses[0].network, responses[0].station, responses[0].channel
-        ('IU', 'ANMO', 'BHZ')
-        >>> responses[0].sensitivity_input_units
-        'm/s'
-        >>> responses[0].digital_stages
-        []
+        >>> epochs[0].station, epochs[0].channel, epochs[0].latitude
+        ('ANMO', 'BHZ', 34.95)
+        >>> epochs[0].response is None
+        True
         >>>
         ```
     """
-    parser = ET.XMLParser(target=_DoctypeRejectingTreeBuilder())
-    root = ET.fromstring(xml, parser=parser)
-    results: list[_RawResponse] = []
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError as exc:
+        raise ValueError(f"Not well-formed XML: {exc}") from exc
 
+    results: list[_RawStationEpoch] = []
     for network_elem in root.findall("fdsn:Network", _NS):
         network_code = network_elem.get("code")
         if network_code is None:
@@ -471,49 +463,58 @@ def parse_stationxml(xml: bytes) -> list[_RawResponse]:
                     f"<Station> element in network {network_code!r} has no "
                     "code attribute."
                 )
-            for channel in station_elem.findall("fdsn:Channel", _NS):
-                channel_code = channel.get("code")
-                if channel_code is None:
-                    raise ValueError(
-                        f"<Channel> element in station {network_code}.{station_code} "
-                        "has no code attribute."
-                    )
-                response = channel.find("fdsn:Response", _NS)
-                if response is None:
-                    raise ValueError(
-                        f"Channel {channel_code!r} has no <Response> "
-                        "element; ensure the StationXML query used "
-                        "level=response."
-                    )
-                (
-                    poles,
-                    zeros,
-                    normalization_factor,
-                    sensitivity_value,
-                    sensitivity_input_units,
-                    digital_stages,
-                ) = _parse_response(response)
+            station_coords = (
+                _optional_child_float(station_elem, "Latitude"),
+                _optional_child_float(station_elem, "Longitude"),
+                _optional_child_float(station_elem, "Elevation"),
+            )
 
-                start_date = _parse_timestamp(channel.get("startDate"))
+            channels = station_elem.findall("fdsn:Channel", _NS)
+            elements: list[tuple[ET.Element, str, str]] = (
+                [(station_elem, "", "")]
+                if not channels
+                else [
+                    (channel, channel.get("code", ""), channel.get("locationCode", ""))
+                    for channel in channels
+                ]
+            )
+
+            for elem, channel_code, location_code in elements:
+                if channels and not channel_code:
+                    raise ValueError(
+                        f"<Channel> element in station "
+                        f"{network_code}.{station_code} has no code attribute."
+                    )
+                start_date = _parse_timestamp(elem.get("startDate"))
                 if start_date is None:
+                    what = f"Channel {channel_code!r}" if channels else "Station"
                     raise ValueError(
-                        f"Channel {channel_code!r} has no startDate attribute."
+                        f"{what} in station {network_code}.{station_code} has "
+                        "no startDate attribute."
                     )
-
+                latitude, longitude, elevation = _epoch_coords(elem, station_coords)
+                if latitude is None or longitude is None:
+                    raise ValueError(
+                        f"{network_code}.{station_code}."
+                        f"{channel_code or '(station)'} has no latitude/longitude."
+                    )
+                response_elem = elem.find("fdsn:Response", _NS)
                 results.append(
-                    _RawResponse(
+                    _RawStationEpoch(
                         network=network_code,
                         station=station_code,
-                        location=channel.get("locationCode", ""),
+                        location=location_code,
                         channel=channel_code,
                         start_date=start_date,
-                        end_date=_parse_timestamp(channel.get("endDate")),
-                        poles=poles,
-                        zeros=zeros,
-                        normalization_factor=normalization_factor,
-                        sensitivity_value=sensitivity_value,
-                        sensitivity_input_units=sensitivity_input_units,
-                        digital_stages=digital_stages,
+                        end_date=_parse_timestamp(elem.get("endDate")),
+                        latitude=latitude,
+                        longitude=longitude,
+                        elevation=elevation,
+                        response=(
+                            None
+                            if response_elem is None
+                            else _parse_response(response_elem)
+                        ),
                     )
                 )
 

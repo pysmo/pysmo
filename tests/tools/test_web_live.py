@@ -25,12 +25,12 @@ import pytest
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
-from pysmo import MiniEvent, MiniStation, Response
-from pysmo.classes import SAC, GeoCsvSeismogram, SacPZ
+from pysmo import Event, MiniEvent, MiniStation, Response
+from pysmo.classes import SAC, GeoCsvSeismogram, QuakeML, SacPZ
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
-from pysmo.tools.web import fetch_sac, fetch_travel_times
+from pysmo.tools.web import fetch_sac, fetch_station_inventory, fetch_travel_times
 
 matplotlib.use("Agg")
 
@@ -168,3 +168,28 @@ def test_fetch_sac_multiple_segments_live() -> None:
         "BH2",
         "BHZ",
     }
+
+
+def test_fetch_quakeml_single_event_live() -> None:
+    event = QuakeML.fetch(event_id="official20100227063411530_30")
+
+    assert isinstance(event, Event)
+    assert event.magnitude is not None and event.magnitude >= 8.5
+    assert event.time.year == 2010
+
+
+def test_fetch_quakeml_catalogue_live() -> None:
+    events = QuakeML.all_from_query(
+        starttime=pd.Timestamp("2010-02-27T00:00:00Z"),
+        endtime=pd.Timestamp("2010-02-28T00:00:00Z"),
+        minmagnitude=7.0,
+    )
+
+    assert len(events) >= 1
+    assert all(e.magnitude is None or e.magnitude >= 7.0 for e in events)
+
+
+def test_fetch_station_inventory_live() -> None:
+    xml = fetch_station_inventory(network="IU", station="ANMO,COLA", channel="BH?")
+
+    assert b"FDSNStationXML" in xml

@@ -1,13 +1,16 @@
 """Tools for fetching seismological data from web services.
 
-Thin wrappers around EarthScope's FDSN web services. `fetch_stationxml`,
-`fetch_sacpz`, `fetch_geocsvseismogram`, and `fetch_sac` return raw,
-unparsed responses — each a lower-level counterpart to a class's own
-`.fetch()` classmethod (e.g. [`SAC.fetch`][pysmo.classes.SAC.fetch]),
-useful on its own for saving a raw response to disk and deferring parsing
-to later, without another network request. `fetch_travel_times` is the
-exception: it has no class counterpart and returns an already-parsed
-`dict[str, float]`.
+Thin wrappers around FDSN web services (EarthScope's, except `fetch_quakeml`,
+which targets USGS since EarthScope retired its event service).
+`fetch_stationxml`, `fetch_station_inventory`, `fetch_sacpz`,
+`fetch_geocsvseismogram`, `fetch_sac`, and `fetch_quakeml` return raw,
+unparsed responses — most a
+lower-level counterpart to a class's own parsing entry point (e.g.
+[`SAC.fetch`][pysmo.classes.SAC.fetch],
+[`QuakeML.all_from_bytes`][pysmo.classes.QuakeML.all_from_bytes]), useful on
+their own for saving a raw response to disk and deferring parsing to later,
+without another network request. `fetch_travel_times` is the exception: it
+has no class counterpart and returns an already-parsed `dict[str, float]`.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ import json
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 import pandas as pd
 
@@ -30,13 +33,19 @@ from pysmo.lib.io import (
 from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = [
+    "QuakeMLOrderBy",
     "TravelTimeBackend",
     "fetch_geocsvseismogram",
+    "fetch_quakeml",
     "fetch_sac",
     "fetch_sacpz",
+    "fetch_station_inventory",
     "fetch_stationxml",
     "fetch_travel_times",
 ]
+
+type QuakeMLOrderBy = Literal["time", "time-asc", "magnitude", "magnitude-asc"]
+"""Allowed `orderby` values for [`fetch_quakeml`][pysmo.tools.web.fetch_quakeml]."""
 
 type TravelTimeBackend = Callable[[float, float, list[str]], dict[str, float]]
 """Callable `(depth_km, dist_deg, phases) -> dict[str, float]` returning travel times.
@@ -48,15 +57,23 @@ travel time in seconds, omitting phases with no arrival at the given geometry.
 
 
 @dataclass(init=False)
-class _EarthScopeDefaults:
+class _ServiceDefaults:
+    """Default web-service endpoints and HTTP retry policy.
+
+    Mostly EarthScope's (`fdsnws-station`/`-dataselect`, `irisws-traveltime`/
+    `-sacpz`); `event_url` is USGS because EarthScope retired its
+    `fdsnws-event` service.
+    """
+
     def __new__(cls) -> Self:
         raise RuntimeError(
-            "_EarthScopeDefaults is not meant to be instantiated. "
-            "Use _EarthScopeDefaults.<attribute> instead."
+            "_ServiceDefaults is not meant to be instantiated. "
+            "Use _ServiceDefaults.<attribute> instead."
         )
 
     traveltime_url: str = "https://service.earthscope.org/irisws/traveltime/1/query"
     station_url: str = "https://service.earthscope.org/fdsnws/station/1/query"
+    event_url: str = "https://earthquake.usgs.gov/fdsnws/event/1/query"
     sacpz_url: str = "https://service.earthscope.org/irisws/sacpz/1/query"
     dataselect_url: str = "https://service.earthscope.org/fdsnws/dataselect/1/query"
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
@@ -145,7 +162,7 @@ def fetch_travel_times(
     if travel_time_backend is not None:
         return travel_time_backend(depth_km, dist_deg, phases)
     data = http_get(
-        _EarthScopeDefaults.traveltime_url,
+        _ServiceDefaults.traveltime_url,
         {
             "model": model,
             "evdepth": depth_km,
@@ -153,9 +170,9 @@ def fetch_travel_times(
             "phases": ",".join(phases),
             "format": "json",
         },
-        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
-        request_retries=_EarthScopeDefaults.request_retries,
-        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
     )
     result: dict[str, Any] = json.loads(data)
     arrivals: dict[str, float] = {}
@@ -170,12 +187,12 @@ def fetch_stationxml(*, station: Station) -> bytes:
     """Fetch raw StationXML response metadata bytes for a station/channel.
 
     A lower-level counterpart to
-    [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch]: returns the
+    [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: returns the
     StationXML document unparsed and uninterpreted, covering every response
     epoch on record for the requested channel. Save it to disk to defer
     parsing to later — offline, without another network request — via
-    [`StationXMLResponse.from_bytes`][pysmo.classes.StationXMLResponse.from_bytes] or
-    [`StationXMLResponse.all_from_bytes`][pysmo.classes.StationXMLResponse.all_from_bytes].
+    [`StationXML.from_bytes`][pysmo.classes.StationXML.from_bytes] or
+    [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes].
 
     Args:
         station: Any object satisfying the [`Station`][pysmo.Station]
@@ -206,7 +223,7 @@ def fetch_stationxml(*, station: Station) -> bytes:
         <!-- skip: end -->
     """
     return http_get(
-        _EarthScopeDefaults.station_url,
+        _ServiceDefaults.station_url,
         {
             "net": station.network,
             "sta": station.name,
@@ -214,9 +231,9 @@ def fetch_stationxml(*, station: Station) -> bytes:
             "cha": station.channel,
             "level": "response",
         },
-        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
-        request_retries=_EarthScopeDefaults.request_retries,
-        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
     )
 
 
@@ -283,11 +300,11 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
             time = floored
         params["time"] = time.isoformat()
     return http_get(
-        _EarthScopeDefaults.sacpz_url,
+        _ServiceDefaults.sacpz_url,
         params,
-        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
-        request_retries=_EarthScopeDefaults.request_retries,
-        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
     ).decode("ascii")
 
 
@@ -340,7 +357,7 @@ def fetch_geocsvseismogram(
     starttime = convert_to_utc_timestamp(starttime)
     endtime = convert_to_utc_timestamp(endtime)
     return http_get(
-        _EarthScopeDefaults.dataselect_url,
+        _ServiceDefaults.dataselect_url,
         {
             "net": station.network,
             "sta": station.name,
@@ -350,9 +367,9 @@ def fetch_geocsvseismogram(
             "endtime": endtime.isoformat(),
             "format": "geocsv",
         },
-        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
-        request_retries=_EarthScopeDefaults.request_retries,
-        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
     )
 
 
@@ -407,7 +424,7 @@ def fetch_sac(
     starttime = convert_to_utc_timestamp(starttime)
     endtime = convert_to_utc_timestamp(endtime)
     return http_get(
-        _EarthScopeDefaults.dataselect_url,
+        _ServiceDefaults.dataselect_url,
         {
             "net": station.network,
             "sta": station.name,
@@ -417,7 +434,248 @@ def fetch_sac(
             "endtime": endtime.isoformat(),
             "format": "sac.zip",
         },
-        timeout_seconds=_EarthScopeDefaults.timeout_seconds,
-        request_retries=_EarthScopeDefaults.request_retries,
-        retry_delay_seconds=_EarthScopeDefaults.retry_delay_seconds,
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
+    )
+
+
+def _isoformat_or_none(value: pd.Timestamp | None) -> str | None:
+    """Convert a timestamp to a UTC ISO 8601 string, passing `None` through."""
+    return None if value is None else convert_to_utc_timestamp(value).isoformat()
+
+
+def fetch_quakeml(
+    *,
+    starttime: pd.Timestamp | None = None,
+    endtime: pd.Timestamp | None = None,
+    updatedafter: pd.Timestamp | None = None,
+    minlatitude: float | None = None,
+    maxlatitude: float | None = None,
+    minlongitude: float | None = None,
+    maxlongitude: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    minradius: float | None = None,
+    maxradius: float | None = None,
+    mindepth_km: float | None = None,
+    maxdepth_km: float | None = None,
+    minmagnitude: float | None = None,
+    maxmagnitude: float | None = None,
+    magnitudetype: str | None = None,
+    eventtype: str | None = None,
+    eventid: str | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
+    orderby: QuakeMLOrderBy | None = None,
+    catalog: str | None = None,
+    contributor: str | None = None,
+) -> bytes:
+    """Fetch raw QuakeML 1.2 event metadata bytes from the USGS fdsnws-event service.
+
+    A lower-level counterpart to
+    [`QuakeML.all_from_query`][pysmo.classes.QuakeML.all_from_query]: returns
+    the QuakeML document unparsed. All parameters are optional;
+    `fetch_quakeml()` with no arguments is a valid "everything" request,
+    bounded only by the service's own limits.
+
+    Args:
+        starttime: Keep events at or after this origin time (UTC).
+        endtime: Keep events at or before this origin time (UTC).
+        updatedafter: Keep events modified after this time (UTC).
+        minlatitude: Southern edge of a bounding box, in degrees.
+        maxlatitude: Northern edge of a bounding box, in degrees.
+        minlongitude: Western edge of a bounding box, in degrees.
+        maxlongitude: Eastern edge of a bounding box, in degrees.
+        latitude: Centre latitude for a radial search, in degrees.
+        longitude: Centre longitude for a radial search, in degrees.
+        minradius: Inner radius for a radial search, in degrees.
+        maxradius: Outer radius for a radial search, in degrees.
+        mindepth_km: Minimum event depth, in **kilometres** (the
+            fdsnws-event filter unit — the parsed
+            [`QuakeML.depth`][pysmo.classes.QuakeML] is in metres).
+        maxdepth_km: Maximum event depth, in **kilometres**.
+        minmagnitude: Minimum event magnitude.
+        maxmagnitude: Maximum event magnitude.
+        magnitudetype: Magnitude type to filter on (e.g. `"Mw"`).
+        eventtype: QuakeML event type, or a comma-separated list of them.
+        eventid: Select a single event by the service's event id.
+        limit: Maximum number of events to return.
+        offset: Return events starting from this 1-based position.
+        orderby: Sort order — one of `"time"`, `"time-asc"`, `"magnitude"`,
+            `"magnitude-asc"`.
+        catalog: Restrict to a named catalog.
+        contributor: Restrict to a named contributor.
+
+    Returns:
+        Raw QuakeML 1.2 document bytes.
+
+    Raises:
+        urllib3.exceptions.ResponseError: If the event web service returns
+            an HTTP error, including a 404 when no event matches.
+
+    Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
+        ```python
+        >>> import pandas as pd
+        >>> from pathlib import Path
+        >>> from pysmo.tools.web import fetch_quakeml
+        >>> xml = fetch_quakeml(
+        ...     starttime=pd.Timestamp("2010-02-27T00:00:00Z"),
+        ...     endtime=pd.Timestamp("2010-02-28T00:00:00Z"),
+        ...     minmagnitude=8.0,
+        ... )
+        >>> _ = Path("maule.quakeml").write_bytes(xml)
+        >>>
+        ```
+        <!-- skip: end -->
+    """
+    params: dict[str, Any] = {"format": "xml", "nodata": "404"}
+    params["starttime"] = _isoformat_or_none(starttime)
+    params["endtime"] = _isoformat_or_none(endtime)
+    params["updatedafter"] = _isoformat_or_none(updatedafter)
+    params.update(
+        {
+            "minlatitude": minlatitude,
+            "maxlatitude": maxlatitude,
+            "minlongitude": minlongitude,
+            "maxlongitude": maxlongitude,
+            "latitude": latitude,
+            "longitude": longitude,
+            "minradius": minradius,
+            "maxradius": maxradius,
+            "mindepth": mindepth_km,
+            "maxdepth": maxdepth_km,
+            "minmagnitude": minmagnitude,
+            "maxmagnitude": maxmagnitude,
+            "magnitudetype": magnitudetype,
+            "eventtype": eventtype,
+            "eventid": eventid,
+            "limit": limit,
+            "offset": offset,
+            "orderby": orderby,
+            "catalog": catalog,
+            "contributor": contributor,
+        }
+    )
+    return http_get(
+        _ServiceDefaults.event_url,
+        {name: value for name, value in params.items() if value is not None},
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
+    )
+
+
+def fetch_station_inventory(
+    *,
+    network: str,
+    station: str = "*",
+    location: str = "*",
+    channel: str,
+    starttime: pd.Timestamp | None = None,
+    endtime: pd.Timestamp | None = None,
+    updatedafter: pd.Timestamp | None = None,
+    minlatitude: float | None = None,
+    maxlatitude: float | None = None,
+    minlongitude: float | None = None,
+    maxlongitude: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    minradius: float | None = None,
+    maxradius: float | None = None,
+    includerestricted: bool | None = None,
+    matchtimeseries: bool | None = None,
+) -> bytes:
+    """Fetch raw FDSN StationXML inventory bytes from the EarthScope fdsnws-station service.
+
+    A bulk, query-style counterpart to
+    [`fetch_stationxml`][pysmo.tools.web.fetch_stationxml] (which is
+    single-station and `level=response`). Returns a `level=channel`
+    document covering every `<Channel>` epoch matching the query — parse it
+    with [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes]
+    and narrow in memory (the results carry no `response`).
+
+    `network` and `channel` are required (a query without them attempts to
+    download the entire global inventory); `station` and `location` default
+    to the FDSN "any" wildcard. Selection strings are sent verbatim, so the
+    service's native comma-lists and `*` / `?` wildcards work
+    (`network="IU,II"`, `channel="BH?"`).
+
+    Args:
+        network: Network code(s) — comma-list and `*` / `?` wildcards allowed.
+        station: Station code(s), defaulting to all.
+        location: Location code(s), defaulting to all.
+        channel: Channel code(s) — comma-list and wildcards allowed.
+        starttime: Keep metadata epochs intersecting at or after this time
+            (UTC). Does not collapse to one epoch per channel.
+        endtime: Keep metadata epochs intersecting at or before this time (UTC).
+        updatedafter: Keep metadata modified after this time (UTC).
+        minlatitude: Southern edge of a bounding box, in degrees.
+        maxlatitude: Northern edge of a bounding box, in degrees.
+        minlongitude: Western edge of a bounding box, in degrees.
+        maxlongitude: Eastern edge of a bounding box, in degrees.
+        latitude: Centre latitude for a radial search, in degrees.
+        longitude: Centre longitude for a radial search, in degrees.
+        minradius: Inner radius for a radial search, in degrees.
+        maxradius: Outer radius for a radial search, in degrees.
+        includerestricted: Include metadata for restricted stations
+            (service default is `True`).
+        matchtimeseries: Limit to metadata with recoverable timeseries data
+            (service default is `False`; data-centre-dependent, can be slow).
+
+    Returns:
+        Raw StationXML document bytes.
+
+    Raises:
+        urllib3.exceptions.ResponseError: If the station web service returns
+            an HTTP error, including a 404 when nothing matches.
+
+    Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
+        ```python
+        >>> from pathlib import Path
+        >>> from pysmo.tools.web import fetch_station_inventory
+        >>> xml = fetch_station_inventory(network="IU", station="ANMO", channel="BHZ")
+        >>> _ = Path("iu_anmo.xml").write_bytes(xml)
+        >>>
+        ```
+        <!-- skip: end -->
+    """
+    params: dict[str, Any] = {
+        "format": "xml",
+        "nodata": "404",
+        "level": "channel",
+        "net": network,
+        "sta": station,
+        "loc": location,
+        "cha": channel,
+    }
+    params["starttime"] = _isoformat_or_none(starttime)
+    params["endtime"] = _isoformat_or_none(endtime)
+    params["updatedafter"] = _isoformat_or_none(updatedafter)
+    params.update(
+        {
+            "minlatitude": minlatitude,
+            "maxlatitude": maxlatitude,
+            "minlongitude": minlongitude,
+            "maxlongitude": maxlongitude,
+            "latitude": latitude,
+            "longitude": longitude,
+            "minradius": minradius,
+            "maxradius": maxradius,
+        }
+    )
+    for name, value in (
+        ("includerestricted", includerestricted),
+        ("matchtimeseries", matchtimeseries),
+    ):
+        if value is not None:
+            params[name] = "true" if value else "false"
+    return http_get(
+        _ServiceDefaults.station_url,
+        {name: value for name, value in params.items() if value is not None},
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
     )
