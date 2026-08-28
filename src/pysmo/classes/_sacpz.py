@@ -183,7 +183,7 @@ class SacPZ:
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
         """Fetch and parse an instrument response from the EarthScope SACPZ web service, selecting one epoch.
 
-        Unlike [`StationXML.fetch`][pysmo.classes.StationXML.fetch], epoch
+        Unlike [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch], epoch
         selection happens server-side: the SACPZ web service's own `time`
         parameter is passed through, so exactly one record is returned
         (the epoch active at *time* if given, otherwise the one currently
@@ -212,10 +212,9 @@ class SacPZ:
         Tip: Prefer StationXML for live fetches
             When fetching live from EarthScope rather than reading an
             existing SAC PZ file, prefer
-            [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: the
-            StationXML response also captures digital FIR/IIR stages, so it
-            always satisfies [`StagedResponse`][pysmo.StagedResponse], unlike
-            `SacPZ`.
+            [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch]:
+            it also captures digital FIR/IIR stages, so it always satisfies
+            [`StagedResponse`][pysmo.StagedResponse], unlike `SacPZ`.
 
         Examples:
             <!-- skip: start if(not run_real_web_requests) -->

@@ -112,7 +112,7 @@ def remove_response[T: Seismogram](
     the full-deconvolution path below — are normalised to displacement. This
     is a convention of the *producer*, not something `SacPZ`/`parse_sacpz`
     enforce or verify — a hand-written SAC PZ file that doesn't follow it will
-    not exhibit this split. A [`StationXML`][pysmo.classes.StationXML]-derived
+    not exhibit this split. A [`StationXMLResponse`][pysmo.classes.StationXMLResponse]-derived
     `response` has no such split: both paths agree with `input_units`.
 
     **`pre_filt` given — spectral deconvolution.** Deconvolves `seismogram.data`
@@ -136,11 +136,11 @@ def remove_response[T: Seismogram](
     The right bound for $f_4$ also depends on whether `response` actually carries
     digital FIR/IIR decimation stages — not just whether it satisfies
     [`StagedResponse`][pysmo.StagedResponse], since e.g.
-    [`StationXML`][pysmo.classes.StationXML] always satisfies that protocol but its
+    [`StationXMLResponse`][pysmo.classes.StationXMLResponse] always satisfies that protocol but its
     `stages` is empty for a document with no digital stage on record:
 
     - **No digital stages** (`stages` empty, e.g. a SAC PZ-derived response, or a
-      `StationXML` document without one): only the analog poles/zeros/sensitivity go
+      StationXML document without one): only the analog poles/zeros/sensitivity go
       into $H(f)$. Pushing $f_4$ above roughly 80% of the seismogram's own Nyquist
       frequency triggers the `UserWarning` described below — the analog-only
       approximation ignores the roll-off and phase a real digitiser's decimation
@@ -223,11 +223,11 @@ def remove_response[T: Seismogram](
 
         ```python
         >>> from pathlib import Path
-        >>> from pysmo.classes import SAC, StationXML
+        >>> from pysmo.classes import SAC, StationXMLResponse
         >>> from pysmo.tools.signal import remove_response
         >>> xml = Path("example_response.xml").read_bytes()
         >>> original = SAC.from_file("example.sac").seismogram
-        >>> response = StationXML.from_bytes(xml, time=original.begin_time)
+        >>> response = StationXMLResponse.from_bytes(xml, time=original.begin_time)
         >>> seismogram = remove_response(original, response, clone=True)
         >>> len(seismogram.data) == len(original.data)
         True

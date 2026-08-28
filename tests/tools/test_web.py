@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from pysmo import MiniStation, Response, StagedResponse
-from pysmo.classes import SacPZ, StationXML
+from pysmo.classes import SacPZ, StationXMLResponse
 from pysmo.tools.web import (
     fetch_sac,
     fetch_sacpz,
@@ -119,7 +119,9 @@ class TestFetchStationxml:
         monkeypatch.setattr("pysmo.tools.web.http_get", fake)
 
         xml = fetch_stationxml(station=station)
-        response = StationXML.from_bytes(xml, time=pd.Timestamp("2016-01-01T00:00:00Z"))
+        response = StationXMLResponse.from_bytes(
+            xml, time=pd.Timestamp("2016-01-01T00:00:00Z")
+        )
 
         assert isinstance(response, Response)
         assert isinstance(response, StagedResponse)
