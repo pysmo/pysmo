@@ -131,6 +131,11 @@ class PysmoProject[T]:
         itself, though: `fetch_seismogram` is called outside the lock, so
         two threads racing the same not-yet-cached entry both still fetch
         before one result wins and is cached.
+
+        Reassigning a window parameter (`phase`, `pre_pick`, …) on one
+        thread while another is mid-fetch is also safe: the in-flight fetch
+        still returns a result, it just isn't cached (the next call
+        recomputes it with the current parameters).
     """
 
     entries: list[ProjectEntry] = field(
@@ -248,6 +253,11 @@ class PysmoProject[T]:
     _cache: dict[_CacheKey, tuple[str, T]] = field(
         init=False, factory=dict, repr=False, eq=False
     )
+    _cache_generation: int = field(init=False, default=0, repr=False, eq=False)
+    """Bumped by every `clear_cache()`. A `_fetch` in progress when the cache
+    is cleared (e.g. a parameter reassigned on another thread mid-download)
+    sees the mismatch and returns its result without caching it under a
+    now-stale key."""
     _lock: threading.Lock = field(
         init=False, factory=threading.Lock, repr=False, eq=False
     )
@@ -256,7 +266,7 @@ class PysmoProject[T]:
 
     def __getstate__(self) -> dict:
         """Drop the fetch cache and lock, neither of which can survive pickling."""
-        state = attrs_getstate(self, {"_cache": {}})
+        state = attrs_getstate(self, {"_cache": {}, "_cache_generation": 0})
         del state["_lock"]
         return state
 
@@ -283,7 +293,9 @@ class PysmoProject[T]:
         `remove`, or index assignment), which isn't observable by
         `on_setattr` and therefore doesn't clear the cache automatically.
         """
-        self._cache.clear()
+        with self._lock:
+            self._cache.clear()
+            self._cache_generation += 1
 
     def _resolve_window(
         self, entry: ProjectEntry
@@ -361,6 +373,7 @@ class PysmoProject[T]:
         )
         with self._lock:
             cached = self._cache.get(key)
+            generation = self._cache_generation
         if cached is None:
             # Deliberately outside the lock — see the class docstring's
             # thread-safety note: two threads racing the same not-yet-cached
@@ -374,9 +387,15 @@ class PysmoProject[T]:
                 endtime=endtime,
                 predicted=predicted,
             )
-            cached = (checksum, self.transform(seismogram, context))
+            fresh = (checksum, self.transform(seismogram, context))
             with self._lock:
-                cached = self._cache.setdefault(key, cached)
+                if self._cache_generation == generation:
+                    cached = self._cache.setdefault(key, fresh)
+                else:
+                    # A parameter changed (clearing the cache) while this
+                    # fetch was in flight: `key` doesn't encode it, so return
+                    # this result once without caching it under a stale key.
+                    cached = fresh
 
         checksum, result = cached
         if entry.checksum is None:
