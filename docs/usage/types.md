@@ -232,8 +232,8 @@ the distance between two geographic locations. That is exactly why pysmo has the
 
 Because these types are meant to be very stable, we can do something that is
 often considered bad practice: class inheritance. In pysmo the
-[`Location`][pysmo.Location] type is reused in the [`Station`][pysmo.Station]
-type via inheritance:
+[`Station`][pysmo.Station] type inherits from two smaller types,
+[`Location`][pysmo.Location] and [`StationCode`][pysmo.StationCode]:
 
 <!-- skip: next -->
 
@@ -244,8 +244,10 @@ type via inheritance:
 The result of this is that the [`Station`][pysmo.Station] type gets the
 [`latitude`][pysmo.Location.latitude] and
 [`longitude`][pysmo.Location.longitude] attributes from
-[`Location`][pysmo.Location]. This means [`Station`][pysmo.Station] classes can
-be used as input in functions annotated with [`Location`][pysmo.Location].
+[`Location`][pysmo.Location], and `name`/`network`/`location`/`channel` from
+[`StationCode`][pysmo.StationCode]. This means [`Station`][pysmo.Station]
+classes can be used as input in functions annotated with either
+[`Location`][pysmo.Location] or [`StationCode`][pysmo.StationCode].
 
 In summary, the strategy for determining types can be summarised as follows:
 

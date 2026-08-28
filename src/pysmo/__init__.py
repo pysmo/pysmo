@@ -32,11 +32,13 @@ from ._types import (
     MiniSeismogram,
     MiniStagedResponse,
     MiniStation,
+    MiniStationCode,
     Response,
     ResponseStage,
     Seismogram,
     StagedResponse,
     Station,
+    StationCode,
 )
 from ._utils import export_module_names
 
@@ -45,6 +47,7 @@ __version__ = version("pysmo")
 type _BaseProto = (
     Seismogram
     | Station
+    | StationCode
     | Event
     | Location
     | LocationWithDepth
@@ -55,6 +58,7 @@ type _BaseProto = (
 type _BaseMini = (
     MiniSeismogram
     | MiniStation
+    | MiniStationCode
     | MiniEvent
     | MiniLocation
     | MiniLocationWithDepth
@@ -67,6 +71,7 @@ type _BaseMini = (
 __all__ = [
     "Seismogram",
     "Station",
+    "StationCode",
     "Event",
     "Location",
     "LocationWithDepth",
@@ -75,6 +80,7 @@ __all__ = [
     "ResponseStage",
     "MiniSeismogram",
     "MiniStation",
+    "MiniStationCode",
     "MiniEvent",
     "MiniLocation",
     "MiniLocationWithDepth",

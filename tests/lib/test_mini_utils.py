@@ -7,8 +7,10 @@ from pysmo import (
     MiniLocationWithDepth,
     MiniSeismogram,
     MiniStation,
+    MiniStationCode,
     Seismogram,
     Station,
+    StationCode,
 )
 
 
@@ -67,3 +69,31 @@ def test_matching_pysmo_types() -> None:
     assert set(matching_pysmo_types(MiniEvent)) == set(
         [Location, LocationWithDepth, Event]
     )
+
+
+def test_proto2mini_stationcode_is_one_to_many() -> None:
+    """MiniStation also structurally satisfies StationCode (NSLC subset)."""
+    from pysmo.lib.mini_utils import proto2mini
+
+    assert set(proto2mini(StationCode)) == {MiniStation, MiniStationCode}
+
+
+def test_matching_pysmo_types_ministation_includes_stationcode() -> None:
+    from pysmo.lib.mini_utils import matching_pysmo_types
+
+    station = MiniStation(
+        latitude=-21.68,
+        longitude=-46.73,
+        name="CACB",
+        network="BL",
+        channel="BHZ",
+        location="00",
+    )
+    assert set(matching_pysmo_types(station)) == {Station, StationCode, Location}
+
+
+def test_matching_pysmo_types_ministationcode_is_stationcode_only() -> None:
+    from pysmo.lib.mini_utils import matching_pysmo_types
+
+    code = MiniStationCode(name="CACB", network="BL", channel="BHZ", location="00")
+    assert set(matching_pysmo_types(code)) == {StationCode}
