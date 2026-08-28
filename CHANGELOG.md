@@ -30,6 +30,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Reject non-evenly-spaced SAC data at the SAC class boundary
 - Address copilot review findings on two-block write/read
 - [**breaking**] Correct signal processing, sacio, and I/O parsing bugs from code review
+- **(project)** Discard cache write when parameters change mid-fetch
 
 ### 📚 Documentation
 
