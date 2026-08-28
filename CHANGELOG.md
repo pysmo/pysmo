@@ -89,6 +89,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(signal)** Add causal/zero-phase -3dB frequency correction
 - Support two-data-block SAC files (IRLIM/IAMPH/IXY/uneven ITIME)
 - Add PysmoProject and SqliteArchiveFetcher for on-demand FDSN data
+- **(stationxml)** Narrow from_bytes epochs by network and station
 
 ### 🧪 Testing
 
