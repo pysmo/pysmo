@@ -132,6 +132,65 @@ MULTIPLE_LOCATIONS_AND_CHANNELS = b"""\
 """
 
 
+def _station_block(station: str, sensitivity: str, pole: str) -> str:
+    return f"""\
+    <Station code="{station}">
+      <Channel code="BHZ" locationCode="00" startDate="2000-01-01T00:00:00.0000">
+        <Response>
+          <InstrumentSensitivity>
+            <Value>{sensitivity}</Value>
+            <InputUnits><Name>m/s</Name></InputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>1.0</NormalizationFactor>
+              <Zero number="0"><Real>0.0</Real><Imaginary>0.0</Imaginary></Zero>
+              <Pole number="0"><Real>{pole}</Real><Imaginary>0.0</Imaginary></Pole>
+            </PolesZeros>
+            <Decimation><InputSampleRate>40.0</InputSampleRate><Factor>1</Factor></Decimation>
+            <StageGain><Value>1.0</Value><Frequency>1.0</Frequency></StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+"""
+
+
+def _document(*networks: str) -> bytes:
+    body = "".join(networks)
+    return (
+        '<?xml version="1.0"?>\n'
+        '<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">\n'
+        f"{body}"
+        "</FDSNStationXML>\n"
+    ).encode()
+
+
+def _network_block(network: str, *station_blocks: str) -> str:
+    return (
+        f'  <Network code="{network}">\n' + "".join(station_blocks) + "  </Network>\n"
+    )
+
+
+# Two networks sharing the same station/location/channel codes -- only
+# `network` disambiguates.
+MULTIPLE_NETWORKS = _document(
+    _network_block("IU", _station_block("ANMO", "1.0E9", "-1.0")),
+    _network_block("II", _station_block("ANMO", "2.0E9", "-2.0")),
+)
+
+# One network, two stations sharing the same location/channel codes -- only
+# `station` disambiguates.
+MULTIPLE_STATIONS = _document(
+    _network_block(
+        "IU",
+        _station_block("ANMO", "1.0E9", "-1.0"),
+        _station_block("COLA", "2.0E9", "-2.0"),
+    )
+)
+
+
 class TestFromBytes:
     def test_single_epoch_fixture(self) -> None:
         response = StationXML.from_bytes(
@@ -207,6 +266,31 @@ class TestFromBytes:
         assert response.location == "10"
         assert response.channel == "BHZ"
         assert response.reference_sensitivity == pytest.approx(3.0e9)
+
+    def test_multiple_networks_raise_without_network_narrowing(self) -> None:
+        with pytest.raises(ValueError, match="found 2"):
+            StationXML.from_bytes(MULTIPLE_NETWORKS)
+
+    def test_network_narrows_to_one_epoch(self) -> None:
+        response = StationXML.from_bytes(MULTIPLE_NETWORKS, network="II")
+
+        assert response.network == "II"
+        assert response.station == "ANMO"
+        assert response.reference_sensitivity == pytest.approx(2.0e9)
+
+    def test_multiple_stations_raise_without_station_narrowing(self) -> None:
+        with pytest.raises(ValueError, match="found 2"):
+            StationXML.from_bytes(MULTIPLE_STATIONS)
+
+    def test_station_narrows_to_one_epoch(self) -> None:
+        response = StationXML.from_bytes(MULTIPLE_STATIONS, station="COLA")
+
+        assert response.station == "COLA"
+        assert response.reference_sensitivity == pytest.approx(2.0e9)
+
+    def test_error_message_lists_network_and_station_narrowing(self) -> None:
+        with pytest.raises(ValueError, match="network 'XX', station 'YY'"):
+            StationXML.from_bytes(MULTIPLE_NETWORKS, network="XX", station="YY")
 
 
 class TestAllFromBytes:
