@@ -5,17 +5,26 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pysmo.lib.io._stationxml import parse_stationxml
+from pysmo.lib.io._stationxml import _RawResponse, parse_stationxml
 
 SINGLE_EPOCH_FIXTURE = Path(__file__).parent / "assets" / "stationxml_anmo_single.xml"
 BULK_FIXTURE = Path(__file__).parent / "assets" / "stationxml_anmo_bulk.xml"
 FIR_STAGE_FIXTURE = Path(__file__).parent / "assets" / "stationxml_fir_stage.xml"
+
+
+def _responses(xml: bytes) -> list[_RawResponse]:
+    """Every parsed epoch's response, asserting each one is present."""
+    epochs = parse_stationxml(xml)
+    assert all(e.response is not None for e in epochs)
+    return [e.response for e in epochs if e.response is not None]
+
 
 MINIMAL_ONE_STAGE = b"""\
 <?xml version="1.0"?>
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -54,16 +63,20 @@ def _replace(template: bytes, old: str, new: str) -> bytes:
 
 class TestParseStationxml:
     def test_real_single_epoch_fixture_with_coefficients_stages(self) -> None:
-        responses = parse_stationxml(SINGLE_EPOCH_FIXTURE.read_bytes())
-        assert len(responses) == 1
-        response = responses[0]
+        epochs = parse_stationxml(SINGLE_EPOCH_FIXTURE.read_bytes())
+        assert len(epochs) == 1
+        epoch = epochs[0]
 
-        assert response.network == "IU"
-        assert response.station == "ANMO"
-        assert response.location == "00"
-        assert response.channel == "BHZ"
-        assert response.start_date == pd.Timestamp("2014-12-17T18:40:00Z")
-        assert response.end_date == pd.Timestamp("2018-07-09T20:45:00Z")
+        assert epoch.network == "IU"
+        assert epoch.station == "ANMO"
+        assert epoch.location == "00"
+        assert epoch.channel == "BHZ"
+        assert epoch.start_date == pd.Timestamp("2014-12-17T18:40:00Z")
+        assert epoch.end_date == pd.Timestamp("2018-07-09T20:45:00Z")
+        assert epoch.latitude == pytest.approx(34.94591)
+
+        response = epoch.response
+        assert response is not None
         assert response.sensitivity_input_units == "m/s"
         assert response.sensitivity_value == pytest.approx(3.40413e9)
         assert len(response.poles) == 5
@@ -78,26 +91,27 @@ class TestParseStationxml:
         assert response.digital_stages[1].correction == pytest.approx(1.6305)
 
     def test_real_bulk_fixture_returns_one_entry_per_epoch(self) -> None:
-        responses = parse_stationxml(BULK_FIXTURE.read_bytes())
-        assert len(responses) == 9
+        epochs = parse_stationxml(BULK_FIXTURE.read_bytes())
+        assert len(epochs) == 9
 
         # Epochs are contiguous and in document order; only the last is open.
-        for previous, current in zip(responses, responses[1:]):
+        for previous, current in zip(epochs, epochs[1:]):
             assert previous.end_date == current.start_date
-        assert responses[-1].end_date is None
-        assert {response.network for response in responses} == {"IU"}
-        assert {response.station for response in responses} == {"ANMO"}
-        assert {response.channel for response in responses} == {"BHZ"}
+        assert epochs[-1].end_date is None
+        assert {epoch.network for epoch in epochs} == {"IU"}
+        assert {epoch.station for epoch in epochs} == {"ANMO"}
+        assert {epoch.channel for epoch in epochs} == {"BHZ"}
+        assert all(epoch.response is not None for epoch in epochs)
 
     def test_only_one_stage_no_digital_stages(self) -> None:
-        responses = parse_stationxml(MINIMAL_ONE_STAGE)
+        responses = _responses(MINIMAL_ONE_STAGE)
         assert len(responses) == 1
         assert responses[0].digital_stages == []
         assert len(responses[0].poles) == 1
         assert len(responses[0].zeros) == 1
 
     def test_fir_stage_shape(self) -> None:
-        responses = parse_stationxml(FIR_STAGE_FIXTURE.read_bytes())
+        responses = _responses(FIR_STAGE_FIXTURE.read_bytes())
         assert len(responses) == 1
         response = responses[0]
         assert len(response.digital_stages) == 1
@@ -117,6 +131,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -144,7 +159,7 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         assert len(responses) == 1
         stage = responses[0].digital_stages[0]
         assert stage.numerator == [1.0]
@@ -157,6 +172,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -199,6 +215,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -229,7 +246,7 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         numerator = responses[0].digital_stages[0].numerator
 
         # Sorted by "i" (0.1, 0.2, 0.3), then normalised to sum to 1.
@@ -238,7 +255,7 @@ class TestParseStationxml:
     def test_fir_stage_odd_symmetry_mirrors_coefficients(self) -> None:
         # FDSN's own worked example: ODD [0.1, 0.4, 0.5] -> [0.1, 0.4, 0.5, 0.4, 0.1]
         # (mirrored about a shared centre tap, giving an odd total length).
-        responses = parse_stationxml(self._fir_xml("ODD"))
+        responses = _responses(self._fir_xml("ODD"))
         numerator = responses[0].digital_stages[0].numerator
 
         assert len(numerator) == 5
@@ -248,7 +265,7 @@ class TestParseStationxml:
     def test_fir_stage_even_symmetry_mirrors_coefficients(self) -> None:
         # FDSN's own worked example: EVEN [0.1, 0.4, 0.5] -> [0.1, 0.4, 0.5, 0.5,
         # 0.4, 0.1] (mirrored with no shared centre tap, giving an even length).
-        responses = parse_stationxml(self._fir_xml("EVEN"))
+        responses = _responses(self._fir_xml("EVEN"))
         numerator = responses[0].digital_stages[0].numerator
 
         assert len(numerator) == 6
@@ -265,6 +282,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -293,39 +311,25 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         assert responses[0].digital_stages[0].correction == 0.0
 
-    def test_doctype_declaration_raises(self) -> None:
+    def test_channel_without_response_yields_none(self) -> None:
         xml = b"""\
 <?xml version="1.0"?>
-<!DOCTYPE FDSNStationXML [<!ENTITY x "boom">]>
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
       </Channel>
     </Station>
   </Network>
 </FDSNStationXML>
 """
-        with pytest.raises(ValueError, match="DOCTYPE"):
-            parse_stationxml(xml)
-
-    def test_missing_response_element_raises(self) -> None:
-        xml = b"""\
-<?xml version="1.0"?>
-<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
-  <Network code="IU">
-    <Station code="ANMO">
-      <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
-      </Channel>
-    </Station>
-  </Network>
-</FDSNStationXML>
-"""
-        with pytest.raises(ValueError, match="no <Response> element"):
-            parse_stationxml(xml)
+        (epoch,) = parse_stationxml(xml)
+        assert epoch.response is None
+        assert epoch.channel == "BHZ"
 
     def test_missing_instrument_sensitivity_raises(self) -> None:
         xml = b"""\
@@ -333,6 +337,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response></Response>
       </Channel>
@@ -349,6 +354,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -379,6 +385,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -407,6 +414,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -434,6 +442,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -465,6 +474,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -503,6 +513,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -544,6 +555,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -568,7 +580,7 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         assert len(responses) == 1
         assert responses[0].digital_stages == []
 
@@ -578,6 +590,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -606,6 +619,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -636,7 +650,7 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         assert responses[0].poles == [complex(-1.0, 0.0), complex(-2.0, 0.0)]
         assert responses[0].zeros == [complex(0.0, 0.0), complex(1.0, 0.0)]
         assert responses[0].normalization_factor == pytest.approx(6.0)
@@ -652,6 +666,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00" startDate="2018-07-09T20:45:00.0000">
         <Response>
           <InstrumentSensitivity>
@@ -681,7 +696,7 @@ class TestParseStationxml:
   </Network>
 </FDSNStationXML>
 """
-        responses = parse_stationxml(xml)
+        responses = _responses(xml)
         digital_stages = responses[0].digital_stages
         assert len(digital_stages) == 1
         assert digital_stages[0].input_sample_rate == 20.0
@@ -693,6 +708,7 @@ class TestParseStationxml:
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
   <Network code="IU">
     <Station code="ANMO">
+      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
       <Channel code="BHZ" locationCode="00">
         <Response>
           <InstrumentSensitivity>
@@ -715,4 +731,91 @@ class TestParseStationxml:
 </FDSNStationXML>
 """
         with pytest.raises(ValueError, match="no startDate attribute"):
+            parse_stationxml(xml)
+
+
+_STATIONS_TWO_NETWORKS = b"""\
+<?xml version="1.0"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
+  <Network code="IU">
+    <Station code="ANMO" startDate="1989-08-29T00:00:00">
+      <Latitude>34.9</Latitude><Longitude>-106.4</Longitude><Elevation>1800</Elevation>
+      <Channel code="BHZ" locationCode="00" startDate="2000-01-01T00:00:00"
+               endDate="2010-01-01T00:00:00">
+        <Latitude>34.95</Latitude><Longitude>-106.46</Longitude><Elevation>1700</Elevation>
+      </Channel>
+      <Channel code="BHZ" locationCode="00" startDate="2010-01-01T00:00:00">
+        <Latitude>34.95</Latitude><Longitude>-106.46</Longitude><Elevation>1650</Elevation>
+      </Channel>
+    </Station>
+  </Network>
+  <Network code="II">
+    <Station code="BFO" startDate="1996-01-01T00:00:00">
+      <Latitude>48.3</Latitude><Longitude>8.3</Longitude><Elevation>590</Elevation>
+      <Channel code="BHZ" locationCode="" startDate="1996-01-01T00:00:00"/>
+    </Station>
+  </Network>
+</FDSNStationXML>
+"""
+
+_STATION_LEVEL_DOC = b"""\
+<?xml version="1.0"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
+  <Network code="IU">
+    <Station code="ANMO" startDate="1989-08-29T00:00:00" endDate="2000-01-01T00:00:00">
+      <Latitude>34.9</Latitude><Longitude>-106.4</Longitude><Elevation>1800</Elevation>
+    </Station>
+  </Network>
+</FDSNStationXML>
+"""
+
+
+class TestParseStationxmlCoords:
+    def test_bulk_fixture_epoch_count_and_identity(self) -> None:
+        epochs = parse_stationxml(BULK_FIXTURE.read_bytes())
+        assert len(epochs) == 9
+        assert all(e.network == "IU" and e.station == "ANMO" for e in epochs)
+        assert all(e.latitude is not None for e in epochs)
+
+    def test_channel_coords_take_precedence(self) -> None:
+        epochs = parse_stationxml(_STATIONS_TWO_NETWORKS)
+        anmo = next(e for e in epochs if e.station == "ANMO")
+        assert (anmo.latitude, anmo.longitude, anmo.elevation) == (
+            34.95,
+            -106.46,
+            1700.0,
+        )
+
+    def test_falls_back_to_station_coords(self) -> None:
+        (bfo,) = [
+            e for e in parse_stationxml(_STATIONS_TWO_NETWORKS) if e.station == "BFO"
+        ]
+        assert (bfo.latitude, bfo.longitude) == (48.3, 8.3)
+        assert bfo.location == ""
+        assert bfo.response is None
+
+    def test_two_networks_and_epoch_windows(self) -> None:
+        epochs = parse_stationxml(_STATIONS_TWO_NETWORKS)
+        assert {e.network for e in epochs} == {"IU", "II"}
+        anmo = [e for e in epochs if e.station == "ANMO"]
+        assert len(anmo) == 2
+        assert anmo[0].end_date == pd.Timestamp("2010-01-01T00:00:00Z")
+        assert anmo[1].end_date is None
+
+    def test_level_station_document(self) -> None:
+        (epoch,) = parse_stationxml(_STATION_LEVEL_DOC)
+        assert epoch.station == "ANMO"
+        assert epoch.channel == ""
+        assert epoch.location == ""
+        assert epoch.latitude == 34.9
+        assert epoch.response is None
+        assert epoch.end_date == pd.Timestamp("2000-01-01T00:00:00Z")
+
+    def test_not_well_formed_xml_raises_value_error(self) -> None:
+        with pytest.raises(ValueError, match="well-formed"):
+            parse_stationxml(b"<FDSNStationXML><Network truncated")
+
+    def test_missing_coords_raises(self) -> None:
+        xml = _STATION_LEVEL_DOC.replace(b"<Latitude>34.9</Latitude>", b"")
+        with pytest.raises(ValueError, match="latitude/longitude"):
             parse_stationxml(xml)

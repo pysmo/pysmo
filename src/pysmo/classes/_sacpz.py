@@ -1,13 +1,12 @@
 """SAC PZ (pole-zero) import class compatible with pysmo types."""
 
-from os import PathLike
 from typing import Self
 
 import pandas as pd
 from attrs import converters, define, field, validators
 
 from pysmo import Station
-from pysmo.lib.io._sacpz import _RawSacPzResponse, parse_sacpz, write_sacpz
+from pysmo.lib.io._sacpz import _RawSacPzResponse, parse_sacpz
 from pysmo.lib.validators import (
     convert_to_complex_list,
     convert_to_utc_timestamp,
@@ -26,7 +25,7 @@ def _convert_optional_float(value: float | None) -> float | None:
 
 @define(kw_only=True)
 class SacPZ:
-    r"""Import/export class for SAC PZ (pole-zero) files.
+    r"""Import class for SAC PZ (pole-zero) files.
 
     Reads an analog instrument response from a
     [SAC PZ](https://ds.iris.edu/files/sac-manual/commands/transfer.html)
@@ -35,10 +34,6 @@ class SacPZ:
     satisfies [`Response`][pysmo.Response], never
     [`StagedResponse`][pysmo.StagedResponse] — the SAC PZ format has no
     digital-stage fields to parse.
-
-    To serialise an instance back to a SAC PZ file call
-    [`write`][pysmo.classes.SacPZ.write], or use [`pysmo.lib.io.write_sacpz`][] for
-    multi-record output.
 
     Examples:
         ```python
@@ -63,10 +58,6 @@ class SacPZ:
         >>> isinstance(response, Response)
         True
         >>> response.network, response.station
-        ('IU', 'ANMO')
-        >>> from pathlib import Path
-        >>> response.write("out.pz"); recovered = SacPZ.from_text(Path("out.pz").read_text())
-        >>> recovered.network, recovered.station
         ('IU', 'ANMO')
         >>>
         ```
@@ -183,7 +174,7 @@ class SacPZ:
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
         """Fetch and parse an instrument response from the EarthScope SACPZ web service, selecting one epoch.
 
-        Unlike [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch], epoch
+        Unlike [`StationXML.fetch`][pysmo.classes.StationXML.fetch], epoch
         selection happens server-side: the SACPZ web service's own `time`
         parameter is passed through, so exactly one record is returned
         (the epoch active at *time* if given, otherwise the one currently
@@ -212,7 +203,7 @@ class SacPZ:
         Tip: Prefer StationXML for live fetches
             When fetching live from EarthScope rather than reading an
             existing SAC PZ file, prefer
-            [`StationXMLResponse.fetch`][pysmo.classes.StationXMLResponse.fetch]:
+            [`StationXML.fetch`][pysmo.classes.StationXML.fetch]:
             it also captures digital FIR/IIR stages, so it always satisfies
             [`StagedResponse`][pysmo.StagedResponse], unlike `SacPZ`.
 
@@ -267,32 +258,3 @@ class SacPZ:
             start_date=record.start_date,
             end_date=record.end_date,
         )
-
-    def write(self, path: str | PathLike) -> None:
-        """Write this response to a SAC PZ file.
-
-        Serialises the instance as a single SAC PZ record using the header
-        convention produced by the EarthScope SACPZ web service. If
-        [`reference_sensitivity`][pysmo.classes.SacPZ.reference_sensitivity]
-        is `None` the `* SENSITIVITY` header line is omitted (the file
-        remains valid; `CONSTANT` carries the full system gain). To write
-        several responses into one concatenated file use
-        [`pysmo.lib.io.write_sacpz`][] directly.
-
-        Args:
-            path: Destination file path. The file is written in UTF-8 text
-                mode and any existing content is overwritten.
-
-        Examples:
-            ```python
-            >>> from pathlib import Path
-            >>> from pysmo.classes import SacPZ
-            >>> text = Path("SACPZ.IU.ANMO.00.BHZ").read_text()
-            >>> response = SacPZ.from_text(text)
-            >>> response.write("out.pz"); recovered = SacPZ.from_text(Path("out.pz").read_text())
-            >>> recovered.network == response.network
-            True
-            >>>
-            ```
-        """
-        write_sacpz(self, path)

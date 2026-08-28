@@ -1,6 +1,5 @@
 from typing import Protocol, runtime_checkable
 
-import pandas as pd
 from attrs import define, field, setters, validators
 
 from pysmo.lib.validators import convert_to_complex_list, validate_nonzero
@@ -140,42 +139,6 @@ class StagedResponse(Response, Protocol):
     stages: list[ResponseStage]
     """Digital decimation stages, in signal order (stage 1 = closest to the
     analog sensor)."""
-
-
-@runtime_checkable
-class _EpochProvenance(Protocol):
-    """Protocol class to define the `_EpochProvenance` type.
-
-    Channel identity (network/station/location/channel) plus the validity
-    window of one response epoch — the bookkeeping needed to place a
-    `Response` within a specific channel and time range, independent of the
-    response data itself.
-
-    Private: unlike `Response`/`ResponseStage`/`StagedResponse`, this exists
-    only so `pysmo.lib.io.write_sacpz` (via `ResponseWithEpoch`) can
-    type-check, not to be implemented by third-party code directly. Real
-    callers already satisfy it structurally as part of a bigger object
-    (`SacPZ`, `StationXMLResponse`), so it is deliberately not exported at the
-    `pysmo` root namespace.
-    """
-
-    network: str
-    """Network code."""
-
-    station: str
-    """Station code."""
-
-    location: str
-    """Location code."""
-
-    channel: str
-    """Channel code."""
-
-    start_date: pd.Timestamp
-    """Start of the epoch this response applies to."""
-
-    end_date: pd.Timestamp | None
-    """End of the epoch this response applies to, or `None` if still open."""
 
 
 @define(kw_only=True)
