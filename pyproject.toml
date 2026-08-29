@@ -23,6 +23,7 @@ dependencies = [
   "scipy>=1.16.2",
   "pandas>=3.0.1",
   "annotated-types>=0.7.0",
+  "pymseed[numpy]>=0.9.5",
 ]
 
 [project.urls]
@@ -116,6 +117,10 @@ exclude = [
 [[tool.mypy.overrides]]
 module = "tests.*"
 warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "pymseed.*"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["src"]

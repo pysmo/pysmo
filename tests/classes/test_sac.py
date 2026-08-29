@@ -79,7 +79,7 @@ class TestSAC:
     def test_native_is_frozen(self, sacfile: Path) -> None:
         """Reassigning `native` would orphan the nested helpers (they bind
         to the `SacIO` instance at construction time), so it must be
-        blocked. Reloading data must go through `read`/`read_buffer`,
+        blocked. Reloading data must go through `read`/`read_bytes`,
         which mutate the same `SacIO` instance in place instead."""
 
         sac = SAC.from_file(sacfile)
@@ -106,9 +106,9 @@ class TestSAC:
             SAC.from_file(UNEVEN_FIXTURE)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_from_buffer_rejects_incompatible_native(self) -> None:
+    def test_from_bytes_rejects_incompatible_native(self) -> None:
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
-            SAC.from_buffer(IRLIM_FIXTURE.read_bytes())
+            SAC.from_bytes(IRLIM_FIXTURE.read_bytes())
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_rejects_incompatible_native(self, sacfile: Path) -> None:
@@ -117,10 +117,10 @@ class TestSAC:
             sac.read(IRLIM_FIXTURE)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
-    def test_read_buffer_rejects_incompatible_native(self, sacfile: Path) -> None:
+    def test_read_bytes_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
-            sac.read_buffer(IRLIM_FIXTURE.read_bytes())
+            sac.read_bytes(IRLIM_FIXTURE.read_bytes())
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:
