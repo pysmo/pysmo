@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import warnings
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
@@ -688,6 +689,31 @@ class TestChecksum:
             call_lineno = sys._getframe().f_lineno - 1
         assert caught[0].filename == __file__
         assert caught[0].lineno == call_lineno
+
+
+def test_default_fetch_seismogram_uses_miniseed(
+    monkeypatch: pytest.MonkeyPatch,
+    station_anmo: MiniStation,
+    event_maule: MiniEvent,
+    reference_event_assets: dict[str, Path],
+) -> None:
+    fields_seen: dict[str, object] = {}
+
+    def fake_http_get(url: str, fields: dict[str, object], **kwargs: object) -> bytes:
+        fields_seen.update(fields)
+        return reference_event_assets["mseed_bhz"].read_bytes()
+
+    monkeypatch.setattr("pysmo.tools.web.http_get", fake_http_get)
+
+    project = PysmoProject(
+        entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+        travel_time_backend=fake_travel_time_backend,
+    )
+    seismogram = project.seismogram(station_anmo, event_maule)
+
+    assert fields_seen["format"] == "miniseed"
+    assert isinstance(seismogram, MiniSeismogram)
+    assert len(seismogram.data) > 0
 
 
 @pytest.mark.real_web_request

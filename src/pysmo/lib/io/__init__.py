@@ -4,10 +4,12 @@ Classes in this module handle file format details but do not implement
 [`pysmo`][] protocol types directly. The `parse_*` functions here return
 uninterpreted raw records meant to be wrapped by a [`pysmo.classes`][] type
 before use, and should generally not be used directly for that reason.
-[`write_geocsv`][pysmo.lib.io.write_geocsv] is the exception: it accepts any
+[`write_geocsv`][pysmo.lib.io.write_geocsv] and
+[`write_mseed`][pysmo.lib.io.write_mseed] are the exception: they accept any
 object satisfying the relevant `pysmo` protocol directly (not just a
-`pysmo.classes` type) and is intended to be used directly, either standalone
-or via [`GeoCsvSeismogram.write`][pysmo.classes.GeoCsvSeismogram.write].
+`pysmo.classes` type) and are intended to be used directly, either standalone
+or via [`GeoCsvSeismogram.write`][pysmo.classes.GeoCsvSeismogram.write] /
+[`MSeed.write`][pysmo.classes.MSeed.write].
 """
 
 from ..._utils import export_module_names
@@ -24,6 +26,7 @@ from ._http import (
     DEFAULT_TIMEOUT_SECONDS,
     http_get,
 )
+from ._mseed import write_mseed
 from ._quakeml import parse_quakeml
 from ._sacio import SacIO
 from ._sacpz import parse_sacpz
@@ -43,6 +46,7 @@ __all__ = [
     "parse_sacpz",
     "parse_stationxml",
     "write_geocsv",
+    "write_mseed",
 ]
 
 export_module_names(globals(), __name__)

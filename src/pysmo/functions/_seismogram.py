@@ -598,7 +598,7 @@ def merge[T: Seismogram](
         ...     begin_time=pd.Timestamp("2010-02-27T06:30:05Z"),
         ...     delta=pd.Timedelta(seconds=1),
         ...     data=np.array([6.0, 7.0]),
-        ...     sid="IU_ANMO_00_LHZ",
+        ...     sourceid="IU_ANMO_00_LHZ",
         ... )
         >>> mixed: Sequence[Seismogram] = [merged, geocsv_seis]
         >>> merged_mixed = merge(mixed, clone=True)
