@@ -23,6 +23,7 @@ from .._utils import export_module_names
 _internal_names = set(dir())
 
 from ._geocsv import *  # noqa: F403
+from ._mseed import *  # noqa: F403
 from ._quakeml import *  # noqa: F403
 from ._sac import *  # noqa: F403
 from ._sacpz import *  # noqa: F403

@@ -302,6 +302,40 @@ class TestConstructionTimeValidation:
         )
 
 
+def test_fetch_mseed_pairing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    station: MiniStation,
+    reference_event_assets: dict[str, Path],
+) -> None:
+    """The recommended reproducible-fetch pairing for PysmoProject's default format."""
+    from pysmo.classes import MSeed
+    from pysmo.tools.web import fetch_mseed
+
+    http_calls: list[object] = []
+
+    def fake_http_get(url: str, fields: dict[str, object], **kwargs: object) -> bytes:
+        http_calls.append(fields)
+        return reference_event_assets["mseed_bhz"].read_bytes()
+
+    monkeypatch.setattr("pysmo.tools.web.http_get", fake_http_get)
+
+    archive = SqliteArchiveFetcher(
+        path=tmp_path / "archive.sqlite3",
+        fetch_raw=fetch_mseed,
+        parse=MSeed.from_bytes,
+    )
+    starttime = pd.Timestamp("2010-02-27T06:44:00Z")
+    endtime = pd.Timestamp("2010-02-27T06:54:00Z")
+
+    first = archive(station, starttime, endtime)
+    second = archive(station, starttime, endtime)
+
+    assert len(http_calls) == 1  # second call served from the sqlite archive
+    assert isinstance(first, MSeed)
+    assert (first.data == second.data).all()
+
+
 @pytest.mark.real_web_request
 def test_fetch_sac_pairing_live(tmp_path: Path, station: MiniStation) -> None:
     def parse_sac_zip(raw: bytes) -> Seismogram:
