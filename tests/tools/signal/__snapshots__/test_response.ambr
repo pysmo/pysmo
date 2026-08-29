@@ -7,6 +7,10 @@
   array([-5.56260e-06, -5.77910e-06, -5.25710e-06, ..., -1.18684e-05,
          -8.24460e-06, -5.27280e-06], shape=(57465,))
 # ---
+# name: TestSnapshot.test_full_pipeline_matches_snapshot[mseed_seismogram]
+  array([-5.56260e-06, -5.77910e-06, -5.25710e-06, ..., -1.18684e-05,
+         -8.24460e-06, -5.27280e-06], shape=(57465,))
+# ---
 # name: TestSnapshot.test_full_pipeline_matches_snapshot[sac_seismogram]
   array([-5.56260e-06, -5.77910e-06, -5.25710e-06, ..., -1.18684e-05,
          -8.24460e-06, -5.27280e-06], shape=(57465,))

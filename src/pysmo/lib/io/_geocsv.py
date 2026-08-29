@@ -82,7 +82,7 @@ class _TimeseriesSegment:
     start_time: pd.Timestamp
     sample_rate_hz: float
     sample_count: int
-    sid: str
+    sourceid: str
     data: np.ndarray
 
 
@@ -211,7 +211,8 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
         start_time=start_time,
         sample_rate_hz=sample_rate_hz,
         sample_count=sample_count,
-        sid=headers.get("sid", ""),
+        # "sid" is the lowercased GeoCSV `SID` keyword, not the pysmo attribute name.
+        sourceid=headers.get("sid", ""),
         data=data,
     )
 
@@ -260,10 +261,10 @@ def merge_geocsv_timeseries(
     if not segments:
         raise ValueError("No non-empty timeseries segments to merge.")
 
-    sids = {segment.sid for segment in segments}
-    if len(sids) > 1:
+    sourceids = {segment.sourceid for segment in segments}
+    if len(sourceids) > 1:
         raise ValueError(
-            f"Cannot merge segments from different channels: {sorted(sids)}."
+            f"Cannot merge segments from different channels: {sorted(sourceids)}."
         )
 
     if len(segments) == 1:
@@ -310,14 +311,14 @@ def merge_geocsv_timeseries(
         # a few nanoseconds off from a round number.
         sample_rate_hz=1_000_000_000 / merged.delta.value,
         sample_count=len(merged.data),
-        sid=reference.sid,
+        sourceid=reference.sourceid,
         data=merged.data,
     )
 
 
 def _geocsv_block(seismogram: Seismogram) -> str:
     """Render a single Seismogram as one GeoCSV 2.0 dataset block."""
-    sid = getattr(seismogram, "sid", None)
+    sourceid = getattr(seismogram, "sourceid", None)
     data = seismogram.data
     sample_count = len(data)
     # `.value` (integer nanoseconds) rather than `.total_seconds()`: the
@@ -337,8 +338,8 @@ def _geocsv_block(seismogram: Seismogram) -> str:
         "# field_unit: UTC, Counts",
         f"# field_type: datetime, {field_type}",
     ]
-    if sid is not None:
-        lines.append(f"# SID: {sid}")
+    if sourceid is not None:
+        lines.append(f"# SID: {sourceid}")
     lines.extend(
         [
             f"# sample_count: {sample_count}",
@@ -358,7 +359,7 @@ def _geocsv_block(seismogram: Seismogram) -> str:
 
 def write_geocsv(
     seismograms: Seismogram | Sequence[Seismogram],
-    path: str | PathLike,
+    path: str | PathLike[str],
 ) -> None:
     """Write one or more Seismogram objects to a GeoCSV 2.0 file.
 
@@ -388,8 +389,8 @@ def write_geocsv(
         preserve full precision (including nanoseconds). Sample values are
         written as `integer` or `float` depending on whether the data is
         integral, so genuinely non-integral data (e.g. a detrended or
-        filtered seismogram) is never silently truncated. A `sid` attribute
-        is used if present (e.g. on a
+        filtered seismogram) is never silently truncated. A `sourceid`
+        attribute is used if present (e.g. on a
         [`GeoCsvSeismogram`][pysmo.classes.GeoCsvSeismogram]), but is not
         required by the [`Seismogram`][pysmo.Seismogram] protocol itself,
         so the `# SID:` header line is simply omitted for objects that
@@ -398,7 +399,7 @@ def write_geocsv(
         concept, so this label may not describe the data's actual physical
         units (e.g. after response removal); `parse_geocsv`/
         `extract_geocsv_timeseries` never read it back, so this doesn't
-        affect round-tripping, only external readers. `sid` is written
+        affect round-tripping, only external readers. `sourceid` is written
         verbatim, with no escaping: a value containing a newline would
         produce a file this module's own `parse_geocsv` cannot read back
         correctly (a comma is fine, since header lines are matched by

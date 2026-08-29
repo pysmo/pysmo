@@ -3,8 +3,8 @@
 Thin wrappers around FDSN web services (EarthScope's, except `fetch_quakeml`,
 which targets USGS since EarthScope retired its event service).
 `fetch_stationxml`, `fetch_station_inventory`, `fetch_sacpz`,
-`fetch_geocsvseismogram`, `fetch_sac`, and `fetch_quakeml` return raw,
-unparsed responses — most a
+`fetch_geocsvseismogram`, `fetch_sac`, `fetch_mseed`, and `fetch_quakeml`
+return raw, unparsed responses — most a
 lower-level counterpart to a class's own parsing entry point (e.g.
 [`SAC.fetch`][pysmo.classes.SAC.fetch],
 [`QuakeML.all_from_bytes`][pysmo.classes.QuakeML.all_from_bytes]), useful on
@@ -36,6 +36,7 @@ __all__ = [
     "QuakeMLOrderBy",
     "TravelTimeBackend",
     "fetch_geocsvseismogram",
+    "fetch_mseed",
     "fetch_quakeml",
     "fetch_sac",
     "fetch_sacpz",
@@ -308,6 +309,37 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
     ).decode("ascii")
 
 
+def _fetch_dataselect(
+    *,
+    station: Station,
+    starttime: pd.Timestamp,
+    endtime: pd.Timestamp,
+    response_format: str,
+) -> bytes:
+    """Fetch raw bytes from the FDSN dataselect service for a station/window.
+
+    Shared request plumbing for `fetch_geocsvseismogram`, `fetch_sac` and
+    `fetch_mseed` — they differ only in the `format` value.
+    """
+    starttime = convert_to_utc_timestamp(starttime)
+    endtime = convert_to_utc_timestamp(endtime)
+    return http_get(
+        _ServiceDefaults.dataselect_url,
+        {
+            "net": station.network,
+            "sta": station.name,
+            "loc": station.location,
+            "cha": station.channel,
+            "starttime": starttime.isoformat(),
+            "endtime": endtime.isoformat(),
+            "format": response_format,
+        },
+        timeout_seconds=_ServiceDefaults.timeout_seconds,
+        request_retries=_ServiceDefaults.request_retries,
+        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
+    )
+
+
 def fetch_geocsvseismogram(
     *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
 ) -> bytes:
@@ -354,22 +386,11 @@ def fetch_geocsvseismogram(
         ```
         <!-- skip: end -->
     """
-    starttime = convert_to_utc_timestamp(starttime)
-    endtime = convert_to_utc_timestamp(endtime)
-    return http_get(
-        _ServiceDefaults.dataselect_url,
-        {
-            "net": station.network,
-            "sta": station.name,
-            "loc": station.location,
-            "cha": station.channel,
-            "starttime": starttime.isoformat(),
-            "endtime": endtime.isoformat(),
-            "format": "geocsv",
-        },
-        timeout_seconds=_ServiceDefaults.timeout_seconds,
-        request_retries=_ServiceDefaults.request_retries,
-        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
+    return _fetch_dataselect(
+        station=station,
+        starttime=starttime,
+        endtime=endtime,
+        response_format="geocsv",
     )
 
 
@@ -421,22 +442,67 @@ def fetch_sac(
         ```
         <!-- skip: end -->
     """
-    starttime = convert_to_utc_timestamp(starttime)
-    endtime = convert_to_utc_timestamp(endtime)
-    return http_get(
-        _ServiceDefaults.dataselect_url,
-        {
-            "net": station.network,
-            "sta": station.name,
-            "loc": station.location,
-            "cha": station.channel,
-            "starttime": starttime.isoformat(),
-            "endtime": endtime.isoformat(),
-            "format": "sac.zip",
-        },
-        timeout_seconds=_ServiceDefaults.timeout_seconds,
-        request_retries=_ServiceDefaults.request_retries,
-        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
+    return _fetch_dataselect(
+        station=station,
+        starttime=starttime,
+        endtime=endtime,
+        response_format="sac.zip",
+    )
+
+
+def fetch_mseed(
+    *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+) -> bytes:
+    """Fetch raw miniSEED waveform bytes for a station/channel and time window.
+
+    A lower-level counterpart to [`MSeed.fetch`][pysmo.classes.MSeed.fetch]:
+    returns the miniSEED body returned by the dataselect web service
+    unparsed and uninterpreted. Save it to disk to defer parsing to later —
+    offline, without another network request — via
+    [`MSeed.from_bytes`][pysmo.classes.MSeed.from_bytes] or
+    [`MSeed.all_from_bytes`][pysmo.classes.MSeed.all_from_bytes].
+
+    Args:
+        station: Any object satisfying the [`Station`][pysmo.Station]
+            protocol. Provides the network, station code, location, and
+            channel for the request.
+        starttime: Start of the requested time window (UTC).
+        endtime: End of the requested time window (UTC).
+
+    Returns:
+        Raw miniSEED bytes, as returned by the dataselect web service. An
+        empty `bytes` object if the service reports no data for the window.
+
+    Raises:
+        urllib3.exceptions.ResponseError: If the dataselect web service
+            returns an HTTP error.
+
+    Examples:
+        <!-- skip: start if(not run_real_web_requests) -->
+        ```python
+        >>> import pandas as pd
+        >>> from pathlib import Path
+        >>> from pysmo import MiniStation
+        >>> from pysmo.tools.web import fetch_mseed
+        >>> station = MiniStation(
+        ...     name="ANMO", network="IU", location="00", channel="LHZ",
+        ...     latitude=34.945981, longitude=-106.457133,
+        ... )
+        >>> data = fetch_mseed(
+        ...     station=station,
+        ...     starttime=pd.Timestamp("2010-02-27T06:44:00Z"),
+        ...     endtime=pd.Timestamp("2010-02-27T06:54:00Z"),
+        ... )
+        >>> _ = Path("ANMO.mseed").write_bytes(data)
+        >>>
+        ```
+        <!-- skip: end -->
+    """
+    return _fetch_dataselect(
+        station=station,
+        starttime=starttime,
+        endtime=endtime,
+        response_format="miniseed",
     )
 
 

@@ -26,11 +26,16 @@ from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
 from pysmo import Event, MiniEvent, MiniStation, Response
-from pysmo.classes import SAC, GeoCsvSeismogram, QuakeML, SacPZ
+from pysmo.classes import SAC, GeoCsvSeismogram, MSeed, QuakeML, SacPZ
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
-from pysmo.tools.web import fetch_sac, fetch_station_inventory, fetch_travel_times
+from pysmo.tools.web import (
+    fetch_mseed,
+    fetch_sac,
+    fetch_station_inventory,
+    fetch_travel_times,
+)
 
 matplotlib.use("Agg")
 
@@ -87,7 +92,7 @@ def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure
     )
 
     assert isinstance(seismogram, GeoCsvSeismogram)
-    assert seismogram.sid == "IU_ANMO_00_LHZ"
+    assert seismogram.sourceid == "IU_ANMO_00_LHZ"
     assert seismogram.delta == pd.Timedelta(seconds=1)
     assert len(seismogram.data) == 600
     assert seismogram.begin_time < predicted_p < seismogram.end_time
@@ -168,6 +173,51 @@ def test_fetch_sac_multiple_segments_live() -> None:
         "BH2",
         "BHZ",
     }
+
+
+def test_fetch_mseed_live(station: MiniStation) -> None:
+    # A fractional-second window (rather than a whole-second literal) so
+    # starttime/endtime reach dataselect as fractional-second
+    # pd.Timestamps via .isoformat() -- the shape fdsnws/dataselect must
+    # accept directly.
+    starttime = pd.Timestamp("2010-02-27T06:44:06.069538Z")
+    endtime = starttime + pd.Timedelta(minutes=10)
+
+    seismogram = MSeed.fetch(station=station, starttime=starttime, endtime=endtime)
+
+    assert isinstance(seismogram, MSeed)
+    assert seismogram.sourceid == "FDSN:IU_ANMO_00_L_H_Z"
+    assert (seismogram.network, seismogram.name, seismogram.channel) == (
+        "IU",
+        "ANMO",
+        "LHZ",
+    )
+    assert seismogram.delta == pd.Timedelta(seconds=1)
+    assert 595 < len(seismogram.data) <= 601
+    assert seismogram.begin_time >= starttime
+    assert seismogram.end_time <= endtime
+
+
+def test_fetch_mseed_multiple_segments_live() -> None:
+    station = MiniStation(
+        name="ANMO",
+        network="IU",
+        location="00",
+        channel="BH?",
+        latitude=34.945981,
+        longitude=-106.457133,
+    )
+    starttime = pd.Timestamp("2010-02-27T06:44:00Z")
+    endtime = pd.Timestamp("2010-02-27T06:54:00Z")
+
+    with pytest.raises(ValueError, match="contiguous segments"):
+        MSeed.fetch(station=station, starttime=starttime, endtime=endtime)
+
+    raw = fetch_mseed(station=station, starttime=starttime, endtime=endtime)
+    segments = MSeed.all_from_bytes(raw)
+
+    assert len(segments) == 3
+    assert {segment.channel for segment in segments} == {"BH1", "BH2", "BHZ"}
 
 
 def test_fetch_quakeml_single_event_live() -> None:

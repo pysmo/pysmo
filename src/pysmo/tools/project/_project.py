@@ -11,7 +11,7 @@ from attrs import Attribute, define, field, setters, validators
 
 from pysmo import Event, MiniSeismogram, Seismogram, Station
 from pysmo._utils import attrs_getstate, attrs_setstate
-from pysmo.classes import GeoCsvSeismogram
+from pysmo.classes import MSeed
 from pysmo.functions import clone_to_mini
 from pysmo.lib.validators import convert_to_timedelta
 from pysmo.tools.azdist import haversine
@@ -29,10 +29,9 @@ def _default_fetch_seismogram(
     """Default `fetch_seismogram` implementation for [`PysmoProject`][pysmo.tools.project.PysmoProject].
 
     Fetches and parses a waveform from the EarthScope FDSN dataselect
-    service as GeoCSV, via
-    [`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch].
+    service as miniSEED, via [`MSeed.fetch`][pysmo.classes.MSeed.fetch].
     """
-    return GeoCsvSeismogram.fetch(station=station, starttime=starttime, endtime=endtime)
+    return MSeed.fetch(station=station, starttime=starttime, endtime=endtime)
 
 
 def _seismogram_to_mini_seismogram(
@@ -213,8 +212,11 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     """Downloads a seismogram for a station and absolute time window.
 
     Defaults to a private helper wrapping
-    [`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch] — the
-    explicit "always fresh, never cached" choice.
+    [`MSeed.fetch`][pysmo.classes.MSeed.fetch] — the explicit "always
+    fresh, never cached" choice. The fetched trace is normalised to a
+    [`MiniSeismogram`][pysmo.MiniSeismogram] by the default
+    `seismogram_transform`, so the project's return type is unchanged by
+    the fetch format.
 
     For any project where reproducibility matters, substitute a
     [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher]

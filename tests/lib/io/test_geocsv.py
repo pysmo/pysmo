@@ -40,7 +40,7 @@ def make_segment(
     start_time: str = "2010-02-27T06:30:00Z",
     sample_rate_hz: float = 1.0,
     sample_count: int = 3,
-    sid: str = "IU_ANMO_00_LHZ",
+    sourceid: str = "IU_ANMO_00_LHZ",
     data: list[float] | None = None,
 ) -> _TimeseriesSegment:
     if data is None:
@@ -49,7 +49,7 @@ def make_segment(
         start_time=pd.Timestamp(start_time),
         sample_rate_hz=sample_rate_hz,
         sample_count=sample_count,
-        sid=sid,
+        sourceid=sourceid,
         data=np.array(data),
     )
 
@@ -135,7 +135,7 @@ class TestExtractGeocsvTimeseries:
         assert segment.start_time == pd.Timestamp("2010-02-27T06:30:00Z")
         assert segment.sample_rate_hz == 1.0
         assert segment.sample_count == 3
-        assert segment.sid == "IU_ANMO_00_LHZ"
+        assert segment.sourceid == "IU_ANMO_00_LHZ"
         npt.assert_allclose(segment.data, [1.0, 2.0, 3.0])
         assert segment.data.dtype == np.float64
 
@@ -188,7 +188,7 @@ class TestExtractGeocsvTimeseries:
         with pytest.raises(ValueError, match="declares sample_count 5"):
             extract_geocsv_timeseries(parse_geocsv(truncated)[0])
 
-    def test_missing_sid(self) -> None:
+    def test_missing_sourceid(self) -> None:
         text = (
             "# dataset: GeoCSV 2.0\n"
             "# sample_count: 0\n"
@@ -196,7 +196,7 @@ class TestExtractGeocsvTimeseries:
             "# start_time: 2010-02-27T06:30:00Z\n"
             "Time, Sample\n"
         )
-        assert extract_geocsv_timeseries(parse_geocsv(text)[0]).sid == ""
+        assert extract_geocsv_timeseries(parse_geocsv(text)[0]).sourceid == ""
 
 
 class TestMergeGeocsvTimeseries:
@@ -224,9 +224,11 @@ class TestMergeGeocsvTimeseries:
         with pytest.raises(ValueError, match="No non-empty timeseries segments"):
             merge_geocsv_timeseries([empty])
 
-    def test_sid_mismatch(self) -> None:
+    def test_sourceid_mismatch(self) -> None:
         first = make_segment()
-        second = make_segment(start_time="2010-02-27T06:30:03Z", sid="IU_ANMO_00_LH1")
+        second = make_segment(
+            start_time="2010-02-27T06:30:03Z", sourceid="IU_ANMO_00_LH1"
+        )
         with pytest.raises(ValueError, match="different channels"):
             merge_geocsv_timeseries([first, second])
 
@@ -302,7 +304,7 @@ def test_real_dataselect_response() -> None:
     assert dataset.delimiter == ","
     assert dataset.headers["latitude_deg"] == "34.945981"
     segment = extract_geocsv_timeseries(dataset)
-    assert segment.sid == "IU_ANMO_00_LHZ"
+    assert segment.sourceid == "IU_ANMO_00_LHZ"
     assert segment.sample_rate_hz == 1.0
     assert segment.sample_count == 60
     assert segment.start_time == pd.Timestamp("2010-02-27T06:30:00.069538Z")
@@ -318,13 +320,13 @@ class TestWriteGeocsv:
     def make_seismogram(
         self,
         data: list[float] | None = None,
-        sid: str = "IU_ANMO_00_LHZ",
+        sourceid: str = "IU_ANMO_00_LHZ",
     ) -> GeoCsvSeismogram:
         return GeoCsvSeismogram(
             begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
             delta=pd.Timedelta(seconds=1.0),
             data=np.array(data if data is not None else [1.0, 2.0, 3.0]),
-            sid=sid,
+            sourceid=sourceid,
         )
 
     def test_round_trip(self, tmp_path: Path) -> None:
@@ -336,26 +338,26 @@ class TestWriteGeocsv:
         assert segment.sample_rate_hz == pytest.approx(1.0)
         npt.assert_allclose(segment.data, seismogram.data)
 
-    def test_sid_written_when_present(self, tmp_path: Path) -> None:
+    def test_sourceid_written_when_present(self, tmp_path: Path) -> None:
         seismogram = self.make_seismogram()
         path = tmp_path / "out.geocsv"
         write_geocsv(seismogram, path)
         assert "# SID: IU_ANMO_00_LHZ" in path.read_text()
 
-    def test_sid_omitted_when_absent(self, tmp_path: Path) -> None:
-        """A bare MiniSeismogram has no `sid` attribute at all — write_geocsv
+    def test_sourceid_omitted_when_absent(self, tmp_path: Path) -> None:
+        """A bare MiniSeismogram has no `sourceid` attribute at all — write_geocsv
         must not raise, and must simply omit the `# SID:` header line."""
         seismogram = MiniSeismogram(
             begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
             delta=pd.Timedelta(seconds=1.0),
             data=np.array([1.0, 2.0, 3.0]),
         )
-        assert not hasattr(seismogram, "sid")
+        assert not hasattr(seismogram, "sourceid")
         path = tmp_path / "out.geocsv"
         write_geocsv(seismogram, path)
         assert "SID" not in path.read_text()
         segment = extract_geocsv_timeseries(parse_geocsv(path.read_text())[0])
-        assert segment.sid == ""
+        assert segment.sourceid == ""
 
     def test_integral_data_written_as_integer_field_type(self, tmp_path: Path) -> None:
         seismogram = self.make_seismogram(data=[1.0, 2.0, 3.0])
@@ -389,8 +391,8 @@ class TestWriteGeocsv:
         npt.assert_allclose(segment.data, [1.0, 2.0, np.inf])
 
     def test_multi_record(self, tmp_path: Path) -> None:
-        seg1 = self.make_seismogram(sid="IU_ANMO_00_LHZ")
-        seg2 = self.make_seismogram(data=[4.0, 5.0, 6.0], sid="IU_ANMO_00_BHZ")
+        seg1 = self.make_seismogram(sourceid="IU_ANMO_00_LHZ")
+        seg2 = self.make_seismogram(data=[4.0, 5.0, 6.0], sourceid="IU_ANMO_00_BHZ")
         path = tmp_path / "multi.geocsv"
         write_geocsv([seg1, seg2], path)
         datasets = parse_geocsv(path.read_text())

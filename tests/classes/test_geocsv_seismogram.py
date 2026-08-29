@@ -41,7 +41,7 @@ class TestGeoCsvSeismogram:
         assert seismogram.begin_time == pd.Timestamp("2010-02-27T06:30:00Z")
         assert seismogram.delta == pd.Timedelta(seconds=0.5)
         npt.assert_allclose(seismogram.data, [1.0, 2.0, 3.0])
-        assert seismogram.sid == "IU_ANMO_00_LHZ"
+        assert seismogram.sourceid == "IU_ANMO_00_LHZ"
         assert seismogram.sample_count == 3
 
     def test_end_time(self) -> None:
@@ -62,7 +62,7 @@ class TestGeoCsvSeismogram:
 
     def test_from_real_response(self) -> None:
         seismogram = GeoCsvSeismogram.from_text(FIXTURE.read_text())
-        assert seismogram.sid == "IU_ANMO_00_LHZ"
+        assert seismogram.sourceid == "IU_ANMO_00_LHZ"
         assert seismogram.delta == pd.Timedelta(seconds=1)
         assert seismogram.sample_count == 60
 
@@ -84,10 +84,10 @@ class TestGeoCsvSeismogram:
         with pytest.raises(ValueError):
             seismogram.delta = pd.Timedelta(seconds=-1)
 
-    def test_invalid_sid(self) -> None:
+    def test_invalid_sourceid(self) -> None:
         seismogram = GeoCsvSeismogram.from_text(TEXT)
         with pytest.raises(TypeError):
-            seismogram.sid = 42  # type: ignore[assignment]
+            seismogram.sourceid = 42  # type: ignore[assignment]
 
     def test_rejects_unknown_attributes(self) -> None:
         seismogram = GeoCsvSeismogram.from_text(TEXT)
@@ -127,7 +127,7 @@ class TestFetch:
         )
 
         assert isinstance(seismogram, Seismogram)
-        assert seismogram.sid == "IU_ANMO_00_LHZ"
+        assert seismogram.sourceid == "IU_ANMO_00_LHZ"
         npt.assert_allclose(seismogram.data, [1.0, 2.0, 3.0])
 
         _, fields = calls[0]
@@ -158,7 +158,7 @@ class TestWrite:
         path = tmp_path / "out.geocsv"
         seismogram.write(path)
         recovered = GeoCsvSeismogram.from_text(path.read_text())
-        assert recovered.sid == seismogram.sid
+        assert recovered.sourceid == seismogram.sourceid
         assert recovered.begin_time == seismogram.begin_time
         assert recovered.delta == seismogram.delta
         npt.assert_allclose(recovered.data, seismogram.data)

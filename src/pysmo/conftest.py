@@ -83,9 +83,11 @@ def copy_testfiles(
 ) -> Generator[None, Any, None]:
     cwd = os.getcwd()
     test_testfile = Path(tmp_path) / "example.sac"
+    test_mseed = Path(tmp_path) / "example.mseed"
     test_stationxml = Path(tmp_path) / "example_response.xml"
     test_sacpz = Path(tmp_path) / "SACPZ.IU.ANMO.00.BHZ"
     copyfile(reference_event_assets["sac_bhz"], test_testfile)
+    copyfile(reference_event_assets["mseed_bhz"], test_mseed)
     copyfile(reference_event_assets["stationxml_bhz"], test_stationxml)
     copyfile(reference_event_assets["sacpz_bhz"], test_sacpz)
     try:
