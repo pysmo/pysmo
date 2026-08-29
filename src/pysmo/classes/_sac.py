@@ -676,7 +676,7 @@ class SAC:
     and [`timestamps`][pysmo.classes.SAC.timestamps] are bound to this object
     at construction time, so reassigning it would silently orphan them. To
     load different data into an existing instance, use
-    [`read`][pysmo.classes.SAC.read]/[`read_buffer`][pysmo.classes.SAC.read_buffer],
+    [`read`][pysmo.classes.SAC.read]/[`read_bytes`][pysmo.classes.SAC.read_bytes],
     which update this same object in place; otherwise construct a new
     [`SAC`][pysmo.classes.SAC] instance.
     """
@@ -701,7 +701,7 @@ class SAC:
         self.timestamps = SacTimestamps(parent=self.native)
 
     @classmethod
-    def from_file(cls, filename: str | PathLike) -> Self:
+    def from_file(cls, filename: str | PathLike[str]) -> Self:
         """Create a new SAC instance from a SAC file.
 
         Args:
@@ -721,26 +721,26 @@ class SAC:
         return cls(native=native)
 
     @classmethod
-    def from_buffer(cls, buffer: bytes) -> Self:
-        """Create a new SAC instance from a SAC data buffer.
+    def from_bytes(cls, data: bytes) -> Self:
+        """Create a new SAC instance from SAC file content as bytes.
 
         Args:
-            buffer: Buffer containing SAC file content.
+            data: Raw bytes of a SAC file.
 
         Returns:
             A new SAC instance.
 
         Raises:
-            NotImplementedError: If the buffer isn't evenly-spaced
+            NotImplementedError: If the data isn't evenly-spaced
                 time-series data (IFTYPE=ITIME, LEVEN=True). Use
                 [`SacIO.from_buffer`][pysmo.lib.io.SacIO.from_buffer]
                 directly for other SAC file types.
         """
-        native = SacIO.from_buffer(buffer)
+        native = SacIO.from_buffer(data)
         _check_seismogram_compatible(native)
         return cls(native=native)
 
-    def read(self, filename: str | PathLike) -> None:
+    def read(self, filename: str | PathLike[str]) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
 
         Args:
@@ -753,20 +753,20 @@ class SAC:
         self.native.read(filename)
         _check_seismogram_compatible(self.native)
 
-    def read_buffer(self, buffer: bytes) -> None:
-        """Read data and headers from a SAC byte buffer into an existing SAC instance.
+    def read_bytes(self, data: bytes) -> None:
+        """Read SAC file content as bytes into an existing SAC instance.
 
         Args:
-            buffer: Buffer containing SAC file content.
+            data: Raw bytes of a SAC file.
 
         Raises:
-            NotImplementedError: If the buffer isn't evenly-spaced
+            NotImplementedError: If the data isn't evenly-spaced
                 time-series data (IFTYPE=ITIME, LEVEN=True).
         """
-        self.native.read_buffer(buffer)
+        self.native.read_buffer(data)
         _check_seismogram_compatible(self.native)
 
-    def write(self, filename: str | PathLike) -> None:
+    def write(self, filename: str | PathLike[str]) -> None:
         """Write data and header values to a SAC file.
 
         Args:
@@ -917,7 +917,7 @@ class SAC:
                 segments = []
                 for name in names:
                     try:
-                        segments.append(cls.from_buffer(archive_zip.read(name)))
+                        segments.append(cls.from_bytes(archive_zip.read(name)))
                     except Exception as error:
                         raise ValueError(
                             f"Could not parse segment {name!r} in zip archive: {error}"

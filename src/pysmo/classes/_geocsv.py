@@ -63,7 +63,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         >>> seismogram = GeoCsvSeismogram.from_text(text)
         >>> isinstance(seismogram, Seismogram)
         True
-        >>> seismogram.sid
+        >>> seismogram.sourceid
         'IU_ANMO_00_LHZ'
         >>> seismogram.data
         array([-47297., -47298., -47299.])
@@ -71,7 +71,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         Timestamp('2010-02-27 06:30:02+0000', tz='UTC')
         >>> import pathlib
         >>> seismogram.write("out.geocsv"); recovered = GeoCsvSeismogram.from_text(pathlib.Path("out.geocsv").read_text())
-        >>> recovered.sid
+        >>> recovered.sourceid
         'IU_ANMO_00_LHZ'
         >>>
         ```
@@ -101,14 +101,18 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     )
     """Seismogram data."""
 
-    sid: str = field(
+    sourceid: str = field(
         validator=validators.instance_of(str),
         on_setattr=setters.validate,
     )
-    """FDSN source identifier of the parsed GeoCSV data (e.g. `IU_ANMO_00_LHZ`).
+    """FDSN Source Identifier as carried in the GeoCSV `SID` header.
 
-    This is parse-time metadata: it describes the GeoCSV data the instance
-    was created from and is not updated when other attributes change.
+    Stored verbatim as parsed, e.g. `IU_ANMO_00_LHZ` — no `FDSN:` URN
+    prefix, and the channel is not split into band/source/subsource. This
+    differs from [`MSeed.sourceid`][pysmo.classes.MSeed.sourceid], which
+    keeps the full URN form. This is parse-time metadata: it describes the
+    GeoCSV data the instance was created from and is not updated when other
+    attributes change.
     """
 
     @property
@@ -146,7 +150,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             begin_time=segment.start_time,
             delta=pd.Timedelta(seconds=1.0 / segment.sample_rate_hz),
             data=segment.data,
-            sid=segment.sid,
+            sourceid=segment.sourceid,
         )
 
     @classmethod
@@ -210,7 +214,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             )
         return cls.from_text(waveform_bytes.decode("utf-8"))
 
-    def write(self, path: str | PathLike) -> None:
+    def write(self, path: str | PathLike[str]) -> None:
         r"""Write this seismogram to a GeoCSV 2.0 file.
 
         Serialises the instance as a single GeoCSV 2.0 timeseries dataset.
@@ -242,7 +246,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             >>> seismogram.write("out.geocsv"); recovered = GeoCsvSeismogram.from_text(
             ...     pathlib.Path("out.geocsv").read_text()
             ... )
-            >>> recovered.sid == seismogram.sid
+            >>> recovered.sourceid == seismogram.sourceid
             True
             >>>
             ```

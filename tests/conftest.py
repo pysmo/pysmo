@@ -19,7 +19,7 @@ from pysmo import (
     Seismogram,
     Station,
 )
-from pysmo.classes import SAC, GeoCsvSeismogram, SacSeismogram, SacStation
+from pysmo.classes import SAC, GeoCsvSeismogram, MSeed, SacSeismogram, SacStation
 
 
 @pytest.fixture()
@@ -67,8 +67,13 @@ def geocsv_seismogram(sac_seismogram: Seismogram) -> GeoCsvSeismogram:
         begin_time=sac_seismogram.begin_time,
         delta=sac_seismogram.delta,
         data=sac_seismogram.data.copy(),
-        sid="XX_TEST_00_HHZ",
+        sourceid="XX_TEST_00_HHZ",
     )
+
+
+@pytest.fixture(scope="function")
+def mseed_seismogram(reference_event_assets: dict[str, Path]) -> MSeed:
+    return MSeed.from_file(reference_event_assets["mseed_bhz"])
 
 
 @pytest.fixture()
@@ -78,7 +83,12 @@ def seismograms(
     return [sac_seismogram, mini_seismogram]
 
 
-SEISMOGRAM_FIXTURE_NAMES = ["sac_seismogram", "mini_seismogram", "geocsv_seismogram"]
+SEISMOGRAM_FIXTURE_NAMES = [
+    "sac_seismogram",
+    "mini_seismogram",
+    "geocsv_seismogram",
+    "mseed_seismogram",
+]
 
 
 @pytest.fixture(params=SEISMOGRAM_FIXTURE_NAMES, ids=SEISMOGRAM_FIXTURE_NAMES)

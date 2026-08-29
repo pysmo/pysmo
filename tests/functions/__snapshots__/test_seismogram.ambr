@@ -7,6 +7,10 @@
   array([ -85583.,  -86231.,  -86873., ..., -714243., -696072., -677494.],
         shape=(28733,))
 # ---
+# name: test_crop_snapshot[mseed_seismogram]
+  array([ -85583.,  -86231.,  -86873., ..., -714243., -696072., -677494.],
+        shape=(28733,))
+# ---
 # name: test_crop_snapshot[sac_seismogram]
   array([ -85583.,  -86231.,  -86873., ..., -714243., -696072., -677494.],
         shape=(28733,))
@@ -16,6 +20,10 @@
          -21859.912832, -10747.892131], shape=(57465,))
 # ---
 # name: test_detrend_snapshot[mini_seismogram]
+  array([   821.538612,    661.559313,    511.580014, ..., -32931.933533,
+         -21859.912832, -10747.892131], shape=(57465,))
+# ---
+# name: test_detrend_snapshot[mseed_seismogram]
   array([   821.538612,    661.559313,    511.580014, ..., -32931.933533,
          -21859.912832, -10747.892131], shape=(57465,))
 # ---
@@ -31,6 +39,10 @@
   array([-0.009759, -0.009793, -0.009824, ..., -0.016984, -0.014695,
          -0.012398], shape=(57465,))
 # ---
+# name: test_normalize_snapshot[mseed_seismogram]
+  array([-0.009759, -0.009793, -0.009824, ..., -0.016984, -0.014695,
+         -0.012398], shape=(57465,))
+# ---
 # name: test_normalize_snapshot[sac_seismogram]
   array([-0.009759, -0.009793, -0.009824, ..., -0.016984, -0.014695,
          -0.012398], shape=(57465,))
@@ -41,6 +53,9 @@
 # name: test_pad_snapshot[mini_seismogram]
   array([0., 0., 0., ..., 0., 0., 0.], shape=(57472,))
 # ---
+# name: test_pad_snapshot[mseed_seismogram]
+  array([0., 0., 0., ..., 0., 0., 0.], shape=(57472,))
+# ---
 # name: test_pad_snapshot[sac_seismogram]
   array([0., 0., 0., ..., 0., 0., 0.], shape=(57472,))
 # ---
@@ -49,6 +64,10 @@
          -115129.961994,  -93206.411301,  -70927.000527], shape=(28732,))
 # ---
 # name: test_resample_snapshot[mini_seismogram]
+  array([ -49407.43898 ,  -47146.180392,  -47977.367529, ...,
+         -115129.961994,  -93206.411301,  -70927.000527], shape=(28732,))
+# ---
+# name: test_resample_snapshot[mseed_seismogram]
   array([ -49407.43898 ,  -47146.180392,  -47977.367529, ...,
          -115129.961994,  -93206.411301,  -70927.000527], shape=(28732,))
 # ---

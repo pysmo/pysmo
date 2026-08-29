@@ -346,7 +346,7 @@ class SacIO(SacIOBase):
             return None
         return self.ref_datetime.time().isoformat(timespec="milliseconds")
 
-    def read(self, filename: str | PathLike) -> None:
+    def read(self, filename: str | PathLike[str]) -> None:
         """Read data and headers from a SAC file into an existing SAC instance.
 
         Args:
@@ -357,7 +357,7 @@ class SacIO(SacIOBase):
 
         self.read_buffer(filename.read_bytes())
 
-    def write(self, filename: str | PathLike) -> None:
+    def write(self, filename: str | PathLike[str]) -> None:
         """Writes data and header values to a SAC file.
 
         Args:
@@ -453,7 +453,7 @@ class SacIO(SacIOBase):
                     file_handle.write(struct.pack("d", value))
 
     @classmethod
-    def from_file(cls, filename: str | PathLike) -> Self:
+    def from_file(cls, filename: str | PathLike[str]) -> Self:
         """Create a new SAC instance from a SAC file.
 
         Args:
