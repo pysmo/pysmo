@@ -21,10 +21,11 @@ omitted from the result, as do distances beyond the CMB grazing limit
 
 import math
 from collections.abc import Callable, Sequence
+from itertools import pairwise
+from typing import get_args
 
 from pysmo.tools.traveltime._model import (
     _EARTH_RADIUS_KM,
-    _SUPPORTED_MODELS,
     SlownessProfile,
     _flattened_depth,
     cmb_depth_km,
@@ -50,6 +51,10 @@ _REFLECTION_PHASES: dict[str, tuple[Wave, Wave]] = {
 _SUPPORTED_PHASES: frozenset[str] = frozenset(
     _TURNING_PHASES.keys() | _REFLECTION_PHASES.keys()
 )
+
+# Velocity models with a bundled `.tvel` file;
+# `test_model_literal_matches_bundled_tvel_files` locks this to `Model`.
+_SUPPORTED_MODELS: frozenset[str] = frozenset(get_args(Model.__value__))
 
 # Relative margin keeping a solved ray parameter off the exact grazing
 # slowness, where the turning integrand vanishes and the integrals
@@ -135,6 +140,11 @@ def _travel_time(
     either because the distance falls in the core shadow or because it is
     below the closest down-going arrival (see the module docstring).
 
+    The ray-parameter range is split at the profile's branch knots so that
+    epicentral distance is monotonic on each sub-range. Where an
+    upper-mantle triplication makes several rays reach *dist*, each is
+    solved and the earliest arrival returned.
+
     Args:
         profile: The slowness profile of the phase.
         z_s: Flattened source depth, in kilometres.
@@ -145,25 +155,31 @@ def _travel_time(
         Travel time in seconds, or `None` when no down-going ray reaches
         *dist*.
     """
-    u_s = profile.u_at(z_s)
-    u_cmb = profile.u_at(z_cmb)
-    p_lo = u_cmb * (1 + _GRAZING_MARGIN)
-    p_hi = u_s * (1 - _GRAZING_MARGIN)
+    p_min = profile.u_at(z_cmb) * (1 + _GRAZING_MARGIN)
+    p_max = profile.u_at(z_s) * (1 - _GRAZING_MARGIN)
 
     def turning_delta(p: float) -> float | None:
         return _down_going_delta(profile, z_s, p)
 
-    d_lo = turning_delta(p_lo)
-    d_hi = turning_delta(p_hi)
-    if d_lo is None or d_hi is None or not (d_hi < dist < d_lo):
-        return None
-    p = _bisect_ray_parameter(turning_delta, dist, p_lo, p_hi)
-    if p is None:
-        return None
-    result = profile.direct_time(z_s, p)
-    if result is None:
-        return None
-    return result[0]
+    knots = profile.branch_knots
+    bounds = [p_min, *knots[(knots > p_min) & (knots < p_max)], p_max]
+
+    earliest: float | None = None
+    for index, (lo, hi) in enumerate(pairwise(bounds)):
+        # Nudge off the interior knots, where the turning integrand grazes.
+        p_lo = lo if index == 0 else lo * (1 + _GRAZING_MARGIN)
+        p_hi = hi if index == len(bounds) - 2 else hi * (1 - _GRAZING_MARGIN)
+        d_lo = turning_delta(p_lo)
+        d_hi = turning_delta(p_hi)
+        if d_lo is None or d_hi is None or (d_lo - dist) * (d_hi - dist) >= 0.0:
+            continue
+        p = _bisect_ray_parameter(turning_delta, dist, p_lo, p_hi)
+        if p is None:
+            continue
+        result = profile.direct_time(z_s, p)
+        if result is not None and (earliest is None or result[0] < earliest):
+            earliest = result[0]
+    return earliest
 
 
 def _reflect_time(
@@ -248,10 +264,11 @@ def solve(
             180 degrees.
 
     Note:
-        Each phase is solved on a single turning branch. Where the model
-        produces a travel-time triplication — mainly P and S at short
-        distances for a shallow source — that branch need not be the
-        first arrival.
+        Turning phases (P, S) return the first arrival: the search is
+        split at the model's velocity discontinuities, so an upper-mantle
+        triplication resolves to its earliest branch. A triplication from
+        a smooth velocity gradient with no discontinuity is not split and
+        may return a later branch.
     """
     if model not in _SUPPORTED_MODELS:
         raise ValueError(
