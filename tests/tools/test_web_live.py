@@ -30,21 +30,12 @@ from pysmo.classes import SAC, GeoCsvSeismogram, MSeed, QuakeML, SacPZ
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
-from pysmo.tools.web import (
-    fetch_mseed,
-    fetch_sac,
-    fetch_station_inventory,
-    fetch_travel_times,
-)
+from pysmo.tools.traveltime import travel_times
+from pysmo.tools.web import fetch_mseed, fetch_sac, fetch_station_inventory
 
 matplotlib.use("Agg")
 
 pytestmark = pytest.mark.real_web_request
-
-# EarthScope's IASP91 traveltime lookup for this depth/distance is a fixed
-# model evaluation, not a measurement, so it is expected to be stable across
-# runs; drift here signals a change on EarthScope's side, not flakiness.
-EXPECTED_TRAVEL_TIMES = {"P": 604.654, "S": 1096.553}
 
 
 @pytest.fixture()
@@ -69,21 +60,13 @@ def event() -> MiniEvent:
     )
 
 
-def test_fetch_travel_times_live() -> None:
-    result = fetch_travel_times(22.9, 60.0, ["P", "S"])
-
-    assert result.keys() >= {"P", "S"}
-    assert 0 < result["P"] < result["S"]
-    assert {phase: round(t, 3) for phase, t in result.items()} == EXPECTED_TRAVEL_TIMES
-
-
 @pytest.mark.mpl_image_compare(remove_text=True)
 def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure:
     # Computing a phase-relative window is just the predicted arrival time
-    # plus/minus a duration — see fetch_travel_times's own Examples.
+    # plus/minus a duration — see travel_times's own Examples.
     dist = haversine(event, station)
-    travel_times = fetch_travel_times(event.depth / 1000.0, dist, ["P"])
-    predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
+    arrivals = travel_times(depth=event.depth, distance=dist, phases=["P"])
+    predicted_p = event.time + arrivals["P"]
 
     seismogram = GeoCsvSeismogram.fetch(
         station=station,
@@ -125,8 +108,8 @@ def test_fetch_sac_live(station: MiniStation, event: MiniEvent) -> None:
     # endpoint, which required stripping fractional seconds/UTC offsets
     # before every request.
     dist = haversine(event, station)
-    travel_times = fetch_travel_times(event.depth / 1000.0, dist, ["P"])
-    predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
+    arrivals = travel_times(depth=event.depth, distance=dist, phases=["P"])
+    predicted_p = event.time + arrivals["P"]
 
     sac = SAC.fetch(
         station=station,

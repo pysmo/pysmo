@@ -15,7 +15,7 @@ from pysmo.classes import MSeed
 from pysmo.functions import clone_to_mini
 from pysmo.lib.validators import convert_to_timedelta
 from pysmo.tools.azdist import haversine
-from pysmo.tools.web import TravelTimeBackend, fetch_travel_times
+from pysmo.tools.traveltime import TravelTimeBackend, builtin_backend
 from pysmo.typing import NonPositiveTimedelta, PositiveTimedelta
 
 from ._entry import ProjectEntry
@@ -237,7 +237,12 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     phase: str = field(
         default="P", on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
     )
-    """Seismic phase used to derive a window from an entry's `event`."""
+    """Seismic phase used to derive a window from an entry's `event`.
+
+    With the default `travel_time_backend` this must be one of the phases
+    in [`Phase`][pysmo.tools.traveltime.Phase]; any other name raises when
+    a window is next resolved. A custom backend may accept a wider set.
+    """
 
     pre_pick: NonPositiveTimedelta = field(
         default=pd.Timedelta(minutes=-2),
@@ -265,10 +270,24 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     )
     """Offset from the predicted arrival to the window end. Must be positive."""
 
-    travel_time_backend: TravelTimeBackend | None = field(
-        default=None, on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
+    travel_time_backend: TravelTimeBackend = field(
+        default=builtin_backend,
+        on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache),
     )
-    """Optional override for travel-time calculation. See [`pysmo.tools.web.TravelTimeBackend`][]."""
+    """Predicts the phase arrival a window is built around.
+
+    Defaults to pysmo's built-in solver,
+    [`travel_times`][pysmo.tools.traveltime.travel_times]. Replace it with
+    any callable of the same shape
+    ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]) — for
+    another velocity model (see the
+    [module documentation][pysmo.tools.project]), a phase the built-in
+    solver does not cover, or arrival times from an external source. Must
+    be picklable: a top-level function, a
+    [`functools.partial`][] of one, or an attrs instance
+    with only picklable fields, like `fetch_seismogram`; not a lambda or
+    closure.
+    """
 
     on_checksum_mismatch: Literal["warn", "raise", "ignore"] = field(
         default="warn",
@@ -357,11 +376,8 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             return entry.starttime, entry.endtime, None
         if entry.event is not None:
             dist = haversine(entry.event, entry.station)
-            tt = fetch_travel_times(
-                entry.event.depth / 1000.0,
-                dist,
-                [self.phase],
-                travel_time_backend=self.travel_time_backend,
+            tt = self.travel_time_backend(
+                depth=entry.event.depth, distance=dist, phases=[self.phase]
             )
             if self.phase not in tt:
                 raise ValueError(
@@ -369,7 +385,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                     f"{entry.station.network}.{entry.station.name} at this "
                     "distance/depth."
                 )
-            predicted = entry.event.time + pd.Timedelta(seconds=tt[self.phase])
+            predicted = entry.event.time + tt[self.phase]
             return predicted + self.pre_pick, predicted + self.post_pick, predicted
         raise ValueError("ProjectEntry needs either an explicit window or an event.")
 
