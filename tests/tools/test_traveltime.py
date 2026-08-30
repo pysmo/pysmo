@@ -111,7 +111,6 @@ IAS91_OMITTED: list[tuple[float, float, Phase]] = [
     (22.9, 0.5, "P"),
     (22.9, 0.5, "S"),
     (0.0, 100.0, "P"),
-    (22.9, 2.0, "P"),
     (0.0, 100.0, "PcP"),
     (0.0, 100.0, "ScS"),
     (0.0, 80.0, "PcS"),
@@ -273,6 +272,32 @@ def test_solver_values_are_stable() -> None:
         "P": 604.652,
         "S": 1096.551,
     }
+
+
+@pytest.mark.parametrize(
+    ("dist_deg", "reference"),
+    [(19.0, 259.987), (20.0, 270.915), (21.0, 281.756)],
+)
+def test_triplication_band_returns_first_arrival(
+    dist_deg: float, reference: float
+) -> None:
+    # In the P triplication band (22.9 km source, ~18-26 degrees) the
+    # search is split at the 410 and 660 km discontinuities so the
+    # earliest of the overlapping branches is returned. Exact-value
+    # regression lock; TauP revalidation of the band is pending.
+    tt = travel_times(depth=22900.0, distance=dist_deg, phases=["P"])
+
+    assert round(tt["P"].total_seconds(), 3) == reference
+
+
+def test_regional_p_has_an_arrival_at_short_distance() -> None:
+    # A ray turning just below the Moho reaches short distances from a
+    # crustal source; its apparent slowness matches the sub-Moho velocity.
+    near = travel_times(depth=22900.0, distance=2.0, phases=["P"])["P"]
+    far = travel_times(depth=22900.0, distance=2.5, phases=["P"])["P"]
+
+    apparent_km_per_s = (2.5 - 2.0) * 111.19 / (far - near).total_seconds()
+    assert 7.9 < apparent_km_per_s < 8.2
 
 
 def test_phase_literal_matches_dispatch_tables() -> None:

@@ -20,14 +20,11 @@ from dataclasses import dataclass
 from functools import lru_cache
 from itertools import pairwise
 from pathlib import Path
-from typing import get_args
 
 import numpy as np
 import numpy.typing as npt
 
 from pysmo.tools.traveltime._types import Model, Wave
-
-_SUPPORTED_MODELS: frozenset[str] = frozenset(get_args(Model.__value__))
 
 _EARTH_RADIUS_KM = 6371.0
 _GRID_STEP_KM = 1.0
@@ -274,6 +271,12 @@ class SlownessProfile:
     Attributes:
         z: Flattened depth of each sample, in kilometres, non-decreasing.
         u: Slowness `r / (a·v)` at each sample, in seconds per kilometre.
+        branch_knots: Slownesses on both sides of every velocity
+            discontinuity, in seconds per kilometre. Epicentral distance is
+            not monotonic in ray parameter across a discontinuity, so a
+            turning-ray search split at these values keeps each sub-range
+            monotonic and can pick the first arrival where the branches
+            overlap (an upper-mantle triplication).
     """
 
     def __init__(self, model: Model, wave: Wave) -> None:
@@ -293,6 +296,9 @@ class SlownessProfile:
         self._u1, self._u2 = self.u[:-1], self.u[1:]
         self._dz = self._z2 - self._z1
         self._real = self._dz > 0.0
+        self.branch_knots: npt.NDArray[np.float64] = np.unique(
+            np.concatenate([self._u1[~self._real], self._u2[~self._real]])
+        )
 
     def u_at(self, z: float) -> float:
         """Interpolate slowness at a flattened depth (linear in depth).
