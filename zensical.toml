@@ -40,6 +40,7 @@ nav = [
       "api/pysmo/tools/plotutils.md",
       "api/pysmo/tools/project.md",
       "api/pysmo/tools/signal.md",
+      "api/pysmo/tools/traveltime.md",
       "api/pysmo/tools/utils.md",
       "api/pysmo/tools/web.md",
     ] },

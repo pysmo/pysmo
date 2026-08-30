@@ -4,20 +4,18 @@ Thin wrappers around FDSN web services (EarthScope's, except `fetch_quakeml`,
 which targets USGS since EarthScope retired its event service).
 `fetch_stationxml`, `fetch_station_inventory`, `fetch_sacpz`,
 `fetch_geocsvseismogram`, `fetch_sac`, `fetch_mseed`, and `fetch_quakeml`
-return raw, unparsed responses — most a
-lower-level counterpart to a class's own parsing entry point (e.g.
+return raw, unparsed responses — mostly a lower-level counterpart to a
+class's own parsing entry point (e.g.
 [`SAC.fetch`][pysmo.classes.SAC.fetch],
 [`QuakeML.all_from_bytes`][pysmo.classes.QuakeML.all_from_bytes]), useful on
 their own for saving a raw response to disk and deferring parsing to later,
-without another network request. `fetch_travel_times` is the exception: it
-has no class counterpart and returns an already-parsed `dict[str, float]`.
+without another network request.
+
+Predicted arrival times, used to window these fetches, are computed
+locally by [`pysmo.tools.traveltime`][] with no web service involved.
 """
 
-from __future__ import annotations
-
-import json
 import warnings
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, Self
 
@@ -34,7 +32,6 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = [
     "QuakeMLOrderBy",
-    "TravelTimeBackend",
     "fetch_geocsvseismogram",
     "fetch_mseed",
     "fetch_quakeml",
@@ -42,28 +39,19 @@ __all__ = [
     "fetch_sacpz",
     "fetch_station_inventory",
     "fetch_stationxml",
-    "fetch_travel_times",
 ]
 
 type QuakeMLOrderBy = Literal["time", "time-asc", "magnitude", "magnitude-asc"]
 """Allowed `orderby` values for [`fetch_quakeml`][pysmo.tools.web.fetch_quakeml]."""
-
-type TravelTimeBackend = Callable[[float, float, list[str]], dict[str, float]]
-"""Callable `(depth_km, dist_deg, phases) -> dict[str, float]` returning travel times.
-
-Accepts source depth in kilometres, epicentral distance in degrees, and a list of
-seismic phase names (e.g. `["P", "S"]`). Returns a mapping of phase name to
-travel time in seconds, omitting phases with no arrival at the given geometry.
-"""
 
 
 @dataclass(init=False)
 class _ServiceDefaults:
     """Default web-service endpoints and HTTP retry policy.
 
-    Mostly EarthScope's (`fdsnws-station`/`-dataselect`, `irisws-traveltime`/
-    `-sacpz`); `event_url` is USGS because EarthScope retired its
-    `fdsnws-event` service.
+    Mostly EarthScope's (`fdsnws-station`/`-dataselect`, `irisws-sacpz`);
+    `event_url` is USGS because EarthScope retired its `fdsnws-event`
+    service.
     """
 
     def __new__(cls) -> Self:
@@ -72,7 +60,6 @@ class _ServiceDefaults:
             "Use _ServiceDefaults.<attribute> instead."
         )
 
-    traveltime_url: str = "https://service.earthscope.org/irisws/traveltime/1/query"
     station_url: str = "https://service.earthscope.org/fdsnws/station/1/query"
     event_url: str = "https://earthquake.usgs.gov/fdsnws/event/1/query"
     sacpz_url: str = "https://service.earthscope.org/irisws/sacpz/1/query"
@@ -80,108 +67,6 @@ class _ServiceDefaults:
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
     request_retries: int = DEFAULT_REQUEST_RETRIES
     retry_delay_seconds: int = DEFAULT_RETRY_DELAY_SECONDS
-
-
-def fetch_travel_times(
-    depth_km: float,
-    dist_deg: float,
-    phases: list[str],
-    model: str = "iasp91",
-    travel_time_backend: TravelTimeBackend | None = None,
-) -> dict[str, float]:
-    """Fetch seismic phase travel times for a given source–receiver geometry.
-
-    Uses the EarthScope traveltime web service by default, or a custom
-    callable if *travel_time_backend* is provided.
-
-    Args:
-        depth_km: Source depth in kilometres.
-        dist_deg: Epicentral distance in degrees.
-        phases: Seismic phase names to request (e.g. `["P", "S"]`).
-        model: Velocity model name.
-        travel_time_backend: Optional callable overriding the web service. Must
-            accept `(depth_km, dist_deg, phases)` and return a mapping of
-            phase name to travel time in seconds. See
-            [`TravelTimeBackend`][pysmo.tools.web.TravelTimeBackend].
-
-    Returns:
-        Mapping of phase name to travel time in seconds. Only phases with
-        arrivals at the given distance and depth are included.
-
-    Examples:
-        Using a custom `travel_time_backend` instead of the EarthScope web service.
-        The lambda below is a stand-in; replace it with a real travel-time
-        calculator:
-
-        ```python
-        >>> from pysmo.tools.web import fetch_travel_times
-        >>> backend = lambda depth, dist, phases: {"P": 480.2, "S": 900.1}
-        >>> fetch_travel_times(22.9, 60.0, ["P", "S"], travel_time_backend=backend)
-        {'P': 480.2, 'S': 900.1}
-        >>>
-        ```
-
-        Fetching a seismogram windowed around a predicted arrival is a short
-        combination of this function with [`pysmo.tools.azdist.haversine`][]
-        and a class's own `.fetch()` method (e.g.
-        [`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch], or
-        [`SAC.fetch`][pysmo.classes.SAC.fetch]):
-
-        ```python
-        >>> import pandas as pd
-        >>> from pysmo import MiniEvent, MiniStation
-        >>> from pysmo.classes import GeoCsvSeismogram
-        >>> from pysmo.tools.azdist import haversine
-        >>> station = MiniStation(
-        ...     name="ANMO", network="IU", location="00", channel="LHZ",
-        ...     latitude=34.945981, longitude=-106.457133,
-        ... )
-        >>> event = MiniEvent(
-        ...     latitude=-36.122, longitude=-72.898, depth=22900.0,
-        ...     time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
-        ... )
-        >>> dist = haversine(event, station)
-        >>> backend = lambda depth, dist, phases: {"P": 604.654}  # stand-in
-        >>> travel_times = fetch_travel_times(
-        ...     event.depth / 1000.0, dist, ["P"], travel_time_backend=backend
-        ... )
-        >>> predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
-        >>>
-        ```
-
-        <!-- skip: start if(not run_real_web_requests) -->
-        ```python
-        >>> seismogram = GeoCsvSeismogram.fetch(
-        ...     station=station,
-        ...     starttime=predicted_p - pd.Timedelta(minutes=2),
-        ...     endtime=predicted_p + pd.Timedelta(minutes=8),
-        ... )
-        >>>
-        ```
-        <!-- skip: end -->
-    """
-    if travel_time_backend is not None:
-        return travel_time_backend(depth_km, dist_deg, phases)
-    data = http_get(
-        _ServiceDefaults.traveltime_url,
-        {
-            "model": model,
-            "evdepth": depth_km,
-            "distdeg": dist_deg,
-            "phases": ",".join(phases),
-            "format": "json",
-        },
-        timeout_seconds=_ServiceDefaults.timeout_seconds,
-        request_retries=_ServiceDefaults.request_retries,
-        retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
-    )
-    result: dict[str, Any] = json.loads(data)
-    arrivals: dict[str, float] = {}
-    for arr in result.get("arrivals", []):
-        phase = str(arr["phase"])
-        if phase not in arrivals:
-            arrivals[phase] = float(arr["time"])
-    return arrivals
 
 
 def fetch_stationxml(*, station: Station) -> bytes:
