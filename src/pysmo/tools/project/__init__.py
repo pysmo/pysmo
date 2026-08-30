@@ -42,7 +42,7 @@ only detects drift on the live-network default rather than avoiding it.
 This example builds a small project around a single, real station/event
 pair — IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake, the
 same reference event used throughout this project's test suite and in
-[`fetch_travel_times`][pysmo.tools.web.fetch_travel_times]'s own `Examples:`
+[`travel_times`][pysmo.tools.traveltime.travel_times]'s own `Examples:`
 block:
 
 ```python
@@ -130,6 +130,35 @@ True
 >>>
 ```
 <!-- skip: end -->
+
+## A different travel-time model
+
+When an entry carries an event but no explicit window, the window is
+placed around a predicted phase arrival — by default
+[`travel_times`][pysmo.tools.traveltime.travel_times] on its own default
+model. `travel_time_backend` swaps that for any callable of the same
+shape ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]).
+Here it is the same solver on the ak135 model, via
+[`functools.partial`][]:
+
+```python
+>>> from functools import partial
+>>> from pysmo.tools.traveltime import travel_times
+>>>
+>>> project_ak135 = PysmoProject(
+...     entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+...     travel_time_backend=partial(travel_times, model="ak135"),
+... )
+>>> arrivals = project_ak135.travel_time_backend(
+...     depth=event_maule.depth, distance=60.0, phases=["P"]
+... )
+>>> round(arrivals["P"].total_seconds(), 1)
+604.7
+>>>
+```
+
+The same hook takes a solver for a phase the built-in one does not
+cover, or arrival times from an external catalogue.
 
 ## Caching downloads
 

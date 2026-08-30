@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -59,20 +60,20 @@ def other_identity_transform(
 
 
 def fake_travel_time_backend(
-    depth_km: float, dist_deg: float, phases: list[str]
-) -> dict[str, float]:
-    return {"P": 100.0, "S": 200.0}
+    *, depth: float, distance: float, phases: Sequence[str]
+) -> dict[str, pd.Timedelta]:
+    return {"P": pd.Timedelta(seconds=100.0), "S": pd.Timedelta(seconds=200.0)}
 
 
 def other_travel_time_backend(
-    depth_km: float, dist_deg: float, phases: list[str]
-) -> dict[str, float]:
-    return {"P": 300.0, "S": 400.0}
+    *, depth: float, distance: float, phases: Sequence[str]
+) -> dict[str, pd.Timedelta]:
+    return {"P": pd.Timedelta(seconds=300.0), "S": pd.Timedelta(seconds=400.0)}
 
 
 def no_arrival_travel_time_backend(
-    depth_km: float, dist_deg: float, phases: list[str]
-) -> dict[str, float]:
+    *, depth: float, distance: float, phases: Sequence[str]
+) -> dict[str, pd.Timedelta]:
     """Stands in for a geometry with no predicted arrival for the requested phase."""
     return {}
 
