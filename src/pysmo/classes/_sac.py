@@ -824,9 +824,10 @@ class SAC:
         """Fetch and parse a SAC seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
 
         For a window relative to a predicted phase arrival instead, compute
-        the window yourself (e.g. with [`pysmo.tools.web.fetch_travel_times`][],
-        which shows exactly this in its own Examples) and pass the
-        resulting *starttime*/*endtime* here.
+        the window yourself (e.g. with
+        [`pysmo.tools.traveltime.travel_times`][], which shows exactly this
+        in its own Examples) and pass the resulting *starttime*/*endtime*
+        here.
 
         To fetch once and interpret later (e.g. offline, or without
         repeating the network request), use

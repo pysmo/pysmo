@@ -1,6 +1,5 @@
 """Tests for pysmo.tools.web."""
 
-import json
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -16,7 +15,6 @@ from pysmo.tools.web import (
     fetch_sacpz,
     fetch_station_inventory,
     fetch_stationxml,
-    fetch_travel_times,
 )
 
 QUAKEML_BYTES = b"<q:quakeml/> -- fetch_quakeml() does no interpretation"
@@ -38,16 +36,6 @@ SACPZ_BULK = (
     Path(__file__).parent.parent / "lib" / "io" / "assets" / "sacpz_anmo_bulk.txt"
 ).read_text()
 SAC_ZIP_BYTES = b"not a real zip archive -- fetch_sac() does no interpretation"
-
-TRAVELTIME_RESPONSE = json.dumps(
-    {
-        "arrivals": [
-            {"phase": "P", "time": 480.2},
-            {"phase": "P", "time": 490.0},
-            {"phase": "S", "time": 900.1},
-        ]
-    }
-).encode()
 
 
 @pytest.fixture()
@@ -75,32 +63,6 @@ class FakeHttpGet:
             if fragment in url:
                 return response
         raise AssertionError(f"Unexpected URL in test: {url}")
-
-
-class TestFetchTravelTimes:
-    def test_travel_time_backend(self) -> None:
-        calls = []
-
-        def backend(
-            depth_km: float, dist_deg: float, phases: list[str]
-        ) -> dict[str, float]:
-            calls.append((depth_km, dist_deg, phases))
-            return {"P": 123.4}
-
-        result = fetch_travel_times(22.9, 60.0, ["P"], travel_time_backend=backend)
-        assert result == {"P": 123.4}
-        assert calls == [(22.9, 60.0, ["P"])]
-
-    def test_web_service(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        fake = FakeHttpGet({"traveltime": TRAVELTIME_RESPONSE})
-        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
-
-        result = fetch_travel_times(22.9, 60.0, ["P", "S"], model="prem")
-
-        assert result == {"P": 480.2, "S": 900.1}
-        (_, fields) = fake.calls[0]
-        assert fields["model"] == "prem"
-        assert fields["phases"] == "P,S"
 
 
 class TestFetchStationxml:
