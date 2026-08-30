@@ -3,7 +3,7 @@
 Chains multiple pysmo modules against the real EarthScope web services —
 computing a phase-relative window (via
 [`haversine`][pysmo.tools.azdist.haversine] and
-[`fetch_travel_times`][pysmo.tools.web.fetch_travel_times] — see that
+[`travel_times`][pysmo.tools.traveltime.travel_times] — see that
 function's own Examples), fetching a real waveform for it
 ([`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch]) and its
 real instrument response
@@ -41,7 +41,7 @@ from pysmo.functions import detrend, taper
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
 from pysmo.tools.signal import remove_response
-from pysmo.tools.web import fetch_travel_times
+from pysmo.tools.traveltime import travel_times
 
 matplotlib.use("Agg")
 
@@ -75,10 +75,10 @@ def test_remove_response_pipeline_live(
     station: MiniStation, event: MiniEvent
 ) -> Figure:
     # Computing a phase-relative window is just the predicted arrival time
-    # plus/minus a duration — see fetch_travel_times's own Examples.
+    # plus/minus a duration — see travel_times's own Examples.
     dist = haversine(event, station)
-    travel_times = fetch_travel_times(event.depth / 1000.0, dist, ["P"])
-    predicted_p = event.time + pd.Timedelta(seconds=travel_times["P"])
+    arrivals = travel_times(depth=event.depth, distance=dist, phases=["P"])
+    predicted_p = event.time + arrivals["P"]
 
     seismogram = GeoCsvSeismogram.fetch(
         station=station,
