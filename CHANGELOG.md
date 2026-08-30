@@ -93,6 +93,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(stationxml)** Narrow from_bytes epochs by network and station
 - [**breaking**] QuakeML support; flatten FDSN trinity to format-named classes ([#303](https://github.com/pysmo/pysmo/issues/303))
 - **(classes)** [**breaking**] Add miniSEED support via pymseed
+- **(traveltime)** [**breaking**] In-house tau-p solver replacing the retired EarthScope service
+- **(traveltime)** Resolve upper-mantle triplications to the first arrival
 
 ### 🧪 Testing
 
