@@ -105,8 +105,13 @@ markers = [
 mypy_path = "src"
 namespace_packages = true
 disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+strict_equality = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+# warn_return_any = true  # pending: ~16 Any-returns at untyped-library/numpy boundaries
 exclude = [
   'division\.py$',
   'division_annotated\.py$',
@@ -153,8 +158,15 @@ exclude = [
 docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "D"]
-ignore = ["E501", "D202"]
+select = [
+  "E", "F", "I", "D", "ISC",
+  "NPY", "FLY", "SLOT", "LOG", "PGH",
+  "UP", "C4", "RSE", "RUF022", "RUF036",
+]
+ignore = ["E501", "D202", "ISC003"]
+
+[tool.ruff.lint.flake8-implicit-str-concat]
+allow-multiline = false
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -162,7 +174,7 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "src/pysmo/lib/io/_sacio/_sacio_rendered.py" = ["E741"]
 "docs/first-steps/tutorial/tutorial.ipynb" = ["F811"]
-"tests/**" = ["D"]
-"docs/**" = ["D"]
+"tests/**" = ["D", "ISC002", "NPY002", "PGH003"]
+"docs/**" = ["D", "NPY002"]
 "utils/**" = ["D"]
 "**/conftest.py" = ["D"]

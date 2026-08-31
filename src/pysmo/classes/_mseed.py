@@ -4,6 +4,7 @@ from os import PathLike
 from typing import Self
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pymseed
 from attrs import cmp_using, define, field, setters, validators
@@ -19,7 +20,7 @@ from pysmo.typing import PositiveTimedelta, UtcTimestamp
 __all__ = ["MSeed"]
 
 
-def _convert_mseed_data(value: object) -> np.ndarray:
+def _convert_mseed_data(value: object) -> npt.NDArray[np.float64]:
     """Coerce decoded samples to a `float64` array, always via a copy.
 
     `pymseed` yields whatever libmseed decoded — usually `int32` for
@@ -102,7 +103,7 @@ class MSeed(SeismogramEndtimeMixin):
     )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(
+    data: npt.NDArray[np.floating] = field(
         converter=_convert_mseed_data,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
@@ -177,14 +178,14 @@ class MSeed(SeismogramEndtimeMixin):
             raise ValueError(f"No miniSEED data found in {source}.")
         segment_lines = "\n".join(
             f"  {s.network}.{s.name}.{s.location}.{s.channel}  "
-            f"{s.begin_time} -- {s.end_time}"
+            + f"{s.begin_time} -- {s.end_time}"
             for s in segments
         )
         raise ValueError(
             f"{source} holds {len(segments)} contiguous segments; "
-            f"MSeed.from_bytes()/from_file() requires exactly one. Use "
-            f"MSeed.all_from_bytes()/all_from_file() instead. Segments found:\n"
-            f"{segment_lines}"
+            + "MSeed.from_bytes()/from_file() requires exactly one. Use "
+            + "MSeed.all_from_bytes()/all_from_file() instead. Segments found:\n"
+            + f"{segment_lines}"
         )
 
     @classmethod
@@ -322,9 +323,9 @@ class MSeed(SeismogramEndtimeMixin):
         )
         if not waveform_bytes:
             raise ValueError(
-                f"No waveform data returned for "
-                f"{station.network}.{station.name}.{station.location}."
-                f"{station.channel} between {starttime} and {endtime}."
+                "No waveform data returned for "
+                + f"{station.network}.{station.name}.{station.location}."
+                + f"{station.channel} between {starttime} and {endtime}."
             )
         return cls.from_bytes(waveform_bytes)
 

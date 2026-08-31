@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, cast
 
 from attrs import AttrsInstance, fields
 
@@ -12,10 +12,11 @@ def as_sequence[T](value: T | Sequence[T]) -> Sequence[T]:
     """
     if isinstance(value, Sequence) and not isinstance(value, str | bytes):
         return value
-    return [value]
+    # cast: the Sequence[T] case returned above, but mypy can't narrow an unbounded T out of `value`.
+    return cast(Sequence[T], [value])
 
 
-def export_module_names(globals_dict: dict, module_name: str) -> None:
+def export_module_names(globals_dict: dict[str, Any], module_name: str) -> None:
     """Updates the __module__ attribute of all objects in __all__ to match the current module name.
 
     Args:

@@ -1,6 +1,6 @@
 """Constrained type aliases used in pysmo."""
 
-from datetime import timezone
+from datetime import UTC
 from typing import Annotated
 
 import pandas as pd
@@ -46,5 +46,5 @@ type NonNegativeTimedelta = Annotated[pd.Timedelta, Ge(_ZERO_TD)]
 type NonPositiveTimedelta = Annotated[pd.Timedelta, Le(_ZERO_TD)]
 """Non-positive Timedelta (includes 0 total_seconds)."""
 
-type UtcTimestamp = Annotated[pd.Timestamp, Timezone(tz=timezone.utc)]
+type UtcTimestamp = Annotated[pd.Timestamp, Timezone(tz=UTC)]
 """Timestamp with utc timezone information."""

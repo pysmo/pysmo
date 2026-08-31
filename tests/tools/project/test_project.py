@@ -12,7 +12,7 @@ from typing import Literal
 import pandas as pd
 import pytest
 
-from pysmo import MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
+from pysmo import Event, MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.tools.project import (
     FetchContext,
     ProjectEntry,
@@ -47,13 +47,15 @@ def other_fake_fetch_seismogram(
     return fake_fetch_seismogram(station, starttime, endtime)
 
 
-def identity_transform(seismogram: Seismogram, context: FetchContext) -> Seismogram:
+def identity_transform[TStation: Station, TEvent: Event](
+    seismogram: Seismogram, context: FetchContext[TStation, TEvent]
+) -> Seismogram:
     """Module-level (not a closure) transform returning the seismogram unchanged."""
     return seismogram
 
 
-def other_identity_transform(
-    seismogram: Seismogram, context: FetchContext
+def other_identity_transform[TStation: Station, TEvent: Event](
+    seismogram: Seismogram, context: FetchContext[TStation, TEvent]
 ) -> Seismogram:
     """A second, distinct top-level transform function for swap tests."""
     return seismogram
@@ -147,7 +149,7 @@ class TestResolveWindow:
     def test_neither_window_nor_event_raises(
         self, project: ProjectT, station_anmo: MiniStation
     ) -> None:
-        entry = ProjectEntry(station=station_anmo)
+        entry: ProjectEntry[MiniStation, MiniEvent] = ProjectEntry(station=station_anmo)
         with pytest.raises(ValueError, match="explicit window or an event"):
             project._resolve_window(entry)
 
@@ -866,8 +868,8 @@ class TestBuildEntries:
         assert project.seismogram(station_cacb, event_maule) is not None
 
 
-def _mini_seismogram_transform(
-    seismogram: Seismogram, context: FetchContext
+def _mini_seismogram_transform[TStation: Station, TEvent: Event](
+    seismogram: Seismogram, context: FetchContext[TStation, TEvent]
 ) -> MiniSeismogram:
     return MiniSeismogram(
         begin_time=seismogram.begin_time,

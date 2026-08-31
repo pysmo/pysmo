@@ -53,7 +53,7 @@ import threading
 import zlib
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import pandas as pd
 from attrs import define, field
@@ -153,13 +153,13 @@ class SqliteArchiveFetcher:
                 f"Parent directory does not exist: {self.path.parent}"
             )
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, Any]:
         """Drop the live connection; the lock is excluded entirely below (no `threading.Lock` is picklable, not even a fresh one)."""
         state = attrs_getstate(self, {"_conn": None})
         del state["_lock"]
         return state
 
-    def __setstate__(self, state: dict) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore state without triggering any `on_setattr` hooks, then create a fresh lock."""
         attrs_setstate(self, state)
         object.__setattr__(self, "_lock", threading.Lock())
@@ -185,7 +185,7 @@ class SqliteArchiveFetcher:
                     conn.execute("PRAGMA journal_mode=WAL")
                 conn.execute(
                     "CREATE TABLE IF NOT EXISTS cache "
-                    "(key TEXT PRIMARY KEY, data BLOB NOT NULL)"
+                    + "(key TEXT PRIMARY KEY, data BLOB NOT NULL)"
                 )
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
@@ -194,8 +194,8 @@ class SqliteArchiveFetcher:
                     conn.close()
                     raise ValueError(
                         f"{self.path} was written with a different cache "
-                        f"encoding (user_version={version}, expected "
-                        f"{_ENCODING_VERSION})."
+                        + f"encoding (user_version={version}, expected "
+                        + f"{_ENCODING_VERSION})."
                     )
                 self._conn = conn
             return self._conn

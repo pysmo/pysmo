@@ -296,8 +296,8 @@ def causal_band(
     if freqmin_causal >= freqmax_causal:
         raise ValueError(
             f"causal_band({freqmin}, {freqmax}, {corners}) would invert the "
-            f"band: freqmin_causal ({freqmin_causal}) >= freqmax_causal "
-            f"({freqmax_causal})."
+            + f"band: freqmin_causal ({freqmin_causal}) >= freqmax_causal "
+            + f"({freqmax_causal})."
         )
     return freqmin_causal, freqmax_causal
 

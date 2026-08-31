@@ -47,7 +47,7 @@ time_headers = [
 ]
 
 # Read yaml file with dictionaries describing SAC headers
-with open(os.path.join(MYDIR, "sacheader.yml"), "r") as stream:
+with open(os.path.join(MYDIR, "sacheader.yml")) as stream:
     _HEADER_DEFS: dict = yaml.safe_load(stream)
 
 # Dictionary of header types (default values etc)

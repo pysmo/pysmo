@@ -1,9 +1,10 @@
 import os
 import random as rd
+from collections.abc import Generator
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Generator
+from typing import Any
 
 import matplotlib
 import pandas as pd
@@ -80,7 +81,7 @@ def run_real_web_requests() -> bool:
 @pytest.fixture()
 def copy_testfiles(
     tmp_path: Path, reference_event_assets: dict[str, Path]
-) -> Generator[None, Any, None]:
+) -> Generator[None, Any]:
     cwd = os.getcwd()
     test_testfile = Path(tmp_path) / "example.sac"
     test_mseed = Path(tmp_path) / "example.mseed"
@@ -100,7 +101,7 @@ def copy_testfiles(
 @pytest.fixture()
 def iccs_seismograms(
     iccs_events_assets: dict[str, dict[str, Path]],
-) -> Generator[list[MiniIccsSeismogram], Any, None]:
+) -> Generator[list[MiniIccsSeismogram], Any]:
     event_stations = iccs_events_assets["solomon_islands"]
     sacfiles = [event_stations[station] for station in sorted(event_stations)]
 

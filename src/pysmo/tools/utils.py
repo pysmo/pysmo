@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 
@@ -72,13 +73,15 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
     for length in range(min_length, UUID_LENGTH + 1):
         shortened = [u[:length] for u in map(str, uuids)]
         if len(set(shortened)) == len(uuids):
-            return {u: uuid for u, uuid in zip(shortened, uuids)}
+            return dict(zip(shortened, uuids))
 
     # Fallback to full UUIDs if necessary (like that's going to happen...)
     return {str(u): u for u in uuids}
 
 
-def pearson_matrix_vector(matrix: np.ndarray, vector: np.ndarray) -> np.ndarray:
+def pearson_matrix_vector(
+    matrix: npt.NDArray[np.floating], vector: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
     """Compute Pearson correlation of each row in a matrix against a vector.
 
     This is a vectorised alternative to calling [`scipy.stats.pearsonr`][] in
@@ -120,7 +123,7 @@ def pearson_matrix_vector(matrix: np.ndarray, vector: np.ndarray) -> np.ndarray:
     if matrix.shape[1] != vector.shape[0]:
         raise ValueError(
             f"Shape mismatch: matrix has {matrix.shape[1]} columns "
-            f"but vector has {vector.shape[0]} elements."
+            + f"but vector has {vector.shape[0]} elements."
         )
 
     matrix_dm = matrix - matrix.mean(axis=1, keepdims=True)

@@ -407,8 +407,8 @@ from .plot import (
 
 __all__ = [
     "ICCS",
-    "IccsSeismogram",
     "IccsResult",
+    "IccsSeismogram",
     "McccResult",
     "MiniIccsSeismogram",
     "plot_matrix_image",

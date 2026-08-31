@@ -3,15 +3,16 @@ from __future__ import annotations
 import warnings
 from io import BytesIO
 from os import PathLike
-from types import SimpleNamespace
 from typing import Self, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from attrs import define, field, setters, validators
+from attrs import define, field, fields, setters, validators
 
 from pysmo import Station
+from pysmo._types.location import MiniLocation
 from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
@@ -20,27 +21,23 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.web import fetch_sac
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
-# Same validator objects (and hence bounds/wording) as MiniLocation.longitude
-# and friends in pysmo._types.location, reused directly here since
 # SacStation/SacEvent.longitude are plain properties, not attrs fields, so
-# they can't pick this validator up via `field(validator=...)` themselves.
+# they can't attach validators via `field(validator=...)`; instead call the
+# same bounds MiniLocation.longitude uses, feeding them the real attrs
+# Attribute (borrowed from MiniLocation) for the error message wording.
 _LONGITUDE_VALIDATORS = (validators.gt(-180.0), validators.le(180.0))
-_LONGITUDE_ATTR = SimpleNamespace(name="longitude")
+_LONGITUDE_ATTR = fields(MiniLocation).longitude
 
 
 def _validate_longitude(value: float) -> None:
     for validator in _LONGITUDE_VALIDATORS:
-        # These validators don't use the instance argument, only value and
-        # attribute.name (for the error message), so a real attrs Attribute
-        # (an internal-use class with many unrelated required fields) isn't
-        # needed here - a plain stand-in with just .name is enough.
-        validator(None, _LONGITUDE_ATTR, value)  # type: ignore[arg-type]
+        validator(None, _LONGITUDE_ATTR, value)
 
 
 __all__ = [
     "SAC",
-    "SacSeismogram",
     "SacEvent",
+    "SacSeismogram",
     "SacStation",
     "SacTimestamps",
 ]
@@ -57,9 +54,9 @@ def _check_seismogram_compatible(native: SacIO) -> None:
     if native.iftype.lower() != "time" or not native.leven:
         raise NotImplementedError(
             "SAC only supports evenly-spaced time-series data "
-            f"(IFTYPE=ITIME, LEVEN=True); got IFTYPE={native.iftype.upper()}, "
-            f"LEVEN={native.leven}. Use SacIO directly (SAC.native) for "
-            "other SAC file types."
+            + f"(IFTYPE=ITIME, LEVEN=True); got IFTYPE={native.iftype.upper()}, "
+            + f"LEVEN={native.leven}. Use SacIO directly (SAC.native) for "
+            + "other SAC file types."
         )
 
 
@@ -116,7 +113,7 @@ class _SacNested:
             if isinstance(sac_time_header, SAC_REQUIRED_TIME_HEADERS):
                 raise ValueError(
                     f"Required SAC header {sac_time_header!r} is missing or "
-                    f"None on {type(self).__name__}."
+                    + f"None on {type(self).__name__}."
                 )
             return None
 
@@ -183,13 +180,13 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
     """
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> npt.NDArray[np.floating]:
         """Seismogram data."""
 
         return self._parent.data
 
     @data.setter
-    def data(self, value: np.ndarray) -> None:
+    def data(self, value: npt.NDArray[np.floating]) -> None:
         self._parent.data = value
 
     @property
@@ -418,27 +415,27 @@ class RequiredSacTimestamp:
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
-    def __set_name__(self, owner: type["_SacNested"], name: str) -> None:
+    def __set_name__(self, owner: type[_SacNested], name: str) -> None:
         # Validates that this attribute name is a strictly required header
         self._name = SAC_REQUIRED_TIME_HEADERS(name)
 
     @overload
-    def __get__(self, instance: None, owner: type["_SacNested"]) -> Self: ...
+    def __get__(self, instance: None, owner: type[_SacNested]) -> Self: ...
 
     @overload
     def __get__(
-        self, instance: "_SacNested", owner: type["_SacNested"]
+        self, instance: _SacNested, owner: type[_SacNested]
     ) -> UtcTimestamp: ...
 
     def __get__(
-        self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
+        self, instance: _SacNested | None, owner: type[_SacNested] | None = None
     ) -> Self | UtcTimestamp:
         if instance is None:
             return self
 
         return instance._get_timestamp_from_sac(self._name)
 
-    def __set__(self, obj: "_SacNested", value: pd.Timestamp) -> None:
+    def __set__(self, obj: _SacNested, value: pd.Timestamp) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
 
@@ -455,27 +452,27 @@ class OptionalSacTimestamp:
     def __init__(self, readonly: bool = False) -> None:
         self.readonly = readonly
 
-    def __set_name__(self, owner: type["_SacNested"], name: str) -> None:
+    def __set_name__(self, owner: type[_SacNested], name: str) -> None:
         # Validates that this attribute name is an optional header
         self._name = SAC_OPTIONAL_TIME_HEADERS(name)
 
     @overload
-    def __get__(self, instance: None, owner: type["_SacNested"]) -> Self: ...
+    def __get__(self, instance: None, owner: type[_SacNested]) -> Self: ...
 
     @overload
     def __get__(
-        self, instance: "_SacNested", owner: type["_SacNested"]
+        self, instance: _SacNested, owner: type[_SacNested]
     ) -> UtcTimestamp | None: ...
 
     def __get__(
-        self, instance: "_SacNested" | None, owner: type["_SacNested"] | None = None
+        self, instance: _SacNested | None, owner: type[_SacNested] | None = None
     ) -> Self | UtcTimestamp | None:
         if instance is None:
             return self
 
         return instance._get_timestamp_from_sac(self._name)
 
-    def __set__(self, obj: "_SacNested", value: pd.Timestamp | None) -> None:
+    def __set__(self, obj: _SacNested, value: pd.Timestamp | None) -> None:
         if self.readonly:
             raise AttributeError(f"SAC header '{self._name}' is read-only.")
 
@@ -806,15 +803,15 @@ class SAC:
 
         segment_lines = "\n".join(
             f"  {segment.station.network}.{segment.station.name}."
-            f"{segment.station.location}.{segment.station.channel}  "
-            f"{segment.seismogram.begin_time} -- {segment.seismogram.end_time}"
+            + f"{segment.station.location}.{segment.station.channel}  "
+            + f"{segment.seismogram.begin_time} -- {segment.seismogram.end_time}"
             for segment in segments
         )
         raise ValueError(
             f"Zip archive contains {len(segments)} segments; "
-            f"SAC.from_zip() requires exactly one continuous segment. "
-            f"Use SAC.all_from_zip() to get all segments instead. "
-            f"Segments found:\n{segment_lines}"
+            + "SAC.from_zip() requires exactly one continuous segment. "
+            + "Use SAC.all_from_zip() to get all segments instead. "
+            + f"Segments found:\n{segment_lines}"
         )
 
     @classmethod
@@ -884,9 +881,9 @@ class SAC:
         # confirmed live.
         if not archive:
             raise ValueError(
-                f"No waveform data returned for "
-                f"{station.network}.{station.name}.{station.location}."
-                f"{station.channel} between {starttime} and {endtime}."
+                "No waveform data returned for "
+                + f"{station.network}.{station.name}.{station.location}."
+                + f"{station.channel} between {starttime} and {endtime}."
             )
         return cls.from_zip(archive)
 

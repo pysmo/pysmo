@@ -4,6 +4,7 @@ from os import PathLike
 from typing import Self
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from attrs import cmp_using, define, field, setters, validators
 
@@ -39,9 +40,9 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     waveform to a [`MiniSeismogram`][pysmo.MiniSeismogram], which can then
     be passed to [`copy_from_mini`][pysmo.functions.copy_from_mini] to
     populate another object such as a [`SAC`][pysmo.classes.SAC] instance.
-    Use [`write`][pysmo.classes.GeoCsvSeismogram.write] to serialise the instance back
-    to a GeoCSV 2.0 file, or [`pysmo.lib.io.write_geocsv`][] to write one or more
-    `Seismogram`-compatible objects in a single call.
+    Use [`write`][pysmo.classes.GeoCsvSeismogram.write] to serialise the
+    instance back to a GeoCSV 2.0 file, or [`pysmo.lib.io.write_geocsv`][]
+    to write one or more `Seismogram`-compatible objects in a single call.
 
     Examples:
         ```python
@@ -93,7 +94,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(
+    data: npt.NDArray[np.floating] = field(
         converter=convert_to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
@@ -176,10 +177,9 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             A new GeoCsvSeismogram instance.
 
         Raises:
-            ValueError: If no waveform data is returned for the given
-                window, or the returned segments cannot be merged into a
-                continuous trace (data gaps, differing channels or sample
-                rates).
+            ValueError: If no waveform data is returned for the given window,
+                or the returned segments cannot be merged into a continuous
+                trace (data gaps, differing channels or sample rates).
             urllib3.exceptions.ResponseError: If the dataselect web service
                 returns an HTTP error.
 
@@ -209,9 +209,9 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         )
         if not waveform_bytes.strip():
             raise ValueError(
-                f"No waveform data returned for "
-                f"{station.network}.{station.name}.{station.location}."
-                f"{station.channel} between {starttime} and {endtime}."
+                "No waveform data returned for "
+                + f"{station.network}.{station.name}.{station.location}."
+                + f"{station.channel} between {starttime} and {endtime}."
             )
         return cls.from_text(waveform_bytes.decode("utf-8"))
 

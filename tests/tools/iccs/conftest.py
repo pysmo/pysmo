@@ -13,7 +13,7 @@ from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
 @pytest.fixture()
 def iccs_seismograms(
     iccs_events_assets: dict[str, dict[str, Path]],
-) -> Generator[list[MiniIccsSeismogram], Any, None]:
+) -> Generator[list[MiniIccsSeismogram], Any]:
     seismograms: list[MiniIccsSeismogram] = []
     event_stations = iccs_events_assets["solomon_islands"]
     iccs_files = [event_stations[station] for station in sorted(event_stations)]
@@ -34,6 +34,6 @@ def iccs_seismograms(
 @pytest.fixture()
 def iccs_instance(
     iccs_seismograms: list[MiniIccsSeismogram],
-) -> Generator[ICCS, Any, None]:
+) -> Generator[ICCS, Any]:
     iccs = ICCS(iccs_seismograms)
     yield iccs
