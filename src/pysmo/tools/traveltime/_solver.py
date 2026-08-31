@@ -273,24 +273,24 @@ def solve(
     if model not in _SUPPORTED_MODELS:
         raise ValueError(
             f"Unsupported velocity model {model!r}; supported models: "
-            f"{sorted(_SUPPORTED_MODELS)!r}."
+            + f"{sorted(_SUPPORTED_MODELS)!r}."
         )
     unknown = sorted(phase for phase in phases if phase not in _SUPPORTED_PHASES)
     if unknown:
         raise ValueError(
             f"Unsupported phase(s) {unknown!r}; supported phases: "
-            f"{sorted(_SUPPORTED_PHASES)!r}."
+            + f"{sorted(_SUPPORTED_PHASES)!r}."
         )
     cmb_km = cmb_depth_km(model)
     if not 0.0 <= depth_km <= cmb_km:
         raise ValueError(
             f"Source depth {depth_km} km is outside the modelled range "
-            f"0 to {cmb_km:.1f} km (surface to core–mantle boundary)."
+            + f"0 to {cmb_km:.1f} km (surface to core–mantle boundary)."
         )
     if not 0.0 <= dist_deg <= 180.0:
         raise ValueError(
             f"Epicentral distance {dist_deg} degrees is outside the range "
-            f"0 to 180 degrees."
+            + "0 to 180 degrees."
         )
     z_s = _flattened_depth(depth_km)
     z_cmb = _flattened_depth(cmb_km)

@@ -1,7 +1,7 @@
 import struct
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from os import PathLike
 from pathlib import Path
 from typing import Literal, Self
@@ -318,7 +318,7 @@ class SacIO(SacIOBase):
             minute=self.nzmin,
             second=self.nzsec,
             microsecond=self.nzmsec * 1000,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         ) + timedelta(days=self.nzjday - 1)
 
     @ref_datetime.setter
@@ -398,8 +398,8 @@ class SacIO(SacIOBase):
                     if len(value) > header_metadata.length:
                         raise ValueError(
                             f"{header!r} value {value.decode()!r} is "
-                            f"{len(value)} bytes when encoded, exceeding the "
-                            f"{header_metadata.length}-byte SAC header limit."
+                            + f"{len(value)} bytes when encoded, exceeding the "
+                            + f"{header_metadata.length}-byte SAC header limit."
                         )
 
                 # write to file
@@ -424,7 +424,7 @@ class SacIO(SacIOBase):
                 if len(self.data2) != self.npts:
                     raise ValueError(
                         f"data2 must have the same length as data ({self.npts=}), "
-                        f"got {len(self.data2)}."
+                        + f"got {len(self.data2)}."
                     )
                 data_2_end = data_1_end + self.npts * 4
                 if self.npts > 0:
@@ -488,7 +488,7 @@ class SacIO(SacIOBase):
         """
 
         if len(buffer) < 632:
-            raise EOFError()
+            raise EOFError
 
         # Guess the file endianness first using the unused12 header field.
         # It is located at position 276 and its value should be -12345.0.
@@ -621,7 +621,7 @@ class SacIO(SacIOBase):
                 data_end = start + length
                 data_format = file_byteorder + str(npts) + "f"
                 if data_end > len(buffer):
-                    raise EOFError()
+                    raise EOFError
                 content = buffer[start:data_end]
                 data = struct.unpack(data_format, content)
                 self.data = np.array(data)
@@ -630,7 +630,7 @@ class SacIO(SacIOBase):
                     block2_start = data_end
                     block2_end = block2_start + length
                     if block2_end > len(buffer):
-                        raise EOFError()
+                        raise EOFError
                     content = buffer[block2_start:block2_end]
                     data2 = struct.unpack(data_format, content)
                     self.data2 = np.array(data2)
@@ -644,7 +644,7 @@ class SacIO(SacIOBase):
                     end = start + length
 
                     if end > len(buffer):
-                        raise EOFError()
+                        raise EOFError
                     content = buffer[start:end]
 
                     value = struct.unpack(file_byteorder + "d", content)[0]
@@ -687,7 +687,7 @@ class SacIO(SacIOBase):
         if header not in _IZTYPE_TARGET_HEADERS:
             raise ValueError(
                 f"{header=} cannot be used as a zero-time reference "
-                f"(must be one of {sorted(_IZTYPE_TARGET_HEADERS)})."
+                + f"(must be one of {sorted(_IZTYPE_TARGET_HEADERS)})."
             )
         old_ref = self.ref_datetime
         if old_ref is None:

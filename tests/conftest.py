@@ -1,7 +1,7 @@
 import os
 import shutil
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -19,7 +19,14 @@ from pysmo import (
     Seismogram,
     Station,
 )
-from pysmo.classes import SAC, GeoCsvSeismogram, MSeed, SacSeismogram, SacStation
+from pysmo.classes import (
+    SAC,
+    GeoCsvSeismogram,
+    MSeed,
+    SacEvent,
+    SacSeismogram,
+    SacStation,
+)
 
 
 @pytest.fixture()
@@ -125,12 +132,12 @@ def stations(sac_station: Station, mini_station: Station) -> tuple[Station, ...]
 
 
 @pytest.fixture()
-def sac_event(sac_instance: SAC):  # type: ignore
+def sac_event(sac_instance: SAC) -> SacEvent:
     return sac_instance.event
 
 
 @pytest.fixture()
-def mini_hypocenter(sac_event) -> MiniLocationWithDepth:  # type: ignore
+def mini_hypocenter(sac_event: SacEvent) -> MiniLocationWithDepth:
     return MiniLocationWithDepth(
         latitude=sac_event.latitude,
         longitude=sac_event.longitude,
@@ -204,7 +211,7 @@ def mini_seismograms(
         st.datetimes(
             min_value=datetime(1970, 1, 1),
             max_value=datetime(2030, 1, 1),
-            timezones=st.just(timezone.utc),
+            timezones=st.just(UTC),
         )
     )
     return MiniSeismogram(

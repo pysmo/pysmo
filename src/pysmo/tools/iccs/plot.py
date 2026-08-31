@@ -14,6 +14,7 @@ from typing import Literal, overload
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import Event, MouseEvent, TimerBase
@@ -39,14 +40,14 @@ from ._defaults import IccsDefaults
 from ._iccs import ICCS
 
 __all__ = [
+    "draw_common_matrix_image",
+    "draw_common_stack",
     "plot_matrix_image",
     "plot_stack",
     "update_bandpass",
     "update_min_cc",
     "update_pick",
     "update_timewindow",
-    "draw_common_stack",
-    "draw_common_matrix_image",
 ]
 
 
@@ -356,7 +357,7 @@ def draw_common_stack(
 
 def _draw_matrix_image_initial(
     ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
-) -> tuple[AxesImage, np.ndarray]:
+) -> tuple[AxesImage, npt.NDArray[np.floating]]:
     """Draw the matrix image plot and return artist references for live updates.
 
     Args:
@@ -409,7 +410,7 @@ def _draw_matrix_image_initial(
     # Row order comes from ccs, which is always zero-phase-based.
     ax.set_ylabel(
         "Seismograms sorted by correlation coefficient"
-        f"{_variant_suffix(iccs.bandpass_apply, False)}"
+        + f"{_variant_suffix(iccs.bandpass_apply, False)}"
     )
     axes_image = ax.imshow(
         seismogram_matrix,
@@ -426,7 +427,7 @@ def _draw_matrix_image_initial(
 
 def draw_common_matrix_image(
     ax: Axes, iccs: ICCS, context: bool, all_seismograms: bool, causal: bool = False
-) -> np.ndarray:
+) -> npt.NDArray[np.floating]:
     """Return a basic matrix image plot for use in other plots.
 
     Args:
@@ -993,7 +994,7 @@ def update_timewindow(
         onselect,
         "horizontal",
         useblit=True,
-        props=dict(alpha=0.5, facecolor="tab:blue"),
+        props={"alpha": 0.5, "facecolor": "tab:blue"},
         interactive=True,
         drag_from_anywhere=True,
     )
@@ -1137,7 +1138,7 @@ def update_min_cc(
         return max(0, round(min(ydata, max_index)))
 
     def calc_cc(line: Line2D) -> float:
-        index = round(line.get_ydata()[0], 0)  # type: ignore
+        index = round(np.asarray(line.get_ydata())[0], 0)
         if index == 0:
             return IccsDefaults.index_zero_multiplier * current_ccs[0]
         return float(np.mean(current_ccs[index - 1 : index + 1]))
@@ -1327,9 +1328,9 @@ def update_bandpass(
         fig.subplots_adjust(
             bottom=bottom_margin, left=_left_margin(True), right=0.95, top=0.93
         )
-        _matrix_cache: OrderedDict[tuple[bool, float, float, bool, int], np.ndarray] = (
-            OrderedDict()
-        )
+        _matrix_cache: OrderedDict[
+            tuple[bool, float, float, bool, int], npt.NDArray[np.floating]
+        ] = OrderedDict()
 
         def _update_matrix() -> None:
             apply = check.get_status()[0]
@@ -1367,7 +1368,7 @@ def update_bandpass(
             ax.set_xlabel(f"Time relative to pick [s]{_variant_suffix(apply, causal)}")
             ax.set_ylabel(
                 "Seismograms sorted by correlation coefficient"
-                f"{_variant_suffix(apply, False)}"
+                + f"{_variant_suffix(apply, False)}"
             )
             fig.canvas.draw_idle()
 
@@ -1381,7 +1382,11 @@ def update_bandpass(
         )
         _stack_cache: OrderedDict[
             tuple[bool, float, float, bool, int],
-            tuple[list[np.ndarray], np.ndarray, np.ndarray],
+            tuple[
+                list[npt.NDArray[np.floating]],
+                npt.NDArray[np.floating],
+                npt.NDArray[np.floating],
+            ],
         ] = OrderedDict()
 
         def _update_stack() -> None:
