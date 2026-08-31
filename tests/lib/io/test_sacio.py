@@ -3,7 +3,7 @@
 import copy
 import pickle
 import struct
-from datetime import timedelta, timezone
+from datetime import UTC, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -164,10 +164,12 @@ def test_ref_datetime() -> None:
     assert sac.kzdate is None
     assert sac.kztime is None
     assert sac.ref_datetime is None
-    now = pd.Timestamp.now(timezone.utc)
+    now = pd.Timestamp.now(UTC)
     sac.ref_datetime = now
     now += pd.Timedelta(microseconds=500)
-    assert sac.ref_datetime.isoformat(timespec="milliseconds") == now.isoformat(  # type: ignore
+    ref = sac.ref_datetime
+    assert ref is not None
+    assert ref.isoformat(timespec="milliseconds") == now.isoformat(
         timespec="milliseconds"
     )
 

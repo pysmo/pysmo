@@ -1,5 +1,5 @@
 import re
-from datetime import timezone
+from datetime import UTC
 
 import numpy as np
 import pandas as pd
@@ -43,7 +43,7 @@ class TestMiniSeismogram:
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
         new_time_utc = pd.Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
-            tzinfo=timezone.utc
+            tzinfo=UTC
         )
         miniseis.data = random_data
         assert miniseis.data.all() == random_data.all()
@@ -59,7 +59,7 @@ class TestMiniSeismogram:
         # Test time conversion on set
         miniseis.begin_time = "2024-03-03T12:00:00"  # type: ignore
         assert isinstance(miniseis.begin_time, pd.Timestamp)
-        assert miniseis.begin_time.tzinfo == timezone.utc
+        assert miniseis.begin_time.tzinfo == UTC
 
         miniseis.delta = pd.Timedelta(seconds=0.1)
         assert miniseis.delta.total_seconds() == 0.1

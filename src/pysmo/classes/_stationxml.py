@@ -177,8 +177,8 @@ class StationXML:
         if self._response is None:
             raise ValueError(
                 f"{self.network}.{self.name}.{self.location}.{self.channel} was "
-                "parsed from a document with no <Response>; fetch it at "
-                "level=response."
+                + "parsed from a document with no <Response>; fetch it at "
+                + "level=response."
             )
         return self._response
 
@@ -233,13 +233,13 @@ class StationXML:
         )
         if len(matches) != 1:
             raise ValueError(
-                f"Expected exactly one epoch in the given StationXML at "
-                f"{'the currently open epoch' if time is None else time}"
-                f"{f', network {network!r}' if network is not None else ''}"
-                f"{f', station {station!r}' if station is not None else ''}"
-                f"{f', location {location!r}' if location is not None else ''}"
-                f"{f', channel {channel!r}' if channel is not None else ''}, "
-                f"found {len(matches)}."
+                "Expected exactly one epoch in the given StationXML at "
+                + f"{'the currently open epoch' if time is None else time}"
+                + f"{f', network {network!r}' if network is not None else ''}"
+                + f"{f', station {station!r}' if station is not None else ''}"
+                + f"{f', location {location!r}' if location is not None else ''}"
+                + f"{f', channel {channel!r}' if channel is not None else ''}, "
+                + f"found {len(matches)}."
             )
         return cls._from_raw(matches[0])
 
@@ -306,7 +306,7 @@ class StationXML:
         if not epoch.has_response:
             raise ValueError(
                 "fetched StationXML at level=response but it carried no "
-                "<Response> element."
+                + "<Response> element."
             )
         return epoch
 

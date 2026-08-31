@@ -2,9 +2,10 @@
 
 import warnings
 from copy import deepcopy
-from typing import Literal, overload
+from typing import Literal, cast, overload
 
 import numpy as np
+import numpy.typing as npt
 import scipy.signal
 
 from pysmo import Response, Seismogram, StagedResponse
@@ -12,19 +13,22 @@ from pysmo import Response, Seismogram, StagedResponse
 __all__ = ["remove_response"]
 
 
-def _analog_transfer_function(response: Response, freqs: np.ndarray) -> np.ndarray:
+def _analog_transfer_function(
+    response: Response, freqs: npt.NDArray[np.floating]
+) -> npt.NDArray[np.complexfloating]:
     """Evaluate the analog (poles/zeros) transfer function at `freqs` (Hz)."""
     s = 1j * 2 * np.pi * freqs
     zeros = np.asarray(response.zeros, dtype=complex)
     poles = np.asarray(response.poles, dtype=complex)
     numerator = np.prod(s[:, None] - zeros[None, :], axis=1)
     denominator = np.prod(s[:, None] - poles[None, :], axis=1)
-    return response.overall_sensitivity * numerator / denominator
+    transfer_function = response.overall_sensitivity * numerator / denominator
+    return cast(npt.NDArray[np.complexfloating], transfer_function)
 
 
 def _digital_transfer_function(
-    response: StagedResponse, freqs: np.ndarray
-) -> np.ndarray:
+    response: StagedResponse, freqs: npt.NDArray[np.floating]
+) -> npt.NDArray[np.complexfloating]:
     """Evaluate the combined digital-stage transfer function at `freqs` (Hz)."""
     result = np.ones_like(freqs, dtype=complex)
     for stage in response.stages:
@@ -42,8 +46,8 @@ def _digital_transfer_function(
 
 
 def _pre_filt_taper(
-    freqs: np.ndarray, pre_filt: tuple[float, float, float, float]
-) -> np.ndarray:
+    freqs: npt.NDArray[np.floating], pre_filt: tuple[float, float, float, float]
+) -> npt.NDArray[np.floating]:
     r"""Build a four-corner cosine taper ($f_1 < f_2 \le f_3 < f_4$) over `freqs`."""
     f1, f2, f3, f4 = pre_filt
     taper = np.zeros_like(freqs)
@@ -338,13 +342,13 @@ def remove_response[T: Seismogram](
         if response.reference_sensitivity is None:
             raise ValueError(
                 "remove_response's sensitivity-only path (pre_filt=None) "
-                "requires response.reference_sensitivity, which is None on "
-                "this response. overall_sensitivity is not a substitute: it "
-                "has response's A0 normalisation factor folded in and would "
-                "mis-scale the result. Either supply reference_sensitivity "
-                "(SAC PZ's SENSITIVITY header or StationXML's "
-                "InstrumentSensitivity/Value) or pass pre_filt for full "
-                "spectral deconvolution, which only needs overall_sensitivity."
+                + "requires response.reference_sensitivity, which is None on "
+                + "this response. overall_sensitivity is not a substitute: it "
+                + "has response's A0 normalisation factor folded in and would "
+                + "mis-scale the result. Either supply reference_sensitivity "
+                + "(SAC PZ's SENSITIVITY header or StationXML's "
+                + "InstrumentSensitivity/Value) or pass pre_filt for full "
+                + "spectral deconvolution, which only needs overall_sensitivity."
             )
         if clone:
             seismogram = deepcopy(seismogram)
@@ -360,8 +364,8 @@ def remove_response[T: Seismogram](
     if f1 <= 0:
         raise ValueError(
             f"pre_filt's lower corner ({f1}) must be above 0: a velocity- or "
-            "acceleration-output sensor has a zero at DC by construction, so "
-            "f1 <= 0 would divide by that zero."
+            + "acceleration-output sensor has a zero at DC by construction, so "
+            + "f1 <= 0 would divide by that zero."
         )
     if not (f1 < f2 <= f3 < f4):
         raise ValueError(
@@ -370,7 +374,7 @@ def remove_response[T: Seismogram](
     if f4 > nyquist:
         raise ValueError(
             f"pre_filt's upper corner ({f4}) exceeds the seismogram's "
-            f"Nyquist frequency ({nyquist})."
+            + f"Nyquist frequency ({nyquist})."
         )
 
     if clone:
@@ -390,12 +394,12 @@ def remove_response[T: Seismogram](
             if f4 > 0.8 * stage_nyquist:
                 warnings.warn(
                     "pre_filt's upper corner is above 80% of the digital "
-                    "stages' own Nyquist frequency (half the slowest "
-                    "stage's input_sample_rate): scipy.signal.freqz is "
-                    "periodic, so evaluating a decimation stage beyond its "
-                    "own Nyquist returns an aliased, non-physical value "
-                    "rather than the stage's actual roll-off. Bound f4 by "
-                    "min(seismogram_nyquist, stage_nyquist) instead.",
+                    + "stages' own Nyquist frequency (half the slowest "
+                    + "stage's input_sample_rate): scipy.signal.freqz is "
+                    + "periodic, so evaluating a decimation stage beyond its "
+                    + "own Nyquist returns an aliased, non-physical value "
+                    + "rather than the stage's actual roll-off. Bound f4 by "
+                    + "min(seismogram_nyquist, stage_nyquist) instead.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -405,10 +409,10 @@ def remove_response[T: Seismogram](
     if not has_stages and f4 > 0.8 * nyquist:
         warnings.warn(
             "pre_filt's upper corner is above 80% of the Nyquist "
-            "frequency, but response has no digital stages (e.g. a SAC "
-            "PZ-derived response): the analog-only approximation does "
-            "not account for the roll-off/phase a real digitiser's "
-            "decimation filter contributes near its own Nyquist.",
+            + "frequency, but response has no digital stages (e.g. a SAC "
+            + "PZ-derived response): the analog-only approximation does "
+            + "not account for the roll-off/phase a real digitiser's "
+            + "decimation filter contributes near its own Nyquist.",
             UserWarning,
             stacklevel=2,
         )

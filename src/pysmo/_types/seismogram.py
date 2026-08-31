@@ -1,6 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from attrs import cmp_using, define, field, setters, validators
 
@@ -12,7 +13,7 @@ from pysmo.lib.validators import (
 )
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
-__all__ = ["Seismogram", "MiniSeismogram"]
+__all__ = ["MiniSeismogram", "Seismogram"]
 
 
 # --8<-- [start:seismogram-protocol]
@@ -44,7 +45,7 @@ class Seismogram(Protocol):
     begin_time: pd.Timestamp
     """Seismogram begin time."""
 
-    data: np.ndarray
+    data: npt.NDArray[np.floating]
     """Seismogram data."""
 
     delta: pd.Timedelta
@@ -119,7 +120,7 @@ class MiniSeismogram(SeismogramEndtimeMixin):
     )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(
+    data: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
         converter=convert_to_ndarray,
         validator=validators.instance_of(np.ndarray),

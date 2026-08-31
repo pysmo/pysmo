@@ -1,5 +1,7 @@
 """Tests for pysmo.lib.io._quakeml."""
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -217,7 +219,7 @@ class TestParseQuakeml:
 
 
 class TestReferenceFixture:
-    def test_maule_2010(self, reference_event_assets: dict) -> None:
+    def test_maule_2010(self, reference_event_assets: dict[str, Path]) -> None:
         events = parse_quakeml(reference_event_assets["quakeml"].read_bytes())
         assert len(events) == 1
         event = events[0]

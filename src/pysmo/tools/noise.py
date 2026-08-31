@@ -51,12 +51,13 @@ import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from pysmo import MiniSeismogram
 from pysmo.lib.defaults import SeismogramDefaults
 
-__all__ = ["NoiseModel", "peterson", "generate_noise"]
+__all__ = ["NoiseModel", "generate_noise", "peterson"]
 
 
 @dataclass(frozen=True)
@@ -87,7 +88,7 @@ class NoiseModel:
         ```
     """
 
-    psd: np.ndarray = field(
+    psd: npt.NDArray[np.floating] = field(
         default_factory=lambda: np.array([]),
         metadata={"description": "Power spectral density of ground acceleration [dB]."},
     )
@@ -244,24 +245,20 @@ def peterson(noise_level: float) -> NoiseModel:
     # calculate noise model
     if noise_level == 0:
         return NLNM
-    elif noise_level == 1:
+    if noise_level == 1:
         return NHNM
-    else:
-        T_common = np.unique(
-            np.concatenate((NLNM.T.total_seconds(), NHNM.T.total_seconds()))
-        )
-        # Peterson's model is a piecewise power law, i.e. linear in
-        # log10(period), not in period itself, so interpolate in log-period
-        # space to stay close to the true curve between tabulated points.
-        log_T_common = np.log10(T_common)
-        NLNM_interp = np.interp(
-            log_T_common, np.log10(NLNM.T.total_seconds()), NLNM.psd
-        )
-        NHNM_interp = np.interp(
-            log_T_common, np.log10(NHNM.T.total_seconds()), NHNM.psd
-        )
-        dB = NLNM_interp + (NHNM_interp - NLNM_interp) * noise_level
-        return NoiseModel(psd=dB, T=pd.to_timedelta(T_common, unit="s"))
+
+    T_common = np.unique(
+        np.concatenate((NLNM.T.total_seconds(), NHNM.T.total_seconds()))
+    )
+    # Peterson's model is a piecewise power law, i.e. linear in
+    # log10(period), not in period itself, so interpolate in log-period
+    # space to stay close to the true curve between tabulated points.
+    log_T_common = np.log10(T_common)
+    NLNM_interp = np.interp(log_T_common, np.log10(NLNM.T.total_seconds()), NLNM.psd)
+    NHNM_interp = np.interp(log_T_common, np.log10(NHNM.T.total_seconds()), NHNM.psd)
+    dB = NLNM_interp + (NHNM_interp - NLNM_interp) * noise_level
+    return NoiseModel(psd=dB, T=pd.to_timedelta(T_common, unit="s"))
 
 
 def generate_noise(
@@ -340,7 +337,7 @@ def generate_noise(
     if periods[1:].min() < T.min() or periods[1:].max() > T.max():
         warnings.warn(
             "Requested frequencies extend beyond the noise model's tabulated "
-            "period range; extrapolating with the nearest tabulated value.",
+            + "period range; extrapolating with the nearest tabulated value.",
             stacklevel=2,
         )
 

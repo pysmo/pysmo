@@ -1,5 +1,7 @@
 """The PysmoProject class and functions used within the class."""
 
+from __future__ import annotations
+
 import hashlib
 import threading
 import warnings
@@ -34,8 +36,8 @@ def _default_fetch_seismogram(
     return MSeed.fetch(station=station, starttime=starttime, endtime=endtime)
 
 
-def _seismogram_to_mini_seismogram(
-    seismogram: Seismogram, context: "FetchContext"
+def _seismogram_to_mini_seismogram[TStation: Station, TEvent: Event](
+    seismogram: Seismogram, context: FetchContext[TStation, TEvent]
 ) -> MiniSeismogram:
     """Default `seismogram_transform`: the raw downloaded trace as a `MiniSeismogram`.
 
@@ -61,7 +63,7 @@ def _checksum(seismogram: Seismogram) -> str:
 
 
 def _on_setattr_clear_cache[T](
-    instance: "PysmoProject", attribute: Attribute, value: T
+    instance: PysmoProject[Any, Any, Any], attribute: Attribute[T], value: T
 ) -> T:
     """Setter that clears the fetch cache when a parameter affecting it changes."""
     if (current := getattr(instance, attribute.name)) is value:
@@ -73,7 +75,7 @@ def _on_setattr_clear_cache[T](
 
 
 @define(kw_only=True, frozen=True)
-class FetchContext:
+class FetchContext[TStation: Station, TEvent: Event]:
     """Context handed to `seismogram_transform` alongside the freshly downloaded seismogram.
 
     Bundles the originating [`ProjectEntry`][pysmo.tools.project.ProjectEntry]
@@ -92,7 +94,7 @@ class FetchContext:
     `context.entry.starttime`/`context.entry.endtime`.
     """
 
-    entry: ProjectEntry[Any, Any]
+    entry: ProjectEntry[TStation, TEvent]
     """The entry this seismogram was fetched for."""
 
     starttime: pd.Timestamp
@@ -174,7 +176,9 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     keyed by entry content).
     """
 
-    seismogram_transform: Callable[[Seismogram, FetchContext], TSeismogram] = field(
+    seismogram_transform: Callable[
+        [Seismogram, FetchContext[TStation, TEvent]], TSeismogram
+    ] = field(
         # The default returns `MiniSeismogram`, which is `TSeismogram`'s own
         # default, but mypy still can't match a concrete return against the
         # bare type parameter in the class body.
@@ -324,13 +328,13 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     """Guards reads/writes of `_cache` against concurrent access from more
     than one thread — see the class docstring's thread-safety note."""
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, Any]:
         """Drop the fetch cache and lock, neither of which can survive pickling."""
         state = attrs_getstate(self, {"_cache": {}, "_cache_generation": 0})
         del state["_lock"]
         return state
 
-    def __setstate__(self, state: dict) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore state without triggering any `on_setattr` hooks, then create a fresh lock."""
         attrs_setstate(self, state)
         object.__setattr__(self, "_lock", threading.Lock())
@@ -358,7 +362,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             self._cache_generation += 1
 
     def _resolve_window(
-        self, entry: ProjectEntry[Any, Any]
+        self, entry: ProjectEntry[TStation, TEvent]
     ) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp | None]:
         """Resolve the absolute fetch window and predicted arrival for one entry.
 
@@ -382,15 +386,15 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             if self.phase not in tt:
                 raise ValueError(
                     f"No {self.phase!r} arrival predicted for "
-                    f"{entry.station.network}.{entry.station.name} at this "
-                    "distance/depth."
+                    + f"{entry.station.network}.{entry.station.name} at this "
+                    + "distance/depth."
                 )
             predicted = entry.event.time + tt[self.phase]
             return predicted + self.pre_pick, predicted + self.post_pick, predicted
         raise ValueError("ProjectEntry needs either an explicit window or an event.")
 
     def _fetch(
-        self, entry: ProjectEntry[Any, Any], *, _stacklevel: int = 3
+        self, entry: ProjectEntry[TStation, TEvent], *, _stacklevel: int = 3
     ) -> TSeismogram:
         """Fetch, transform, and cache the seismogram for one entry.
 
@@ -462,8 +466,8 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         elif entry.checksum != checksum and self.on_checksum_mismatch != "ignore":
             message = (
                 f"Fetched data for {entry.station.network}.{entry.station.name} "
-                "no longer matches the checksum recorded when this entry was "
-                "first fetched — the underlying archive may have been revised."
+                + "no longer matches the checksum recorded when this entry was "
+                + "first fetched — the underlying archive may have been revised."
             )
             if self.on_checksum_mismatch == "raise":
                 raise ValueError(message)

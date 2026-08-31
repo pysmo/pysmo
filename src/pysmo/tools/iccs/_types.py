@@ -3,6 +3,7 @@ from enum import StrEnum, auto
 from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from attrs import cmp_using, converters, define, field, setters, validators
 
@@ -23,7 +24,7 @@ __all__ = ["IccsResult", "IccsSeismogram", "McccResult", "MiniIccsSeismogram"]
 class IccsResult:
     """Result returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__]."""
 
-    convergence: np.ndarray
+    convergence: npt.NDArray[np.floating]
     """Convergence criterion value after each iteration."""
 
     converged: bool
@@ -136,7 +137,7 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
     )
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(
+    data: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
         converter=convert_to_ndarray,
         validator=validators.instance_of(np.ndarray),

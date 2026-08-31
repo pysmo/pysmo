@@ -24,6 +24,7 @@ from functools import cached_property
 from os import PathLike
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from pysmo import MiniSeismogram, Seismogram
@@ -33,9 +34,9 @@ from pysmo.typing import NonNegativeNumber
 
 __all__ = [
     "GeoCsvDataset",
-    "parse_geocsv",
     "extract_geocsv_timeseries",
     "merge_geocsv_timeseries",
+    "parse_geocsv",
     "write_geocsv",
 ]
 
@@ -83,7 +84,7 @@ class _TimeseriesSegment:
     sample_rate_hz: float
     sample_count: int
     sourceid: str
-    data: np.ndarray
+    data: npt.NDArray[np.floating]
 
 
 def _parse_fields(line: str, delimiter: str) -> list[str]:
@@ -124,7 +125,7 @@ def parse_geocsv(text: str) -> list[GeoCsvDataset]:
             elif keyword in current.headers:
                 warnings.warn(
                     f"Duplicate {keyword!r} keyword line in GeoCSV dataset; "
-                    f"{current.headers[keyword]!r} is replaced by {value!r}.",
+                    + f"{current.headers[keyword]!r} is replaced by {value!r}.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -152,7 +153,7 @@ def _find_sample_column(dataset: GeoCsvDataset) -> int:
             return index
     raise ValueError(
         "Cannot determine sample column: no 'field_type' header with a numeric "
-        f"type ({', '.join(_SAMPLE_FIELD_TYPES)}) found in GeoCSV dataset."
+        + f"type ({', '.join(_SAMPLE_FIELD_TYPES)}) found in GeoCSV dataset."
     )
 
 
@@ -196,7 +197,7 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
         except IndexError as error:
             raise ValueError(
                 f"GeoCSV dataset row has fewer than {sample_column + 1} fields; "
-                "cannot locate the sample column declared by 'field_type'."
+                + "cannot locate the sample column declared by 'field_type'."
             ) from error
     else:
         data = np.array([], dtype=np.float64)
@@ -204,7 +205,7 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
     if len(data) != sample_count:
         raise ValueError(
             f"GeoCSV dataset declares sample_count {sample_count} "
-            f"but contains {len(data)} data rows."
+            + f"but contains {len(data)} data rows."
         )
 
     return _TimeseriesSegment(
@@ -274,8 +275,8 @@ def merge_geocsv_timeseries(
         sample_rates = {segment.sample_rate_hz for segment in segments}
         if len(sample_rates) > 1:
             raise ValueError(
-                f"Cannot merge segments with different sample rates: "
-                f"{sorted(sample_rates)} Hz."
+                "Cannot merge segments with different sample rates: "
+                + f"{sorted(sample_rates)} Hz."
             )
 
     reference = segments[0]

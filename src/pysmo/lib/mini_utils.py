@@ -6,7 +6,7 @@ from typing import TypeAliasType, cast, get_args
 from pysmo import _BaseMini, _BaseProto
 from pysmo.tools import _ToolsMini, _ToolsProto
 
-__all__ = ["proto2mini", "matching_pysmo_types"]
+__all__ = ["matching_pysmo_types", "proto2mini"]
 
 type _AnyProto = _BaseProto | _ToolsProto
 "Type alias for any pysmo Protocol class."
@@ -20,19 +20,17 @@ def _get_flattened_types(tp: object) -> tuple[type, ...]:
 
     Assumes NO usage of typing.Union or typing.Optional!
     """
-    # 1. Unwrap aliases
-    while isinstance(tp, TypeAliasType):
-        tp = tp.__value__
-
-    # 2. Check ONLY for modern '|' unions
-    if isinstance(tp, types.UnionType):
-        flattened_args: list[type] = []
-        for member in get_args(tp):
-            flattened_args.extend(_get_flattened_types(member))
-        return tuple(flattened_args)
-
-    # 3. Base Case: Single class
-    return (cast(type, tp),)
+    match tp:
+        case TypeAliasType():
+            # An alias may itself point at another alias, so keep unwrapping.
+            return _get_flattened_types(tp.__value__)
+        case types.UnionType():
+            # Each member may be an alias or a nested union in its own right.
+            return tuple(
+                flat for member in get_args(tp) for flat in _get_flattened_types(member)
+            )
+        case _:
+            return (cast(type, tp),)
 
 
 def _safe_check(obj: object, proto: type) -> bool:

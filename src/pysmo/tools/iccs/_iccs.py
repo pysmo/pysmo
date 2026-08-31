@@ -1,9 +1,12 @@
 """The ICCS class and functions used within the class."""
 
+from __future__ import annotations
+
 import warnings
 from collections.abc import Sequence
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from attrs import Attribute, cmp_using, define, field, setters, validate, validators
 from numpy.linalg import norm
@@ -58,7 +61,7 @@ def _compute_ramp(
     return ramp_width * (window_post - window_pre)
 
 
-def _on_setattr_clear_cache[T](instance: "ICCS", attribute: Attribute, value: T) -> T:
+def _on_setattr_clear_cache[T](instance: ICCS, attribute: Attribute[T], value: T) -> T:
     """Setter that causes cached attributes to be cleared when their value changes."""
 
     current = getattr(instance, attribute.name)
@@ -89,7 +92,7 @@ def _on_setattr_clear_cache[T](instance: "ICCS", attribute: Attribute, value: T)
 
 
 def _validate_window_pre(
-    instance: "ICCS", attribute: Attribute, value: pd.Timedelta
+    instance: ICCS, attribute: Attribute[pd.Timedelta], value: pd.Timedelta
 ) -> None:
     """Ensure window_pre fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, value, instance.window_post)
@@ -98,7 +101,7 @@ def _validate_window_pre(
 
 
 def _validate_window_post(
-    instance: "ICCS", attribute: Attribute, value: pd.Timedelta
+    instance: ICCS, attribute: Attribute[pd.Timedelta], value: pd.Timedelta
 ) -> None:
     """Ensure window_post fits within all seismograms, accounting for the taper ramp."""
     ramp = _compute_ramp(instance.ramp_width, instance.window_pre, value)
@@ -107,7 +110,7 @@ def _validate_window_post(
 
 
 def _validate_bandpass_fmin(
-    instance: "ICCS", attribute: Attribute, value: float
+    instance: ICCS, attribute: Attribute[float], value: float
 ) -> None:
     """Ensure bandpass_fmin is positive and below bandpass_fmax."""
     if value <= 0:
@@ -119,12 +122,12 @@ def _validate_bandpass_fmin(
     except ValueError:
         raise ValueError(
             "bandpass_fmin is too close to bandpass_fmax for the causal "
-            "variant's corrected passband at the current corners."
+            + "variant's corrected passband at the current corners."
         ) from None
 
 
 def _validate_bandpass_fmax(
-    instance: "ICCS", attribute: Attribute, value: float
+    instance: ICCS, attribute: Attribute[float], value: float
 ) -> None:
     """Ensure bandpass_fmax is above bandpass_fmin and below the Nyquist frequency."""
     if value <= instance.bandpass_fmin:
@@ -140,12 +143,12 @@ def _validate_bandpass_fmax(
     except ValueError:
         raise ValueError(
             "bandpass_fmax is too close to bandpass_fmin for the causal "
-            "variant's corrected passband at the current corners."
+            + "variant's corrected passband at the current corners."
         ) from None
 
 
 def _validate_corners_causal_band(
-    instance: "ICCS", attribute: Attribute, value: int
+    instance: ICCS, attribute: Attribute[int], value: int
 ) -> None:
     """Ensure corners doesn't invert the causal variant's corrected passband."""
     try:
@@ -153,12 +156,12 @@ def _validate_corners_causal_band(
     except ValueError:
         raise ValueError(
             "corners is too low for the causal variant's corrected "
-            "passband at the current bandpass_fmin/bandpass_fmax."
+            + "passband at the current bandpass_fmin/bandpass_fmax."
         ) from None
 
 
 def _validate_bandpass_apply(
-    instance: "ICCS", attribute: Attribute, value: bool
+    instance: ICCS, attribute: Attribute[bool], value: bool
 ) -> None:
     """Ensure Nyquist constraint is met when enabling the bandpass filter."""
     if value and instance.seismograms:
@@ -170,8 +173,8 @@ def _validate_bandpass_apply(
 
 
 def _validate_ramp_width(
-    instance: "ICCS",
-    attribute: Attribute,
+    instance: ICCS,
+    attribute: Attribute[NonNegativeTimedelta | NonNegativeNumber],
     value: NonNegativeTimedelta | NonNegativeNumber,
 ) -> None:
     ramp = _compute_ramp(value, instance.window_pre, instance.window_post)
@@ -210,7 +213,7 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     delta: pd.Timedelta = field(init=False)
     """Seismogram sampling interval."""
 
-    data: np.ndarray = field(init=False, eq=cmp_using(eq=np.array_equal))
+    data: npt.NDArray[np.floating] = field(init=False, eq=cmp_using(eq=np.array_equal))
     """Seismogram data."""
 
     def __attrs_post_init__(self) -> None:
@@ -476,7 +479,7 @@ class ICCS:
         default=None, init=False
     )
     """Cached list of the prepared seismograms with context padding."""
-    _ccs_cache: np.ndarray | None = field(default=None, init=False)
+    _ccs_cache: npt.NDArray[np.floating] | None = field(default=None, init=False)
     """Cached array of the normalised cross-correlation coefficients."""
     _cc_stack_cache: MiniSeismogram | None = field(default=None, init=False)
     """Cached stack of the prepared seismograms for cross-correlation."""
@@ -658,7 +661,7 @@ class ICCS:
         return self._context_seismograms_cache
 
     @property
-    def ccs(self) -> np.ndarray:
+    def ccs(self) -> npt.NDArray[np.floating]:
         """Return an array of the normalised cross-correlation coefficients."""
 
         if self._ccs_cache is None:
@@ -1037,7 +1040,7 @@ def _update_seismogram(
         # Use stacklevel=2 to point at the direct caller of _update_seismogram.
         warnings.warn(
             f"Refusing to update t1 for seismogram with t0={seismogram.t0}. "
-            "Would move out of limits - consider reducing window size.",
+            + "Would move out of limits - consider reducing window size.",
             stacklevel=2,
         )
         return
@@ -1113,7 +1116,7 @@ def _prepare_seismograms(
         ephemeral_seismograms.append(ephemeral_seismogram)
 
     # If all seismograms have the same length, return them now.
-    if len(lengths := set(len(s.data) for s in ephemeral_seismograms)) == 1:
+    if len(lengths := {len(s.data) for s in ephemeral_seismograms}) == 1:
         return ephemeral_seismograms
 
     # Shorten seismograms if necessary and return (floating-point precision
@@ -1142,7 +1145,7 @@ def _create_stack(seismograms: Sequence[_EphemeralSeismogram]) -> MiniSeismogram
     if not selected:
         raise ValueError(
             "Cannot create stack: no seismograms are selected. "
-            "Ensure at least one seismogram has select=True before accessing the stack."
+            + "Ensure at least one seismogram has select=True before accessing the stack."
         )
     begin_time = average_datetimes([p.begin_time for p in selected])
     delta = selected[0].delta

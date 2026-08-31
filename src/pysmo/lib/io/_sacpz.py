@@ -97,7 +97,7 @@ def _parse_complex_block(
     except ValueError as error:
         raise ValueError(
             f"'{keyword}' block at line {index + 1} has a non-integer count: "
-            f"{tokens[1]!r}."
+            + f"{tokens[1]!r}."
         ) from error
     if count < 0:
         raise ValueError(
@@ -172,7 +172,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
         if not lines[index].strip().startswith("*"):
             raise ValueError(
                 f"Expected a comment header line at line {index + 1}, found "
-                f"{lines[index]!r}."
+                + f"{lines[index]!r}."
             )
 
         headers, index = _parse_headers(lines, index)
@@ -192,7 +192,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
         if len(constant_tokens) < 2:
             raise ValueError(
                 f"'CONSTANT' at line {index + 1} is missing its value: "
-                f"{constant_line!r}."
+                + f"{constant_line!r}."
             )
         overall_sensitivity = _parse_float(constant_tokens[1])
         index += 1

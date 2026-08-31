@@ -194,7 +194,7 @@ def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
     if not factor.is_integer():
         raise ValueError(
             f"Stage {stage.get('number')}'s <Decimation>/<Factor> "
-            f"{factor_text!r} is not a whole number."
+            + f"{factor_text!r} is not a whole number."
         )
     decimation_factor = int(factor)
     # <Offset> (which input sample the decimated output is aligned to) has no
@@ -214,11 +214,11 @@ def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
     if correction < 0:
         warnings.warn(
             f"Stage {stage.get('number')} has a negative <Correction> "
-            f"({correction}s). Correction is almost always >= 0 (it "
-            "cancels the stage's own, almost-always-positive <Delay>); a "
-            "negative value more likely indicates a metadata error at the "
-            "provider than a genuine non-causal correction, and will "
-            "shift timing the wrong way if used as-is.",
+            + f"({correction}s). Correction is almost always >= 0 (it "
+            + "cancels the stage's own, almost-always-positive <Delay>); a "
+            + "negative value more likely indicates a metadata error at the "
+            + "provider than a genuine non-causal correction, and will "
+            + "shift timing the wrong way if used as-is.",
             UserWarning,
             stacklevel=2,
         )
@@ -244,7 +244,7 @@ def _parse_stage(stage: ET.Element) -> _StageParseResult:
         if pz_type != _ANALOG_PZ_TYPE:
             raise ValueError(
                 f"Unsupported PzTransferFunctionType {pz_type!r} in stage "
-                f"{stage.get('number')}; only {_ANALOG_PZ_TYPE!r} is supported."
+                + f"{stage.get('number')}; only {_ANALOG_PZ_TYPE!r} is supported."
             )
         normalization_factor = float(_child_text(pz, "NormalizationFactor"))
         # <NormalizationFrequency> (the frequency NormalizationFactor is
@@ -261,8 +261,8 @@ def _parse_stage(stage: ET.Element) -> _StageParseResult:
         if cf_type != _DIGITAL_CF_TYPE:
             raise ValueError(
                 f"Unsupported CfTransferFunctionType {cf_type!r} in stage "
-                f"{stage.get('number')}; only {_DIGITAL_CF_TYPE!r} is "
-                "supported."
+                + f"{stage.get('number')}; only {_DIGITAL_CF_TYPE!r} is "
+                + "supported."
             )
         input_sample_rate, decimation_factor, correction = _parse_decimation(stage)
         numerator = _parse_coefficients(coefficients, "Numerator")
@@ -316,7 +316,7 @@ def _parse_stage(stage: ET.Element) -> _StageParseResult:
 
     raise ValueError(
         f"Stage {stage.get('number')} has no recognised PolesZeros/Coefficients/"
-        "FIR element."
+        + "FIR element."
     )
 
 
@@ -461,7 +461,7 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
             if station_code is None:
                 raise ValueError(
                     f"<Station> element in network {network_code!r} has no "
-                    "code attribute."
+                    + "code attribute."
                 )
             station_coords = (
                 _optional_child_float(station_elem, "Latitude"),
@@ -482,21 +482,21 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
             for elem, channel_code, location_code in elements:
                 if channels and not channel_code:
                     raise ValueError(
-                        f"<Channel> element in station "
-                        f"{network_code}.{station_code} has no code attribute."
+                        "<Channel> element in station "
+                        + f"{network_code}.{station_code} has no code attribute."
                     )
                 start_date = _parse_timestamp(elem.get("startDate"))
                 if start_date is None:
                     what = f"Channel {channel_code!r}" if channels else "Station"
                     raise ValueError(
                         f"{what} in station {network_code}.{station_code} has "
-                        "no startDate attribute."
+                        + "no startDate attribute."
                     )
                 latitude, longitude, elevation = _epoch_coords(elem, station_coords)
                 if latitude is None or longitude is None:
                     raise ValueError(
                         f"{network_code}.{station_code}."
-                        f"{channel_code or '(station)'} has no latitude/longitude."
+                        + f"{channel_code or '(station)'} has no latitude/longitude."
                     )
                 response_elem = elem.find("fdsn:Response", _NS)
                 results.append(
