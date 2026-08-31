@@ -14,19 +14,20 @@ import matplotlib.dates as mdates
 import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from pysmo import Seismogram
 
 __all__ = [
+    "plotseis",
+    "relative_time_array",
     "time_array",
     "unix_time_array",
-    "relative_time_array",
-    "plotseis",
 ]
 
 
-def time_array(seismogram: Seismogram) -> np.ndarray:
+def time_array(seismogram: Seismogram) -> npt.NDArray[np.floating]:
     """Create an array containing Matplotlib dates.
 
     Args:
@@ -62,7 +63,7 @@ def time_array(seismogram: Seismogram) -> np.ndarray:
     return np.linspace(start, end, len(seismogram.data))
 
 
-def unix_time_array(seismogram: Seismogram) -> np.ndarray:
+def unix_time_array(seismogram: Seismogram) -> npt.NDArray[np.floating]:
     """Create an array containing unix epoch dates.
 
     Args:
@@ -97,7 +98,9 @@ def unix_time_array(seismogram: Seismogram) -> np.ndarray:
     return np.linspace(start, end, len(seismogram.data))
 
 
-def relative_time_array(seismogram: Seismogram, reference: pd.Timestamp) -> np.ndarray:
+def relative_time_array(
+    seismogram: Seismogram, reference: pd.Timestamp
+) -> npt.NDArray[np.floating]:
     """Create an array of elapsed seconds relative to a reference time.
 
     Args:

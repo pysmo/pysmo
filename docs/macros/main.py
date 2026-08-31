@@ -1,15 +1,15 @@
 import importlib
 from dataclasses import fields
+from typing import Any
 
 
-def define_env(env):  # type: ignore
+def define_env(env: Any) -> None:
     """
     This is the hook where you define your custom macros.
     """
 
     print("🚀 Macros are loading successfully!")
 
-    @env.macro
     def dataclass_table(class_path: str) -> str:
         # 1. Dynamically import the class
         module_path, class_name = class_path.rsplit(".", 1)
@@ -31,3 +31,5 @@ def define_env(env):  # type: ignore
             rows.append(f"| **{field.name}** | `{type_name}` | {default} |")
 
         return "\n".join(rows)
+
+    env.macro(dataclass_table)

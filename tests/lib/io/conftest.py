@@ -3,16 +3,16 @@ from pathlib import Path
 
 import pytest
 
-SACIO_ASSETS = dict(
-    sacfile_IB=Path(__file__).parent / "assets/testfile_iztype_is_IB.sac",
-    sacfile_no_b=Path(__file__).parent / "assets/no_b.sac",
-    sacfile_v6=Path(__file__).parent / "assets/funcgen6.sac",
-    sacfile_v7=Path(__file__).parent / "assets/funcgen7.sac",
-    sacfile_irlim=Path(__file__).parent / "assets/funcgen_irlim_v7.sac",
-    sacfile_iamph=Path(__file__).parent / "assets/funcgen_iamph_v7.sac",
-    sacfile_uneven=Path(__file__).parent / "assets/funcgen_uneven_v6.sac",
-    sacfile_ixy=Path(__file__).parent / "assets/funcgen_ixy_v6.sac",
-)
+SACIO_ASSETS = {
+    "sacfile_IB": Path(__file__).parent / "assets/testfile_iztype_is_IB.sac",
+    "sacfile_no_b": Path(__file__).parent / "assets/no_b.sac",
+    "sacfile_v6": Path(__file__).parent / "assets/funcgen6.sac",
+    "sacfile_v7": Path(__file__).parent / "assets/funcgen7.sac",
+    "sacfile_irlim": Path(__file__).parent / "assets/funcgen_irlim_v7.sac",
+    "sacfile_iamph": Path(__file__).parent / "assets/funcgen_iamph_v7.sac",
+    "sacfile_uneven": Path(__file__).parent / "assets/funcgen_uneven_v6.sac",
+    "sacfile_ixy": Path(__file__).parent / "assets/funcgen_ixy_v6.sac",
+}
 
 
 @pytest.fixture()

@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import UTC
 
 import numpy.testing as npt
 import pandas as pd
@@ -21,7 +21,7 @@ class TestUtilsFunctions:
         npt.assert_equal(mini_clone.data, mini_seismogram.data)
 
         # clone sac with updated begin_time
-        now = pd.Timestamp.now(timezone.utc)
+        now = pd.Timestamp.now(UTC)
         mini_clone = clone_to_mini(
             MiniSeismogram, sac_instance.seismogram, update={"begin_time": now}
         )

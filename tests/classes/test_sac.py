@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import UTC
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
@@ -142,7 +142,7 @@ class TestSAC:
             == pytest.approx(0.05, 0.001)
         )
         assert sacseis.begin_time.timestamp() == pytest.approx(
-            pd.Timestamp(2010, 2, 27, 6, 44, 6, 69538, tzinfo=timezone.utc).timestamp()
+            pd.Timestamp(2010, 2, 27, 6, 44, 6, 69538, tzinfo=UTC).timestamp()
         )
         assert sacseis.begin_time.year == sacio.nzyear
         if sacio.nzjday:
@@ -161,9 +161,7 @@ class TestSAC:
                 1000 * (sacio.nzmsec + int(sacio.b * 1000)) % 1000000, abs=1000
             )
         assert sacseis.end_time.timestamp() == pytest.approx(
-            pd.Timestamp(
-                2010, 2, 27, 7, 31, 59, 269538, tzinfo=timezone.utc
-            ).timestamp()
+            pd.Timestamp(2010, 2, 27, 7, 31, 59, 269538, tzinfo=UTC).timestamp()
         )
         assert (sacseis.end_time - sacseis.begin_time).total_seconds() == pytest.approx(
             sacio.delta * (sacio.npts - 1)
@@ -172,7 +170,7 @@ class TestSAC:
         # Change some values
         random_data = np.random.randn(100)
         new_time1 = pd.Timestamp.fromisoformat("2011-11-04T00:05:23.123").replace(
-            tzinfo=timezone.utc
+            tzinfo=UTC
         )
         sacseis.data = random_data
         # changing data should also change end time
@@ -299,7 +297,7 @@ class TestSAC:
         assert (sac.timestamps.e - sac.timestamps.b).total_seconds() == pytest.approx(
             sacio.e - sacio.b, 0.000001
         )
-        now = pd.Timestamp.now(timezone.utc)
+        now = pd.Timestamp.now(UTC)
         with pytest.raises(AttributeError):
             sac.timestamps.e = now
         assert sac.timestamps.t0 is None
@@ -314,7 +312,7 @@ class TestSAC:
         # Naive timestamp should be converted to UTC automatically now
         naive_now = pd.Timestamp.now()
         sac.timestamps.b = naive_now
-        assert sac.timestamps.b.tzinfo == timezone.utc
+        assert sac.timestamps.b.tzinfo == UTC
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_nested_objects_reject_unknown_attributes(self, sacfile: Path) -> None:

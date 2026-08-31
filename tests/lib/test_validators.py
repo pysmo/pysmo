@@ -1,5 +1,5 @@
 import zoneinfo
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -77,7 +77,7 @@ def test_convert_to_ndarray_passthrough() -> None:
         max_value=datetime(2030, 1, 1),
         timezones=st.sampled_from(
             [
-                timezone.utc,
+                UTC,
                 zoneinfo.ZoneInfo("US/Eastern"),
                 zoneinfo.ZoneInfo("Europe/Berlin"),
                 zoneinfo.ZoneInfo("Asia/Tokyo"),

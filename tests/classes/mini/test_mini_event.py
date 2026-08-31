@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import UTC
 
 import pandas as pd
 import pytest
@@ -18,7 +18,7 @@ class TestMiniEvent:
             2.2,
         )
         depth = 1000
-        time_utc = pd.Timestamp.now(timezone.utc)
+        time_utc = pd.Timestamp.now(UTC)
         minievent = MiniEvent(
             latitude=latitude, longitude=longitude, depth=depth, time=time_utc
         )
@@ -31,7 +31,7 @@ class TestMiniEvent:
             1.1,
             2.2,
             1000,
-            pd.Timestamp.now(timezone.utc),
+            pd.Timestamp.now(UTC),
         )
         new_latitude, new_longitude, new_depth, new_time = (
             -21.1,
@@ -63,7 +63,7 @@ class TestMiniEvent:
         # Test time conversion on set
         minievent.time = "2024-03-03T12:00:00"  # type: ignore
         assert isinstance(minievent.time, pd.Timestamp)
-        assert minievent.time.tzinfo == timezone.utc
+        assert minievent.time.tzinfo == UTC
 
         with pytest.raises(ValueError):
             minievent.latitude = -100
