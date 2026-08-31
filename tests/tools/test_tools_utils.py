@@ -1,4 +1,5 @@
 import random as rd
+from datetime import UTC
 
 import numpy as np
 import pytest
@@ -17,7 +18,6 @@ def mock_uuid4(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_average_datetimes() -> None:
-    from datetime import timezone
 
     import pandas as pd
 
@@ -25,7 +25,7 @@ def test_average_datetimes() -> None:
 
     with pytest.raises(ValueError):
         average_datetimes([])
-    now = pd.Timestamp.now(timezone.utc)
+    now = pd.Timestamp.now(UTC)
     assert average_datetimes([now]) == now
 
     now_no_tz = pd.Timestamp.now()

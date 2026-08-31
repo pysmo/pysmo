@@ -167,8 +167,8 @@ class QuakeML:
         if event_id is None:
             if len(events) != 1:
                 raise ValueError(
-                    f"Expected exactly one event in the given QuakeML, found "
-                    f"{len(events)}: {[event.public_id for event in events]}."
+                    "Expected exactly one event in the given QuakeML, found "
+                    + f"{len(events)}: {[event.public_id for event in events]}."
                 )
             return events[0]
 
@@ -186,7 +186,7 @@ class QuakeML:
         if len(short) > 1:
             raise ValueError(
                 f"event_id {event_id!r} matches {len(short)} events: "
-                f"{[event.public_id for event in short]}."
+                + f"{[event.public_id for event in short]}."
             )
         raise ValueError(
             f"Expected exactly one event matching event_id {event_id!r}, found 0."

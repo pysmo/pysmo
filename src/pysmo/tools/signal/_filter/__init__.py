@@ -4,5 +4,5 @@ from ._gauss import envelope, gauss
 
 __all__ = ["filter"]
 __all__ += ["envelope", "gauss"]
-__all__ += ["bandpass", "bandstop", "lowpass", "highpass"]
+__all__ += ["bandpass", "bandstop", "highpass", "lowpass"]
 __all__ += ["causal_band", "zerophase_band"]

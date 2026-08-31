@@ -15,8 +15,9 @@ creation metadata are all deliberately out of scope.
 """
 
 import xml.etree.ElementTree as ET
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
+from typing import TypeIs
 
 import pandas as pd
 
@@ -95,6 +96,13 @@ def _quantity_value(parent: ET.Element, local: str) -> str | None:
     return _child_text(quantity, "value")
 
 
+def _all_required_present(
+    values: Mapping[str, str | None],
+) -> TypeIs[Mapping[str, str]]:
+    """True when every required origin element has a value, narrowing the mapping to `str` values."""
+    return all(value is not None for value in values.values())
+
+
 def _resolve_preferred(
     candidates: list[ET.Element], preferred_id: str | None
 ) -> ET.Element | None:
@@ -119,6 +127,37 @@ def _resolve_preferred(
     )
 
 
+def _parse_magnitude(
+    magnitude_elem: ET.Element | None, public_id: str
+) -> tuple[float | None, str | None]:
+    """Parse a preferred `<magnitude>` element into a numeric value and type.
+
+    Returns `(None, None)` when `magnitude_elem` is `None`. Raises
+    `ValueError` when the `<mag>` text is present but unparseable.
+    """
+    if magnitude_elem is None:
+        return None, None
+    mag_text = _quantity_value(magnitude_elem, "mag")
+    magnitude: float | None = None
+    if mag_text is not None:
+        try:
+            magnitude = float(mag_text)
+        except ValueError as exc:
+            raise ValueError(
+                f"event {public_id!r}: could not parse magnitude value ({exc})"
+            )
+    return magnitude, _child_text(magnitude_elem, "type")
+
+
+def _first_description(event: ET.Element) -> str | None:
+    """Return the text of the first `<description>` child with non-empty text, or `None`."""
+    for description_elem in _iter_children(event, "description"):
+        text = _child_text(description_elem, "text")
+        if text is not None:
+            return text
+    return None
+
+
 def _parse_event(event: ET.Element, position: int) -> _RawEvent:
     """Parse one `<event>` element into a `_RawEvent`, raising `ValueError` on any unrepresentable part."""
     public_id = event.get("publicID")
@@ -136,18 +175,18 @@ def _parse_event(event: ET.Element, position: int) -> _RawEvent:
         raise ValueError(f"event {public_id!r}: no origin found")
 
     values = {name: _quantity_value(origin, name) for name in _REQUIRED_ORIGIN_ELEMENTS}
-    missing = [f"<{name}>" for name, text in values.items() if text is None]
-    if missing:
+    if not _all_required_present(values):
+        missing = [f"<{name}>" for name, text in values.items() if text is None]
         raise ValueError(
             f"event {public_id!r}: preferred origin is missing required "
-            f"element(s): {', '.join(missing)}"
+            + f"element(s): {', '.join(missing)}"
         )
 
     try:
-        time = convert_to_utc_timestamp(values["time"])  # type: ignore[arg-type]
-        latitude = float(values["latitude"])  # type: ignore[arg-type]
-        longitude = float(values["longitude"])  # type: ignore[arg-type]
-        depth = float(values["depth"])  # type: ignore[arg-type]
+        time = convert_to_utc_timestamp(values["time"])
+        latitude = float(values["latitude"])
+        longitude = float(values["longitude"])
+        depth = float(values["depth"])
     except (ValueError, TypeError) as exc:
         raise ValueError(
             f"event {public_id!r}: could not parse a preferred origin value ({exc})"
@@ -159,25 +198,9 @@ def _parse_event(event: ET.Element, position: int) -> _RawEvent:
         )
     except ValueError as exc:
         raise ValueError(f"event {public_id!r}: ambiguous preferred magnitude ({exc})")
-    magnitude: float | None = None
-    magnitude_type: str | None = None
-    if magnitude_elem is not None:
-        mag_text = _quantity_value(magnitude_elem, "mag")
-        if mag_text is not None:
-            try:
-                magnitude = float(mag_text)
-            except ValueError as exc:
-                raise ValueError(
-                    f"event {public_id!r}: could not parse magnitude value ({exc})"
-                )
-        magnitude_type = _child_text(magnitude_elem, "type")
+    magnitude, magnitude_type = _parse_magnitude(magnitude_elem, public_id)
 
-    description = None
-    for description_elem in _iter_children(event, "description"):
-        text = _child_text(description_elem, "text")
-        if text is not None:
-            description = text
-            break
+    description = _first_description(event)
 
     return _RawEvent(
         public_id=public_id,

@@ -57,7 +57,7 @@ class _ServiceDefaults:
     def __new__(cls) -> Self:
         raise RuntimeError(
             "_ServiceDefaults is not meant to be instantiated. "
-            "Use _ServiceDefaults.<attribute> instead."
+            + "Use _ServiceDefaults.<attribute> instead."
         )
 
     station_url: str = "https://service.earthscope.org/fdsnws/station/1/query"
@@ -180,7 +180,7 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         if floored != time:
             warnings.warn(
                 "SACPZ web service rejects sub-second precision in "
-                f"'time'; truncating {time} to {floored}.",
+                + f"'time'; truncating {time} to {floored}.",
                 stacklevel=2,
             )
             time = floored

@@ -1,8 +1,9 @@
-from datetime import timezone
+from datetime import UTC
 
 import matplotlib  # type: ignore
 import pandas as pd
 import pytest
+from matplotlib.figure import Figure
 
 from pysmo import Seismogram
 
@@ -10,7 +11,9 @@ matplotlib.use("Agg")
 
 
 @pytest.mark.mpl_image_compare(remove_text=True)
-def test_plotutils_plotseis(seismograms: list[Seismogram]):  # type: ignore
+def test_plotutils_plotseis(
+    seismograms: list[Seismogram],
+) -> Figure:
     from pysmo.tools.plotutils import plotseis
 
     fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
@@ -42,13 +45,11 @@ class TestPlotseisFunctions:
         unix_times = unix_time_array(seismogram)
         assert len(unix_times) == len(seismogram.data)
         assert (
-            pytest.approx(
-                pd.Timestamp.fromtimestamp(unix_times[0], timezone.utc).timestamp()
-            )
+            pytest.approx(pd.Timestamp.fromtimestamp(unix_times[0], UTC).timestamp())
             == seismogram.begin_time.timestamp()
         )
         assert (
-            pd.Timestamp.fromtimestamp(unix_times[-1], timezone.utc).timestamp()
+            pd.Timestamp.fromtimestamp(unix_times[-1], UTC).timestamp()
             == seismogram.end_time.timestamp()
         )
 

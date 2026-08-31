@@ -61,7 +61,7 @@ def crop[T: Seismogram](
     end_time: pd.Timestamp,
     *,
     clone: bool = False,
-) -> None | T:
+) -> T | None:
     """Shorten a seismogram by providing new begin and end times.
 
     This function calculates the indices corresponding to the provided new
@@ -118,7 +118,7 @@ def detrend(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
 def detrend[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
 
 
-def detrend[T: Seismogram](seismogram: T, *, clone: bool = False) -> None | T:
+def detrend[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
     """Remove linear and/or constant trends from a seismogram.
 
     Args:
@@ -180,7 +180,7 @@ def normalize[T: Seismogram](
     t2: pd.Timestamp | None = None,
     *,
     clone: bool = False,
-) -> None | T:
+) -> T | None:
     """Normalise a seismogram with its absolute max value.
 
     Args:
@@ -225,8 +225,8 @@ def normalize[T: Seismogram](
     if abs_max == 0:
         raise ValueError(
             "Cannot normalise a seismogram because the absolute maximum "
-            "within the selected time window (or entire trace if no window "
-            "is given) is zero."
+            + "within the selected time window (or entire trace if no window "
+            + "is given) is zero."
         )
 
     if clone is True:
@@ -272,7 +272,7 @@ def pad[T: Seismogram](
     *,
     clone: bool = False,
     **kwargs: Any,
-) -> None | T:
+) -> T | None:
     """Pad seismogram data.
 
     This function calculates the indices corresponding to the provided new
@@ -357,7 +357,7 @@ def resample[T: Seismogram](
 
 def resample[T: Seismogram](
     seismogram: T, delta: PositiveTimedelta, *, clone: bool = False
-) -> None | T:
+) -> T | None:
     """Resample Seismogram data using the Fourier method.
 
     This function uses [`scipy.signal.resample`][] to resample the data to a
@@ -493,7 +493,7 @@ def merge[T: Seismogram](
     auto_delta: bool = False,
     gap_tolerance_factor: NonNegativeNumber = 0.5,
     clone: bool = False,
-) -> None | T:
+) -> T | None:
     """Merge contiguous seismograms into a single seismogram.
 
     Empty seismograms take no part in the merge arithmetic (they never
@@ -676,7 +676,7 @@ def merge[T: Seismogram](
             if seismogram.delta != reference_delta:
                 raise ValueError(
                     "Cannot merge seismograms with different sampling intervals "
-                    f"without resampling: {reference_delta} vs {seismogram.delta}."
+                    + f"without resampling: {reference_delta} vs {seismogram.delta}."
                 )
     else:
         reference_delta = delta
@@ -706,7 +706,7 @@ def merge[T: Seismogram](
             )
             raise ValueError(
                 f"Data {description} detected between seismogram ending at "
-                f"{prev.end_time} and seismogram starting at {curr.begin_time}."
+                + f"{prev.end_time} and seismogram starting at {curr.begin_time}."
             )
         if gap < pd.Timedelta(0):
             samples = min(round(-gap / prev.delta), len(prev.data), len(curr.data))
@@ -714,9 +714,9 @@ def merge[T: Seismogram](
                 prev.data[-samples:], curr.data[:samples]
             ):
                 raise ValueError(
-                    f"Overlapping samples between seismogram ending at "
-                    f"{prev.end_time} and seismogram starting at "
-                    f"{curr.begin_time} do not match; cannot merge."
+                    "Overlapping samples between seismogram ending at "
+                    + f"{prev.end_time} and seismogram starting at "
+                    + f"{curr.begin_time} do not match; cannot merge."
                 )
             overlap_samples[index] = samples
 
@@ -762,7 +762,7 @@ def taper[T: Seismogram](
     window_type: _WindowType = "hann",
     *,
     clone: bool = False,
-) -> None | T:
+) -> T | None:
     """Apply a symmetric taper to the ends of a Seismogram.
 
     The taper width is understood as the portion of the seismogram affected
@@ -899,7 +899,7 @@ def time2index(
 
     raise ValueError(
         f"Calculated index {index} is out of bounds for seismogram with "
-        f"{len(seismogram.data)} samples. (Target time: {time})"
+        + f"{len(seismogram.data)} samples. (Target time: {time})"
     )
 
 
@@ -938,7 +938,7 @@ def window[T: Seismogram](
     same_shape: bool = False,
     *,
     clone: bool = False,
-) -> None | T:
+) -> T | None:
     """Returns an optionally padded and tapered window of a seismogram.
 
     This function combines the [`crop`][pysmo.functions.crop],
@@ -1035,12 +1035,12 @@ def window[T: Seismogram](
     if window_begin_time - ramp_duration < seismogram.begin_time:
         raise ValueError(
             f"ramp_width={ramp_width} requires data before {window_begin_time - ramp_duration}, "
-            f"but seismogram only starts at {seismogram.begin_time}."
+            + f"but seismogram only starts at {seismogram.begin_time}."
         )
     if window_end_time + ramp_duration > seismogram.end_time:
         raise ValueError(
             f"ramp_width={ramp_width} requires data after {window_end_time + ramp_duration}, "
-            f"but seismogram only ends at {seismogram.end_time}."
+            + f"but seismogram only ends at {seismogram.end_time}."
         )
 
     window_begin_time -= ramp_duration
