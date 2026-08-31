@@ -1,5 +1,7 @@
 """Tests for pysmo.classes.QuakeML."""
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -56,7 +58,7 @@ class TestConformance:
 
 class TestReferenceFixture:
     @pytest.fixture()
-    def maule(self, reference_event_assets: dict) -> QuakeML:
+    def maule(self, reference_event_assets: dict[str, Path]) -> QuakeML:
         return QuakeML.from_bytes(reference_event_assets["quakeml"].read_bytes())
 
     def test_hypocentre(self, maule: QuakeML) -> None:

@@ -48,7 +48,7 @@ block:
 ```python
 >>> import pandas as pd
 >>> from attrs import define
->>> from pysmo import MiniEvent, MiniStation, Seismogram
+>>> from pysmo import Event, MiniEvent, MiniStation, Seismogram, Station
 >>> from pysmo.classes import StationXML
 >>> from pysmo.functions import clone_to_mini
 >>> from pysmo.tools.iccs import ICCS, MiniIccsSeismogram
@@ -81,7 +81,7 @@ configurable per instance:
 ...     pre_filt: tuple[float, float, float, float]
 ...
 ...     def __call__(
-...         self, seismogram: Seismogram, context: FetchContext
+...         self, seismogram: Seismogram, context: FetchContext[Station, Event]
 ...     ) -> MiniIccsSeismogram:
 ...         response = StationXML.fetch(
 ...             station=context.entry.station, time=context.starttime

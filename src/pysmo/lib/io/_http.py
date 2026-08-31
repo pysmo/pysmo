@@ -6,10 +6,10 @@ import urllib3
 from urllib3.util.retry import Retry
 
 __all__ = [
-    "http_get",
-    "DEFAULT_TIMEOUT_SECONDS",
     "DEFAULT_REQUEST_RETRIES",
     "DEFAULT_RETRY_DELAY_SECONDS",
+    "DEFAULT_TIMEOUT_SECONDS",
+    "http_get",
 ]
 
 #: Default timeout/retry values for web-service calls built on `http_get`.

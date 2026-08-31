@@ -1,6 +1,7 @@
 import math
 import warnings
 from collections.abc import Sequence
+from itertools import combinations
 
 import numpy as np
 import numpy.typing as npt
@@ -11,12 +12,15 @@ from scipy.signal import correlate as _correlate
 from scipy.stats.mstats import pearsonr as _pearsonr
 
 from pysmo import Seismogram
+from pysmo._utils import as_sequence
 from pysmo.typing import NonNegativeTimedelta
 
-__all__ = ["delay", "multi_delay", "multi_multi_delay", "mccc"]
+__all__ = ["delay", "mccc", "multi_delay", "multi_multi_delay"]
 
 
-def _pearson_at_lag(reference: np.ndarray, other: np.ndarray, lag: int) -> float:
+def _pearson_at_lag(
+    reference: npt.NDArray[np.floating], other: npt.NDArray[np.floating], lag: int
+) -> float:
     """Pearson correlation restricted to the actual overlap at `lag` samples.
 
     `lag` follows the same sign convention as `delay()`'s returned shift:
@@ -44,7 +48,7 @@ def _check_same_delta(
 
     ref_delta = seismogram1.delta.total_seconds()
 
-    for s in seismogram2 if isinstance(seismogram2, Sequence) else [seismogram2]:
+    for s in as_sequence(seismogram2):
         if not np.isclose(ref_delta, s.delta.total_seconds()):
             raise ValueError(f"Sampling intervals differ: {ref_delta} vs {s.delta}.")
 
@@ -373,7 +377,7 @@ def multi_delay(
     if t_std == 0:
         warnings.warn(
             "Template seismogram has zero standard deviation (constant data). "
-            "Cross-correlation results will be zero for all traces.",
+            + "Cross-correlation results will be zero for all traces.",
             UserWarning,
             stacklevel=2,
         )
@@ -390,7 +394,7 @@ def multi_delay(
         if std == 0:
             warnings.warn(
                 f"Seismogram at index {i} has zero standard deviation (constant data). "
-                "Its cross-correlation coefficient will be zero.",
+                + "Its cross-correlation coefficient will be zero.",
                 UserWarning,
                 stacklevel=2,
             )
@@ -534,7 +538,7 @@ def multi_multi_delay(
         if std == 0:
             warnings.warn(
                 f"Seismogram at index {i} has zero standard deviation (constant data). "
-                "Its cross-correlation coefficients will be zero for all pairs.",
+                + "Its cross-correlation coefficients will be zero for all pairs.",
                 UserWarning,
                 stacklevel=2,
             )
@@ -575,10 +579,10 @@ def multi_multi_delay(
     ccs = np.empty((n, n), dtype=float)
     for i in range(n):
         ccs[i, i] = _pearson_at_lag(all_data[i], all_data[i], 0)
-        for j in range(i + 1, n):
-            cc = _pearson_at_lag(all_data[i], all_data[j], int(signed_lags[i, j]))
-            ccs[i, j] = cc
-            ccs[j, i] = cc
+    for i, j in combinations(range(n), 2):
+        cc = _pearson_at_lag(all_data[i], all_data[j], int(signed_lags[i, j]))
+        ccs[i, j] = cc
+        ccs[j, i] = cc
 
     return delays, ccs
 
@@ -722,27 +726,26 @@ def mccc(
     delay_matrix_seconds = delay_matrix / np.timedelta64(1, "s")
 
     # Build linear system (g @ m = d)
-    rows: list[np.ndarray] = []
+    rows: list[npt.NDArray[np.floating]] = []
     data_vec: list[float] = []
     weights: list[float] = []
 
-    for i in range(n_traces):
-        for j in range(i + 1, n_traces):
-            cc = cc_matrix[i, j]
-            # When abs_max is True, we care about the absolute correlation strength
-            cc_to_check = abs(cc) if abs_max else cc
-            if cc_to_check < min_cc:
-                continue
+    for i, j in combinations(range(n_traces), 2):
+        cc = cc_matrix[i, j]
+        # When abs_max is True, we care about the absolute correlation strength
+        cc_to_check = abs(cc) if abs_max else cc
+        if cc_to_check < min_cc:
+            continue
 
-            lag_seconds = delay_matrix_seconds[i, j]
+        lag_seconds = delay_matrix_seconds[i, j]
 
-            row = np.zeros(n_traces)
-            row[i] = -1.0
-            row[j] = 1.0
+        row = np.zeros(n_traces)
+        row[i] = -1.0
+        row[j] = 1.0
 
-            rows.append(row)
-            data_vec.append(lag_seconds)
-            weights.append(cc**2)
+        rows.append(row)
+        data_vec.append(lag_seconds)
+        weights.append(cc**2)
 
     if not rows:
         return (

@@ -9,10 +9,11 @@ callers learn one import location for pysmo's format writers.
 
 from collections.abc import Sequence
 from os import PathLike
-from typing import Literal
+from typing import Any, Literal
 from warnings import warn
 
 import numpy as np
+import numpy.typing as npt
 import pymseed
 from pymseed import DataEncoding, MS3TraceList
 
@@ -33,16 +34,16 @@ _SAMPLE_TYPE_TO_ENCODING: dict[str, DataEncoding] = {
 }
 
 
-def _sample_type_for(data: np.ndarray) -> Literal["i", "f", "d"]:
+def _sample_type_for(data: npt.NDArray[Any]) -> Literal["i", "f", "d"]:
     """Map a data array's dtype to a miniSEED sample-type code."""
     try:
         return _DTYPE_TO_SAMPLE_TYPE[data.dtype.type]
     except KeyError:
         raise TypeError(
             f"Cannot write miniSEED from data of dtype {data.dtype}. "
-            f"Supported dtypes are int32, float32 and float64; convert the "
-            f"data first, or pass an explicit sample_type to accept the "
-            f"conversion."
+            + "Supported dtypes are int32, float32 and float64; convert the "
+            + "data first, or pass an explicit sample_type to accept the "
+            + "conversion."
         ) from None
 
 
@@ -124,7 +125,7 @@ def write_mseed(
         ):
             warn(
                 f"Writing {data.dtype} data as sample_type {sample_type!r}; "
-                f"pymseed will convert each sample, which may lose precision.",
+                + "pymseed will convert each sample, which may lose precision.",
                 UserWarning,
                 stacklevel=2,
             )
@@ -147,8 +148,8 @@ def write_mseed(
     if len(encodings) > 1:
         raise ValueError(
             "All segments in one miniSEED file must share a sample encoding; "
-            "pass a single explicit sample_type, or write segments of "
-            "differing dtype to separate files."
+            + "pass a single explicit sample_type, or write segments of "
+            + "differing dtype to separate files."
         )
 
     tracelist.to_file(path, overwrite=True, encoding=encodings.pop())

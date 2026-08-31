@@ -4,7 +4,7 @@ from attrs import converters, define, field, setters, validators
 
 from .location import Location
 
-__all__ = ["StationCode", "Station", "MiniStationCode", "MiniStation"]
+__all__ = ["MiniStation", "MiniStationCode", "Station", "StationCode"]
 
 # --8<-- [start:station-protocol]
 

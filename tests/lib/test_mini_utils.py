@@ -17,9 +17,12 @@ from pysmo import (
 def test_proto2mini() -> None:
     from pysmo.lib.mini_utils import proto2mini
 
-    assert set(proto2mini(Location)) == set(
-        [MiniLocation, MiniLocationWithDepth, MiniEvent, MiniStation]
-    )
+    assert set(proto2mini(Location)) == {
+        MiniLocation,
+        MiniLocationWithDepth,
+        MiniEvent,
+        MiniStation,
+    }
 
 
 def test_proto2mini_covers_disjoint_protocols() -> None:
@@ -66,9 +69,7 @@ def test_proto2mini_no_duplicates_overlapping_protocols() -> None:
 def test_matching_pysmo_types() -> None:
     from pysmo.lib.mini_utils import matching_pysmo_types
 
-    assert set(matching_pysmo_types(MiniEvent)) == set(
-        [Location, LocationWithDepth, Event]
-    )
+    assert set(matching_pysmo_types(MiniEvent)) == {Location, LocationWithDepth, Event}
 
 
 def test_proto2mini_stationcode_is_one_to_many() -> None:

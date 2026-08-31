@@ -1,7 +1,7 @@
 """Functions for 'Mini' classes."""
 
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from attrs import NOTHING, fields
 from cattrs import unstructure
@@ -10,13 +10,13 @@ if TYPE_CHECKING:
     from pysmo.lib.mini_utils import _AnyMini, _AnyProto
 
 __all__ = [
-    "copy_from_mini",
     "clone_to_mini",
+    "copy_from_mini",
 ]
 
 
 def copy_from_mini(
-    source: "_AnyMini", target: "_AnyProto", update: dict | None = None
+    source: "_AnyMini", target: "_AnyProto", update: dict[str, Any] | None = None
 ) -> None:
     """Copy attributes from a Mini instance to matching other one.
 
@@ -38,25 +38,25 @@ def copy_from_mini(
         instance of a Mini class from a matching other one.
     """
 
-    update = update or dict()
+    update = update or {}
 
     attributes = unstructure(source).keys() | set()
     attributes.update(update.keys())
 
-    if all(map(lambda x: hasattr(target, x), attributes)):
-        for attribute in attributes:
-            if attribute in update:
-                setattr(target, attribute, update[attribute])
-            else:
-                setattr(target, attribute, copy(getattr(source, attribute)))
-    else:
+    if not all(hasattr(target, x) for x in attributes):
         raise AttributeError(
             f"Unable to copy to target: {type(target)} not compatible with {type(source)}."
         )
 
+    for attribute in attributes:
+        if attribute in update:
+            setattr(target, attribute, update[attribute])
+        else:
+            setattr(target, attribute, copy(getattr(source, attribute)))
+
 
 def clone_to_mini[TMini: _AnyMini](
-    mini_cls: type[TMini], source: "_AnyProto", update: dict | None = None
+    mini_cls: type[TMini], source: "_AnyProto", update: dict[str, Any] | None = None
 ) -> TMini:
     """Create a new instance of a Mini class from a matching other one.
 
@@ -109,15 +109,11 @@ def clone_to_mini[TMini: _AnyMini](
         from a Mini instance to matching other one.
     """
 
-    update = update or dict()
+    update = update or {}
 
     if all(
-        map(
-            lambda x: (
-                hasattr(source, x.name) or x.name in update or x.default is not NOTHING
-            ),
-            fields(mini_cls),
-        )
+        (hasattr(source, x.name) or x.name in update or x.default is not NOTHING)
+        for x in fields(mini_cls)
     ):
         clone_dict = {
             attr.name: (

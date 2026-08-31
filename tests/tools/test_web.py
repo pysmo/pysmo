@@ -230,7 +230,7 @@ class TestFetchQuakeml:
         assert "maxmagnitude" not in fields
 
     def test_round_trip_with_quakeml_all_from_bytes(
-        self, monkeypatch: pytest.MonkeyPatch, reference_event_assets: dict
+        self, monkeypatch: pytest.MonkeyPatch, reference_event_assets: dict[str, Path]
     ) -> None:
         quakeml = reference_event_assets["quakeml"].read_bytes()
         fake = FakeHttpGet({"event": quakeml})

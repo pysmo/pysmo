@@ -1,13 +1,19 @@
 """Validators and converters for pysmo classes using [`attrs`][]."""
 
-from datetime import datetime, timedelta, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from attrs import Attribute
 
 
-def validate_nonzero(instance: object, attribute: Attribute, value: float) -> None:
+def validate_nonzero[T: int | float | complex | None](
+    instance: object, attribute: Attribute[T], value: T
+) -> None:
     """Ensure `value` is not exactly zero. Either sign is otherwise permitted."""
     if value == 0:
         raise ValueError(f"{attribute.name} must not be zero.")
@@ -21,9 +27,9 @@ def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timesta
     ts = pd.Timestamp(value)
 
     if ts.tz is None:
-        return ts.tz_localize(timezone.utc)
+        return ts.tz_localize(UTC)
 
-    return ts.tz_convert(timezone.utc)
+    return ts.tz_convert(UTC)
 
 
 def convert_to_timedelta(
@@ -38,7 +44,9 @@ def convert_to_timedelta(
     return pd.Timedelta(value)
 
 
-def convert_to_ndarray(value: np.ndarray | list | tuple) -> np.ndarray:
+def convert_to_ndarray(
+    value: npt.NDArray[Any] | list[Any] | tuple[Any, ...],
+) -> npt.NDArray[Any]:
     """Convert a value to a [`ndarray`][numpy.ndarray] object."""
     return np.asanyarray(value)
 

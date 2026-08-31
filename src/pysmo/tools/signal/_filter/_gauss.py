@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Literal, overload
 
 import numpy as np
+import numpy.typing as npt
 
 from pysmo import Seismogram
 
@@ -108,7 +109,7 @@ def gauss[T: Seismogram](
 
 def _gauss(
     seismogram: Seismogram, fc: float, alpha: float
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
     """Apply a Gaussian filter and compute the analytic signal.
 
     Implements the multiple filter technique of Herrmann (1973)[^1].

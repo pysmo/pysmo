@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 import pandas as pd
 import pytest
+from matplotlib.figure import Figure
 from scipy import signal  # type: ignore
 
 import pysmo.tools.noise as noise
@@ -31,7 +32,7 @@ def test_NoiseModel() -> None:
 
 @pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
-def test_peterson():  # type: ignore
+def test_peterson() -> Figure:
     nlnm = noise.peterson(0.0)
     nhnm = noise.peterson(1.0)
     nm_03 = noise.peterson(0.3)
@@ -116,10 +117,10 @@ def test_generate_noise_acceleration_length() -> None:
 
 @pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
-def test_generate_noise():  # type: ignore
+def test_generate_noise() -> Figure:
     npts = 10000
-    nperseg = npts / 4
-    nfft = npts / 2
+    nperseg = int(npts / 4)
+    nfft = int(npts / 2)
     srate = 0.1
     delta = pd.Timedelta(seconds=srate)
     sfrec = 1 / srate

@@ -10,7 +10,7 @@ from pysmo.functions import clone_to_mini
 
 
 @pytest.fixture()
-def sac_files() -> Generator[list[Path], Any, None]:
+def sac_files() -> Generator[list[Path], Any]:
     sac_files = sorted((Path(__file__).parent / "assets/").glob("*.sac"))
     yield sac_files
 
@@ -18,7 +18,7 @@ def sac_files() -> Generator[list[Path], Any, None]:
 @pytest.fixture()
 def butter_seis(
     sac_files: list[Path],
-) -> Generator[dict[str, MiniSeismogram], Any, None]:
+) -> Generator[dict[str, MiniSeismogram], Any]:
     butter_instances = {}
     for sac_file in sac_files:
         name = sac_file.name
