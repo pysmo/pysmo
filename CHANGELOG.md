@@ -73,6 +73,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(io)** Delegate http_get retry policy to urllib3.util.Retry
 - **(types)** Extract StationCode protocol from Station
 - **(classes)** Rename StationXML to StationXMLResponse
+- [**breaking**] Stricter typing, explicit numpy array types, lint hardening
 
 ### 🚀 New Features
 
