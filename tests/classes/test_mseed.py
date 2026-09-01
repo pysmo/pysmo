@@ -8,16 +8,10 @@ import pandas as pd
 import pymseed
 import pytest
 
-from pysmo import (
-    MiniSeismogram,
-    MiniStation,
-    MiniStationCode,
-    Seismogram,
-    Station,
-    StationCode,
-)
+from pysmo import MiniSeismogram, MiniStation, MiniStationCode, Station, StationCode
 from pysmo.classes import MSeed
 from pysmo.lib.io import write_mseed
+from pysmo.lib.mini_utils import _structural_match
 
 GAP_FIXTURE = Path(__file__).parent / "assets" / "mseed_gap.mseed"
 
@@ -51,9 +45,8 @@ def make_mseed_bytes(
 class TestRead:
     def test_from_bytes(self) -> None:
         seismogram = MSeed.from_bytes(make_mseed_bytes())
-        assert isinstance(seismogram, Seismogram)
-        assert isinstance(seismogram, StationCode)
-        assert not isinstance(seismogram, Station)
+        assert _structural_match(seismogram, StationCode)
+        assert not _structural_match(seismogram, Station)
         assert seismogram.begin_time == pd.Timestamp("2010-02-27T06:30:00Z")
         assert seismogram.delta == pd.Timedelta(seconds=0.05)
         assert seismogram.sample_count == 100
@@ -164,7 +157,6 @@ class TestFetch:
             endtime=pd.Timestamp("2010-02-27T06:30:05Z"),
         )
 
-        assert isinstance(seismogram, Seismogram)
         assert seismogram.sourceid == "FDSN:IU_ANMO_00_B_H_Z"
 
         _, fields = calls[0]

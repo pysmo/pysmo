@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pysmo import Location, MiniStation, Response, StagedResponse, Station
+from pysmo import MiniStation
 from pysmo.classes import StationXML, resolve_epochs
 
 SINGLE_EPOCH_FIXTURE = (
@@ -200,8 +200,6 @@ class TestFromBytes:
             SINGLE_EPOCH_FIXTURE.read_bytes(), time=pd.Timestamp("2016-01-01T00:00:00Z")
         )
 
-        assert isinstance(epoch, Station)
-        assert isinstance(epoch, Location)
         assert epoch.network == "IU"
         assert epoch.name == "ANMO"
         assert epoch.location == "00"
@@ -209,8 +207,6 @@ class TestFromBytes:
         assert epoch.latitude == pytest.approx(34.94591)
 
         response = epoch.response
-        assert isinstance(response, Response)
-        assert isinstance(response, StagedResponse)
         assert response.input_units == "m/s"
         assert len(response.stages) == 2
 
@@ -230,7 +226,6 @@ class TestFromBytes:
     def test_selects_currently_open_epoch(self) -> None:
         response = StationXML.from_bytes(BULK_FIXTURE.read_bytes()).response
 
-        assert isinstance(response, StagedResponse)
         assert len(response.poles) == 13
         assert len(response.stages) == 2
 
@@ -239,7 +234,6 @@ class TestFromBytes:
             BULK_FIXTURE.read_bytes(), time=pd.Timestamp("1999-01-01T00:00:00Z")
         ).response
 
-        assert isinstance(response, StagedResponse)
         assert len(response.stages) == 5
 
     def test_no_matching_epoch_raises(self) -> None:
@@ -306,8 +300,6 @@ class TestAllFromBytes:
         epochs = StationXML.all_from_bytes(BULK_FIXTURE.read_bytes())
         assert len(epochs) == 9
         for epoch in epochs:
-            assert isinstance(epoch, Station)
-            assert isinstance(epoch.response, StagedResponse)
             assert epoch.network == "IU"
             assert epoch.name == "ANMO"
         for previous, current in zip(epochs, epochs[1:]):
@@ -348,10 +340,7 @@ class TestFetch:
             station=station, time=pd.Timestamp("2016-01-01T00:00:00Z")
         )
 
-        assert isinstance(epoch, Station)
         response = epoch.response
-        assert isinstance(response, Response)
-        assert isinstance(response, StagedResponse)
         assert response.input_units == "m/s"
         assert len(response.stages) == 2
 
@@ -372,7 +361,6 @@ class TestFetch:
 
         response = StationXML.fetch(station=station).response
 
-        assert isinstance(response, StagedResponse)
         assert len(response.poles) == 13
         assert len(response.stages) == 2
 
@@ -388,7 +376,6 @@ class TestFetch:
             station=station, time=pd.Timestamp("1999-01-01T00:00:00Z")
         ).response
 
-        assert isinstance(response, StagedResponse)
         assert len(response.stages) == 5
 
     def test_no_matching_epoch_raises(

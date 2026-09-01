@@ -74,6 +74,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(types)** Extract StationCode protocol from Station
 - **(classes)** Rename StationXML to StationXMLResponse
 - [**breaking**] Stricter typing, explicit numpy array types, lint hardening
+- [**breaking**] Drop @runtime_checkable from protocol types
 
 ### 🚀 New Features
 

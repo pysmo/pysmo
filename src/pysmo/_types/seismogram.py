@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -19,7 +19,6 @@ __all__ = ["MiniSeismogram", "Seismogram"]
 # --8<-- [start:seismogram-protocol]
 
 
-@runtime_checkable
 class Seismogram(Protocol):
     """Protocol class to define the `Seismogram` type.
 
@@ -89,15 +88,13 @@ class MiniSeismogram(SeismogramEndtimeMixin):
 
     Examples:
         ```python
-        >>> from pysmo import MiniSeismogram, Seismogram
+        >>> from pysmo import MiniSeismogram
         >>> import pandas as pd
         >>> from datetime import timezone
         >>> import numpy as np
         >>> now = pd.Timestamp.now(timezone.utc)
         >>> delta = pd.Timedelta(seconds=0.1)
         >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
-        >>> isinstance(seismogram, Seismogram)
-        True
         >>>
         ```
     """
