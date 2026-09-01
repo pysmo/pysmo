@@ -15,7 +15,6 @@ Predicted arrival times, used to window these fetches, are computed
 locally by [`pysmo.tools.traveltime`][] with no web service involved.
 """
 
-import warnings
 from dataclasses import dataclass
 from typing import Any, Literal, Self
 
@@ -49,9 +48,8 @@ type QuakeMLOrderBy = Literal["time", "time-asc", "magnitude", "magnitude-asc"]
 class _ServiceDefaults:
     """Default web-service endpoints and HTTP retry policy.
 
-    Mostly EarthScope's (`fdsnws-station`/`-dataselect`, `irisws-sacpz`);
-    `event_url` is USGS because EarthScope retired its `fdsnws-event`
-    service.
+    Mostly EarthScope's (`fdsnws-station`/`-dataselect`); `event_url` is
+    USGS because EarthScope retired its `fdsnws-event` service.
     """
 
     def __new__(cls) -> Self:
@@ -62,7 +60,6 @@ class _ServiceDefaults:
 
     station_url: str = "https://service.earthscope.org/fdsnws/station/1/query"
     event_url: str = "https://earthquake.usgs.gov/fdsnws/event/1/query"
-    sacpz_url: str = "https://service.earthscope.org/irisws/sacpz/1/query"
     dataselect_url: str = "https://service.earthscope.org/fdsnws/dataselect/1/query"
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
     request_retries: int = DEFAULT_REQUEST_RETRIES
@@ -126,6 +123,9 @@ def fetch_stationxml(*, station: Station) -> bytes:
 def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
     """Fetch raw SAC PZ response metadata text for a station/channel.
 
+    Fetched from `fdsnws-station` with `level=response&format=sacpz`,
+    EarthScope's designated replacement for the `irisws-sacpz` service.
+
     A lower-level counterpart to
     [`SacPZ.fetch`][pysmo.classes.SacPZ.fetch]: returns the response
     metadata unparsed and uninterpreted. Save it to disk to defer parsing
@@ -138,12 +138,8 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
             protocol. Provides the network, station code, location, and
             channel for the request.
         time: Timestamp used to select the response epoch server-side, so
-            exactly one epoch is returned. If `None`, the SACPZ web
-            service defaults to the currently-open epoch. Truncated to
-            whole seconds before the request is sent — the web service
-            returns an HTTP error for a `time` with sub-second precision
-            (confirmed against the live service, not documented by
-            EarthScope) — with a `UserWarning` if that changes the value.
+            exactly one epoch is returned. If `None`, the web service
+            defaults to the currently-open epoch.
 
     Returns:
         Raw SAC PZ text.
@@ -168,25 +164,18 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         ```
         <!-- skip: end -->
     """
-    params = {
+    params: dict[str, Any] = {
         "net": station.network,
         "sta": station.name,
         "loc": station.location,
         "cha": station.channel,
+        "level": "response",
+        "format": "sacpz",
     }
     if time is not None:
-        time = convert_to_utc_timestamp(time)
-        floored = time.floor("s")
-        if floored != time:
-            warnings.warn(
-                "SACPZ web service rejects sub-second precision in "
-                + f"'time'; truncating {time} to {floored}.",
-                stacklevel=2,
-            )
-            time = floored
-        params["time"] = time.isoformat()
+        params["time"] = convert_to_utc_timestamp(time).isoformat()
     return http_get(
-        _ServiceDefaults.sacpz_url,
+        _ServiceDefaults.station_url,
         params,
         timeout_seconds=_ServiceDefaults.timeout_seconds,
         request_retries=_ServiceDefaults.request_retries,
