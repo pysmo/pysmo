@@ -114,7 +114,7 @@ def remove_response[T: Seismogram](
 
     For a [`SacPZ`][pysmo.classes.SacPZ]-derived `response`, this path's output
     is typically *not* in the units `input_units` declares: by SAC convention
-    (followed by e.g. the EarthScope SACPZ web service and `rdseed -p`), the
+    (followed by e.g. EarthScope's fdsnws-station service and `rdseed -p`), the
     `SENSITIVITY` header (`reference_sensitivity`) stays in the sensor's
     native units (e.g. `M/S**2` for an accelerometer), while
     `poles`/`zeros`/`overall_sensitivity` — and therefore `input_units`, and

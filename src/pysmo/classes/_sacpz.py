@@ -29,8 +29,8 @@ class SacPZ:
 
     Reads an analog instrument response from a
     [SAC PZ](https://ds.iris.edu/files/sac-manual/commands/transfer.html)
-    file (as produced by e.g. the EarthScope SACPZ web service) and exposes
-    it as a [`Response`][pysmo.Response]-compatible object. `SacPZ` only ever
+    file (as produced by e.g. EarthScope's fdsnws-station service) and
+    exposes it as a [`Response`][pysmo.Response]-compatible object. `SacPZ` only ever
     satisfies [`Response`][pysmo.Response], never
     [`StagedResponse`][pysmo.StagedResponse] — the SAC PZ format has no
     digital-stage fields to parse.
@@ -166,23 +166,24 @@ class SacPZ:
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
-        """Fetch and parse an instrument response from the EarthScope SACPZ web service, selecting one epoch.
+        """Fetch and parse an instrument response as SAC PZ from EarthScope's fdsnws-station service, selecting one epoch.
+
+        The response comes from `fdsnws-station` with
+        `level=response&format=sacpz`, EarthScope's designated replacement
+        for the `irisws-sacpz` service.
 
         Unlike [`StationXML.fetch`][pysmo.classes.StationXML.fetch], epoch
-        selection happens server-side: the SACPZ web service's own `time`
-        parameter is passed through, so exactly one record is returned
-        (the epoch active at *time* if given, otherwise the one currently
-        open) without needing to fetch the full response history first.
+        selection happens server-side: the web service's `time` parameter
+        is passed through, so exactly one record is returned (the epoch
+        active at *time* if given, otherwise the one currently open)
+        without needing to fetch the full response history first.
 
         Args:
             station: Any object satisfying the [`Station`][pysmo.Station]
                 protocol. Provides the network, station code, location, and
                 channel for the request.
             time: Timestamp used to select the response epoch. If `None`,
-                the currently-open epoch is selected. See
-                [`fetch_sacpz`][pysmo.tools.web.fetch_sacpz] for the
-                sub-second-precision truncation applied before the request
-                is sent.
+                the currently-open epoch is selected.
 
         Returns:
             A new SacPZ instance for the response epoch active at *time*
