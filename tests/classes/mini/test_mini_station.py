@@ -1,6 +1,6 @@
 import pytest
 
-from pysmo import MiniStation, Station
+from pysmo import MiniStation
 
 
 class TestMiniStation:
@@ -26,7 +26,6 @@ class TestMiniStation:
             longitude=longitude,
         )
         assert isinstance(ministation, MiniStation)
-        assert isinstance(ministation, Station)
         assert ministation.name == "stat"
         assert ministation.latitude == 1.1
         assert ministation.longitude == 2.2

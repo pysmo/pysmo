@@ -1,7 +1,8 @@
 """Mini utils."""
 
+import inspect
 import types
-from typing import TypeAliasType, cast, get_args
+from typing import TypeAliasType, cast, get_args, get_protocol_members
 
 from pysmo import _BaseMini, _BaseProto
 from pysmo.tools import _ToolsMini, _ToolsProto
@@ -33,23 +34,19 @@ def _get_flattened_types(tp: object) -> tuple[type, ...]:
             return (cast(type, tp),)
 
 
-def _safe_check(obj: object, proto: type) -> bool:
-    """Safely checks isinstance/issubclass for Protocols with data members."""
-    try:
-        if isinstance(obj, type):
-            return issubclass(obj, proto)
-        return isinstance(obj, proto)
-    except TypeError:
-        # Fallback: Structural check using annotations. Merged across the
-        # whole MRO, not just target.__annotations__ (which holds only the
-        # class's own annotations) - otherwise a subclass that doesn't
-        # redeclare an inherited field would spuriously fail to match.
-        proto_anns = getattr(proto, "__annotations__", {})
-        target = obj if isinstance(obj, type) else type(obj)
-        target_anns: dict[str, object] = {}
-        for klass in reversed(target.__mro__):
-            target_anns.update(getattr(klass, "__annotations__", {}))
-        return all(key in target_anns for key in proto_anns)
+def _structural_match(obj: object, proto: type) -> bool:
+    """Whether `obj` (an instance or a class) has every member `proto` requires.
+
+    Name-based structural check — signatures and types are a type-checker
+    concern, not checked here. Uses `inspect.getattr_static`, so a member
+    defined as a property whose getter would raise still counts as present.
+    """
+    for member in get_protocol_members(proto):
+        try:
+            inspect.getattr_static(obj, member)
+        except AttributeError:
+            return False
+    return True
 
 
 def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
@@ -135,7 +132,7 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
     possible_protos = _get_flattened_types(_AnyProto)
 
     for proto in possible_protos:
-        if _safe_check(obj, proto):
+        if _structural_match(obj, proto):
             matches.append(cast(type[_AnyProto], proto))
 
     return tuple(matches)

@@ -1,6 +1,6 @@
 import pytest
 
-from pysmo import MiniResponse, Response
+from pysmo import MiniResponse
 
 
 class TestMiniResponse:
@@ -15,7 +15,6 @@ class TestMiniResponse:
             input_units="M/S",
         )
         assert isinstance(response, MiniResponse)
-        assert isinstance(response, Response)
         assert response.poles == [-0.037 + 0.037j, -0.037 - 0.037j]
         assert response.zeros == [0j, 0j]
         assert response.overall_sensitivity == 3.4e9

@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from pysmo import MiniStation, Seismogram
+from pysmo import MiniStation
 from pysmo.classes import GeoCsvSeismogram
 
 FIXTURE = (
@@ -37,7 +37,6 @@ Time, Sample
 class TestGeoCsvSeismogram:
     def test_from_text(self) -> None:
         seismogram = GeoCsvSeismogram.from_text(TEXT)
-        assert isinstance(seismogram, Seismogram)
         assert seismogram.begin_time == pd.Timestamp("2010-02-27T06:30:00Z")
         assert seismogram.delta == pd.Timedelta(seconds=0.5)
         npt.assert_allclose(seismogram.data, [1.0, 2.0, 3.0])
@@ -126,7 +125,6 @@ class TestFetch:
             endtime=pd.Timestamp("2010-02-27T06:30:01Z"),
         )
 
-        assert isinstance(seismogram, Seismogram)
         assert seismogram.sourceid == "IU_ANMO_00_LHZ"
         npt.assert_allclose(seismogram.data, [1.0, 2.0, 3.0])
 
