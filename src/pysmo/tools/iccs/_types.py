@@ -1,6 +1,6 @@
 from collections.abc import Hashable
 from enum import StrEnum, auto
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -63,7 +63,6 @@ class ConvergenceMethod(StrEnum):
     change = auto()
 
 
-@runtime_checkable
 class IccsSeismogram(Seismogram, Protocol):
     """Protocol class to define the `IccsSeismogram` type.
 
