@@ -15,8 +15,6 @@ Welcome to Pysmo's documentation!
    installation
    sac
    tools
-   contrib
-   developing
 
 
 Indices and tables

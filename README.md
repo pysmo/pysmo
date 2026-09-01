@@ -1,8 +1,8 @@
 
 ![Test Status](https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml/badge.svg)
-![Build Status](https://github.com/pysmo/pysmo/actions/workflows/build.yml/badge.svg)
+![Release Status](https://github.com/pysmo/pysmo/actions/workflows/release.yml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/pysmo/badge/?version=latest)](https://pysmo.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/pysmo/pysmo/branch/master/graph/badge.svg?token=ZsHTBN4rxF)](https://codecov.io/gh/pysmo/pysmo)
+[![codecov](https://codecov.io/gh/pysmo/pysmo/branch/0.8.x/graph/badge.svg?token=ZsHTBN4rxF)](https://codecov.io/gh/pysmo/pysmo)
 [![PyPI](https://img.shields.io/pypi/v/pysmo)](https://pypi.org/project/pysmo/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pysmo)
 
@@ -26,10 +26,10 @@ Pre-release versions of pysmo can be installed by running:
 $ pip install pysmo --pre
 ```
 
-Finally, to install the current ``master`` branch directly from Github run:
+Finally, to install the current ``0.8.x`` branch directly from Github run:
 
 ```shell
-$ pip install git+https://github.com/pysmo/pysmo
+$ pip install git+https://github.com/pysmo/pysmo@0.8.x
 ```
 
 Pysmo can then be used in a python script or the python shell directly:

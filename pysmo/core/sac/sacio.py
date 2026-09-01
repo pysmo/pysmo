@@ -22,17 +22,19 @@ Python module for reading/writing SAC files using the :class:`SacIO` class.
 __author__ = "Simon Lloyd"
 __copyright__ = "Copyright (c) 2012 Simon Lloyd"
 
-import struct
 import datetime
 import io
-import requests
+import struct
 import urllib.parse
 import zipfile
 from contextlib import contextmanager
-from .sacheader import SacHeader, _HEADER_FIELDS
+
+import requests
+
+from .sacheader import _HEADER_FIELDS, SacHeader
 
 
-class SacIO():
+class SacIO:
     """
     The :class:`SacIO` class reads and writes data and header values to and
     from a SAC file. Additonal class attributes may be set, but are not written
@@ -260,7 +262,7 @@ class SacIO():
         existing SacIO instance.
         """
 
-        with open(filename, 'rb') as file_handle:
+        with open(filename, "rb") as file_handle:
             self.read_buffer(file_handle.read())
 
     def read_buffer(self, buffer):
@@ -276,11 +278,11 @@ class SacIO():
         # It is located at position 276 and it's value should be -12345.0.
 
         # try reading with little endianness
-        if struct.unpack('<f', buffer[276:280])[-1] == -12345.0:
-            file_byteorder = '<'
+        if struct.unpack("<f", buffer[276:280])[-1] == -12345.0:
+            file_byteorder = "<"
         # otherwise assume big endianness.
         else:
-            file_byteorder = '>'
+            file_byteorder = ">"
 
         # Loop over all header fields and store them in the SAC object.
         # Since we are reading them from file instead of manually
@@ -294,8 +296,9 @@ class SacIO():
                 if end >= len(buffer):
                     continue
                 content = buffer[start:end]
-                value = struct.unpack(file_byteorder +
-                                      header_properties.format, content)[0]
+                value = struct.unpack(
+                    file_byteorder + header_properties.format, content
+                )[0]
                 if isinstance(value, bytes):
                     value = value.decode().rstrip()
                 setattr(self, header_field, value)
@@ -303,8 +306,8 @@ class SacIO():
         # Read first data block
         start1 = 632
         length = self.npts * 4
-        end1 = start1+length
-        data_format = file_byteorder + str(self.npts) + 'f'
+        end1 = start1 + length
+        data_format = file_byteorder + str(self.npts) + "f"
         if end1 > len(buffer):
             raise EOFError()
 
@@ -317,7 +320,7 @@ class SacIO():
         # NOTE: I've never encountered such a file in
         # the wild, and this is somewhat untested...
         try:
-            content = buffer[start1+length:end1+length]
+            content = buffer[start1 + length : end1 + length]
             data2 = struct.unpack(data_format, content)
             data = []
             for x1, x2 in zip(data1, data2):
@@ -326,7 +329,7 @@ class SacIO():
         except:  # noqa: E722
             self._data = list(data1)
             if self.depmen is None:
-                self.depmen = sum(data1)/self.npts
+                self.depmen = sum(data1) / self.npts
 
         if self.depmin is None:
             self.depmin = min(data1)
@@ -353,8 +356,7 @@ class SacIO():
         return newinstance
 
     @classmethod
-    def from_iris(cls, net, sta, cha, loc, force_single_result=False,
-                  **kwargs):
+    def from_iris(cls, net, sta, cha, loc, force_single_result=False, **kwargs):
         """
         Create a list of SacIO instances from a single IRIS
         request using the output format as "sac.zip".
@@ -370,11 +372,11 @@ class SacIO():
         kwargs["loc"] = loc
         kwargs["output"] = "sac.zip"
 
-        if type(kwargs["start"]) == datetime.datetime:
+        if isinstance(kwargs["start"], datetime.datetime):
             kwargs["start"] = kwargs["start"].isoformat()
 
         end = kwargs.get("end", None)
-        if end is not None and type(end) == datetime.datetime:
+        if end is not None and isinstance(end, datetime.datetime):
             kwargs["end"] = end.isoformat()
 
         base = "https://service.iris.edu/irisws/timeseries/1/query"
@@ -395,7 +397,7 @@ class SacIO():
         """
         Write data and header values to a SAC file
         """
-        with open(filename, 'wb') as file_handle:
+        with open(filename, "wb") as file_handle:
             # loop over all valid header fields and write them to the file
             for header_field in _HEADER_FIELDS:
                 header_properties = getattr(type(self), header_field)
@@ -433,7 +435,7 @@ class SacIO():
             else:
                 data1 = data
             for x in data1:
-                file_handle.write(struct.pack('f', x))
+                file_handle.write(struct.pack("f", x))
 
     @property
     def data(self):
@@ -483,15 +485,14 @@ class SacIO():
             else:
                 self.depmin = min(data)
                 self.depmax = max(data)
-                self.depmen = sum(data)/self.npts
+                self.depmen = sum(data) / self.npts
 
     @property
     def kzdate(self):
         """
         ISO 8601 format of GMT reference date.
         """
-        _kzdate = datetime.date(self.nzyear, 1, 1) +\
-            datetime.timedelta(self.nzjday)
+        _kzdate = datetime.date(self.nzyear, 1, 1) + datetime.timedelta(self.nzjday)
         return _kzdate.isoformat()
 
     @property
@@ -499,6 +500,5 @@ class SacIO():
         """
         Alphanumeric form of GMT reference time.
         """
-        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec,
-                                self.nzmsec * 1000)
-        return _kztime.isoformat(timespec='milliseconds')
+        _kztime = datetime.time(self.nzhour, self.nzmin, self.nzsec, self.nzmsec * 1000)
+        return _kztime.isoformat(timespec="milliseconds")

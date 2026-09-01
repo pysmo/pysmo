@@ -50,9 +50,7 @@ To install the latest stable version of pysmo and all dependencies not already i
 
 If you wish to install the latest developement version of pysmo *instead* of the stable release::
 
-   $ pip install git+https://github.com/pysmo/pysmo
-
-.. note:: It is possible to install the stable release alongside the development version. Please read :ref:`Developing pysmo` for instructions.
+   $ pip install git+https://github.com/pysmo/pysmo@0.8.x
 
 Example Data
 ~~~~~~~~~~~~

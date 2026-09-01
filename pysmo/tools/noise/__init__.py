@@ -8,6 +8,6 @@ Peterson, J., 1993. Observations and modelling of background seismic noise.
 Open-file report 93-322, U. S. Geological Survey, Albuquerque, New Mexico.
 """
 
-from .peterson import NLNM, NHNM, genNoiseNHNM, genNoiseNLNM
+from .peterson import NHNM, NLNM, genNoiseNHNM, genNoiseNLNM
 
-__all__ = ('NLNM', 'NHNM', 'genNoiseNHNM', 'genNoiseNLNM')
+__all__ = ("NLNM", "NHNM", "genNoiseNHNM", "genNoiseNLNM")
