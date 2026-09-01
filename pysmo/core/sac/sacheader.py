@@ -19,8 +19,9 @@
 Python module for reading/writing SAC files.
 """
 
-from weakref import WeakKeyDictionary
 import os
+from weakref import WeakKeyDictionary
+
 import yaml
 
 __copyright__ = """
@@ -28,30 +29,29 @@ Copyright (c) 2018 Simon Lloyd
 """
 
 # Load SAC header definitions from yaml file and store them in dicts
-with open(os.path.join(os.path.dirname(__file__), 'sacheader.yml'), 'r')\
-        as stream:
+with open(os.path.join(os.path.dirname(__file__), "sacheader.yml")) as stream:
     _HEADER_DEFS = yaml.safe_load(stream)
 
 # Create dictionary of different header types (float, integer, enumerated,
 # logical, alphanumeric, auxilary). This provides respective defaults etc.
-_HEADER_TYPES = _HEADER_DEFS.pop('header_types')
+_HEADER_TYPES = _HEADER_DEFS.pop("header_types")
 
 
 # Create dictionary of all header fields. This provides start position in the
 # SAC file, header type, etc.
-_HEADER_FIELDS = _HEADER_DEFS.pop('header_fields')
+_HEADER_FIELDS = _HEADER_DEFS.pop("header_fields")
 
 # Each enumrated header value has a corresponding integer key.
 # This creates a dictionary mapping for these values
-_ENUMERATED_STR2INT = _HEADER_DEFS.pop('enumerated_header_values')
+_ENUMERATED_STR2INT = _HEADER_DEFS.pop("enumerated_header_values")
 # Add the undefined key/value pair to the dictionary
-_ENUMERATED_STR2INT['undefined'] = _HEADER_TYPES['i']['undefined']
+_ENUMERATED_STR2INT["undefined"] = _HEADER_TYPES["i"]["undefined"]
 
 # Reverse dictionary to look up enumerated strings from ID.
 _ENUMERATED_INT2STR = {v: k for k, v in _ENUMERATED_STR2INT.items()}
 
 
-class SacHeader():
+class SacHeader:
     """
     Python descriptor class for SAC file headers. Mainly for use
     inside the SacIO class.
@@ -64,13 +64,13 @@ class SacHeader():
         # Values are stored in a weak key dictionary with the instance as key.
         self.values = WeakKeyDictionary()
 
-        self.__doc__ = _HEADER_FIELDS[header_field]['description']
+        self.__doc__ = _HEADER_FIELDS[header_field]["description"]
 
     @property
     def default(self):
         # Initially set header field value to 0 for b, npts and delta
         # All others are set the undefined value of that header type.
-        if self.name in ['b', 'npts', 'delta']:
+        if self.name in ["b", "npts", "delta"]:
             return 0
         return self.undefined
 
@@ -81,8 +81,8 @@ class SacHeader():
         """
         # Is this a mandatory header field?
         try:
-            required = _HEADER_FIELDS[self.name]['required']
-            if required in ['true', '1', 't', 'y', 'yes', 'True', 'TRUE']:
+            required = _HEADER_FIELDS[self.name]["required"]
+            if required in ["true", "1", "t", "y", "yes", "True", "TRUE"]:
                 return True
         except KeyError:
             pass
@@ -92,8 +92,8 @@ class SacHeader():
     def protected(self):
         # Is this a protected header field (npts, e, depmin, ...)?
         try:
-            protected = _HEADER_FIELDS[self.name]['protected']
-            if protected in ['true', '1', 't', 'y', 'yes', 'True', 'TRUE']:
+            protected = _HEADER_FIELDS[self.name]["protected"]
+            if protected in ["true", "1", "t", "y", "yes", "True", "TRUE"]:
                 return True
         except KeyError:
             pass
@@ -104,14 +104,14 @@ class SacHeader():
         """
         Return SAC header type.
         """
-        return _HEADER_FIELDS[self.name]['header_type']
+        return _HEADER_FIELDS[self.name]["header_type"]
 
     @property
     def undefined(self):
         """
         Returns the value of an undefined header field as stored in a SAC file.
         """
-        return _HEADER_TYPES[self.header_type]['undefined']
+        return _HEADER_TYPES[self.header_type]["undefined"]
 
     @property
     def enumerated(self):
@@ -121,14 +121,14 @@ class SacHeader():
         """
         # Enumerated header fields have the allowed_vals key in their
         # dictionary, so we can set this boolean using that.
-        return bool('allowed_vals' in _HEADER_FIELDS[self.name])
+        return bool("allowed_vals" in _HEADER_FIELDS[self.name])
 
     @property
     def valid_enum_values(self):
         """
         Return valid 'fancy' values for enumerated header fields
         """
-        return _HEADER_FIELDS[self.name]['allowed_vals'].keys()
+        return _HEADER_FIELDS[self.name]["allowed_vals"].keys()
 
     @property
     def valid_enum_keys(self):
@@ -142,29 +142,29 @@ class SacHeader():
         """
         Start position in the binary sac file.
         """
-        return _HEADER_FIELDS[self.name]['start']
+        return _HEADER_FIELDS[self.name]["start"]
 
     @property
     def format(self):
         # Some header fields have their own format that is specified
         # in the dictionary.
         try:
-            return _HEADER_FIELDS[self.name]['format']
+            return _HEADER_FIELDS[self.name]["format"]
         # If there is none such header field specific format use default one
         # for that type.
         except KeyError:
-            return _HEADER_TYPES[self.header_type]['format']
+            return _HEADER_TYPES[self.header_type]["format"]
 
     @property
     def length(self):
         # Some header fields have their own length that is specified in
         # the dictionary.
         try:
-            return _HEADER_FIELDS[self.name]['length']
+            return _HEADER_FIELDS[self.name]["length"]
         # If there is none such header field specific length use
         # default one for that type.
         except KeyError:
-            return _HEADER_TYPES[self.header_type]['length']
+            return _HEADER_TYPES[self.header_type]["length"]
 
     @staticmethod
     def enumerated_str2int(value):
@@ -210,10 +210,10 @@ class SacHeader():
         # should not have to be used outside of sacfile.py
 
         if self.protected and not instance.force:
-            raise ValueError('%s may not be set manualy' % self.name)
+            raise ValueError("%s may not be set manualy" % self.name)
 
         # Set header field to type specific undefined value if required.
-        elif value in ('undefined', self.undefined, None):
+        elif value in ("undefined", self.undefined, None):
             self.values[instance] = self.undefined
 
         # Save integer corresponding to enumerated value internally.
@@ -223,39 +223,47 @@ class SacHeader():
             elif value in self.valid_enum_keys:
                 self.values[instance] = value
             else:
-                raise ValueError('%s not a valid value for %s' %
-                                 (value, self.name))
+                raise ValueError("%s not a valid value for %s" % (value, self.name))
 
         # Save headers of type 'f' as a float.
-        elif self.header_type == 'f':
+        elif self.header_type == "f":
             try:
                 self.values[instance] = float(value)
             except ValueError:
-                raise ValueError('Unable to set %s to %s - must be of type\
-                                 float.' % (self.name, value))
+                raise ValueError(
+                    "Unable to set %s to %s - must be of type\
+                                 float."
+                    % (self.name, value)
+                )
 
         # Save headers of type 'n' as an int.
-        elif self.header_type == 'n':
+        elif self.header_type == "n":
             try:
                 self.values[instance] = int(value)
             except ValueError:
-                raise ValueError('Unable to set %s to %s - must be of type\
-                                 int.' % (self.name, value))
+                raise ValueError(
+                    "Unable to set %s to %s - must be of type\
+                                 int."
+                    % (self.name, value)
+                )
 
         # Save headers of type 'l' - raise an error if value is not a bool.
-        elif self.header_type == 'l':
+        elif self.header_type == "l":
             if isinstance(value, bool):
                 self.values[instance] = value
             else:
-                raise ValueError('Unable to set %s to %s - must be of type\
-                                 bool.' % (self.name, value))
+                raise ValueError(
+                    "Unable to set %s to %s - must be of type\
+                                 bool."
+                    % (self.name, value)
+                )
 
         # Save headers of type 'k' as a string. Also check length is not
         # exceeded. Strings are also padded with spaces to match the sac
         # header length.
-        elif self.header_type == 'k':
+        elif self.header_type == "k":
             if isinstance(value, bool):
-                raise ValueError('Value for %s may not be a bool.' % self.name)
+                raise ValueError("Value for %s may not be a bool." % self.name)
             # fix for aimbat returning bytes instead of strings. Should really be
             # fixed there, but I don't know what is causing it...
             if isinstance(value, bytes):
@@ -263,23 +271,28 @@ class SacHeader():
             try:
                 value = str(value).rstrip()
             except ValueError:
-                raise ValueError('Unable to set %s to %s - must be of type\
-                                 str.' % (self.name, value))
+                raise ValueError(
+                    "Unable to set %s to %s - must be of type\
+                                 str."
+                    % (self.name, value)
+                )
             if len(value) > self.length:
-                raise ValueError('%s is too long - maximum length is %s' %
-                                 (value, self.length))
+                raise ValueError(
+                    "%s is too long - maximum length is %s" % (value, self.length)
+                )
             else:
-                self.values[instance] = '{0: <{1}}'.format(value, self.length)
+                self.values[instance] = "{0: <{1}}".format(value, self.length)
 
         # Catchall
         else:
-            raise ValueError("%s - I don't know what to do with that header!" %
-                             self.name)
+            raise ValueError(
+                "%s - I don't know what to do with that header!" % self.name
+            )
 
         # Calculate new end time 'e' when 'b' or 'delta' are changed.
         # Only do this when instance.force is False, because we do not
         # want to trigger this when e.g. reading from a sac file.
-        if self.name in ('b', 'delta') and not instance.force:
+        if self.name in ("b", "delta") and not instance.force:
             b = instance.b
             npts = instance.npts
             delta = instance.delta

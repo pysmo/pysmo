@@ -2,15 +2,18 @@
 Run tests for all functions defined in pysmo.sac.sacfunc
 """
 
-import matplotlib.pyplot as plt
-from pysmo import SacIO, sacfunc
 import os
-import tempfile
 import shutil
-import pytest
-import numpy as np
+import tempfile
+
 import matplotlib
-matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+
+from pysmo import SacIO, sacfunc
+
+matplotlib.use("Agg")
 
 
 @pytest.fixture()
@@ -27,13 +30,13 @@ def tmpdir():
 @pytest.fixture()
 def testfile():
     """Determine absolute path of the test SAC file."""
-    return os.path.join(os.path.dirname(__file__), 'testfile.sac')
+    return os.path.join(os.path.dirname(__file__), "testfile.sac")
 
 
 @pytest.fixture()
 def sacobj(tmpdir, testfile):
     """Return read-only SacFile object"""
-    tmpfile = os.path.join(tmpdir, 'tmpfile.sac')
+    tmpfile = os.path.join(tmpdir, "tmpfile.sac")
     shutil.copyfile(testfile, tmpfile)
     return SacIO.from_file(tmpfile)
 
@@ -97,7 +100,7 @@ def test_calcaz(sacobj):
     binary itself.
     """
     azimuth_wgs84 = sacfunc.calc_az(sacobj)
-    azimuth_clrk66 = sacfunc.calc_az(sacobj, ellps='clrk66')
+    azimuth_clrk66 = sacfunc.calc_az(sacobj, ellps="clrk66")
     assert pytest.approx(azimuth_wgs84) == 181.9199258637492
     assert pytest.approx(azimuth_clrk66) == 181.92001941872516
 
@@ -111,7 +114,7 @@ def test_calcbaz(sacobj):
     binary itself.
     """
     azimuth_wgs84 = sacfunc.calc_baz(sacobj)
-    azimuth_clrk66 = sacfunc.calc_baz(sacobj, ellps='clrk66')
+    azimuth_clrk66 = sacfunc.calc_baz(sacobj, ellps="clrk66")
     assert pytest.approx(azimuth_wgs84) == 2.4677533885335947
     assert pytest.approx(azimuth_clrk66) == 2.467847115319614
 
@@ -125,7 +128,7 @@ def test_calcdist(sacobj):
     binary itself.
     """
     dist_wgs84 = sacfunc.calc_dist(sacobj)
-    dist_clrk66 = sacfunc.calc_dist(sacobj, ellps='clrk66')
+    dist_clrk66 = sacfunc.calc_dist(sacobj, ellps="clrk66")
     assert pytest.approx(dist_wgs84) == 1889.1549940066523
     assert pytest.approx(dist_clrk66) == 1889.1217781364019
 
@@ -154,7 +157,7 @@ def test_gauss(sacobj):
     assert pytest.approx(data[100]) == -5.639860165811819
 
 
-@pytest.mark.depends(on=['test_envelope', 'test_gauss'])
+@pytest.mark.depends(on=["test_envelope", "test_gauss"])
 @pytest.mark.mpl_image_compare(remove_text=True)
 def test_plot_gauss_env(sacobj):
     Tn = 50  # Center Gaussian filter at 50s period
@@ -162,9 +165,9 @@ def test_plot_gauss_env(sacobj):
     time, vals = sacfunc.sac2xy(sacobj, retarray=False)
     vals = vals - np.mean(vals)
     fig = plt.figure()
-    plt.plot(time, vals, linewidth=0.01, color='black')
-    plt.plot(time, sacfunc.envelope(sacobj, Tn, alpha), color='blue')
-    plt.plot(time, sacfunc.gauss(sacobj, Tn, alpha), color='red')
-    plt.xlabel('Time[s]')
+    plt.plot(time, vals, linewidth=0.01, color="black")
+    plt.plot(time, sacfunc.envelope(sacobj, Tn, alpha), color="blue")
+    plt.plot(time, sacfunc.gauss(sacobj, Tn, alpha), color="red")
+    plt.xlabel("Time[s]")
     plt.xlim([100, 1200])
-    return(fig)
+    return fig

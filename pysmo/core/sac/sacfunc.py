@@ -43,11 +43,12 @@ def sac2xy(name, retarray=False):
         >>> time, vals = sacfunc.sac2xy(sacobj, retarray=True)
     """
     import numpy as np
+
     data = name.data
     b = name.b
     delta = name.delta
     npts = name.npts
-    e = b + (npts-1)*delta
+    e = b + (npts - 1) * delta
     t = np.linspace(b, e, npts)
     if retarray:
         return t, np.array(data)
@@ -73,9 +74,10 @@ def plotsac(name, outfile=None, showfig=True):
     """
 
     import matplotlib.pyplot as plt
+
     t, data = sac2xy(name)
     plt.plot(t, data)
-    plt.xlabel('Time[s]')
+    plt.xlabel("Time[s]")
     if outfile is not None:
         plt.savefig(outfile)
     if showfig:
@@ -102,6 +104,7 @@ def resample(name, delta_new):
         >>> data_new = sacfunc.resample(sac, delta_new)
     """
     import scipy.signal
+
     data_old = name.data
     npts_old = name.npts
     delta_old = name.delta
@@ -127,10 +130,11 @@ def detrend(name):
     """
 
     import scipy.signal
+
     return scipy.signal.detrend(name.data)
 
 
-def calc_az(name, ellps='WGS84'):
+def calc_az(name, ellps="WGS84"):
     """
     Calculate azimuth (in DEG) from a SacIO object. The default
     ellipse used is 'WGS84', but others may be specified. For
@@ -156,7 +160,7 @@ def calc_az(name, ellps='WGS84'):
     return __azdist(name, ellps)[0]
 
 
-def calc_baz(name, ellps='WGS84'):
+def calc_baz(name, ellps="WGS84"):
     """
     Calculate backazimuth (in DEG) from a SacIO object. The default
     ellipse used is 'WGS84', but others may be specified. For
@@ -177,12 +181,12 @@ def calc_baz(name, ellps='WGS84'):
         >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> backazimuth = sacfunc.calc_baz(sacobj) # Use default WGS84.
-        >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
+        >>> backazimuth = sacfunc.calc_baz(sacobj, ellps='clrk66') # Clarke 1966
     """
     return __azdist(name, ellps)[1]
 
 
-def calc_dist(name, ellps='WGS84'):
+def calc_dist(name, ellps="WGS84"):
     """
     Calculate the great circle distance (in km) from a SacIO object. The
     default ellipse used is 'WGS84', but others may be specified. For
@@ -203,7 +207,7 @@ def calc_dist(name, ellps='WGS84'):
         >>> from pysmo import SacIO, sacfunc
         >>> sacobj = SacIO.from_file('sacfile.sac')
         >>> distance = sacfunc.calc_dist(sacobj) # Use default WGS84.
-        >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Use Clarke 1966 ellipsoid.
+        >>> distance = sacfunc.calc_dist(sacobj, ellps='clrk66') # Clarke 1966
     """
     return __azdist(name, ellps)[2]
 
@@ -214,6 +218,7 @@ def __azdist(name, ellps):
     pyproj (proj4 bindings)
     """
     from pyproj import Geod
+
     g = Geod(ellps=ellps)
     stla, stlo = name.stla, name.stlo
     evla, evlo = name.evla, name.evlo
@@ -275,6 +280,7 @@ def gauss(name, Tn, alpha):
 
 def __gauss(sacobj, Tn, alpha):
     import numpy as np
+
     data = np.array(sacobj.data)
     delta = sacobj.delta
     Wn = 1 / float(Tn)
@@ -282,9 +288,9 @@ def __gauss(sacobj, Tn, alpha):
     npts = data.size
     spec = np.fft.fft(data)
     W = np.array(np.linspace(0, Nyq, npts))
-    Hn = spec * np.exp(-1 * alpha * ((W-Wn)/Wn)**2)
+    Hn = spec * np.exp(-1 * alpha * ((W - Wn) / Wn) ** 2)
     Qn = complex(0, 1) * Hn.real - Hn.imag
     hn = np.fft.ifft(Hn).real
     qn = np.fft.ifft(Qn).real
     an = np.sqrt(hn**2 + qn**2)  # envelope
-    return(an, hn)
+    return (an, hn)
