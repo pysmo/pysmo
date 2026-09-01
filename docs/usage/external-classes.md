@@ -33,15 +33,21 @@ with).
 ### Yes
 
 If the external class has the same attributes (name and type) as a given pysmo
-type, then it should work out-of-the-box. You can verify this using
-[`isinstance`][]:
+type, then it works out-of-the-box. To check, pass an instance to a function
+annotated with the pysmo type and run [mypy](https://mypy.readthedocs.io) (or
+watch your editor): a matching class is accepted, and a near-miss is flagged at
+the attribute that doesn't line up.
 
 <!-- skip: start -->
 
 ```python
 >>> from pysmo import Location
->>> isinstance(my_external_object, Location)
-True
+>>>
+>>> def describe(location: Location) -> str:
+...     return f"{location.latitude}, {location.longitude}"
+...
+>>> describe(my_external_object)  # mypy accepts this call if the class matches
+'41.9, -87.6'
 >>>
 ```
 
@@ -50,6 +56,12 @@ True
 This is most likely to happen with simpler types like
 [`Location`][pysmo.Location], which only requires `latitude` and `longitude`
 attributes of type [`float`][].
+
+Pysmo deliberately does *not* expect you to gate this with a runtime check, such
+as [`isinstance`][] against the protocol (pysmo's protocols are not
+`runtime_checkable`). Conformance is something the type checker proves, so the
+workflow is to react to what mypy or your editor reports, before the code ever
+runs.
 
 ### Yes, with a tiny bit of work
 
@@ -162,7 +174,7 @@ class MyExtendedClass(ExternalClass):
         self.event_location = EventLocation(parent=self)
 ```
 
-Inheriting from `ExternalClass` isn't required here — composition (holding the
+Inheriting from `ExternalClass` isn't required here. Composition (holding the
 external object as an attribute rather than subclassing it) works just as well:
 
 <!-- skip: next -->
@@ -176,7 +188,7 @@ class MyExtendedClass:
 ```
 
 Composition is the better choice whenever `ExternalClass` has a large surface
-you don't want to expose wholesale on `MyExtendedClass` — see the
+you don't want to expose wholesale on `MyExtendedClass`. See the
 [`SAC`][pysmo.classes.SAC] example below, which does exactly this.
 
 ## Examples
@@ -188,12 +200,12 @@ class. The underlying [`SacIO`][pysmo.lib.io.SacIO] class manages file I/O and
 provides access to all SAC header fields using their original names (`stla`,
 `evla`, `b`, etc.). These names do not match pysmo types, and several types
 (station location, event location, seismogram data) coexist within a single
-object — and exposing all ~99 raw headers alongside the curated attributes
+object. Exposing all ~99 raw headers alongside the curated attributes
 invites name clashes and reference-time mixups: raw `t0` (a `float`, an offset
 in seconds from *that file's own* reference time) would sit right next to
-`SAC.timestamps.t0` (a [`pandas.Timestamp`][] in UTC, described below — a fixed
+`SAC.timestamps.t0` (a [`pandas.Timestamp`][] in UTC, described below: a fixed
 point in calendar time, not an offset from another point) under the same name
-but with incompatible types and semantics — mixing the two, or comparing `t0`
+but with incompatible types and semantics. Mixing the two, or comparing `t0`
 across two files with different reference times, produces a wrong answer with no
 indication anything went wrong.
 
@@ -213,15 +225,21 @@ curated attributes. Typically, it is much less work to adapt an existing class
 than what went into building it in the first place:
 
 ```python
->>> from pysmo import Seismogram, Station, Event
+>>> from pysmo import Event, Seismogram, Station
 >>> from pysmo.classes import SAC
+>>>
+>>> def begin_year(seismogram: Seismogram) -> int:
+...     return seismogram.begin_time.year
+...
+>>> def station_id(station: Station) -> str:
+...     return f"{station.network}.{station.name}"
+...
+>>> def origin_year(event: Event) -> int:
+...     return event.time.year
+...
 >>> sac = SAC.from_file("example.sac")
->>> isinstance(sac.seismogram, Seismogram)
-True
->>> isinstance(sac.station, Station)
-True
->>> isinstance(sac.event, Event)
-True
+>>> begin_year(sac.seismogram), station_id(sac.station), origin_year(sac.event)
+(2010, 'IU.ANMO', 2010)
 >>>
 ```
 
@@ -230,7 +248,7 @@ For more details, see the [`SAC`][pysmo.classes.SAC] API documentation.
 ### ObsPy's `Trace`
 
 The [`SAC`][pysmo.classes.SAC] example above is pysmo's own code adapting
-pysmo's own [`SacIO`][pysmo.lib.io.SacIO] class — useful to see the pattern used
+pysmo's own [`SacIO`][pysmo.lib.io.SacIO] class, useful to see the pattern used
 for real, but not literally an external class. A more realistic case for many
 seismologists: you already have waveform data as an
 [ObsPy](https://docs.obspy.org/) `Trace` object and want to run pysmo's
@@ -241,7 +259,7 @@ functions and tools on it without converting your whole workflow.
 [`pandas.Timedelta`][]), so this needs the "attribute name and format differ"
 treatment from above, not the free out-of-the-box case: the adapter needs
 properties that convert between the two, not simple aliases. (`end_time` isn't
-read from `Trace.stats.endtime` at all — it's derived from `begin_time` and
+read from `Trace.stats.endtime` at all; it's derived from `begin_time` and
 `delta` instead, the same way [`Seismogram`][pysmo.Seismogram]'s `end_time` is
 meant to be computed.)
 
@@ -254,7 +272,6 @@ meant to be computed.)
 ```python
 >>> import numpy as np
 >>> from obspy import Trace
->>> from pysmo import Seismogram
 >>> from pysmo.functions import detrend
 >>> trace = Trace(
 ...     data=np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
@@ -268,9 +285,7 @@ meant to be computed.)
 ...     },
 ... )
 >>> trace_seis = TraceSeismogram(trace)
->>> isinstance(trace_seis, Seismogram)
-True
->>> detrend(trace_seis)
+>>> detrend(trace_seis)  # detrend takes a Seismogram; mypy accepts trace_seis
 >>> trace.data
 array([...])
 >>>
@@ -280,9 +295,9 @@ array([...])
 
 With the setters in place, every [`pysmo.functions`][] and [`pysmo.tools`][]
 call that takes a [`Seismogram`][pysmo.Seismogram] works on `trace_seis`
-directly — including the ones that mutate in place, like `detrend` above. Note
-what this adapter does *not* attempt: `Trace.stats` has no latitude/longitude —
-that lives in ObsPy's separate `Inventory` hierarchy, not on `Trace` itself — so
+directly, including the ones that mutate in place, like `detrend` above. Note
+what this adapter does *not* attempt: `Trace.stats` has no latitude/longitude
+(that lives in ObsPy's separate `Inventory` hierarchy, not on `Trace` itself), so
 `TraceSeismogram` only ever satisfies [`Seismogram`][pysmo.Seismogram], never
 [`Station`][pysmo.Station]. Supply station/event metadata separately, the same
 way [`GeoCsvSeismogram.fetch()`][pysmo.classes.GeoCsvSeismogram.fetch] does.
@@ -295,7 +310,7 @@ way [`GeoCsvSeismogram.fetch()`][pysmo.classes.GeoCsvSeismogram.fetch] does.
     (`detrend(seismogram)`). That difference isn't incidental. A method bound to
     `Trace` only ever works on a `Trace` (or a subclass of it). A function written
     against the [`Seismogram`][pysmo.Seismogram] protocol works on anything that
-    satisfies it — `TraceSeismogram` here,
+    satisfies it: `TraceSeismogram` here,
     [`SacSeismogram`][pysmo.classes.SacSeismogram], a [mini class](mini-classes.md),
     or any bespoke class you write yourself. That's why the exact same
     [`detrend`][pysmo.functions.detrend] call works unchanged on the
@@ -303,8 +318,44 @@ way [`GeoCsvSeismogram.fetch()`][pysmo.classes.GeoCsvSeismogram.fetch] does.
     dispatch logic anywhere to make that happen. Targeting the protocol rather than
     one specific class is what makes every function in
     [`pysmo.functions`][]/[`pysmo.tools`][] reusable this way. And it isn't limited
-    to pysmo's own functions — any function you write yourself against
+    to pysmo's own functions; any function you write yourself against
     [`Seismogram`][pysmo.Seismogram] gets the same property for free.
+
+## When you genuinely need a runtime check
+
+Everything above is about *conformance*: does this class speak a pysmo type?
+That is a question for the type checker, not for [`isinstance`][]. Occasionally
+you have a different question. At runtime you are holding a mix of objects and
+need to treat two shapes differently. For example, some of your station objects
+carry coordinates (they satisfy [`Station`][pysmo.Station]) and some are
+NSLC-only (they satisfy [`StationCode`][pysmo.StationCode] but not
+[`Station`][pysmo.Station], as a seismogram read straight from miniSEED does),
+and the code needs to branch on which it has.
+
+Write that branch as a [`TypeIs`][typing.TypeIs] guard. It narrows the type for
+the type checker in both branches, and names exactly what is being checked:
+
+```python
+>>> from typing import TypeIs
+>>> from pysmo import MiniStation, MiniStationCode, Station, StationCode
+>>>
+>>> def has_location(sta: StationCode) -> TypeIs[Station]:
+...     return hasattr(sta, "latitude") and hasattr(sta, "longitude")
+...
+>>> stations: list[StationCode] = [
+...     MiniStation(
+...         name="ANMO", network="IU", location="00", channel="BHZ",
+...         latitude=34.95, longitude=-106.46,
+...     ),
+...     MiniStationCode(name="COLA", network="IU", location="00", channel="BHZ"),
+... ]
+>>> [sta.name for sta in stations if has_location(sta)]
+['ANMO']
+>>>
+```
+
+This is for runtime dispatch over mixed data, **not** for checking whether a
+class conforms to a protocol. That stays a type-checker job.
 
 ## Beyond adapting existing classes
 
@@ -314,7 +365,7 @@ type actually is.
 
 You've already built this twice in this chapter, in two different shapes,
 without necessarily naming what it was. The helper-class approach builds a
-narrow view as a separate object that reads from — and writes back to — a richer
+narrow view as a separate object that reads from, and writes back to, a richer
 parent; [`SacSeismogram`][pysmo.classes.SacSeismogram] is a real example of
 exactly this: [`SAC`][pysmo.classes.SAC] carries the full complexity of a SAC
 file's header, [`SacSeismogram`][pysmo.classes.SacSeismogram] exposes only what
@@ -322,21 +373,21 @@ file's header, [`SacSeismogram`][pysmo.classes.SacSeismogram] exposes only what
 need a separate object: a single bespoke class can carry its own extra
 attributes directly, alongside the ones a protocol requires, and still be handed
 to any function expecting that protocol unchanged. Either way, the "rich" and
-"narrow" views aren't two objects with data copied between them — they're two
+"narrow" views aren't two objects with data copied between them; they're two
 readings of the same one.
 
 That's actually a general pattern, not something specific to these two examples.
 The same object can be two different things at once, depending on who's looking
 at it. To the code that owns it, a seismogram can carry arbitrarily rich,
-problem-specific state — processing history, quality flags, picks, provenance,
+problem-specific state: processing history, quality flags, picks, provenance,
 whatever the task at hand actually needs. To a function written against
 [`Seismogram`][pysmo.Seismogram], that same object is just `begin_time`, `data`,
-`delta`, nothing more. Both are true at the same time, of the same instance —
+`delta`, nothing more. Both are true at the same time, of the same instance:
 the type doesn't strip anything away, it just describes which part of the object
 a given piece of code has committed to relying on.
 
 The narrow view is the more interesting half of that pair. A type like
-[`Seismogram`][pysmo.Seismogram] isn't really a Python feature — it's a minimal
+[`Seismogram`][pysmo.Seismogram] isn't really a Python feature; it's a minimal
 specification of what a seismogram fundamentally needs to be, arrived at by
 asking what processing functions actually require rather than what any one class
 happens to expose (see
@@ -348,13 +399,13 @@ Fortran, a database schema, or a paragraph of prose. It doesn't depend on
 Python, or on pysmo, to remain true.
 
 That distinction matters over a project's lifetime. Libraries and file formats
-change — sometimes for good reasons, sometimes just because tooling fashions
-shift — and code written directly against one specific class inherits that
+change (sometimes for good reasons, sometimes just because tooling fashions
+shift), and code written directly against one specific class inherits that
 churn. Code written against a well-considered, minimal interface mostly doesn't:
 only the adaptation layer at the boundary needs to change, not the logic behind
-it. The same holds on a smaller scale too — say you move a slow step like
+it. The same holds on a smaller scale too. Say you move a slow step like
 [`mccc`][pysmo.tools.signal.mccc] from Python to a compiled language for speed.
-The hard part of a move like that is never translating syntax — it's figuring
+The hard part of a move like that is never translating syntax; it's figuring
 out what the actual minimal data model needs to be. If that work is already
 done, captured as a small, deliberate interface rather than smeared across
 whatever attributes a particular class happened to expose, the move means
@@ -364,13 +415,13 @@ re-deriving the whole data model from scratch.
 It isn't only external change that's unpredictable, either. You rarely know in
 advance how complex the class supporting a particular problem will need to
 become. A bespoke class doesn't have to mean a dataclass with a few extra
-attributes — that's the simplest case, not the only one. What starts that way
+attributes; that's the simplest case, not the only one. What starts that way
 can, as a project's real requirements surface, turn into something far more
-involved. [AIMBAT](https://github.com/pysmo/aimbat) — an arrival-time picking
-package built on pysmo — shows both ends of that range. Its first version had
+involved. [AIMBAT](https://github.com/pysmo/aimbat) (an arrival-time picking
+package built on pysmo) shows both ends of that range. Its first version had
 nowhere else to put processing state, so it stored things like filter parameters
-directly in SAC's generic `user6`/`user7`/`kuser1`/`kuser2` header fields —
-fields with no defined meaning of their own, repurposed because nothing better
+directly in SAC's generic `user6`/`user7`/`kuser1`/`kuser2` header fields, which
+have no defined meaning of their own and were repurposed because nothing better
 was available. (It's also why old AIMBAT-processed SAC files can have
 oddly-populated header fields that are confusing to decode later, if you ever
 come across one.) Current AIMBAT solves the same problem properly instead: its
@@ -379,10 +430,10 @@ stored as ordinary table columns and `data` fetched from a separate table only
 when it's actually needed. That split pays off concretely too: changing a pick
 or a sampling interval is a small database update, not a read of the whole
 waveform file. Do the same thing with a SAC file being read directly, and
-there's no such distinction available — updating one value means touching the
+there's no such distinction available: updating one value means touching the
 entire seismogram. None of that is something you can plan for up front, and it
 doesn't need to be. The protocol boundary doesn't ask the rich side to stay
-simple, or to stay anything in particular — only that
+simple, or to stay anything in particular, only that
 [`begin_time`][pysmo.Seismogram.begin_time], [`data`][pysmo.Seismogram.data],
 and [`delta`][pysmo.Seismogram.delta] keep meaning what they always meant. The
 processing logic on the other side of that boundary never has to change, no

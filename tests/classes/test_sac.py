@@ -8,7 +8,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from pysmo import Event, MiniStation, Seismogram, Station
+from pysmo import MiniStation
 from pysmo.classes import SAC
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
@@ -37,14 +37,11 @@ class TestSAC:
     def test_create_instance(self) -> None:
         sac = SAC()
         assert isinstance(sac, SAC)
-        assert isinstance(sac.seismogram, Seismogram)
 
         # coordinates for event and station are None.
         with pytest.raises(TypeError):
-            assert isinstance(sac.station, Station)
             sac.station.latitude
         with pytest.raises(TypeError):
-            assert isinstance(sac.event, Event)
             sac.event.latitude
 
     @pytest.mark.depends(on=["test_create_instance"])
@@ -71,9 +68,6 @@ class TestSAC:
     def test_create_instance_from_file(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         assert isinstance(sac, SAC)
-        assert isinstance(sac.seismogram, Seismogram)
-        assert isinstance(sac.station, Station)
-        assert isinstance(sac.event, Event)
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_native_is_frozen(self, sacfile: Path) -> None:
@@ -126,7 +120,6 @@ class TestSAC:
     def test_sac_seismogram(self, sacfile: Path) -> None:
         sacseis = SAC.from_file(sacfile).seismogram
         sacio = SacIO.from_file(sacfile)
-        assert isinstance(sacseis, Seismogram)
         assert isinstance(sacseis.data, np.ndarray)
         assert sacseis.data.all() == sacio.data.all()
         assert list(sacseis.data[:5]) == [

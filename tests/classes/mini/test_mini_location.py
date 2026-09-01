@@ -1,6 +1,6 @@
 import pytest
 
-from pysmo import Location, MiniLocation
+from pysmo import MiniLocation
 
 
 class TestMiniLocation:
@@ -14,7 +14,6 @@ class TestMiniLocation:
         latitude, longitude = 1.1, 2.2
         minilocation = MiniLocation(latitude=latitude, longitude=longitude)
         assert isinstance(minilocation, MiniLocation)
-        assert isinstance(minilocation, Location)
         assert minilocation.latitude == 1.1
         assert minilocation.longitude == 2.2
 

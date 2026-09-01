@@ -1,7 +1,7 @@
 """Type aliases and the backend protocol shared across the travel-time tools."""
 
 from collections.abc import Mapping, Sequence
-from typing import Literal, Protocol, runtime_checkable
+from typing import Literal, Protocol
 
 import pandas as pd
 
@@ -15,7 +15,6 @@ type Phase = Literal["P", "S", "PcP", "ScS", "PcS", "ScP"]
 """A phase name the built-in solver computes."""
 
 
-@runtime_checkable
 class TravelTimeBackend(Protocol):
     """The shape of a replacement travel-time function.
 

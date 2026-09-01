@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import pandas as pd
 import pytest
 
-from pysmo import MiniStation, Response, StagedResponse
+from pysmo import MiniStation
 from pysmo.classes import QuakeML, SacPZ, StationXML
 from pysmo.tools.web import (
     fetch_quakeml,
@@ -92,8 +92,6 @@ class TestFetchStationxml:
         epoch = StationXML.from_bytes(xml, time=pd.Timestamp("2016-01-01T00:00:00Z"))
         response = epoch.response
 
-        assert isinstance(response, Response)
-        assert isinstance(response, StagedResponse)
         assert response.input_units == "m/s"
         assert len(response.stages) == 2
 
@@ -124,7 +122,6 @@ class TestFetchSacpz:
         text = fetch_sacpz(station=station)
         response = SacPZ.from_text(text)
 
-        assert isinstance(response, Response)
         assert response.network == "IU"
         assert response.station == "ANMO"
 

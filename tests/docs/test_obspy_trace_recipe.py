@@ -23,7 +23,6 @@ import pytest
 
 obspy = pytest.importorskip("obspy")
 
-from pysmo import Seismogram  # noqa: E402
 from pysmo.functions import detrend  # noqa: E402
 
 SNIPPET_PATH = (
@@ -55,8 +54,6 @@ def test_trace_seismogram_recipe() -> None:
         },
     )
     trace_seis = TraceSeismogram(trace)
-
-    assert isinstance(trace_seis, Seismogram)
 
     original_data = trace.data.copy()
     detrend(trace_seis)

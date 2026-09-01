@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 import pandas as pd
 from attrs import define, field, setters, validators
@@ -11,7 +11,6 @@ from .location_with_depth import LocationWithDepth
 __all__ = ["Event", "MiniEvent"]
 
 
-@runtime_checkable
 class Event(LocationWithDepth, Protocol):
     """Protocol class to define the `Event` type."""
 
@@ -25,17 +24,11 @@ class MiniEvent:
 
     Examples:
         ```python
-        >>> from pysmo import MiniEvent, Event, LocationWithDepth, Location
+        >>> from pysmo import MiniEvent
         >>> import pandas as pd
         >>> from datetime import timezone
         >>> now = pd.Timestamp.now(timezone.utc)
         >>> event = MiniEvent(latitude=-24.68, longitude=-26.73, depth=15234.0, time=now)
-        >>> isinstance(event, Event)
-        True
-        >>> isinstance(event, Location)
-        True
-        >>> isinstance(event, LocationWithDepth)
-        True
         >>>
         ```
     """

@@ -25,7 +25,7 @@ import pytest
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure
 
-from pysmo import Event, MiniEvent, MiniStation, Response
+from pysmo import MiniEvent, MiniStation
 from pysmo.classes import SAC, GeoCsvSeismogram, MSeed, QuakeML, SacPZ
 from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
@@ -92,7 +92,6 @@ def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure
 def test_fetch_sacpz_live(station: MiniStation) -> None:
     response = SacPZ.fetch(station=station)
 
-    assert isinstance(response, Response)
     assert response.network == "IU"
     assert response.station == "ANMO"
     assert response.channel == "LHZ"
@@ -206,7 +205,6 @@ def test_fetch_mseed_multiple_segments_live() -> None:
 def test_fetch_quakeml_single_event_live() -> None:
     event = QuakeML.fetch(event_id="official20100227063411530_30")
 
-    assert isinstance(event, Event)
     assert event.magnitude is not None and event.magnitude >= 8.5
     assert event.time.year == 2010
 

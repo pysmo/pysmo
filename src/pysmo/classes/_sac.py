@@ -154,15 +154,19 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
     new [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
-        Checking if a SacSeismogram matches the pysmo
+        A SacSeismogram can be passed to any function that expects the pysmo
         [`Seismogram`][pysmo.Seismogram] type:
 
         ```python
         >>> from pysmo import Seismogram
         >>> from pysmo.classes import SAC
+        >>>
+        >>> def begin_time_isoformat(seismogram: Seismogram) -> str:
+        ...     return seismogram.begin_time.isoformat()
+        ...
         >>> sac = SAC.from_file("example.sac")
-        >>> isinstance(sac.seismogram, Seismogram)
-        True
+        >>> begin_time_isoformat(sac.seismogram)
+        '2010-02-27T06:44:06.069538+00:00'
         >>>
         ```
 
@@ -220,15 +224,19 @@ class SacStation(_SacNested):
     [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
-        Checking if a SacStation matches the pysmo
+        A SacStation can be passed to any function that expects the pysmo
         [`Station`][pysmo.Station] type:
 
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo import Station
+        >>>
+        >>> def station_id(station: Station) -> str:
+        ...     return f"{station.network}.{station.name}"
+        ...
         >>> sac = SAC.from_file("example.sac")
-        >>> isinstance(sac.station, Station)
-        True
+        >>> station_id(sac.station)
+        'IU.ANMO'
         >>>
         ```
     """
@@ -330,15 +338,19 @@ class SacEvent(_SacNested):
     [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
-        Checking if a SacEvent matches the pysmo
+        A SacEvent can be passed to any function that expects the pysmo
         [`Event`][pysmo.Event] type:
 
         ```python
         >>> from pysmo.classes import SAC
         >>> from pysmo import Event
+        >>>
+        >>> def origin_isoformat(event: Event) -> str:
+        ...     return event.time.isoformat()
+        ...
         >>> sac = SAC.from_file("example.sac")
-        >>> isinstance(sac.event, Event)
-        True
+        >>> origin_isoformat(sac.event)
+        '2010-02-27T06:34:11.529998536+00:00'
         >>>
         ```
 
@@ -623,15 +635,20 @@ class SAC:
         types, accessible under different names:
 
         ```python
-        >>> # Import the Seismogram type to check if the nested class is compatible:
         >>> from pysmo import Seismogram
         >>>
-        >>> # First verify that a SAC instance is not a pysmo Seismogram:
-        >>> isinstance(sac, Seismogram)
-        False
-        >>> # The sac.seismogram object is, however:
-        >>> isinstance(sac.seismogram, Seismogram)
-        True
+        >>> def sample_count(seismogram: Seismogram) -> int:
+        ...     return len(seismogram.data)
+        ...
+        >>> # A bare SAC instance is not a Seismogram: a type checker rejects
+        >>> # this, and at runtime the function fails on the missing member:
+        >>> sample_count(sac)
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'SAC' object has no attribute 'data'
+        >>> # The sac.seismogram helper is a Seismogram:
+        >>> sample_count(sac.seismogram)
+        57465
         >>>
         ```
 
