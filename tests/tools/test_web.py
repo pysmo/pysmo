@@ -102,36 +102,37 @@ class TestFetchSacpz:
     def test_returns_raw_text(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
     ) -> None:
-        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
+        fake = FakeHttpGet({"station": SACPZ_SINGLE.encode("ascii")})
         monkeypatch.setattr("pysmo.tools.web.http_get", fake)
 
         text = fetch_sacpz(station=station)
 
         assert text == SACPZ_SINGLE
         (url, fields) = fake.calls[0]
+        assert "fdsnws/station" in url
         assert fields["net"] == "IU"
         assert fields["sta"] == "ANMO"
         assert fields["loc"] == "00"
         assert fields["cha"] == "LHZ"
-        assert "level" not in fields
+        assert fields["level"] == "response"
+        assert fields["format"] == "sacpz"
 
     def test_round_trip_with_sacpz_from_text(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
     ) -> None:
-        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
+        fake = FakeHttpGet({"station": SACPZ_SINGLE.encode("ascii")})
         monkeypatch.setattr("pysmo.tools.web.http_get", fake)
 
         text = fetch_sacpz(station=station)
         response = SacPZ.from_text(text)
 
-        assert isinstance(response, Response)
         assert response.network == "IU"
         assert response.station == "ANMO"
 
     def test_bulk_fixture_round_trip_with_all_from_text(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
     ) -> None:
-        fake = FakeHttpGet({"sacpz": SACPZ_BULK.encode("ascii")})
+        fake = FakeHttpGet({"station": SACPZ_BULK.encode("ascii")})
         monkeypatch.setattr("pysmo.tools.web.http_get", fake)
 
         text = fetch_sacpz(station=station)
@@ -139,32 +140,16 @@ class TestFetchSacpz:
 
         assert len(responses) == 9
 
-    def test_sub_second_time_truncated_with_warning(
+    def test_sub_second_time_passed_through(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
     ) -> None:
-        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
+        fake = FakeHttpGet({"station": SACPZ_SINGLE.encode("ascii")})
         monkeypatch.setattr("pysmo.tools.web.http_get", fake)
 
-        with pytest.warns(UserWarning, match="sub-second precision"):
-            fetch_sacpz(station=station, time=pd.Timestamp("2010-02-27T06:37:51.0936Z"))
+        fetch_sacpz(station=station, time=pd.Timestamp("2010-02-27T06:37:51.0936Z"))
 
         (_, fields) = fake.calls[0]
-        assert fields["time"] == "2010-02-27T06:37:51+00:00"
-
-    def test_whole_second_time_not_truncated_no_warning(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-        station: MiniStation,
-        recwarn: pytest.WarningsRecorder,
-    ) -> None:
-        fake = FakeHttpGet({"sacpz": SACPZ_SINGLE.encode("ascii")})
-        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
-
-        fetch_sacpz(station=station, time=pd.Timestamp("2010-02-27T06:37:51Z"))
-
-        assert len(recwarn) == 0
-        (_, fields) = fake.calls[0]
-        assert fields["time"] == "2010-02-27T06:37:51+00:00"
+        assert fields["time"] == "2010-02-27T06:37:51.093600+00:00"
 
 
 class TestFetchSac:

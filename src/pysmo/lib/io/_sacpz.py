@@ -1,6 +1,6 @@
 """Low-level parsing of the SAC PZ (pole-zero) text format.
 
-A SAC PZ file (as produced by e.g. the EarthScope SACPZ web service) encodes
+A SAC PZ file (as produced by e.g. EarthScope's fdsnws-station service) encodes
 one instrument's analog response as poles, zeros, and a single `CONSTANT`
 (the product of the analog normalisation factor `A0` and the overall system
 sensitivity — see
@@ -117,10 +117,10 @@ def _parse_complex_block(
 def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
     r"""Split SAC PZ text into a list of uninterpreted records.
 
-    A text body may contain several concatenated records (the EarthScope
-    SACPZ web service returns one per channel epoch when a query is not
-    pinned to a single epoch); this function returns all of them, in order
-    of appearance.
+    A text body may contain several concatenated records (EarthScope's
+    fdsnws-station service returns one per channel epoch when a query is
+    not pinned to a single epoch); this function returns all of them, in
+    order of appearance.
 
     Args:
         text: SAC PZ text body, containing one or more records.
