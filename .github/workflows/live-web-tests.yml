@@ -1,0 +1,61 @@
+name: live web tests
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.14"
+      - name: Sync dependencies
+        run: uv sync --locked --all-extras --no-group docs
+      - name: Run live web tests
+        id: tests
+        run: >
+          uv run pytest --mpl --run-real-web-requests
+          --reruns 3 --reruns-delay 60
+          --only-rerun 'ConnectionError|ReadTimeout|ReadTimeoutError|MaxRetryError|ProtocolError|NewConnectionError|ResponseError'
+          tests/tools/test_web_live.py
+          tests/integration/test_response_removal_live.py
+      - name: Report upstream drift
+        if: always() && steps.tests.conclusion == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Live web tests failing against an upstream service"
+          stamp="$(date -u +%Y-%m-%dT%H:%MZ)"
+          existing="$(gh issue list --state open --json number,labels \
+            --jq '[.[] | select(any(.labels[]; .name == "upstream-drift"))][0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still failing as of ${stamp} — ${RUN_URL}"
+          else
+            gh label create upstream-drift --color BFD4F2 --force \
+              --description "Live web tests failing against an upstream service"
+            gh issue create --title "$title" --label upstream-drift --body "$(cat <<EOF
+          The scheduled \`live web tests\` workflow failed on ${stamp}.
+
+          Run: ${RUN_URL}
+
+          These tests hit the real EarthScope and USGS web services. A failure here
+          usually means an upstream service changed its URL, request parameters, or
+          response format (as with the \`irisws-sacpz\` retirement), not a pysmo
+          regression. Transient network errors are retried automatically before the
+          job fails.
+
+          Investigate, then close this issue once a later run is green.
+          EOF
+          )"
+          fi
