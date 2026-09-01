@@ -12,7 +12,6 @@ All notable changes to the **pysmo** project will be documented in this file.
 ### 🎨 Styling
 
 - **(ruff)** Enable google docstring convention and docstring-code-format
-- Reformat markdown per .editorconfig
 
 ### 🐛 Bug Fixes
 
@@ -31,6 +30,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Address copilot review findings on two-block write/read
 - [**breaking**] Correct signal processing, sacio, and I/O parsing bugs from code review
 - **(project)** Discard cache write when parameters change mid-fetch
+- **(web)** Fetch SAC PZ from fdsnws-station, not the dead irisws-sacpz
 
 ### 📚 Documentation
 
@@ -46,7 +46,6 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Update deps, cleanup docstrings ([#271](https://github.com/pysmo/pysmo/issues/271))
 - Update packages and small fixes for edge-cases ([#272](https://github.com/pysmo/pysmo/issues/272))
 - Add .editorconfig
-- Ignore markdown reformat in git blame
 - Move CI workflows to reusable versions in pysmo/.github
 
 ### 🔍 Other Changes
@@ -114,10 +113,6 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Use poetry with mkdocs
 - Use dynamic versioning
 
-### 🎨 Styling
-
-- Switch to formatting with black
-
 ### 🐛 Bug Fixes
 
 - Fix typo
@@ -161,7 +156,6 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ### 📦 Miscellaneous
 
-- Ignore black commit in git blame
 - Update packages
 - Add py312 to matrix
 - Don't install pandoc, don't run post attach commands ([#143](https://github.com/pysmo/pysmo/issues/143))
