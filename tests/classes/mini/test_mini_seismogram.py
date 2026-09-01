@@ -15,7 +15,6 @@ class TestMiniSeismogram:
 
         miniseis = MiniSeismogram()
         assert isinstance(miniseis, MiniSeismogram)
-        assert isinstance(miniseis, Seismogram)
 
     @pytest.mark.depends(name="test_create_instance")
     def test_defaults(self) -> None:

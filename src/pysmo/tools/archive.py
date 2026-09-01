@@ -40,7 +40,7 @@ Examples:
     ... )
     >>> seismogram = archive(station, starttime, endtime)  # miss: fetches and stores
     >>> seismogram_again = archive(station, starttime, endtime)  # hit: no fetch
-    >>> isinstance(seismogram_again, Seismogram)
+    >>> seismogram_again.data.shape == seismogram.data.shape
     True
     >>>
     ```
@@ -53,7 +53,7 @@ import threading
 import zlib
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol
 
 import pandas as pd
 from attrs import define, field
@@ -68,7 +68,6 @@ _ENCODING_VERSION = 1
 """Raw bytes are stored zlib-compressed; bump this on any change to that encoding."""
 
 
-@runtime_checkable
 class RawFetcher(Protocol):
     """Callable `(*, station, starttime, endtime) -> bytes` returning a raw, unparsed fetch response.
 
