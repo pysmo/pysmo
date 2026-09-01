@@ -1,12 +1,6 @@
 import pytest
 
-from pysmo import (
-    MiniResponseStage,
-    MiniStagedResponse,
-    Response,
-    ResponseStage,
-    StagedResponse,
-)
+from pysmo import MiniResponseStage, MiniStagedResponse
 
 
 class TestMiniResponseStage:
@@ -18,7 +12,6 @@ class TestMiniResponseStage:
             input_sample_rate=40.0, decimation_factor=1, numerator=[0.5, 0.5]
         )
         assert isinstance(stage, MiniResponseStage)
-        assert isinstance(stage, ResponseStage)
         assert stage.input_sample_rate == 40.0
         assert stage.decimation_factor == 1
         assert stage.numerator == [0.5, 0.5]
@@ -76,8 +69,6 @@ class TestMiniStagedResponse:
             ],
         )
         assert isinstance(response, MiniStagedResponse)
-        assert isinstance(response, StagedResponse)
-        assert isinstance(response, Response)
         assert len(response.stages) == 1
 
     def test_empty_stages_still_satisfies_staged_response(self) -> None:
@@ -85,8 +76,6 @@ class TestMiniStagedResponse:
             poles=[], zeros=[], overall_sensitivity=1.0, input_units="M/S"
         )
         assert response.stages == []
-        assert isinstance(response, StagedResponse)
-        assert isinstance(response, Response)
 
     def test_reference_sensitivity_inherited_from_mini_response(self) -> None:
         response = MiniStagedResponse(

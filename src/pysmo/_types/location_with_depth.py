@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 from attrs import define, field, setters, validators
 
@@ -7,7 +7,6 @@ from .location import Location
 __all__ = ["LocationWithDepth", "MiniLocationWithDepth"]
 
 
-@runtime_checkable
 class LocationWithDepth(Location, Protocol):
     """Protocol class to define the `LocationWithDepth` type."""
 
@@ -21,12 +20,8 @@ class MiniLocationWithDepth:
 
     Examples:
         ```python
-        >>> from pysmo import MiniLocationWithDepth, LocationWithDepth, Location
+        >>> from pysmo import MiniLocationWithDepth
         >>> hypo = MiniLocationWithDepth(latitude=-24.68, longitude=-26.73, depth=15234.0)
-        >>> isinstance(hypo, LocationWithDepth)
-        True
-        >>> isinstance(hypo, Location)
-        True
         >>>
         ```
     """

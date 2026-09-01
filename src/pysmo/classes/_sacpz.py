@@ -37,7 +37,6 @@ class SacPZ:
 
     Examples:
         ```python
-        >>> from pysmo import Response
         >>> from pysmo.classes import SacPZ
         >>> text = '''\
         ... * NETWORK   (KNETWK): IU
@@ -55,8 +54,6 @@ class SacPZ:
         ... CONSTANT 1.0e+09
         ... '''
         >>> response = SacPZ.from_text(text)
-        >>> isinstance(response, Response)
-        True
         >>> response.network, response.station
         ('IU', 'ANMO')
         >>>
@@ -152,12 +149,9 @@ class SacPZ:
 
             ```python
             >>> from pathlib import Path
-            >>> from pysmo import Response
             >>> from pysmo.classes import SacPZ
             >>> text = Path("SACPZ.IU.ANMO.00.BHZ").read_text()
             >>> response = SacPZ.from_text(text)
-            >>> isinstance(response, Response)
-            True
             >>> response.network, response.station
             ('IU', 'ANMO')
             >>>

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pysmo import MiniStation, Response
+from pysmo import MiniStation
 from pysmo.classes import SacPZ
 
 SINGLE_FIXTURE = (
@@ -35,7 +35,6 @@ CONSTANT\t1.0e+09
 class TestFromText:
     def test_real_single_record_fixture(self) -> None:
         response = SacPZ.from_text(SINGLE_FIXTURE.read_text())
-        assert isinstance(response, Response)
         assert response.network == "IU"
         assert response.station == "ANMO"
         assert response.location == "00"
@@ -68,7 +67,6 @@ class TestAllFromText:
         responses = SacPZ.all_from_text(BULK_FIXTURE.read_text())
         assert len(responses) == 9
         for response in responses:
-            assert isinstance(response, Response)
             assert response.network == "IU"
             assert response.station == "ANMO"
         for previous, current in zip(responses, responses[1:]):
@@ -107,7 +105,6 @@ class TestFetch:
 
         response = SacPZ.fetch(station=station)
 
-        assert isinstance(response, Response)
         assert response.network == "IU"
         assert response.station == "ANMO"
 

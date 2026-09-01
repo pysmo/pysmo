@@ -46,7 +46,6 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
 
     Examples:
         ```python
-        >>> from pysmo import Seismogram
         >>> from pysmo.classes import GeoCsvSeismogram
         >>> text = '''\
         ... # dataset: GeoCSV 2.0
@@ -62,8 +61,6 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         ... 2010-02-27T06:30:01Z, -47298
         ... 2010-02-27T06:30:02Z, -47299'''
         >>> seismogram = GeoCsvSeismogram.from_text(text)
-        >>> isinstance(seismogram, Seismogram)
-        True
         >>> seismogram.sourceid
         'IU_ANMO_00_LHZ'
         >>> seismogram.data

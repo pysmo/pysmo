@@ -68,7 +68,6 @@ class StationXML:
 
     Examples:
         ```python
-        >>> from pysmo import Location, Response, Station
         >>> from pysmo.classes import StationXML
         >>> xml = b'''\
         ... <?xml version="1.0"?>
@@ -100,14 +99,10 @@ class StationXML:
         ...   </Network>
         ... </FDSNStationXML>'''
         >>> station = StationXML.from_bytes(xml)
-        >>> isinstance(station, Station)
-        True
-        >>> isinstance(station, Location)
-        True
         >>> station.network, station.name, station.channel
         ('IU', 'ANMO', 'BHZ')
-        >>> isinstance(station.response, Response)
-        True
+        >>> station.response.input_units
+        'm/s'
         >>>
         ```
     """

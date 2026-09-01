@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 from attrs import define, field, setters, validators
 
@@ -8,7 +8,6 @@ __all__ = ["Location", "MiniLocation"]
 # --8<-- [start:location-protocol]
 
 
-@runtime_checkable
 class Location(Protocol):
     """Protocol class to define the `Location` type."""
 
@@ -30,10 +29,8 @@ class MiniLocation:
 
     Examples:
         ```python
-        >>> from pysmo import MiniLocation, Location
+        >>> from pysmo import MiniLocation
         >>> location = MiniLocation(latitude=41.8781, longitude=-87.6298)
-        >>> isinstance(location, Location)
-        True
         >>>
         ```
     """
