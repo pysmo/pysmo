@@ -2,7 +2,7 @@
 
 import warnings
 from copy import deepcopy
-from typing import Literal, cast, overload
+from typing import Literal, TypeIs, cast, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -11,6 +11,11 @@ import scipy.signal
 from pysmo import Response, Seismogram, StagedResponse
 
 __all__ = ["remove_response"]
+
+
+def _has_digital_stages(response: Response) -> TypeIs[StagedResponse]:
+    """Whether `response` carries digital decimation stages."""
+    return hasattr(response, "stages")
 
 
 def _analog_transfer_function(
@@ -384,7 +389,7 @@ def remove_response[T: Seismogram](
 
     h = _analog_transfer_function(response, freqs)
 
-    if isinstance(response, StagedResponse):
+    if _has_digital_stages(response):
         h = h * _digital_transfer_function(response, freqs)
         has_stages = bool(response.stages)
         if has_stages:

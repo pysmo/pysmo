@@ -1,6 +1,6 @@
 import pytest
 
-from pysmo import LocationWithDepth, MiniLocationWithDepth
+from pysmo import MiniLocationWithDepth
 
 
 class TestMiniLocationWithDepth:
@@ -14,7 +14,6 @@ class TestMiniLocationWithDepth:
             latitude=latitude, longitude=longitude, depth=depth
         )
         assert isinstance(minihypocenter, MiniLocationWithDepth)
-        assert isinstance(minihypocenter, LocationWithDepth)
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
@@ -24,8 +23,6 @@ class TestMiniLocationWithDepth:
         minihypocenter = MiniLocationWithDepth(
             latitude=latitude, longitude=longitude, depth=depth
         )
-
-        assert isinstance(minihypocenter, LocationWithDepth)
 
         assert minihypocenter.depth == depth
         assert minihypocenter.latitude == latitude

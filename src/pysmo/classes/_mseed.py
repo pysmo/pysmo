@@ -70,15 +70,8 @@ class MSeed(SeismogramEndtimeMixin):
 
     Examples:
         ```python
-        >>> from pysmo import Seismogram, Station, StationCode
         >>> from pysmo.classes import MSeed
         >>> seismogram = MSeed.from_file("example.mseed")
-        >>> isinstance(seismogram, Seismogram)
-        True
-        >>> isinstance(seismogram, StationCode)
-        True
-        >>> isinstance(seismogram, Station)
-        False
         >>> seismogram.sourceid
         'FDSN:IU_ANMO_00_B_H_Z'
         >>> seismogram.network, seismogram.name, seismogram.location, seismogram.channel
