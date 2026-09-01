@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 from attrs import define, field, setters, validators
 
@@ -37,7 +37,6 @@ def _convert_strict_int(value: int) -> int:
     return int(as_float)
 
 
-@runtime_checkable
 class Response(Protocol):
     """Protocol class to define the `Response` type.
 
@@ -98,7 +97,6 @@ class Response(Protocol):
     """
 
 
-@runtime_checkable
 class ResponseStage(Protocol):
     """Protocol class to define one digital (FIR/IIR) decimation stage."""
 
@@ -128,7 +126,6 @@ class ResponseStage(Protocol):
     coefficient-derived transfer function unchanged."""
 
 
-@runtime_checkable
 class StagedResponse(Response, Protocol):
     """Protocol class to define a `Response` with digital decimation stages.
 
@@ -147,15 +144,13 @@ class MiniResponse:
 
     Examples:
         ```python
-        >>> from pysmo import MiniResponse, Response
+        >>> from pysmo import MiniResponse
         >>> response = MiniResponse(
         ...     poles=[-0.037 + 0.037j, -0.037 - 0.037j],
         ...     zeros=[0j, 0j],
         ...     overall_sensitivity=3.4e9,
         ...     input_units="M/S",
         ... )
-        >>> isinstance(response, Response)
-        True
         >>>
         ```
     """
@@ -218,14 +213,12 @@ class MiniResponseStage:
 
     Examples:
         ```python
-        >>> from pysmo import MiniResponseStage, ResponseStage
+        >>> from pysmo import MiniResponseStage
         >>> stage = MiniResponseStage(
         ...     input_sample_rate=40.0,
         ...     decimation_factor=1,
         ...     numerator=[0.5, 0.5],
         ... )
-        >>> isinstance(stage, ResponseStage)
-        True
         >>> stage.denominator
         [1.0]
         >>>
@@ -292,17 +285,13 @@ class MiniStagedResponse(MiniResponse):
 
     Examples:
         ```python
-        >>> from pysmo import MiniStagedResponse, StagedResponse, Response
+        >>> from pysmo import MiniStagedResponse
         >>> response = MiniStagedResponse(
         ...     poles=[-0.037 + 0.037j, -0.037 - 0.037j],
         ...     zeros=[0j, 0j],
         ...     overall_sensitivity=3.4e9,
         ...     input_units="M/S",
         ... )
-        >>> isinstance(response, StagedResponse)
-        True
-        >>> isinstance(response, Response)
-        True
         >>>
         ```
     """

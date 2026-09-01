@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from pysmo import Event, Location, LocationWithDepth, MiniEvent
+from pysmo import MiniEvent
 from pysmo.classes import QuakeML
 from pysmo.functions import clone_to_mini
 
@@ -40,12 +40,6 @@ def _event(public_id: str, *, extra: str = "") -> str:
 
 
 class TestConformance:
-    def test_isinstance_triple(self) -> None:
-        event = QuakeML.from_bytes(_doc(_event("smi:e/1")))
-        assert isinstance(event, Event)
-        assert isinstance(event, Location)
-        assert isinstance(event, LocationWithDepth)
-
     def test_clone_to_mini(self) -> None:
         event = QuakeML.from_bytes(_doc(_event("smi:e/1")))
         mini = clone_to_mini(MiniEvent, event)
