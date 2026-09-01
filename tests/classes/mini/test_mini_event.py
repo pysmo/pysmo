@@ -3,7 +3,7 @@ from datetime import UTC
 import pandas as pd
 import pytest
 
-from pysmo import Event, MiniEvent
+from pysmo import MiniEvent
 
 
 class TestMiniEvent:
@@ -23,7 +23,6 @@ class TestMiniEvent:
             latitude=latitude, longitude=longitude, depth=depth, time=time_utc
         )
         assert isinstance(minievent, MiniEvent)
-        assert isinstance(minievent, Event)
 
     @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
@@ -43,8 +42,6 @@ class TestMiniEvent:
         minievent = MiniEvent(
             latitude=latitude, longitude=longitude, depth=depth, time=time
         )
-
-        assert isinstance(minievent, Event)
 
         assert minievent.depth == depth
         assert minievent.latitude == latitude

@@ -52,7 +52,6 @@ class QuakeML:
 
     Examples:
         ```python
-        >>> from pysmo import Event, Location, LocationWithDepth
         >>> from pysmo.classes import QuakeML
         >>> xml = b'''<?xml version="1.0"?>
         ... <q:quakeml xmlns="http://quakeml.org/xmlns/bed/1.2"
@@ -75,8 +74,6 @@ class QuakeML:
         ...   </eventParameters>
         ... </q:quakeml>'''
         >>> event = QuakeML.from_bytes(xml)
-        >>> isinstance(event, Event)
-        True
         >>> event.latitude, event.longitude, event.depth
         (-36.122, -72.898, 22900.0)
         >>> event.magnitude, event.magnitude_type

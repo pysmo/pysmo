@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 from attrs import converters, define, field, setters, validators
 
@@ -9,7 +9,6 @@ __all__ = ["MiniStation", "MiniStationCode", "Station", "StationCode"]
 # --8<-- [start:station-protocol]
 
 
-@runtime_checkable
 class StationCode(Protocol):
     """Protocol class to define the `StationCode` type.
 
@@ -48,7 +47,6 @@ class StationCode(Protocol):
     """
 
 
-@runtime_checkable
 class Station(Location, StationCode, Protocol):
     """Protocol class to define the `Station` type."""
 
@@ -69,10 +67,8 @@ class MiniStationCode:
 
     Examples:
         ```python
-        >>> from pysmo import MiniStationCode, StationCode
+        >>> from pysmo import MiniStationCode
         >>> code = MiniStationCode(name="CACB", network="BL", channel="BHZ", location="00")
-        >>> isinstance(code, StationCode)
-        True
         >>>
         ```
     """
@@ -122,12 +118,8 @@ class MiniStation:
 
     Examples:
         ```python
-        >>> from pysmo import MiniStation, Station, Location
+        >>> from pysmo import MiniStation
         >>> station = MiniStation(latitude=-21.680301, longitude=-46.732601, name="CACB", network="BL", channel="BHZ", location="00")
-        >>> isinstance(station, Station)
-        True
-        >>> isinstance(station, Location)
-        True
         >>>
         ```
     """
