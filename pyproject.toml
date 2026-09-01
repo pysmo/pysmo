@@ -1,39 +1,63 @@
-[tool.poetry]
+[project]
 name = "pysmo"
-version = "0.8.3"
+dynamic = ["version"]
 description = "Python module to read/write/manipulate SAC (Seismic Analysis Code) files"
 readme = "README.md"
-authors = ["Simon M. Lloyd <simon@slloyd.net>"]
+authors = [{ name = "Simon M. Lloyd", email = "simon@slloyd.net" }]
 license = "GPL-3.0-or-later"
-documentation = "https://pysmo.readthedocs.io"
+requires-python = ">=3.11,<3.15"
 classifiers = [
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
-    "Operating System :: OS Independent",
-    "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Operating System :: OS Independent",
+  "Development Status :: 5 - Production/Stable",
+]
+dependencies = [
+  "numpy>=2.1",
+  "scipy>=1.14",
+  "matplotlib>=3.9",
+  "pyproj>=3.7",
+  "PyYAML>=6.0.1",
+  "requests>=2.32.4",
 ]
 
-[tool.poetry.dependencies]
-python = "<3.12,>=3.8"
-scipy = "^1.5.4"
-numpy = "^1.19.4"
-matplotlib = "^3.3.3"
-pyproj = "^3.0.0"
-PyYAML = "^5.3.1"
-requests = "^2.25.1"
+[project.optional-dependencies]
+test = [
+  "pytest>=8.3",
+  "pytest-mpl>=0.17",
+  "pytest-cov>=5.0",
+  "pytest-depends>=1.0.1",
+]
+lint = ["ruff>=0.11"]
+docs = [
+  "Sphinx>=7.4",
+  "sphinx-rtd-theme>=3.0",
+]
+dev = ["pysmo[test,lint,docs]"]
 
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.1.2"
-Sphinx = "^3.3.1"
-sphinx-rtd-theme = "^0.5.0"
-pytest-mpl = "^0.12"
-pytest-cov = "^2.10.1"
-pytest-depends = "^1.0.1"
-flake8 = "^3.9.2"
-
+[project.urls]
+Documentation = "https://pysmo.readthedocs.io"
+Repository = "https://github.com/pysmo/pysmo"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pysmo"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/pysmo", "/tests", "/docs", "/README.md", "/LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = ["E741", "UP031"]
