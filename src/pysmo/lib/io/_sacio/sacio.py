@@ -1,4 +1,5 @@
 import os
+import shutil
 import struct
 import tempfile
 from collections.abc import Iterator
@@ -29,6 +30,12 @@ from ._sacio_rendered import (
 # a zero-time reference. Excludes "unkn" (no reference) and "day" (midnight
 # of the reference GMT day, which is not a header of its own).
 _IZTYPE_TARGET_HEADERS = frozenset(IZTYPE.__members__) - {"unkn", "day"}
+
+
+def _current_umask() -> int:
+    mask = os.umask(0)
+    os.umask(mask)
+    return mask
 
 
 @define(kw_only=True)
@@ -362,13 +369,20 @@ class SacIO(SacIOBase):
         """Writes data and header values to a SAC file.
 
         The file is written via a temporary file and an atomic replace, so a
-        failure mid-write cannot destroy an existing valid file.
+        failure mid-write cannot destroy an existing valid file. When the target
+        already exists its mode and ownership are carried over to the new file;
+        a symlink target is resolved so the file it points to is replaced, not
+        the link itself.
 
         Args:
             filename: Name of the sacfile to write to.
         """
-        filename = Path(filename)
-        fd, tmp_name = tempfile.mkstemp(dir=filename.parent, suffix=".sac.tmp")
+        target = Path(os.path.realpath(filename))
+        try:
+            existing = target.stat()
+        except FileNotFoundError:
+            existing = None
+        fd, tmp_name = tempfile.mkstemp(dir=target.parent, suffix=".sac.tmp")
         try:
             with open(fd, "wb") as file_handle:
                 # loop over all valid header fields and write them to the file
@@ -458,7 +472,16 @@ class SacIO(SacIOBase):
                         # write to file
                         file_handle.seek(start)
                         file_handle.write(struct.pack("d", value))
-            os.replace(tmp_name, filename)
+            if existing is not None:
+                shutil.copymode(target, tmp_name)
+                if hasattr(os, "chown"):
+                    try:
+                        os.chown(tmp_name, existing.st_uid, existing.st_gid)
+                    except OSError:
+                        pass
+            else:
+                os.chmod(tmp_name, 0o666 & ~_current_umask())
+            os.replace(tmp_name, target)
         except BaseException:
             Path(tmp_name).unlink(missing_ok=True)
             raise

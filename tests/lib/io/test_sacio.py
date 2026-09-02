@@ -3,6 +3,7 @@
 import copy
 import pickle
 import struct
+import sys
 from datetime import UTC, timedelta
 from pathlib import Path
 
@@ -381,6 +382,35 @@ def test_two_block_v6_write_read_roundtrip(sacfile_uneven: Path) -> None:
     reread = SacIO.from_file(sacfile_uneven)
     npt.assert_allclose(reread.data, sac.data)
     npt.assert_allclose(reread.data2, sac.data2)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="POSIX permission bits not meaningful on Windows"
+)
+@pytest.mark.depends(on=["test_write_to_file"])
+def test_write_preserves_mode_of_existing_file(tmp_path: Path) -> None:
+    target = tmp_path / "out.sac"
+    target.touch()
+    target.chmod(0o640)
+    SacIO(data=np.random.rand(100)).write(target)
+    assert target.stat().st_mode & 0o777 == 0o640
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="symlink creation needs privileges on Windows"
+)
+@pytest.mark.depends(on=["test_write_to_file"])
+def test_write_follows_symlink_target(tmp_path: Path) -> None:
+    real = tmp_path / "real.sac"
+    SacIO(b=1.0, data=np.random.rand(100)).write(real)
+    link = tmp_path / "link.sac"
+    link.symlink_to(real)
+
+    SacIO(b=2.0, data=np.random.rand(100)).write(link)
+
+    assert link.is_symlink()
+    assert pytest.approx(SacIO.from_file(real).b) == 2.0
+    assert not list(tmp_path.glob("*.sac.tmp"))
 
 
 @pytest.mark.depends(on=["test_read_irlim"])
