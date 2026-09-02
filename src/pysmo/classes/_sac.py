@@ -9,10 +9,9 @@ from zipfile import BadZipFile, ZipFile
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from attrs import define, field, fields, setters, validators
+from attrs import define, field, setters
 
 from pysmo import Station
-from pysmo._types.location import MiniLocation
 from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
@@ -21,18 +20,8 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.web import fetch_sac
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
-# SacStation/SacEvent.longitude are plain properties, not attrs fields, so
-# they can't attach validators via `field(validator=...)`; instead call the
-# same bounds MiniLocation.longitude uses, feeding them the real attrs
-# Attribute (borrowed from MiniLocation) for the error message wording.
-_LONGITUDE_VALIDATORS = (validators.gt(-180.0), validators.le(180.0))
-_LONGITUDE_ATTR = fields(MiniLocation).longitude
-
-
-def _validate_longitude(value: float) -> None:
-    for validator in _LONGITUDE_VALIDATORS:
-        validator(None, _LONGITUDE_ATTR, value)
-
+# SacStation/SacEvent coordinate setters just assign to the underlying SacIO
+# field, which already range-validates stla/stlo/evla/evlo (-90..90, -180..180).
 
 __all__ = [
     "SAC",
@@ -315,7 +304,6 @@ class SacStation(_SacNested):
 
     @longitude.setter
     def longitude(self, value: int | float) -> None:
-        _validate_longitude(value)
         setattr(self._parent, "stlo", value)
 
     @property
@@ -380,7 +368,6 @@ class SacEvent(_SacNested):
 
     @longitude.setter
     def longitude(self, value: int | float) -> None:
-        _validate_longitude(value)
         setattr(self._parent, "evlo", value)
 
     @property

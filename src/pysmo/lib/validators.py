@@ -26,10 +26,25 @@ def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timesta
 
     ts = pd.Timestamp(value)
 
+    if pd.isna(ts):
+        raise ValueError(f"{value!r} is not a valid timestamp.")
+
     if ts.tz is None:
         return ts.tz_localize(UTC)
 
     return ts.tz_convert(UTC)
+
+
+def convert_to_longitude(value: float) -> float:
+    """Convert a value to a `float` longitude in degrees, folding -180 onto +180.
+
+    -180 and +180 name the same meridian; +180 is kept as the single
+    canonical value so two spellings of the antimeridian cannot compare
+    unequal. Values genuinely outside `[-180, 180]` are returned unchanged
+    for a downstream validator to reject.
+    """
+    longitude = float(value)
+    return 180.0 if longitude == -180.0 else longitude
 
 
 def convert_to_timedelta(

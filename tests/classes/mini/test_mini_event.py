@@ -66,8 +66,10 @@ class TestMiniEvent:
             minievent.latitude = -100
         with pytest.raises(ValueError):
             minievent.latitude = 100
+        minievent.longitude = -180  # the antimeridian, canonicalised to +180
+        assert minievent.longitude == 180
         with pytest.raises(ValueError):
-            minievent.longitude = -180
+            minievent.longitude = -180.5
         with pytest.raises(ValueError):
             minievent.longitude = 181
 

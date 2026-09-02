@@ -8,6 +8,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from pysmo.lib.validators import (
+    convert_to_longitude,
     convert_to_ndarray,
     convert_to_timedelta,
     convert_to_utc_timestamp,
@@ -17,6 +18,22 @@ from pysmo.lib.validators import (
 def test_convert_to_utc_timestamp_none() -> None:
     with pytest.raises(TypeError, match="Value is None"):
         convert_to_utc_timestamp(None)  # type: ignore[arg-type]
+
+
+def test_convert_to_utc_timestamp_nat() -> None:
+    with pytest.raises(ValueError, match="not a valid timestamp"):
+        convert_to_utc_timestamp(pd.NaT)  # type: ignore[arg-type]
+
+
+def test_convert_to_longitude() -> None:
+    assert convert_to_longitude(-180) == 180.0  # antimeridian folded onto +180
+    assert convert_to_longitude(-180.0) == 180.0
+    assert convert_to_longitude(180) == 180.0
+    assert convert_to_longitude(-179.9) == -179.9
+    assert convert_to_longitude("45") == 45.0  # type: ignore[arg-type]
+    # out of range: passed through unchanged for a downstream validator
+    assert convert_to_longitude(-180.5) == -180.5
+    assert convert_to_longitude(200) == 200.0
 
 
 def test_convert_to_utc_timestamp_naive() -> None:

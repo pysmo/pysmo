@@ -97,12 +97,27 @@ def project(station_anmo: MiniStation, event_maule: MiniEvent) -> ProjectT:
 
 
 class TestProjectEntry:
-    def test_defaults(self, station_anmo: MiniStation) -> None:
-        entry = ProjectEntry(station=station_anmo)
-        assert entry.event is None
+    def test_defaults(self, station_anmo: MiniStation, event_maule: MiniEvent) -> None:
+        entry = ProjectEntry(station=station_anmo, event=event_maule)
         assert entry.starttime is None
         assert entry.endtime is None
         assert entry.checksum is None
+
+    def test_bare_entry_rejected(self, station_anmo: MiniStation) -> None:
+        with pytest.raises(ValueError, match="window or an event"):
+            ProjectEntry(station=station_anmo)
+
+    def test_half_specified_window_rejected(self, station_anmo: MiniStation) -> None:
+        with pytest.raises(ValueError, match="both starttime and endtime"):
+            ProjectEntry(station=station_anmo, starttime="2024-01-01T00:00:00")
+
+    def test_reversed_window_rejected(self, station_anmo: MiniStation) -> None:
+        with pytest.raises(ValueError, match="starttime must be before endtime"):
+            ProjectEntry(
+                station=station_anmo,
+                starttime="2024-01-01T01:00:00",
+                endtime="2024-01-01T00:00:00",
+            )
 
     def test_string_and_datetime_converted_to_utc_timestamp(
         self, station_anmo: MiniStation
@@ -147,9 +162,12 @@ class TestResolveWindow:
         assert endtime == expected_predicted + project.post_pick
 
     def test_neither_window_nor_event_raises(
-        self, project: ProjectT, station_anmo: MiniStation
+        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
-        entry: ProjectEntry[MiniStation, MiniEvent] = ProjectEntry(station=station_anmo)
+        # A bare entry is rejected at construction; _resolve_window keeps its
+        # own guard for an entry mutated back to that state afterwards.
+        entry = ProjectEntry(station=station_anmo, event=event_maule)
+        entry.event = None
         with pytest.raises(ValueError, match="explicit window or an event"):
             project._resolve_window(entry)
 
