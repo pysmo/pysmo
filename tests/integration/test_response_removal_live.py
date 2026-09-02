@@ -122,7 +122,7 @@ def test_remove_response_pipeline_live(
     assert 0.5 < corr < 1.0
     assert seismogram.begin_time < predicted_p < seismogram.end_time
 
-    fig = plotseis(deconvolved, showfig=False, linewidth=0.5)
+    fig = plotseis(deconvolved, linewidth=0.5)
     fig.gca().axvline(
         date2num(predicted_p), color="red", linestyle="--", label="predicted P"
     )

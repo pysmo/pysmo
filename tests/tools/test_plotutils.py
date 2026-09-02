@@ -16,7 +16,7 @@ def test_plotutils_plotseis(
 ) -> Figure:
     from pysmo.tools.plotutils import plotseis
 
-    fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
+    fig = plotseis(*seismograms, linewidth=0.5)  # type: ignore
     return fig
 
 
