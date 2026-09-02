@@ -35,8 +35,11 @@ class IccsResult:
 class McccResult:
     """Result returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc].
 
-    These results include all seismograms if `run_mccc()` is called with
-    `all_seismograms=True`, only the selected ones otherwise.
+    Every list is positional, in the order MCCC processed the seismograms:
+    all of `ICCS.seismograms` when `run_mccc(all_seismograms=True)`, otherwise
+    only the selected ones in `ICCS.selected_cc_seismograms` order. There is
+    no seismogram identity in the result — the caller must line the lists up
+    against the same seismogram sequence itself.
     """
 
     picks: list[pd.Timestamp]

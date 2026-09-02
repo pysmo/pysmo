@@ -439,7 +439,7 @@ def lowpass[T: Seismogram](
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[True] = ...,
+    clone: Literal[True],
 ) -> T: ...
 
 
