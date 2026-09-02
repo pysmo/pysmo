@@ -66,8 +66,10 @@ class TestMiniStation:
         ministation.longitude = -179.9
         ministation.longitude = 180
         assert ministation.longitude == 180
+        ministation.longitude = -180  # the antimeridian, canonicalised to +180
+        assert ministation.longitude == 180
         with pytest.raises(ValueError):
-            ministation.longitude = -180
+            ministation.longitude = -180.5
         with pytest.raises(ValueError):
             ministation.longitude = 181
 
