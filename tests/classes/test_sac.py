@@ -107,14 +107,19 @@ class TestSAC:
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
+        npts_before = len(sac.seismogram.data)
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
             sac.read(IRLIM_FIXTURE)
+        # a rejected read must not have disturbed the existing instance
+        assert len(sac.seismogram.data) == npts_before
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_bytes_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
+        npts_before = len(sac.seismogram.data)
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
             sac.read_bytes(IRLIM_FIXTURE.read_bytes())
+        assert len(sac.seismogram.data) == npts_before
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:

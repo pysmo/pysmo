@@ -107,7 +107,8 @@ class SqliteArchiveFetcher:
     the decompressed bytes to `parse` on both a cache hit and a miss. A hit
     never calls `fetch_raw` again — a side effect of this is bit-identical
     replay of a previously fetched window, rather than only detecting drift
-    after the fact.
+    after the fact. `fetch_raw` runs outside the lock, so two threads racing
+    the same not-yet-cached window both fetch before one result is stored.
 
     Warning: Local disk only
         SQLite's own documentation states that WAL mode does not work over a

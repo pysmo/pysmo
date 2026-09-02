@@ -1,4 +1,6 @@
+import os
 import struct
+import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -359,97 +361,107 @@ class SacIO(SacIOBase):
     def write(self, filename: str | PathLike[str]) -> None:
         """Writes data and header values to a SAC file.
 
+        The file is written via a temporary file and an atomic replace, so a
+        failure mid-write cannot destroy an existing valid file.
+
         Args:
             filename: Name of the sacfile to write to.
         """
-        with open(filename, "wb") as file_handle:
-            # loop over all valid header fields and write them to the file
-            for header, header_metadata in SAC_HEADERS.items():
-                header_type = header_metadata.type
-                header_format = header_metadata.format
-                start = header_metadata.start
-                header_undefined = HEADER_TYPES[header_type].undefined
+        filename = Path(filename)
+        fd, tmp_name = tempfile.mkstemp(dir=filename.parent, suffix=".sac.tmp")
+        try:
+            with open(fd, "wb") as file_handle:
+                # loop over all valid header fields and write them to the file
+                for header, header_metadata in SAC_HEADERS.items():
+                    header_type = header_metadata.type
+                    header_format = header_metadata.format
+                    start = header_metadata.start
+                    header_undefined = HEADER_TYPES[header_type].undefined
 
-                value = None
-                try:
-                    if hasattr(self, header):
-                        value = getattr(self, header)
-                except TypeError:
-                    value = None
-
-                # convert enumerated header to integer if it is not None
-                if header_type == "i" and value is not None:
-                    value = SAC_ENUMS_DICT[header][value]
-
-                # set None to -12345
-                if value is None:
-                    value = header_undefined
-
-                # Encode strings to bytes
-                if isinstance(value, str):
-                    value = value.encode()
-                    # struct.pack silently truncates a "Ns" field to N bytes
-                    # rather than raising. header_metadata.length validators
-                    # (e.g. max_len) only bound the *character* count, so a
-                    # string using multi-byte UTF-8 characters can still
-                    # overflow the header's byte width and get corrupted on
-                    # write without warning.
-                    if len(value) > header_metadata.length:
-                        raise ValueError(
-                            f"{header!r} value {value.decode()!r} is "
-                            + f"{len(value)} bytes when encoded, exceeding the "
-                            + f"{header_metadata.length}-byte SAC header limit."
-                        )
-
-                # write to file
-                file_handle.seek(start)
-                file_handle.write(struct.pack(header_format, value))
-
-            has_second_block = self.iftype.lower() in ("rlim", "amph") or (
-                not self.leven
-            )
-
-            # write data (if npts > 0)
-            data_1_start = 632
-            data_1_end = data_1_start + self.npts * 4
-            file_handle.truncate(data_1_start)
-            if self.npts > 0:
-                file_handle.seek(data_1_start)
-                file_handle.write(np.asarray(self.data, dtype=np.float32).tobytes())
-
-            data_end = data_1_end
-            if has_second_block:
-                if len(self.data2) != self.npts:
-                    raise ValueError(
-                        f"data2 must have the same length as data ({self.npts=}), "
-                        + f"got {len(self.data2)}."
-                    )
-                data_2_end = data_1_end + self.npts * 4
-                if self.npts > 0:
-                    file_handle.seek(data_1_end)
-                    file_handle.write(
-                        np.asarray(self.data2, dtype=np.float32).tobytes()
-                    )
-                data_end = data_2_end
-
-            if self.nvhdr == 7:
-                for footer, footer_metadata in SAC_FOOTERS.items():
-                    undefined = -12345.0
-                    start = footer_metadata.start + data_end
                     value = None
                     try:
-                        if hasattr(self, footer):
-                            value = getattr(self, footer)
-                    except AttributeError:
+                        if hasattr(self, header):
+                            value = getattr(self, header)
+                    except TypeError:
                         value = None
+
+                    # convert enumerated header to integer if it is not None
+                    if header_type == "i" and value is not None:
+                        value = SAC_ENUMS_DICT[header][value]
 
                     # set None to -12345
                     if value is None:
-                        value = undefined
+                        value = header_undefined
+
+                    # Encode strings to bytes
+                    if isinstance(value, str):
+                        value = value.encode()
+                        # struct.pack silently truncates a "Ns" field to N bytes
+                        # rather than raising. header_metadata.length validators
+                        # (e.g. max_len) only bound the *character* count, so a
+                        # string using multi-byte UTF-8 characters can still
+                        # overflow the header's byte width and get corrupted on
+                        # write without warning.
+                        if len(value) > header_metadata.length:
+                            raise ValueError(
+                                f"{header!r} value {value.decode()!r} is "
+                                + f"{len(value)} bytes when encoded, exceeding the "
+                                + f"{header_metadata.length}-byte SAC header limit."
+                            )
 
                     # write to file
                     file_handle.seek(start)
-                    file_handle.write(struct.pack("d", value))
+                    file_handle.write(struct.pack(header_format, value))
+
+                has_second_block = self.iftype.lower() in ("rlim", "amph") or (
+                    not self.leven
+                )
+
+                # write data (if npts > 0)
+                data_1_start = 632
+                data_1_end = data_1_start + self.npts * 4
+                file_handle.truncate(data_1_start)
+                if self.npts > 0:
+                    file_handle.seek(data_1_start)
+                    file_handle.write(np.asarray(self.data, dtype=np.float32).tobytes())
+
+                data_end = data_1_end
+                if has_second_block:
+                    if len(self.data2) != self.npts:
+                        raise ValueError(
+                            f"data2 must have the same length as data ({self.npts=}), "
+                            + f"got {len(self.data2)}."
+                        )
+                    data_2_end = data_1_end + self.npts * 4
+                    if self.npts > 0:
+                        file_handle.seek(data_1_end)
+                        file_handle.write(
+                            np.asarray(self.data2, dtype=np.float32).tobytes()
+                        )
+                    data_end = data_2_end
+
+                if self.nvhdr == 7:
+                    for footer, footer_metadata in SAC_FOOTERS.items():
+                        undefined = -12345.0
+                        start = footer_metadata.start + data_end
+                        value = None
+                        try:
+                            if hasattr(self, footer):
+                                value = getattr(self, footer)
+                        except AttributeError:
+                            value = None
+
+                        # set None to -12345
+                        if value is None:
+                            value = undefined
+
+                        # write to file
+                        file_handle.seek(start)
+                        file_handle.write(struct.pack("d", value))
+            os.replace(tmp_name, filename)
+        except BaseException:
+            Path(tmp_name).unlink(missing_ok=True)
+            raise
 
     @classmethod
     def from_file(cls, filename: str | PathLike[str]) -> Self:
