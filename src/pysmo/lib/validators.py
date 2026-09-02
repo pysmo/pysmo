@@ -46,9 +46,17 @@ def convert_to_timedelta(
 
 def convert_to_ndarray(
     value: npt.NDArray[Any] | list[Any] | tuple[Any, ...],
-) -> npt.NDArray[Any]:
-    """Convert a value to a [`ndarray`][numpy.ndarray] object."""
-    return np.asanyarray(value)
+) -> npt.NDArray[np.floating]:
+    """Convert a value to a floating-point [`ndarray`][numpy.ndarray] object.
+
+    Non-floating input (e.g. an integer list) is cast to `float64`; floating
+    input keeps its own precision. `np.asarray`, not `np.asanyarray`, so an
+    ndarray subclass (masked array, `np.matrix`) does not leak through.
+    """
+    array = np.asarray(value)
+    if np.issubdtype(array.dtype, np.floating):
+        return array
+    return array.astype(np.float64)
 
 
 def convert_to_complex_list(value: list[complex]) -> list[complex]:
