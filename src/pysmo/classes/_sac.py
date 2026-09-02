@@ -749,10 +749,11 @@ class SAC:
 
         Raises:
             NotImplementedError: If the file isn't evenly-spaced time-series
-                data (IFTYPE=ITIME, LEVEN=True).
+                data (IFTYPE=ITIME, LEVEN=True); the existing instance is left
+                unchanged in this case.
         """
+        _check_seismogram_compatible(SacIO.from_file(filename))
         self.native.read(filename)
-        _check_seismogram_compatible(self.native)
 
     def read_bytes(self, data: bytes) -> None:
         """Read SAC file content as bytes into an existing SAC instance.
@@ -762,10 +763,11 @@ class SAC:
 
         Raises:
             NotImplementedError: If the data isn't evenly-spaced
-                time-series data (IFTYPE=ITIME, LEVEN=True).
+                time-series data (IFTYPE=ITIME, LEVEN=True); the existing
+                instance is left unchanged in this case.
         """
+        _check_seismogram_compatible(SacIO.from_buffer(data))
         self.native.read_buffer(data)
-        _check_seismogram_compatible(self.native)
 
     def write(self, filename: str | PathLike[str]) -> None:
         """Write data and header values to a SAC file.
