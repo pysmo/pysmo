@@ -478,6 +478,7 @@ class SacIO(SacIOBase):
                     try:
                         os.chown(tmp_name, existing.st_uid, existing.st_gid)
                     except OSError:
+                        # Unprivileged and not the owner: keep our own uid/gid.
                         pass
             else:
                 os.chmod(tmp_name, 0o666 & ~_current_umask())
