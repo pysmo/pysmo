@@ -31,6 +31,16 @@ All notable changes to the **pysmo** project will be documented in this file.
 - [**breaking**] Correct signal processing, sacio, and I/O parsing bugs from code review
 - **(project)** Discard cache write when parameters change mid-fetch
 - **(web)** Fetch SAC PZ from fdsnws-station, not the dead irisws-sacpz
+- **(signal)** Correct delay() correlation coefficient when max_shift is set
+- **(sacio)** Clamp gcarc argument and bulk-write data blocks
+- **(validators)** Coerce seismogram data to a floating dtype
+- Tighten coordinate, timestamp, and window validation
+- Clearer error messages in parsers and the filter dispatcher
+- **(iccs)** Guard convergence NaN and align the min_cc picker
+- Correctness edge cases in clone_to_mini, traveltime, and I/O
+- Harden SAC I/O, model parsing, and the project checksum path
+- Preserve mode, ownership and symlinks in SacIO.write
+- Address PR review feedback
 
 ### 📚 Documentation
 
@@ -74,6 +84,8 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(classes)** Rename StationXML to StationXMLResponse
 - [**breaking**] Stricter typing, explicit numpy array types, lint hardening
 - [**breaking**] Drop @runtime_checkable from protocol types
+- **(plotutils)** [**breaking**] Plotseis returns the figure without displaying it
+- Cosmetic cleanups from the review
 
 ### 🚀 New Features
 
@@ -96,6 +108,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(classes)** [**breaking**] Add miniSEED support via pymseed
 - **(traveltime)** [**breaking**] In-house tau-p solver replacing the retired EarthScope service
 - **(traveltime)** Resolve upper-mantle triplications to the first arrival
+- **(quakeml)** Add strict=False to skip unrepresentable events
 
 ### 🧪 Testing
 
