@@ -255,6 +255,15 @@ def test_distance_out_of_range_raises(distance: float) -> None:
         travel_times(depth=22900.0, distance=distance, phases=["P"])
 
 
+def test_source_at_the_cmb_omits_turning_phases() -> None:
+    """A source right at the CMB has no turning-ray branch; solve must not blow up."""
+    from pysmo.tools.traveltime._model import cmb_depth_km
+
+    cmb_m = cmb_depth_km("iasp91") * 1000.0
+    result = travel_times(depth=cmb_m, distance=60.0, phases=["P", "S", "PcP"])
+    assert "P" not in result and "S" not in result
+
+
 def test_source_at_surface_and_60_degrees_match_reference() -> None:
     result = travel_times(depth=0.0, distance=60.0, phases=["P", "S"])
 
