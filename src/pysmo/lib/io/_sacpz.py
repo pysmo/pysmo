@@ -108,7 +108,13 @@ def _parse_complex_block(
     for _ in range(count):
         if index >= len(lines):
             raise ValueError(f"Unexpected end of text while parsing '{keyword}' block.")
-        real, imag = (_parse_float(part) for part in lines[index].split())
+        parts = lines[index].split()
+        if len(parts) != 2:
+            raise ValueError(
+                f"'{keyword}' entry at line {index + 1} must be a 'real imag' "
+                + f"pair, got {lines[index].strip()!r}."
+            )
+        real, imag = (_parse_float(part) for part in parts)
         values.append(complex(real, imag))
         index += 1
     return values, index

@@ -142,3 +142,10 @@ class TestParseSacpz:
         )
         with pytest.raises(ValueError, match="Unexpected end of text"):
             parse_sacpz(text)
+
+    def test_malformed_pole_zero_line_names_the_line(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "\t-1.000000e-02\t+0.000000e+00", "\t-1.000000e-02"
+        )
+        with pytest.raises(ValueError, match=r"'POLES' entry at line \d+ must be"):
+            parse_sacpz(text)

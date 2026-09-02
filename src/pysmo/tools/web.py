@@ -180,7 +180,7 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         timeout_seconds=_ServiceDefaults.timeout_seconds,
         request_retries=_ServiceDefaults.request_retries,
         retry_delay_seconds=_ServiceDefaults.retry_delay_seconds,
-    ).decode("ascii")
+    ).decode("utf-8")
 
 
 def _fetch_dataselect(
