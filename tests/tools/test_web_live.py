@@ -81,7 +81,7 @@ def test_fetch_seismogram_live(station: MiniStation, event: MiniEvent) -> Figure
     assert seismogram.begin_time < predicted_p < seismogram.end_time
 
     detrend(seismogram)
-    fig = plotseis(seismogram, showfig=False, linewidth=0.5)
+    fig = plotseis(seismogram, linewidth=0.5)
     fig.gca().axvline(
         date2num(predicted_p), color="red", linestyle="--", label="predicted P"
     )
