@@ -976,7 +976,8 @@ def window[T: Seismogram](
         Windowed [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
 
     Raises:
-        ValueError: If the ramp extends beyond the seismogram on either side.
+        ValueError: If `window_end_time` is not after `window_begin_time`, or
+            the ramp extends beyond the seismogram on either side.
 
     Examples:
         In this example we focus on a window starting 600 seconds after the
@@ -1024,6 +1025,9 @@ def window[T: Seismogram](
     """
 
     begin_time, end_time = seismogram.begin_time, seismogram.end_time
+
+    if window_end_time <= window_begin_time:
+        raise ValueError("window_end_time must be after window_begin_time.")
 
     window_duration = window_end_time - window_begin_time
     ramp_duration = (

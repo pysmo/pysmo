@@ -40,7 +40,7 @@ def copy_from_mini(
 
     update = update or {}
 
-    attributes = unstructure(source).keys() | set()
+    attributes = set(unstructure(source).keys())
     attributes.update(update.keys())
 
     if not all(hasattr(target, x) for x in attributes):
