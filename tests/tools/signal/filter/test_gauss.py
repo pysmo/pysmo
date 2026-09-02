@@ -89,5 +89,5 @@ def test_plot_gauss_env(sac_seismogram: Seismogram) -> matplotlib.figure.Figure:
     seismogram.data = seismogram.data - np.mean(seismogram.data)
     gauss_seis = gauss(seismogram, fc, alpha, clone=True)
     env_seis = envelope(seismogram, fc, alpha, clone=True)
-    fig = plotseis(seismogram, gauss_seis, env_seis, showfig=False)
+    fig = plotseis(seismogram, gauss_seis, env_seis)
     return fig
