@@ -62,10 +62,22 @@ def test_convert_to_ndarray_from_tuple() -> None:
     np.testing.assert_array_equal(arr, np.array([1, 2, 3]))
 
 
-def test_convert_to_ndarray_passthrough() -> None:
-    original = np.array([1, 2, 3])
+def test_convert_to_ndarray_casts_integer_to_float() -> None:
+    assert convert_to_ndarray([1, 2, 3]).dtype == np.float64
+    assert convert_to_ndarray(np.array([1, 2, 3], dtype=np.int32)).dtype == np.float64
+
+
+def test_convert_to_ndarray_preserves_float_dtype_and_identity() -> None:
+    original = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     arr = convert_to_ndarray(original)
     assert arr is original
+    assert arr.dtype == np.float32
+
+
+def test_convert_to_ndarray_rejects_ndarray_subclass_passthrough() -> None:
+    masked = np.ma.array([1.0, 2.0, 3.0], mask=[False, True, False])
+    arr = convert_to_ndarray(masked)
+    assert type(arr) is np.ndarray
 
 
 # ─────────────────────── Property-based tests ───────────────────────────────
