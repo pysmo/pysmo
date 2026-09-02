@@ -80,7 +80,7 @@ def filter[T: Seismogram](
         valid_filters = ", ".join(_FILTER_REGISTRY.keys())
         raise ValueError(
             f"Filter '{filter_name}' is not registered. Available: {valid_filters}"
-        )
+        ) from None
 
     if clone:
         return filter_func(seismogram, clone=True, **filter_options)

@@ -26,10 +26,25 @@ def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timesta
 
     ts = pd.Timestamp(value)
 
+    if pd.isna(ts):
+        raise ValueError(f"{value!r} is not a valid timestamp.")
+
     if ts.tz is None:
         return ts.tz_localize(UTC)
 
     return ts.tz_convert(UTC)
+
+
+def convert_to_longitude(value: float | str) -> float:
+    """Convert a value to a `float` longitude in degrees, folding -180 onto +180.
+
+    -180 and +180 name the same meridian; +180 is kept as the single
+    canonical value so two spellings of the antimeridian cannot compare
+    unequal. Values genuinely outside `[-180, 180]` are returned unchanged
+    for a downstream validator to reject.
+    """
+    longitude = float(value)
+    return 180.0 if longitude == -180.0 else longitude
 
 
 def convert_to_timedelta(
@@ -46,9 +61,17 @@ def convert_to_timedelta(
 
 def convert_to_ndarray(
     value: npt.NDArray[Any] | list[Any] | tuple[Any, ...],
-) -> npt.NDArray[Any]:
-    """Convert a value to a [`ndarray`][numpy.ndarray] object."""
-    return np.asanyarray(value)
+) -> npt.NDArray[np.floating]:
+    """Convert a value to a floating-point [`ndarray`][numpy.ndarray] object.
+
+    Non-floating input (e.g. an integer list) is cast to `float64`; floating
+    input keeps its own precision. `np.asarray`, not `np.asanyarray`, so an
+    ndarray subclass (masked array, `np.matrix`) does not leak through.
+    """
+    array = np.asarray(value)
+    if np.issubdtype(array.dtype, np.floating):
+        return array
+    return array.astype(np.float64)
 
 
 def convert_to_complex_list(value: list[complex]) -> list[complex]:

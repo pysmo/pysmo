@@ -128,6 +128,45 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     assert cc_delay == -rand_int * seismogram1.delta
 
 
+def test_delay_max_shift_correlation_coefficient() -> None:
+    """The cc returned with `max_shift` is computed from real samples, not padding.
+
+    Regression test: `delay` used to reuse the zero-padded working array for
+    the post-alignment overlap, so the cc came out near zero even for a
+    perfect match once `max_shift` was set.
+    """
+    rng = np.random.default_rng(0)
+    base = rng.normal(size=2000)
+    seismogram1 = MiniSeismogram(data=base.copy(), delta=pd.Timedelta(seconds=1))
+
+    # positive shift: data2 lags data1 by 50 samples
+    seismogram2 = MiniSeismogram(data=np.roll(base, 50), delta=pd.Timedelta(seconds=1))
+    cc_delay, cc_coeff = delay(
+        seismogram1, seismogram2, max_shift=pd.Timedelta(seconds=100)
+    )
+    assert cc_delay == pd.Timedelta(seconds=50)
+    assert cc_coeff == pytest.approx(1.0)
+
+    # negative shift: data1 lags data3 by 37 samples
+    seismogram3 = MiniSeismogram(data=np.roll(base, -37), delta=pd.Timedelta(seconds=1))
+    cc_delay, cc_coeff = delay(
+        seismogram1, seismogram3, max_shift=pd.Timedelta(seconds=100)
+    )
+    assert cc_delay == pd.Timedelta(seconds=-37)
+    assert cc_coeff == pytest.approx(1.0)
+
+    # anti-correlated, polarity-insensitive
+    seismogram4 = MiniSeismogram(data=-np.roll(base, 50), delta=pd.Timedelta(seconds=1))
+    cc_delay, cc_coeff = delay(
+        seismogram1,
+        seismogram4,
+        max_shift=pd.Timedelta(seconds=100),
+        abs_max=True,
+    )
+    assert cc_delay == pd.Timedelta(seconds=50)
+    assert cc_coeff == pytest.approx(-1.0)
+
+
 # --- multi_delay tests ---
 
 

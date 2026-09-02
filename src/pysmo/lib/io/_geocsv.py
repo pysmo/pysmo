@@ -172,10 +172,10 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
         The dataset as a waveform segment.
 
     Raises:
-        ValueError: If a required timeseries header is missing, no numeric
-            `field_type` column is found, or the number of data rows does
-            not match the declared `sample_count` (e.g. a truncated
-            response).
+        ValueError: If a required timeseries header is missing or
+            unparseable, no numeric `field_type` column is found, a sample
+            value is non-numeric, or the number of data rows does not match
+            the declared `sample_count` (e.g. a truncated response).
     """
     headers = dataset.headers
     try:
@@ -186,6 +186,10 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
     except KeyError as error:
         raise ValueError(
             f"GeoCSV dataset is missing required timeseries header {error}."
+        ) from error
+    except ValueError as error:
+        raise ValueError(
+            f"GeoCSV dataset has an unparseable timeseries header: {error}."
         ) from error
 
     if dataset.rows:
@@ -198,6 +202,11 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
             raise ValueError(
                 f"GeoCSV dataset row has fewer than {sample_column + 1} fields; "
                 + "cannot locate the sample column declared by 'field_type'."
+            ) from error
+        except ValueError as error:
+            raise ValueError(
+                "GeoCSV dataset has a non-numeric value in the sample column: "
+                + f"{error}."
             ) from error
     else:
         data = np.array([], dtype=np.float64)

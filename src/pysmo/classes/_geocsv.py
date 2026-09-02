@@ -146,7 +146,8 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
         )
         return cls(
             begin_time=segment.start_time,
-            delta=pd.Timedelta(seconds=1.0 / segment.sample_rate_hz),
+            # integer ns keeps sub-microsecond precision the float form loses
+            delta=pd.Timedelta(round(1_000_000_000 / segment.sample_rate_hz), "ns"),
             data=segment.data,
             sourceid=segment.sourceid,
         )

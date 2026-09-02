@@ -44,6 +44,7 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
     Raises:
         ValueError: If an empty sequence is provided as input.
         ValueError: If `min_length` is not between 1 and 36.
+        ValueError: If `uuids` contains a duplicate.
 
     Examples:
         ```python
@@ -70,12 +71,15 @@ def uuid_shortener(uuids: Sequence[UUID], min_length: int = 4) -> dict[str, UUID
     if not (1 <= min_length <= UUID_LENGTH):
         raise ValueError(f"min_length must be between 1 and {UUID_LENGTH}.")
 
+    if len(set(uuids)) != len(uuids):
+        raise ValueError("uuids must not contain duplicates.")
+
     for length in range(min_length, UUID_LENGTH + 1):
         shortened = [u[:length] for u in map(str, uuids)]
         if len(set(shortened)) == len(uuids):
             return dict(zip(shortened, uuids))
 
-    # Fallback to full UUIDs if necessary (like that's going to happen...)
+    # Unreachable: distinct full UUIDs always resolve in the loop above.
     return {str(u): u for u in uuids}
 
 

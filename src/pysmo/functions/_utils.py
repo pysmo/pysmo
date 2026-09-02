@@ -40,7 +40,7 @@ def copy_from_mini(
 
     update = update or {}
 
-    attributes = unstructure(source).keys() | set()
+    attributes = set(unstructure(source).keys())
     attributes.update(update.keys())
 
     if not all(hasattr(target, x) for x in attributes):
@@ -111,20 +111,20 @@ def clone_to_mini[TMini: _AnyMini](
 
     update = update or {}
 
-    if all(
+    if not all(
         (hasattr(source, x.name) or x.name in update or x.default is not NOTHING)
         for x in fields(mini_cls)
     ):
-        clone_dict = {
-            attr.name: (
-                update[attr.name]
-                if attr.name in update
-                else copy(getattr(source, attr.name, attr.default))
-            )
-            for attr in fields(mini_cls)
-        }
-        return mini_cls(**clone_dict)
+        raise AttributeError(
+            f"Unable to create clone: {source} not compatible with {mini_cls}."
+        )
 
-    raise AttributeError(
-        f"Unable to create clone: {source} not compatible with {mini_cls}."
-    )
+    # Omit a field the source lacks so mini_cls applies its own default:
+    # passing attr.default would hand a Factory object to the constructor.
+    clone_dict: dict[str, Any] = {}
+    for attr in fields(mini_cls):
+        if attr.name in update:
+            clone_dict[attr.name] = update[attr.name]
+        elif hasattr(source, attr.name):
+            clone_dict[attr.name] = copy(getattr(source, attr.name))
+    return mini_cls(**clone_dict)

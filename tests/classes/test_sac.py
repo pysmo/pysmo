@@ -107,14 +107,19 @@ class TestSAC:
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
+        npts_before = len(sac.seismogram.data)
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
             sac.read(IRLIM_FIXTURE)
+        # a rejected read must not have disturbed the existing instance
+        assert len(sac.seismogram.data) == npts_before
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_bytes_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
+        npts_before = len(sac.seismogram.data)
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
             sac.read_bytes(IRLIM_FIXTURE.read_bytes())
+        assert len(sac.seismogram.data) == npts_before
 
     @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:
@@ -219,6 +224,9 @@ class TestSAC:
             sacstation.latitude = bad_latitude
         with pytest.raises(ValueError):
             sacstation.longitude = bad_longitude
+        # the antimeridian is a valid longitude (SacIO validates -180..180)
+        sacstation.longitude = -180
+        assert sacstation.longitude == -180
 
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station

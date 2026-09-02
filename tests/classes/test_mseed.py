@@ -1,6 +1,7 @@
 """Tests for pysmo.classes.MSeed and pysmo.lib.io.write_mseed."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import numpy.testing as npt
@@ -285,7 +286,9 @@ class TestWrite:
         identity = MiniStationCode(
             name="ANMO", network="IU", location="00", channel="BHZ"
         )
-        seismogram = MiniSeismogram(
+        # MiniSeismogram coerces its data to float, so use a bare stand-in to
+        # get an int16 array in front of write_mseed's dtype guard.
+        seismogram = SimpleNamespace(
             begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
             delta=pd.Timedelta(seconds=0.05),
             data=np.array([1, 2, 3], dtype=np.int16),
