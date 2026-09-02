@@ -30,7 +30,7 @@ def test_convert_to_longitude() -> None:
     assert convert_to_longitude(-180.0) == 180.0
     assert convert_to_longitude(180) == 180.0
     assert convert_to_longitude(-179.9) == -179.9
-    assert convert_to_longitude("45") == 45.0  # type: ignore[arg-type]
+    assert convert_to_longitude("45") == 45.0
     # out of range: passed through unchanged for a downstream validator
     assert convert_to_longitude(-180.5) == -180.5
     assert convert_to_longitude(200) == 200.0

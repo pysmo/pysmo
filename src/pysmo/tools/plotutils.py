@@ -150,6 +150,9 @@ def plotseis(
     Returns:
         The matplotlib [`Figure`][matplotlib.figure.Figure] containing the plot.
 
+    Raises:
+        TypeError: If the removed `showfig` keyword is passed.
+
     Examples:
         ```python
         >>> from pysmo.classes import SAC
@@ -159,6 +162,11 @@ def plotseis(
         >>>
         ```
     """
+    if "showfig" in kwargs:
+        raise TypeError(
+            "plotseis() no longer accepts 'showfig'; it always returns the "
+            + "Figure without displaying it. Call fig.show() yourself."
+        )
     fig = plt.figure()
     any_labelled = False
     for seis in seismograms:
