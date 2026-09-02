@@ -188,6 +188,16 @@ class TestExtractGeocsvTimeseries:
         with pytest.raises(ValueError, match="declares sample_count 5"):
             extract_geocsv_timeseries(parse_geocsv(truncated)[0])
 
+    def test_unparseable_sample_count_header(self) -> None:
+        bad = SIMPLE.replace("# sample_count: 3", "# sample_count: 3.0")
+        with pytest.raises(ValueError, match="unparseable timeseries header"):
+            extract_geocsv_timeseries(parse_geocsv(bad)[0])
+
+    def test_non_numeric_sample_value(self) -> None:
+        bad = SIMPLE.replace("2010-02-27T06:30:01Z, 2", "2010-02-27T06:30:01Z, oops")
+        with pytest.raises(ValueError, match="non-numeric value in the sample column"):
+            extract_geocsv_timeseries(parse_geocsv(bad)[0])
+
     def test_missing_sourceid(self) -> None:
         text = (
             "# dataset: GeoCSV 2.0\n"

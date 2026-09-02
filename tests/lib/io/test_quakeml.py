@@ -138,6 +138,18 @@ class TestParseQuakeml:
         with pytest.raises(ValueError, match=r"smi:e/bad1.*2 events"):
             parse_quakeml(doc)
 
+    def test_strict_false_skips_bad_events_and_warns(self) -> None:
+        doc = _doc(
+            _event(public_id="smi:e/good1")
+            + "\n"
+            + _event(public_id="smi:e/bad", origins=_origin(depth=None))
+            + "\n"
+            + _event(public_id="smi:e/good2")
+        )
+        with pytest.warns(UserWarning, match=r"Skipped 1 unrepresentable.*smi:e/bad"):
+            events = parse_quakeml(doc, strict=False)
+        assert [e.public_id for e in events] == ["smi:e/good1", "smi:e/good2"]
+
     def test_no_pointer_and_multiple_origins_raises(self) -> None:
         origins = _origin(public_id="smi:o/A") + _origin(public_id="smi:o/B")
         with pytest.raises(ValueError, match="ambiguous preferred origin"):

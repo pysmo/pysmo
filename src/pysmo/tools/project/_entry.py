@@ -22,6 +22,10 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     [`PysmoProject`][pysmo.tools.project.PysmoProject] for how the window is
     actually resolved.
 
+    At least one of (`event`, an explicit `starttime`/`endtime` pair) is
+    required; a lone `starttime` or `endtime`, or a `starttime` at or after
+    `endtime`, raises `ValueError` at construction.
+
     Generic over the station and event types it was built with, so a
     [`PysmoProject`][pysmo.tools.project.PysmoProject] built from a list of
     entries keeps those concrete types (e.g. `project.events` comes back as
@@ -73,6 +77,24 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     fine; sharing them without being aware their checksum state is joint,
     not per-project, is the surprise to avoid.
     """
+
+    def __attrs_post_init__(self) -> None:
+        """Reject a window that is only half-specified, reversed, or absent with no event."""
+        if (self.starttime is None) != (self.endtime is None):
+            raise ValueError(
+                "ProjectEntry needs both starttime and endtime, or neither."
+            )
+        if (
+            self.starttime is not None
+            and self.endtime is not None
+            and self.starttime >= self.endtime
+        ):
+            raise ValueError("ProjectEntry starttime must be before endtime.")
+        if self.event is None and self.starttime is None:
+            raise ValueError(
+                "ProjectEntry needs an explicit starttime/endtime window or an "
+                + "event to derive one from."
+            )
 
 
 def build_entries[TStation: Station, TEvent: Event](

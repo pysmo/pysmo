@@ -33,8 +33,10 @@ class TestMiniLocation:
         minilocation.longitude = -179.9
         minilocation.longitude = 180
         assert minilocation.longitude == 180
+        minilocation.longitude = -180  # the antimeridian, canonicalised to +180
+        assert minilocation.longitude == 180
         with pytest.raises(ValueError):
-            minilocation.longitude = -180
+            minilocation.longitude = -180.5
         with pytest.raises(ValueError):
             minilocation.longitude = 181
 

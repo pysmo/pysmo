@@ -82,18 +82,27 @@ def _read_model_rows(model: Model) -> tuple[_ModelRow, ...]:
     """Parse a model's `.tvel` file into `_ModelRow` records."""
     path = _DATA_DIR / f"{model}.tvel"
     rows: list[_ModelRow] = []
-    with path.open() as source:
-        for line in source:
-            parts = line.split()
-            if len(parts) == 4:
-                rows.append(
-                    _ModelRow(
-                        depth_km=float(parts[0]),
-                        vp=float(parts[1]),
-                        vs=float(parts[2]),
-                        rho=float(parts[3]),
-                    )
-                )
+    # A .tvel file opens with exactly two free-text comment lines; every
+    # line after that is a `depth vp vs rho` row.
+    for line_number, line in enumerate(path.read_text().splitlines()[2:], start=3):
+        parts = line.split()
+        if not parts:
+            continue
+        if len(parts) != 4:
+            raise ValueError(
+                f"{path.name} line {line_number}: expected 'depth vp vs rho', "
+                + f"got {line.strip()!r}."
+            )
+        rows.append(
+            _ModelRow(
+                depth_km=float(parts[0]),
+                vp=float(parts[1]),
+                vs=float(parts[2]),
+                rho=float(parts[3]),
+            )
+        )
+    if len(rows) < 2 or any(b.depth_km < a.depth_km for a, b in pairwise(rows)):
+        raise ValueError(f"{path.name}: needs >=2 rows of non-decreasing depth.")
     return tuple(rows)
 
 
@@ -230,9 +239,9 @@ def _layer_integrals_vec(
 
     The same closed forms as the scalar version, one `(tau, delta)` pair
     per layer. This is the hot path: `integrate` calls it once per ray
-    parameter over every layer above the turning point. Layers below the
-    turning point (`u < p`) are clamped to zero and masked out by the
-    caller.
+    parameter over every layer above the turning point, and only sums the
+    layers it knows lie above it — the closed form itself is not valid for a
+    layer below the turning point, so a caller must not sum one.
 
     Args:
         u1: Slowness at the top of each layer, in seconds per kilometre.

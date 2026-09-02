@@ -157,6 +157,8 @@ def _travel_time(
     """
     p_min = profile.u_at(z_cmb) * (1 + _GRAZING_MARGIN)
     p_max = profile.u_at(z_s) * (1 - _GRAZING_MARGIN)
+    if p_min >= p_max:
+        return None  # source at the CMB: no room for a turning ray
 
     def turning_delta(p: float) -> float | None:
         return _down_going_delta(profile, z_s, p)

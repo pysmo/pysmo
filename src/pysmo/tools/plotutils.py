@@ -132,22 +132,26 @@ def relative_time_array(
 def plotseis(
     *seismograms: Seismogram,
     outfile: str = "",
-    showfig: bool = True,
     title: str = "",
     **kwargs: Any,
 ) -> matplotlib.figure.Figure:
     """Plot Seismogram objects.
 
+    Returns the [`Figure`][matplotlib.figure.Figure] without displaying it;
+    call `fig.show()` or integrate it into your own application.
+
     Args:
         seismograms: One or more seismogram objects. If a 'label' attribute is
             found it will be used to label the trace in the plot.
         outfile: Optionally save figure to this filename.
-        showfig: Display figure.
         title: Optionally set figure title.
         kwargs: Optional keyword arguments passed directly to `matplotlib.pyplot.plot`.
 
     Returns:
         The matplotlib [`Figure`][matplotlib.figure.Figure] containing the plot.
+
+    Raises:
+        TypeError: If the removed `showfig` keyword is passed.
 
     Examples:
         ```python
@@ -158,6 +162,11 @@ def plotseis(
         >>>
         ```
     """
+    if "showfig" in kwargs:
+        raise TypeError(
+            "plotseis() no longer accepts 'showfig'; it always returns the "
+            + "Figure without displaying it. Call fig.show() yourself."
+        )
     fig = plt.figure()
     any_labelled = False
     for seis in seismograms:
@@ -179,6 +188,4 @@ def plotseis(
         plt.legend()
     if outfile:
         plt.savefig(outfile)
-    if showfig:
-        plt.show()
     return fig

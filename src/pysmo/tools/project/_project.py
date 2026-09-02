@@ -461,13 +461,20 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                     cached = fresh
 
         checksum, result = cached
-        if entry.checksum is None:
-            entry.checksum = checksum
-        elif entry.checksum != checksum and self.on_checksum_mismatch != "ignore":
+        with self._lock:
+            recorded = entry.checksum
+            if recorded is None:
+                entry.checksum = checksum
+        if (
+            recorded is not None
+            and recorded != checksum
+            and (self.on_checksum_mismatch != "ignore")
+        ):
             message = (
                 f"Fetched data for {entry.station.network}.{entry.station.name} "
                 + "no longer matches the checksum recorded when this entry was "
-                + "first fetched — the underlying archive may have been revised."
+                + "first fetched — the archive was revised, or fetch_seismogram "
+                + "now yields the same samples in a different dtype."
             )
             if self.on_checksum_mismatch == "raise":
                 raise ValueError(message)

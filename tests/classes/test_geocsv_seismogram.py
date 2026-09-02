@@ -47,6 +47,13 @@ class TestGeoCsvSeismogram:
         seismogram = GeoCsvSeismogram.from_text(TEXT)
         assert seismogram.end_time == pd.Timestamp("2010-02-27T06:30:01Z")
 
+    def test_delta_rounds_to_nearest_nanosecond(self) -> None:
+        text = TEXT.replace("# sample_rate_hz: 2.0", "# sample_rate_hz: 7.0")
+        seismogram = GeoCsvSeismogram.from_text(text)
+        # 1e9 / 7 = 142857142.857...; nearest ns is ...143, not the ...142
+        # a float `1.0 / 7` reciprocal would give.
+        assert seismogram.delta.value == 142_857_143
+
     def test_from_text_multi_dataset(self) -> None:
         continuation = TEXT.replace(
             "start_time: 2010-02-27T06:30:00Z", "start_time: 2010-02-27T06:30:01.5Z"

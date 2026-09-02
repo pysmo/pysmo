@@ -218,8 +218,8 @@ def delay(
 
     if max_shift is not None:
         max_lag_in_samples = math.ceil(max_shift / delta)
-        data1 = np.pad(data1, max_lag_in_samples)
-        corr = _correlate(data1, data2, mode="valid")
+        # Pad only the correlation input; the overlap cc below needs real samples.
+        corr = _correlate(np.pad(data1, max_lag_in_samples), data2, mode="valid")
     else:
         corr = _correlate(data1, data2, mode="full")
 

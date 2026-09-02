@@ -16,8 +16,15 @@ def test_plotutils_plotseis(
 ) -> Figure:
     from pysmo.tools.plotutils import plotseis
 
-    fig = plotseis(*seismograms, showfig=False, linewidth=0.5)  # type: ignore
+    fig = plotseis(*seismograms, linewidth=0.5)  # type: ignore
     return fig
+
+
+def test_plotseis_rejects_showfig(seismograms: list[Seismogram]) -> None:
+    from pysmo.tools.plotutils import plotseis
+
+    with pytest.raises(TypeError, match="no longer accepts 'showfig'"):
+        plotseis(*seismograms, showfig=True)  # type: ignore[call-arg]
 
 
 class TestPlotseisFunctions:
