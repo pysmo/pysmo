@@ -35,7 +35,7 @@ def convert_to_utc_timestamp(value: pd.Timestamp | datetime | str) -> pd.Timesta
     return ts.tz_convert(UTC)
 
 
-def convert_to_longitude(value: float) -> float:
+def convert_to_longitude(value: float | str) -> float:
     """Convert a value to a `float` longitude in degrees, folding -180 onto +180.
 
     -180 and +180 name the same meridian; +180 is kept as the single

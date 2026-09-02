@@ -20,6 +20,13 @@ def test_plotutils_plotseis(
     return fig
 
 
+def test_plotseis_rejects_showfig(seismograms: list[Seismogram]) -> None:
+    from pysmo.tools.plotutils import plotseis
+
+    with pytest.raises(TypeError, match="no longer accepts 'showfig'"):
+        plotseis(*seismograms, showfig=True)  # type: ignore[call-arg]
+
+
 class TestPlotseisFunctions:
     def test_time_array(self, seismogram: Seismogram) -> None:
         """Get times from Seismogram object and verify them."""
