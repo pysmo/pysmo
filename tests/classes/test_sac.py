@@ -219,6 +219,9 @@ class TestSAC:
             sacstation.latitude = bad_latitude
         with pytest.raises(ValueError):
             sacstation.longitude = bad_longitude
+        # the antimeridian is a valid longitude (SacIO validates -180..180)
+        sacstation.longitude = -180
+        assert sacstation.longitude == -180
 
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station

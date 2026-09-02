@@ -38,8 +38,8 @@ def envelope[T: Seismogram](
         Seismogram containing the envelope.
 
     Raises:
-        ValueError: If `seismogram.data` is empty, or `seismogram.delta` is
-            not positive.
+        ValueError: If `seismogram.data` is empty, `seismogram.delta` is not
+            positive, or `fc`/`alpha` is not positive.
 
     Examples:
         ```python
@@ -87,8 +87,8 @@ def gauss[T: Seismogram](
         Gaussian filtered seismogram.
 
     Raises:
-        ValueError: If `seismogram.data` is empty, or `seismogram.delta` is
-            not positive.
+        ValueError: If `seismogram.data` is empty, `seismogram.delta` is not
+            positive, or `fc`/`alpha` is not positive.
 
     Examples:
         ```python
@@ -132,6 +132,10 @@ def _gauss(
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot apply a Gaussian filter to an empty seismogram.")
+    if fc <= 0:
+        raise ValueError("Centre frequency 'fc' must be positive.")
+    if alpha <= 0:
+        raise ValueError("Shape parameter 'alpha' must be positive.")
     dt = seismogram.delta.total_seconds()
     if dt <= 0:
         raise ValueError("Seismogram delta must be positive.")
