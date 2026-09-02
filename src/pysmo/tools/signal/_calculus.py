@@ -24,7 +24,9 @@ def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | N
     Multiplies the FFT of `seismogram.data` by $i\omega$ at each
     [`rfftfreq`][numpy.fft.rfftfreq] bin, then inverse transforms back to the
     time domain. The DC bin is correctly zeroed ($i\omega = 0$), since a
-    constant offset differentiates to zero.
+    constant offset differentiates to zero. For an even-length signal the
+    Nyquist bin is dropped: `irfft` requires it to be real, and $i\omega$
+    makes it imaginary.
 
     Args:
         seismogram: Seismogram object.
