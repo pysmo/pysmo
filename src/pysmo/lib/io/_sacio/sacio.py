@@ -233,12 +233,11 @@ class SacIO(SacIOBase):
         ):
             lat1, lon1 = np.deg2rad(self.stla), np.deg2rad(self.stlo)
             lat2, lon2 = np.deg2rad(self.evla), np.deg2rad(self.evlo)
-            return np.rad2deg(
-                np.arccos(
-                    np.sin(lat1) * np.sin(lat2)
-                    + np.cos(lat1) * np.cos(lat2) * np.cos(np.abs(lon1 - lon2))
-                )
-            )
+            cos_angle = np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(
+                lat2
+            ) * np.cos(np.abs(lon1 - lon2))
+            # Clamp: rounding can push this just past ±1, making arccos NaN.
+            return np.rad2deg(np.arccos(np.clip(cos_angle, -1.0, 1.0)))
         raise TypeError("One or more coordinates are None.")
 
     @property
@@ -416,8 +415,7 @@ class SacIO(SacIOBase):
             file_handle.truncate(data_1_start)
             if self.npts > 0:
                 file_handle.seek(data_1_start)
-                for x in self.data:
-                    file_handle.write(struct.pack("f", x))
+                file_handle.write(np.asarray(self.data, dtype=np.float32).tobytes())
 
             data_end = data_1_end
             if has_second_block:
@@ -429,8 +427,9 @@ class SacIO(SacIOBase):
                 data_2_end = data_1_end + self.npts * 4
                 if self.npts > 0:
                     file_handle.seek(data_1_end)
-                    for x in self.data2:
-                        file_handle.write(struct.pack("f", x))
+                    file_handle.write(
+                        np.asarray(self.data2, dtype=np.float32).tobytes()
+                    )
                 data_end = data_2_end
 
             if self.nvhdr == 7:

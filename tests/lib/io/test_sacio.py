@@ -919,6 +919,20 @@ def test_computed_geo_properties_with_zero_coordinates() -> None:
     assert isinstance(sac.gcarc, float)
 
 
+def test_gcarc_coincident_coordinates_is_zero_not_nan() -> None:
+    """A coincident station/event gives gcarc 0, not NaN from an unclamped arccos."""
+    # This lat/lon pair pushes the law-of-cosines cosine just above 1.0 in
+    # floating point; without clamping, arccos returns NaN.
+    sac = SacIO(
+        stla=75.30769230769229,
+        stlo=-179.0,
+        evla=75.30769230769229,
+        evlo=-179.0,
+        b=0.0,
+    )
+    assert sac.gcarc == pytest.approx(0.0, abs=1e-6)
+
+
 def test_computed_geo_properties_raises_when_none() -> None:
     """dist/az/baz/gcarc must raise TypeError when any coordinate is genuinely None."""
     sac = SacIO()
