@@ -33,6 +33,20 @@ class TestUtilsFunctions:
         with pytest.raises(AttributeError):
             mini_clone = clone_to_mini(MiniStation, mini_seismogram)  # type: ignore
 
+    def test_clone_to_mini_source_missing_factory_field(self) -> None:
+        """A source lacking a factory-defaulted field gets the factory's value, not a Factory object."""
+        from types import SimpleNamespace
+
+        from pysmo.functions import clone_to_mini
+
+        # no `data` attribute; MiniSeismogram.data has factory=lambda: np.array([])
+        source = SimpleNamespace(
+            begin_time=pd.Timestamp("2020-01-01", tz=UTC),
+            delta=pd.Timedelta(seconds=1),
+        )
+        clone = clone_to_mini(MiniSeismogram, source)  # type: ignore[type-var]
+        assert len(clone.data) == 0
+
     def test_copy_from_mini(self, sac_instance: SAC) -> None:
         from pysmo.functions import clone_to_mini, copy_from_mini
 

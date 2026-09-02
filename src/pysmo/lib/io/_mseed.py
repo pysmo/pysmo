@@ -117,7 +117,8 @@ def write_mseed(
     encodings: set[DataEncoding] = set()
 
     for identity, seismogram in segments:
-        data = np.asarray(seismogram.data)
+        # pymseed reads a raw C buffer; materialise any non-contiguous view.
+        data = np.ascontiguousarray(seismogram.data)
         resolved_type = sample_type or _sample_type_for(data)
         if (
             sample_type is not None
@@ -140,7 +141,7 @@ def write_mseed(
             sourceid=sourceid,
             data_samples=data,
             sample_type=resolved_type,
-            sample_rate=1.0 / seismogram.delta.total_seconds(),
+            sample_rate=1_000_000_000 / seismogram.delta.value,
             starttime=seismogram.begin_time.value,
             publication_version=1,
         )
