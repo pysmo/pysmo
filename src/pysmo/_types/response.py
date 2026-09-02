@@ -249,6 +249,7 @@ class MiniResponseStage:
 
     numerator: list[float] = field(
         converter=_convert_float_list,
+        validator=validators.min_len(1),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Feedforward ("b") filter coefficients.
@@ -259,6 +260,7 @@ class MiniResponseStage:
     denominator: list[float] = field(
         factory=lambda: [1.0],
         converter=_convert_float_list,
+        validator=validators.min_len(1),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Feedback ("a") filter coefficients.

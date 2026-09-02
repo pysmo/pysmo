@@ -49,9 +49,11 @@ def test_uuid_shortener(mock_uuid4, snapshot) -> None:  # type: ignore
     view = sorted(uuid_shortener(uuids).items())
     assert view == snapshot
 
-    # simulate collision (which in our case means shortening is not possible)
+    # a duplicate input can never be shortened uniquely
     uuids.append(uuids[0])
-    assert all(len(k) == 36 for k in uuid_shortener(uuids).keys())
+    with pytest.raises(ValueError, match="must not contain duplicates"):
+        uuid_shortener(uuids)
+    uuids.pop()
 
     with pytest.raises(ValueError):
         uuid_shortener([])

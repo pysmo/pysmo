@@ -83,6 +83,21 @@ class TestNarrowing:
         events = QuakeML.all_from_bytes(_doc(_event("smi:e/1"), _event("smi:e/2")))
         assert [e.public_id for e in events] == ["smi:e/1", "smi:e/2"]
 
+    def test_all_from_bytes_strict_false_skips_unrepresentable_event(self) -> None:
+        bad_origin = _ORIGIN.replace("<depth><value>22900</value></depth>", "")
+        bad_event = (
+            f'<event publicID="smi:e/bad">{bad_origin}'
+            "<preferredOriginID>smi:o/1</preferredOriginID></event>"
+        )
+        doc = _doc(_event("smi:e/good"), bad_event)
+
+        with pytest.raises(ValueError):
+            QuakeML.all_from_bytes(doc)  # strict=True default
+
+        with pytest.warns(UserWarning, match="Skipped 1 unrepresentable"):
+            events = QuakeML.all_from_bytes(doc, strict=False)
+        assert [e.public_id for e in events] == ["smi:e/good"]
+
     def test_event_id_full_public_id(self) -> None:
         doc = _doc(
             _event("smi:service.iris.edu/fdsnws/event/1/query?eventid=111"),

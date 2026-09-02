@@ -8,6 +8,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from pysmo.lib.validators import (
+    convert_to_longitude,
     convert_to_ndarray,
     convert_to_timedelta,
     convert_to_utc_timestamp,
@@ -17,6 +18,22 @@ from pysmo.lib.validators import (
 def test_convert_to_utc_timestamp_none() -> None:
     with pytest.raises(TypeError, match="Value is None"):
         convert_to_utc_timestamp(None)  # type: ignore[arg-type]
+
+
+def test_convert_to_utc_timestamp_nat() -> None:
+    with pytest.raises(ValueError, match="not a valid timestamp"):
+        convert_to_utc_timestamp(pd.NaT)  # type: ignore[arg-type]
+
+
+def test_convert_to_longitude() -> None:
+    assert convert_to_longitude(-180) == 180.0  # antimeridian folded onto +180
+    assert convert_to_longitude(-180.0) == 180.0
+    assert convert_to_longitude(180) == 180.0
+    assert convert_to_longitude(-179.9) == -179.9
+    assert convert_to_longitude("45") == 45.0
+    # out of range: passed through unchanged for a downstream validator
+    assert convert_to_longitude(-180.5) == -180.5
+    assert convert_to_longitude(200) == 200.0
 
 
 def test_convert_to_utc_timestamp_naive() -> None:
@@ -62,10 +79,22 @@ def test_convert_to_ndarray_from_tuple() -> None:
     np.testing.assert_array_equal(arr, np.array([1, 2, 3]))
 
 
-def test_convert_to_ndarray_passthrough() -> None:
-    original = np.array([1, 2, 3])
+def test_convert_to_ndarray_casts_integer_to_float() -> None:
+    assert convert_to_ndarray([1, 2, 3]).dtype == np.float64
+    assert convert_to_ndarray(np.array([1, 2, 3], dtype=np.int32)).dtype == np.float64
+
+
+def test_convert_to_ndarray_preserves_float_dtype_and_identity() -> None:
+    original = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     arr = convert_to_ndarray(original)
     assert arr is original
+    assert arr.dtype == np.float32
+
+
+def test_convert_to_ndarray_rejects_ndarray_subclass_passthrough() -> None:
+    masked = np.ma.array([1.0, 2.0, 3.0], mask=[False, True, False])
+    arr = convert_to_ndarray(masked)
+    assert type(arr) is np.ndarray
 
 
 # ─────────────────────── Property-based tests ───────────────────────────────

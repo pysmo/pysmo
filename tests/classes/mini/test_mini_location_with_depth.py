@@ -39,8 +39,10 @@ class TestMiniLocationWithDepth:
             minihypocenter.latitude = -100
         with pytest.raises(ValueError):
             minihypocenter.latitude = 100
+        minihypocenter.longitude = -180  # the antimeridian, canonicalised to +180
+        assert minihypocenter.longitude == 180
         with pytest.raises(ValueError):
-            minihypocenter.longitude = -180
+            minihypocenter.longitude = -180.5
         with pytest.raises(ValueError):
             minihypocenter.longitude = 181
 

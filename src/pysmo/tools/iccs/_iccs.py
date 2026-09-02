@@ -1175,8 +1175,11 @@ def _calc_convergence(
         method: Method of convergence criterion calculation.
     """
     if method == ConvergenceMethod.corrcoef:
-        covr, _ = pearsonr(current_stack.data, prev_stack.data)
-        return 1 - float(covr)
+        if np.array_equal(current_stack.data, prev_stack.data):
+            return 0.0  # unchanged stack has converged; pearsonr would be NaN
+        covr = float(pearsonr(current_stack.data, prev_stack.data)[0])
+        # NaN (a constant stack) -> unconverged, not past the <= check.
+        return 1 - covr if not np.isnan(covr) else float("inf")
     elif method == ConvergenceMethod.change:
         change = norm(current_stack.data - prev_stack.data, 1)
         denominator = norm(current_stack.data, 2)

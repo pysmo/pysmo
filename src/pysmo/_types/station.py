@@ -2,6 +2,8 @@ from typing import Protocol
 
 from attrs import converters, define, field, setters, validators
 
+from pysmo.lib.validators import convert_to_longitude
+
 from .location import Location
 
 __all__ = ["MiniStation", "MiniStationCode", "Station", "StationCode"]
@@ -75,7 +77,7 @@ class MiniStationCode:
 
     name: str = field(
         validator=[validators.min_len(1), validators.max_len(5)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Station name.
 
@@ -84,7 +86,7 @@ class MiniStationCode:
 
     network: str = field(
         validator=[validators.min_len(1), validators.max_len(2)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Network name.
 
@@ -104,7 +106,7 @@ class MiniStationCode:
 
     channel: str = field(
         validator=[validators.min_len(3), validators.max_len(3)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Channel code.
 
@@ -126,7 +128,7 @@ class MiniStation:
 
     name: str = field(
         validator=[validators.min_len(1), validators.max_len(5)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Station name.
 
@@ -135,7 +137,7 @@ class MiniStation:
 
     network: str = field(
         validator=[validators.min_len(1), validators.max_len(2)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Network name.
 
@@ -155,7 +157,7 @@ class MiniStation:
 
     channel: str = field(
         validator=[validators.min_len(3), validators.max_len(3)],
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        on_setattr=setters.validate,
     )
     """Channel code.
 
@@ -170,11 +172,11 @@ class MiniStation:
     """Station latitude from -90 to 90 degrees."""
 
     longitude: float = field(
-        converter=float,
+        converter=convert_to_longitude,
         validator=[validators.gt(-180), validators.le(180)],
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
-    """Station longitude from -180 to 180 degrees."""
+    """Station longitude from -180 to 180 degrees (-180 is stored as +180)."""
 
     elevation: float | None = field(
         default=None,
