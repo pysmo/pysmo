@@ -14,6 +14,7 @@ amplitudes, station magnitudes, competing origin/magnitude solutions and
 creation metadata are all deliberately out of scope.
 """
 
+import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
@@ -215,7 +216,7 @@ def _parse_event(event: ET.Element, position: int) -> _RawEvent:
     )
 
 
-def parse_quakeml(xml: bytes) -> list[_RawEvent]:
+def parse_quakeml(xml: bytes, *, strict: bool = True) -> list[_RawEvent]:
     """Parse the event hypocentre and origin time from a QuakeML 1.2 document.
 
     Returns one entry per `<event>` found. Only the preferred origin's
@@ -225,18 +226,25 @@ def parse_quakeml(xml: bytes) -> list[_RawEvent]:
     Args:
         xml: Raw QuakeML 1.2 document bytes (as returned by any
             `fdsnws-event` service).
+        strict: If `True` (default), a single unrepresentable event fails
+            the whole document. If `False`, unrepresentable events are
+            skipped and a `UserWarning` reports how many; useful for a
+            broad catalogue query where a few malformed origins should not
+            discard the rest.
 
     Returns:
-        One uninterpreted event per `<event>` found, in document order.
+        One uninterpreted event per representable `<event>` found, in
+        document order.
 
     Raises:
         ValueError: If `xml` is not well-formed XML, its root is not a
-            QuakeML `<quakeml>` element, it has no `<eventParameters>`,
-            or any event has no `publicID`, no resolvable preferred origin,
-            a preferred origin missing `<time>`/`<latitude>`/`<longitude>`/
-            `<depth>`, an ambiguous preferred origin/magnitude, or an
-            unparseable numeric or timestamp value. When more than one event
-            is unrepresentable, the message names the first and the count.
+            QuakeML `<quakeml>` element, or it has no `<eventParameters>`.
+            When `strict` is `True`, also if any event has no `publicID`, no
+            resolvable preferred origin, a preferred origin missing
+            `<time>`/`<latitude>`/`<longitude>`/`<depth>`, an ambiguous
+            preferred origin/magnitude, or an unparseable numeric or
+            timestamp value; the message names the first such event and the
+            count.
 
     Examples:
         ```python
@@ -297,6 +305,12 @@ def parse_quakeml(xml: bytes) -> list[_RawEvent]:
         message = errors[0]
         if len(errors) > 1:
             message += f" ({len(errors)} events in the document could not be parsed)"
-        raise ValueError(message)
+        if strict:
+            raise ValueError(message)
+        warnings.warn(
+            f"Skipped {len(errors)} unrepresentable event(s); first: {message}",
+            UserWarning,
+            stacklevel=2,
+        )
 
     return results
