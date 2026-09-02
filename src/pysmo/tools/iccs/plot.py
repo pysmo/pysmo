@@ -1125,8 +1125,11 @@ def update_min_cc(
         pending_val[0] = new_val
         ax.set_title(f"Click save to set min_cc to {new_val:.4f}")
 
+    # Sort by |cc| to match the matrix image's row order (it sorts by |cc|).
     current_ccs = sorted(
-        i for i, s in zip(iccs.ccs, iccs.seismograms) if s.select or all_seismograms
+        abs(i)
+        for i, s in zip(iccs.ccs, iccs.seismograms)
+        if s.select or all_seismograms
     )
     start_index = int(np.searchsorted(current_ccs, iccs.min_cc))
     max_index = len(matrix) - 1
