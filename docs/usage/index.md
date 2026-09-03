@@ -5,51 +5,45 @@ tags:
 
 # Usage
 
-Pysmo is just as much an opinionated way of writing code as it is a library.
-This section of the documentation focuses on the philosophy and inner workings
-of pysmo. This will help you write pysmo-like code using pysmo. If you are
-looking for specifics on a particular component of pysmo, please refer to the
-relevant section in the [API reference](../api/pysmo.md).
+Pysmo is as much an opinionated way of writing code as it is a library. The
+[first steps](../first-steps/index.md) chapter introduces its types and shows
+them in use. This chapter covers the reasoning behind them and how they work
+internally, as a guide to writing code in the same style. For details on a
+specific component, see the [API reference](../api/pysmo.md).
 
-## Library vs. framework
+## Library or framework
 
-Before using a third-party package for your project, it is important to consider
-if what you are using is a library or a framework. One might define them as
-follows:
+Before taking on a third-party package, it is worth asking whether it is a
+library or a framework:
 
-- Libraries serve as building blocks to solve more complex problems or for
-    building applications.
-- Frameworks provide ready-made solutions to solve complex problems. A framework
-    may easily also be considered an application itself.
+- A library is a set of building blocks for solving a larger problem or building
+    an application.
+- A framework is a ready-made solution to a class of problems, often close to an
+    application in its own right.
 
-Distinguishing between the two can be a bit tricky when it comes to using tools
-like pysmo. Often it is not only a question of what the respective authors
-intend their software to be, but also how you use it for your purposes. A
-helpful way of looking at this (and an important consideration for
-future-proofing your code), is to ask yourself in which ways your code depends
-on the third-party package you are using. By this we mean factors such as:
+The line is not always sharp. It depends not only on what the authors intended,
+but on how the package is used. A useful question, and one that matters for
+keeping code maintainable, is how heavily the code depends on the package:
 
-- How susceptible is your project to potential future changes in the package you
-    are using? If you are only using built-in features you are probably safe,
-    but if you are writing new features (e.g. new functions for data processing)
-    they might suddenly stop working.
-- Do you understand what a particular package does, or does it feel more like a
-    black box when you e.g. use a particular class or call a function from that
-    package? This is often influenced by how integrated or dependent individual
-    components of that package are.
-- Does the third-party package play nicely with other packages or data formats?
-- Can it easily be replaced by a similar package (or your own implementation)?
-- Does using a particular package make it impossible to e.g. rewrite your code
-    in a different programming language?
+- How exposed is the code to future changes in the package? Using only its
+    built-in features is fairly safe. Building new features on top of it, such
+    as new processing functions, is more fragile.
+- Is it clear what the package does, or does a given class or function behave
+    like a black box? This often comes down to how tightly its components depend
+    on one another.
+- Does it work well alongside other packages and data formats?
+- Could it be swapped for a similar package, or a bespoke implementation,
+    without much trouble?
+- Does relying on it rule out things like porting the code to another language?
 
-Often it boils down to a trade-off between convenience and transparency, and
-which side of it you find yourself on more. With that said, the core of pysmo is
-considered to be a library. Outside the core part, there are some extra bits
-that fall more on the framework side of things. To accommodate for that, pysmo
-organises things into different namespaces. More application-like modules are
-found in [`pysmo.tools`][], while everything else is library-like.
+It usually comes down to a trade-off between convenience and transparency. The
+core of pysmo sits on the library side. A few parts lean more towards a
+framework, and pysmo separates them by namespace: the more application-like
+modules live in [`pysmo.tools`][], and everything else stays library-like.
 
 !!! note "Tools are reusable too"
 
-    Even [`pysmo.tools`][] are written in a way that makes them easy to reuse
-    outside of pysmo.
+    The split is about organisation, not lock-in. Each `pysmo.tools` module is
+    written against the pysmo types and takes ordinary arguments, so any one can be
+    used on its own with a conforming class. They also double as worked examples of
+    the style this section describes.

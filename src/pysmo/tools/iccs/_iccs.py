@@ -200,12 +200,12 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
     directly by users.
 
     When `bandpass_apply` is `False`, the `*_causal` properties return the
-    exact same objects as their zero-phase counterparts, not copies — an
+    exact same objects as their zero-phase counterparts, not copies; an
     in-place mutation through one name would be visible through the other.
     """
 
     parent_seismogram: IccsSeismogram
-    """Reference to the parent IccsSeismogram from which this ephemeral seismogram is derived."""
+    """The parent `IccsSeismogram` this ephemeral seismogram is derived from."""
 
     begin_time: pd.Timestamp = field(init=False)
     """Seismogram begin time."""
@@ -224,12 +224,12 @@ class _EphemeralSeismogram(SeismogramEndtimeMixin):
 
 @define
 class ICCS:
-    """Class to store a list of [`IccsSeismograms`][pysmo.tools.iccs.IccsSeismogram] and run the ICCS algorithm.
+    """Container for seismograms that runs the ICCS algorithm.
 
-    The [`ICCS`][pysmo.tools.iccs.ICCS] class serves as a container to store a
-    list of seismograms (typically recordings of the same event at different
-    stations), and to then run the ICCS algorithm when an instance of this
-    class is called. Processing parameters that are common to all seismograms
+    An `ICCS` instance stores a list of
+    [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram]s (typically recordings
+    of the same event at different stations), and runs the ICCS algorithm when
+    the instance is called. Processing parameters common to all seismograms
     are stored as attributes (e.g. time window limits).
 
     Before use, seismograms are internally prepared into
@@ -256,8 +256,8 @@ class ICCS:
     Warning: In-place mutation bypasses the cache
         Assigning a new list to this attribute clears the cache automatically.
         *Mutating* the list in place (e.g. with `append`, `remove`, or direct
-        index assignment) bypasses the setter and does **not** clear the cache
-        — and neither does mutating an *individual* seismogram already in the
+        index assignment) bypasses the setter and does **not** clear the
+        cache, and neither does mutating an *individual* seismogram already in the
         list, such as setting its
         [`t1`][pysmo.tools.iccs.IccsSeismogram.t1],
         [`flip`][pysmo.tools.iccs.IccsSeismogram.flip], or
@@ -273,7 +273,7 @@ class ICCS:
         `False`. A deselected seismogram is excluded from the stack and
         correlation output, but its pick and data span still constrain the valid
         ranges for [`window_pre`][pysmo.tools.iccs.ICCS.window_pre],
-        [`window_post`][pysmo.tools.iccs.ICCS.window_post], and pick updates —
+        [`window_post`][pysmo.tools.iccs.ICCS.window_post], and pick updates,
         because all seismograms (selected or not) are used to generate the
         ephemeral seismograms. A badly drifting pick on a deselected seismogram
         can therefore make it impossible to set useful window or pick ranges for
@@ -336,7 +336,7 @@ class ICCS:
     and [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms].
     It also gates whether a causal (single-pass) counterpart is produced for
     [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal] and
-    [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal] —
+    [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal];
     see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the two variants
     relate.
 
@@ -353,12 +353,13 @@ class ICCS:
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
     )
-    """Bandpass filter minimum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
+    """Bandpass filter minimum frequency (Hz).
 
-    The filter is applied to each seismogram at its original sampling rate, before
-    any resampling to a common grid. Valid frequencies are therefore bounded by the
-    Nyquist frequency of the most coarsely sampled seismogram, i.e.
-    `0.5 / max_delta.total_seconds()`.
+    Only used when [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
+    `True`. The filter is applied to each seismogram at its original sampling
+    rate, before any resampling to a common grid. Valid frequencies are
+    therefore bounded by the Nyquist frequency of the most coarsely sampled
+    seismogram, i.e. `0.5 / max_delta.total_seconds()`.
     """
 
     bandpass_fmax: float = field(
@@ -369,11 +370,12 @@ class ICCS:
             setters.convert, setters.validate, _on_setattr_clear_cache
         ),
     )
-    """Bandpass filter maximum frequency (Hz). Only used if [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is `True`.
+    """Bandpass filter maximum frequency (Hz).
 
-    The filter is applied to each seismogram at its original sampling rate, before
-    any resampling to a common grid. Valid frequencies are therefore bounded by the
-    Nyquist frequency of the most coarsely sampled seismogram, i.e.
+    Only used when `bandpass_apply` is `True`. The filter is applied to each
+    seismogram at its original sampling rate, before any resampling to a
+    common grid. Valid frequencies are therefore bounded by the Nyquist
+    frequency of the most coarsely sampled seismogram, i.e.
     `0.5 / max_delta.total_seconds()`.
     """
 
@@ -403,7 +405,7 @@ class ICCS:
     passed to [`bandpass`][pysmo.tools.signal.bandpass] are corrected via
     [`causal_band`][pysmo.tools.signal.causal_band] so the causal variant's
     actual -3dB point matches the zero-phase variant's actual (inward-shifted)
-    -3dB point closely — not exactly. See
+    -3dB point closely, though not exactly. See
     [`causal_band`][pysmo.tools.signal.causal_band] for the correction
     itself and its derivation; in short, the residual comes
     from real Butterworth bandpass edges interacting with each other (not
@@ -422,14 +424,14 @@ class ICCS:
     nominal band, `corners` is no longer independent of `bandpass_fmin`/
     `bandpass_fmax`: lowering `corners` while they stay fixed (or narrowing
     them while `corners` stays fixed) can raise `ValueError` if the corrected
-    band would invert — the ratio `causal_band` applies is monotonically
+    band would invert: the ratio `causal_band` applies is monotonically
     increasing in `corners`, so *raising* `corners` can only
     move a combination towards validity, never away from it; only lowering
     it (or narrowing the nominal band) can break a previously-valid one. See
     [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin]/
     [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax] for the coupled
     validation. This is a distinct, *frequency-validity* constraint from the
-    numerical-stability finding below — there is still no cap on `corners`
+    numerical-stability finding below; there is still no cap on `corners`
     for numerical-stability reasons; the new `ValueError` is a different
     mechanism entirely.
 
@@ -438,7 +440,7 @@ class ICCS:
     causal filter only pushes energy forward in time, so a pick made on
     [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal] is
     systematically biased later than the true onset by an amount that
-    depends on `corners`, `bandpass_fmin`, and `bandpass_fmax` — this is the
+    depends on `corners`, `bandpass_fmin`, and `bandpass_fmax`; this is the
     trade-off for avoiding zero-phase's backward precursor smearing, not
     something corrected here. Compute
     [`group_delay`][scipy.signal.group_delay] on the same `corners`/frequency
@@ -488,15 +490,15 @@ class ICCS:
     _cc_seismograms_causal_cache: list[_EphemeralSeismogram] | None = field(
         default=None, init=False
     )
-    """Cached list of the causally-filtered prepared seismograms for cross-correlation."""
+    """Cached list of causally-filtered seismograms for cross-correlation."""
     _context_seismograms_causal_cache: list[_EphemeralSeismogram] | None = field(
         default=None, init=False
     )
-    """Cached list of the causally-filtered prepared seismograms with context padding."""
+    """Cached list of causally-filtered seismograms with context padding."""
     _cc_stack_causal_cache: MiniSeismogram | None = field(default=None, init=False)
-    """Cached stack of the causally-filtered prepared seismograms for cross-correlation."""
+    """Cached stack of causally-filtered seismograms for cross-correlation."""
     _context_stack_causal_cache: MiniSeismogram | None = field(default=None, init=False)
-    """Cached stack of the causally-filtered prepared seismograms with context padding."""
+    """Cached stack of causally-filtered seismograms with context padding."""
     _max_td_pre_cache: pd.Timedelta | None = field(default=None, init=False)
     """Cached maximum negative time delta between pick and seismogram begin_time."""
     _min_td_post_cache: pd.Timedelta | None = field(default=None, init=False)
@@ -621,7 +623,7 @@ class ICCS:
         6. Normalised based on the highest absolute value within the cropped
            window. This step is done slightly differently in
            [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms]
-           — see the documentation of that property for details.
+           (see the documentation of that property for details).
         """
 
         if self._cc_seismograms_cache is None:
@@ -630,7 +632,10 @@ class ICCS:
 
     @property
     def selected_cc_seismograms(self) -> list[_EphemeralSeismogram]:
-        """Return the [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] with [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to `True`."""
+        """Return the `cc_seismograms` whose `select` attribute is `True`.
+
+        See [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms].
+        """
         return [s for s in self.cc_seismograms if s.parent_seismogram.select]
 
     @property
@@ -671,7 +676,7 @@ class ICCS:
 
     @property
     def stack(self) -> MiniSeismogram:
-        """Return the stacked [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms].
+        """Return the stacked `cc_seismograms`.
 
         The stack is calculated as the average of all seismograms with the
         attribute [`select`][pysmo.tools.iccs.IccsSeismogram.select] set to
@@ -689,7 +694,7 @@ class ICCS:
 
     @property
     def context_stack(self) -> MiniSeismogram:
-        """Return the stacked [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms].
+        """Return the stacked `context_seismograms`.
 
         Returns:
             Stacked input seismograms with context padding.
@@ -703,7 +708,7 @@ class ICCS:
         """Return the seismograms as used for cross-correlation, causally filtered.
 
         Mirrors [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms],
-        with a causal (single-pass) rather than zero-phase bandpass filter —
+        with a causal (single-pass) rather than zero-phase bandpass filter;
         see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the filter
         order and passband of the two variants relate. Intended for
         picking-oriented tools, since a causal filter avoids the acausal
@@ -731,7 +736,7 @@ class ICCS:
         """Return the seismograms with extra context for plotting, causally filtered.
 
         Mirrors [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms],
-        with a causal (single-pass) rather than zero-phase bandpass filter —
+        with a causal (single-pass) rather than zero-phase bandpass filter;
         see [`corners`][pysmo.tools.iccs.ICCS.corners] for how the filter
         order and passband of the two variants relate.
 
@@ -739,7 +744,7 @@ class ICCS:
         ([`context_width`][pysmo.tools.iccs.ICCS.context_width]) exists to
         show pre-arrival "quiet" alongside the time window, but a causal
         filter's group delay pushes energy from the true onset forward in
-        time — some of what the padding shows as pre-arrival quiet may
+        time, so some of what the padding shows as pre-arrival quiet may
         actually contain the filter's response to the onset itself, not the
         true unfiltered signal before it. This is expected behaviour (see
         [`corners`][pysmo.tools.iccs.ICCS.corners]), not a bug.
@@ -760,7 +765,7 @@ class ICCS:
 
     @property
     def stack_causal(self) -> MiniSeismogram:
-        """Return the stacked [`cc_seismograms_causal`][pysmo.tools.iccs.ICCS.cc_seismograms_causal].
+        """Return the stacked `cc_seismograms_causal`.
 
         When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
         `False`, this returns the same object as
@@ -777,7 +782,7 @@ class ICCS:
 
     @property
     def context_stack_causal(self) -> MiniSeismogram:
-        """Return the stacked [`context_seismograms_causal`][pysmo.tools.iccs.ICCS.context_seismograms_causal].
+        """Return the stacked `context_seismograms_causal`.
 
         When [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] is
         `False`, this returns the same object as
@@ -866,8 +871,10 @@ class ICCS:
         """Run the ICCS algorithm.
 
         Args:
-            autoflip: Automatically toggle [`flip`][pysmo.tools.iccs.IccsSeismogram.flip] attribute of seismograms.
-            autoselect: Automatically set `select` attribute to `False` for poor quality seismograms.
+            autoflip: Automatically toggle the `flip` attribute of
+                seismograms.
+            autoselect: Automatically set the `select` attribute to `False`
+                for poor-quality seismograms.
             convergence_limit: Convergence limit at which the algorithm stops.
             convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
@@ -976,7 +983,7 @@ class ICCS:
         )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
-        """Update [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] in all seismograms by the same amount.
+        """Update `t1` in all seismograms by the same amount.
 
         Args:
             pickdelta: Delta applied to all picks.
@@ -1134,7 +1141,8 @@ def _create_stack(seismograms: Sequence[_EphemeralSeismogram]) -> MiniSeismogram
         seismograms: Prepared seismograms to stack.
 
     Returns:
-        A new seismogram whose data is the mean of all selected input seismograms.
+        A new seismogram whose data are the sample-wise mean of the selected
+        input seismograms.
 
     Raises:
         ValueError: If no seismograms are selected.

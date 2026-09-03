@@ -67,7 +67,7 @@ def run_real_web_requests() -> bool:
     `pytest.Item`) requests every fixture named in `Sybil(fixtures=[...])`
     for every collected example, and requesting the built-in `request`
     fixture from one of those breaks `tmp_path` teardown for *all* of
-    them — confirmed directly, not assumed. Reading a module-level flag set
+    them; confirmed directly, not assumed. Reading a module-level flag set
     once in `pytest_configure` sidesteps that entirely.
 
     Pair with a `<!-- skip: next if(not run_real_web_requests) -->` comment

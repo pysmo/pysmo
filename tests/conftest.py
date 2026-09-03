@@ -35,6 +35,14 @@ def assets(reference_event_assets: dict[str, Path]) -> dict[str, Path]:
 
 
 @pytest.fixture()
+def seeded_noise_rng(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin `pysmo.tools.noise.generate_noise`'s RNG so its output, and any
+    figure built from it, is reproducible."""
+    original = np.random.default_rng
+    monkeypatch.setattr(np.random, "default_rng", lambda *a, **kw: original(0))
+
+
+@pytest.fixture()
 def empty_file(tmpdir_factory: pytest.TempdirFactory) -> Path:
     tmpdir = tmpdir_factory.mktemp("empty_files")
     return Path(tmpdir) / "empty_file"

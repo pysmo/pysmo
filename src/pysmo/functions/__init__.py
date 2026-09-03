@@ -26,8 +26,8 @@ operates on the input directly or first creates a clone (via
 ```
 
 Note: Needless deepcopy
-    Reassigning the clone back to the same name — `sac_seis = resample(sac_seis,
-    new_delta, clone=True)` — ends up equivalent to modifying `sac_seis` in
+    Reassigning the clone back to the same name (`sac_seis = resample(sac_seis,
+    new_delta, clone=True)`) ends up equivalent to modifying `sac_seis` in
     place, but pays for a [`deepcopy`][copy.deepcopy] to get there. Call
     `resample(sac_seis, new_delta)` directly instead.
 

@@ -50,8 +50,8 @@ class StationXML:
     Reads one `<Channel>` epoch from a
     [FDSN StationXML](http://www.fdsn.org/xml/station/) document and exposes
     it as a [`Station`][pysmo.Station]-compatible object: NSLC identity,
-    coordinates, the epoch's validity window, and — when the document was
-    fetched at `level=response` — the instrument
+    coordinates, the epoch's validity window, and (when the document was
+    fetched at `level=response`) the instrument
     [`response`][pysmo.classes.StationXML.response].
 
     A document commonly covers a channel's full history, i.e. several
@@ -62,7 +62,7 @@ class StationXML:
     [`response`][pysmo.classes.StationXML.response] raises for an epoch
     parsed from a `level=channel` / `level=station` document (e.g. a bulk
     inventory fetched with
-    [`pysmo.tools.web.fetch_station_inventory`][]) — guard it with
+    [`pysmo.tools.web.fetch_station_inventory`][]); guard it with
     [`has_response`][pysmo.classes.StationXML.has_response].
     [`fetch`][pysmo.classes.StationXML.fetch] always populates it.
 
@@ -164,7 +164,7 @@ class StationXML:
 
         Raises:
             ValueError: If this epoch was parsed from a document with no
-                `<Response>` — check
+                `<Response>`; check
                 [`has_response`][pysmo.classes.StationXML.has_response]
                 first, or fetch at `level=response`
                 ([`StationXML.fetch`][pysmo.classes.StationXML.fetch]).
@@ -190,7 +190,7 @@ class StationXML:
     ) -> Self:
         """Create a new instance from a StationXML document, selecting one epoch.
 
-        A document is not guaranteed to cover a single channel — a bulk or
+        A document is not guaranteed to cover a single channel: a bulk or
         wildcard query can cover several networks and stations, each with
         every location/channel combination and its own epoch history.
         `network`/`station`/`location`/`channel` narrow to one before *time*
@@ -243,7 +243,7 @@ class StationXML:
         """Create one instance per `<Channel>` epoch in a StationXML document.
 
         Unlike [`from_bytes`][pysmo.classes.StationXML.from_bytes], this does
-        not narrow — a document covering a channel's full history returns
+        not narrow: a document covering a channel's full history returns
         several, each with its own NSLC / `start_date` / `end_date`.
 
         Args:
@@ -256,7 +256,7 @@ class StationXML:
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
-        """Fetch one channel's response epoch from the EarthScope FDSN station web service.
+        """Fetch one channel's response epoch from EarthScope's FDSN station service.
 
         Fetches the full response history for the channel in one
         `level=response` request and narrows client-side to the epoch active
@@ -354,7 +354,7 @@ def resolve_epochs(
     group, keeps the single epoch whose `[start_date, end_date)` window
     covers `time` (an epoch with no `end_date` is still open and covers any
     time at or after its `start_date`). An NSLC with no covering epoch is
-    dropped — that station provably was not recording then.
+    dropped; that station provably was not recording then.
 
     Args:
         epochs: Station epochs, e.g. from
@@ -367,7 +367,7 @@ def resolve_epochs(
 
     Raises:
         ValueError: If an NSLC has more than one epoch covering `time`
-            (overlapping validity windows — an invalid inventory).
+            (overlapping validity windows, i.e. an invalid inventory).
     """
     time = convert_to_utc_timestamp(time)
     grouped: dict[_Nslc, list[StationXML]] = defaultdict(list)
