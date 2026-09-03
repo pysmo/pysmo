@@ -4,7 +4,7 @@ This module implements the parsing side of a narrow slice of
 [QuakeML 1.2](https://quakeml.org/): per event, the `publicID` and the
 preferred origin's time, latitude, longitude and depth, plus the preferred
 magnitude, event type and description where present. It returns
-uninterpreted `_RawEvent` instances — one per `<event>` — without
+uninterpreted `_RawEvent` instances (one per `<event>`) without
 constructing any `pysmo` type. Interpretation into an
 [`Event`][pysmo.Event]-compatible object happens one layer up, in
 [`pysmo.classes.QuakeML`][].
@@ -33,14 +33,14 @@ _QUAKEML_NS = frozenset(
     }
 )
 """The two namespace URIs QuakeML 1.2 splits its umbrella and body elements
-across. Body elements are resolved by local name within either — some
+across. Body elements are resolved by local name within either; some
 producers emit the whole document in one default namespace rather than
 splitting root from body."""
 
 _REQUIRED_ORIGIN_ELEMENTS = ("time", "latitude", "longitude", "depth")
 """Preferred-origin sub-elements the [`Event`][pysmo.Event] protocol needs.
-`<depth>` is schema-optional (`0..1`) but non-optional here — see
-[`pysmo.classes.QuakeML`][]."""
+`<depth>` is schema-optional (`0..1`) but non-optional here (see
+[`pysmo.classes.QuakeML`][])."""
 
 
 @dataclass
@@ -69,7 +69,7 @@ def _namespace_uri(tag: str) -> str | None:
 
 
 def _iter_children(elem: ET.Element, local: str) -> Iterator[ET.Element]:
-    """Yield `elem`'s direct children with the given local name in a QuakeML namespace."""
+    """Yield `elem`'s children with the given local name (QuakeML namespace)."""
     for child in elem:
         uri = _namespace_uri(child.tag)
         if _local_name(child.tag) == local and (uri is None or uri in _QUAKEML_NS):
@@ -82,7 +82,7 @@ def _find_child(elem: ET.Element, local: str) -> ET.Element | None:
 
 
 def _child_text(elem: ET.Element, local: str) -> str | None:
-    """Return the stripped text of `elem`'s first `<local>` child, or `None` if absent/empty."""
+    """Stripped text of `elem`'s first `<local>` child, or `None` if absent or empty."""
     child = _find_child(elem, local)
     if child is None or child.text is None or not child.text.strip():
         return None
@@ -90,7 +90,7 @@ def _child_text(elem: ET.Element, local: str) -> str | None:
 
 
 def _quantity_value(parent: ET.Element, local: str) -> str | None:
-    """Return the text of `parent/<local>/<value>` (a QuakeML `RealQuantity`/`TimeQuantity`), or `None`."""
+    """Text of `parent/<local>/<value>` (a QuakeML quantity element), or `None`."""
     quantity = _find_child(parent, local)
     if quantity is None:
         return None
@@ -100,19 +100,19 @@ def _quantity_value(parent: ET.Element, local: str) -> str | None:
 def _all_required_present(
     values: Mapping[str, str | None],
 ) -> TypeIs[Mapping[str, str]]:
-    """True when every required origin element has a value, narrowing the mapping to `str` values."""
+    """True when every required origin element has a value (narrows to `str`)."""
     return all(value is not None for value in values.values())
 
 
 def _resolve_preferred(
     candidates: list[ET.Element], preferred_id: str | None
 ) -> ET.Element | None:
-    """Resolve the preferred `<origin>`/`<magnitude>` from a pointer and the inlined candidates.
+    """Resolve the preferred `<origin>` or `<magnitude>` element.
 
     Returns the pointed-to element if the pointer resolves; otherwise the
     sole inlined candidate if there is exactly one; otherwise `None` for
     zero candidates. Raises `ValueError` for more than one candidate with no
-    resolving pointer — an ambiguity that cannot be resolved without
+    resolving pointer, an ambiguity that cannot be resolved without
     guessing.
     """
     if preferred_id is not None:
@@ -151,7 +151,7 @@ def _parse_magnitude(
 
 
 def _first_description(event: ET.Element) -> str | None:
-    """Return the text of the first `<description>` child with non-empty text, or `None`."""
+    """Text of the first `<description>` child that has non-empty text, or `None`."""
     for description_elem in _iter_children(event, "description"):
         text = _child_text(description_elem, "text")
         if text is not None:
@@ -160,7 +160,10 @@ def _first_description(event: ET.Element) -> str | None:
 
 
 def _parse_event(event: ET.Element, position: int) -> _RawEvent:
-    """Parse one `<event>` element into a `_RawEvent`, raising `ValueError` on any unrepresentable part."""
+    """Parse one `<event>` element into a `_RawEvent`.
+
+    Raises `ValueError` for any part that cannot be represented.
+    """
     public_id = event.get("publicID")
     if not public_id:
         raise ValueError(f"event at position {position} has no publicID attribute")

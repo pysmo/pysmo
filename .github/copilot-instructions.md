@@ -6,8 +6,8 @@
 make sync          # Install all dependencies (run first)
 make tests         # Run full test suite (includes mypy)
 make mypy          # Type checks only
-make lint          # black --check + ruff check
-make format        # Apply black formatting
+make lint          # ruff check + ruff format --check
+make format        # ruff check --fix + ruff format
 ```
 
 Run a single test file or specific test:
@@ -28,7 +28,7 @@ Pysmo separates **types** (protocols), **storage** (concrete classes), and **pro
 
 ### Mini classes (also in `src/pysmo/_types/`)
 
-`MiniSeismogram`, `MiniStation`, etc. are minimal `attrs`-based reference implementations of each protocol. They use `@beartype` for runtime validation and are the default way to create pysmo objects programmatically.
+`MiniSeismogram`, `MiniStation`, etc. are minimal `attrs`-based reference implementations of each protocol, with runtime validation via `attrs` field validators. They are the default way to create pysmo objects programmatically.
 
 ### Concrete classes (`src/pysmo/classes/`)
 
@@ -51,7 +51,7 @@ All time values use **pandas** types:
 
 ### Constrained types (`src/pysmo/typing.py`)
 
-`pysmo.typing` provides `Annotated` type aliases with `beartype` validators: `PositiveTimedelta`, `PositiveNumber`, `UnitFloat`, etc. Use these for attribute/parameter annotations where value constraints are needed.
+`pysmo.typing` provides `Annotated` type aliases (from `annotated_types`) documenting value constraints: `PositiveTimedelta`, `PositiveNumber`, `UnitFloat`, etc. Use these for attribute/parameter annotations where value constraints are needed.
 
 ## Code Style and Standards
 
@@ -59,7 +59,7 @@ All time values use **pandas** types:
 
 - Follow [PEP 8](https://peps.python.org/pep-0008/) style guide for all Python code
 - Use 4 spaces for indentation (no tabs)
-- Maximum line length: 88 characters (Black default)
+- Maximum line length: 88 characters
 - Use blank lines to separate functions and classes
 - Imports should be grouped: standard library, third-party, local
 - Use ellipsis (`...`) for code that is not implemented yet, rather than `pass`
@@ -70,22 +70,18 @@ All time values use **pandas** types:
 
 ### Code Formatting
 
-- All code must pass **Black** formatting
-  - Target Python versions: 3.12, 3.13, 3.14
-  - Line length: 88 characters
-  - Run `black .` before committing
-
-- All code must pass **Ruff** linting
+- All code must pass **Ruff** formatting and linting
   - Configuration in `pyproject.toml`
-  - Run `ruff check .` before committing
-  - Fix issues with `ruff check --fix .`
+  - Target Python versions: 3.13, 3.14
+  - Line length: 88 characters
+  - Run `ruff check .` and `ruff format --check .` before committing
+  - Fix issues with `ruff check --fix .` and `ruff format .`
 
 ### Language
 
-- Use **British English** spelling in all:
+- Use **British English** spelling in:
   - Comments
   - Docstrings
-  - Variable names
   - Documentation
   - Error messages
 - Examples:
@@ -94,6 +90,8 @@ All time values use **pandas** types:
   - `initialise` not `initialize`
   - `behaviour` not `behavior`
   - `centre` not `center`
+- Identifiers (function, variable, and class names) follow the more common
+  American convention for Python code, e.g. the function `normalize`
 
 ### Documentation Style
 
@@ -129,7 +127,7 @@ All time values use **pandas** types:
 #### Type Hints
 
 - Use type hints for all function parameters and return values
-- Use modern Python type syntax (Python 3.12+):
+- Use modern Python type syntax (Python 3.13+):
   - `list[str]` not `List[str]`
   - `dict[str, int]` not `Dict[str, int]`
   - `type1 | type2` not `Union[type1, type2]`
@@ -170,8 +168,8 @@ All time values use **pandas** types:
 
 ### Dependencies
 
-- Minimum Python version: 3.12, maximum 3.14
-- Core dependencies: numpy, matplotlib, scipy, beartype, attrs, pandas
+- Minimum Python version: 3.13, maximum 3.14
+- Core dependencies: numpy, matplotlib, scipy, attrs, pandas
 - Dependency management: `uv` with locked `uv.lock`; run `make sync` after pulling
 
 ### File Organisation
@@ -183,7 +181,7 @@ All time values use **pandas** types:
 
 ## Before Committing
 
-1. Run `make format` to apply black formatting
+1. Run `make format` to apply ruff formatting and autofixes
 2. Run `make lint` to check formatting and linting
 3. Run `make tests` to run the full test suite (includes mypy)
 4. Check British English spelling

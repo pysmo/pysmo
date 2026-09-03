@@ -15,33 +15,33 @@ class StationCode(Protocol):
     """Protocol class to define the `StationCode` type.
 
     Network/station/location/channel (NSLC) identity for a data stream,
-    independent of geographic location — the subset of `Station` a format
+    independent of geographic location; the subset of `Station` a format
     like miniSEED can provide without coordinates.
     """
 
     name: str
     """Station name or identifier.
 
-    A 1-5 character identifier for the station recording the data.
+    A 1- to 5-character identifier for the station recording the data.
     """
 
     network: str
     """Network name or identifier.
 
-    A 1-2 character code identifying the network/owner of the data.
+    A 1- or 2-character code identifying the network that owns the data.
     """
 
     location: str
     """Location ID.
 
-    A two character code used to uniquely identify different data streams
-    at a single station.
+    A 2-character code used to identify different data streams at a single
+    station.
     """
 
     channel: str
     """Channel code.
 
-    A three character combination used to identify:
+    A 3-character combination that identifies:
 
     1. Band and general sample rate.
     2. Instrument type.
@@ -50,7 +50,12 @@ class StationCode(Protocol):
 
 
 class Station(Location, StationCode, Protocol):
-    """Protocol class to define the `Station` type."""
+    """Protocol class to define the `Station` type.
+
+    A seismic station: NSLC identity from
+    [`StationCode`][pysmo.StationCode], position from
+    [`Location`][pysmo.Location], and an optional elevation.
+    """
 
     elevation: int | float | None
     """Station elevation in metres."""
@@ -65,12 +70,16 @@ def _pad_string(x: str) -> str:
 
 @define(kw_only=True)
 class MiniStationCode:
-    """Minimal class for use with the [`StationCode`][pysmo.StationCode] type.
+    """Minimal implementation of the `StationCode` type.
+
+    See [`StationCode`][pysmo.StationCode].
 
     Examples:
         ```python
         >>> from pysmo import MiniStationCode
-        >>> code = MiniStationCode(name="CACB", network="BL", channel="BHZ", location="00")
+        >>> code = MiniStationCode(
+        ...     name="CACB", network="BL", channel="BHZ", location="00"
+        ... )
         >>>
         ```
     """
@@ -116,12 +125,21 @@ class MiniStationCode:
 
 @define(kw_only=True)
 class MiniStation:
-    """Minimal class for use with the [`Station`][pysmo.Station] type.
+    """Minimal implementation of the `Station` type.
+
+    See [`Station`][pysmo.Station].
 
     Examples:
         ```python
         >>> from pysmo import MiniStation
-        >>> station = MiniStation(latitude=-21.680301, longitude=-46.732601, name="CACB", network="BL", channel="BHZ", location="00")
+        >>> station = MiniStation(
+        ...     latitude=-21.680301,
+        ...     longitude=-46.732601,
+        ...     name="CACB",
+        ...     network="BL",
+        ...     channel="BHZ",
+        ...     location="00",
+        ... )
         >>>
         ```
     """

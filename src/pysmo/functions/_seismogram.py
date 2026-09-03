@@ -62,7 +62,7 @@ def crop[T: Seismogram](
     *,
     clone: bool = False,
 ) -> T | None:
-    """Shorten a seismogram by providing new begin and end times.
+    """Shorten a seismogram to new begin and end times.
 
     This function calculates the indices corresponding to the provided new
     begin and end times using [`time2index`][pysmo.functions.time2index], then
@@ -507,7 +507,7 @@ def merge[T: Seismogram](
     interval using [`resample`][pysmo.functions.resample]. If `delta` is
     `None` and `auto_delta` is `True`, a common interval is estimated with
     [`estimate_delta`][pysmo.functions.estimate_delta] instead of requiring
-    an exact match — useful when sampling intervals only disagree by
+    an exact match; useful when sampling intervals only disagree by
     measurement or floating-point noise.
 
     A small amount of boundary timestamp jitter is allowed, bounded by
@@ -518,7 +518,7 @@ def merge[T: Seismogram](
     floating-point noise from e.g. prior resampling); they are verified and
     the duplicates are discarded rather than concatenated.
 
-    When `clone=False`, the first seismogram in `seismograms` (as given —
+    When `clone=False`, the first seismogram in `seismograms` (as given,
     not necessarily the chronologically first, and regardless of whether it
     is itself empty) is modified in place and becomes the merged result: its
     `begin_time` and `data` are overwritten to reflect the full,
@@ -608,7 +608,7 @@ def merge[T: Seismogram](
         ```
 
         The merged object's actual class is always `seismograms[0]`'s class,
-        regardless of what a type checker can infer — this is purely a
+        regardless of what a type checker can infer; this is purely a
         static-typing concern. If downstream code depends on the concrete
         type, merging a single concrete type (the common case) lets it be inferred
         automatically, without needing the annotation above.
@@ -855,9 +855,9 @@ def time2index(
     time: pd.Timestamp,
     allow_out_of_bounds: bool = False,
 ) -> int:
-    """Converts a specific timestamp to the corresponding data array index.
+    """Convert a timestamp to the corresponding data-array index.
 
-    Seismic data is sampled at discrete intervals. When a requested time does
+    Seismic data are sampled at discrete intervals. When a requested time does
     not align perfectly with a sample, this function selects the nearest
     index using the following rules:
 
@@ -939,7 +939,7 @@ def window[T: Seismogram](
     *,
     clone: bool = False,
 ) -> T | None:
-    """Returns an optionally padded and tapered window of a seismogram.
+    """Return an optionally padded and tapered window of a seismogram.
 
     This function combines the [`crop`][pysmo.functions.crop],
     [`detrend`][pysmo.functions.detrend], [`taper`][pysmo.functions.taper], and
@@ -1019,8 +1019,8 @@ def window[T: Seismogram](
         -->
 
         <figure markdown="span">
-        ![Functions window](../../images/sybil/functions_window.png#only-light){ loading=lazy }
-        ![Functions window](../../images/sybil/functions_window-dark.png#only-dark){ loading=lazy }
+        ![A tapered window applied to a seismogram, shown over the original trace.](../../images/sybil/functions_window.png#only-light){ loading=lazy }
+        ![A tapered window applied to a seismogram, shown over the original trace.](../../images/sybil/functions_window-dark.png#only-dark){ loading=lazy }
         </figure>
     """
 

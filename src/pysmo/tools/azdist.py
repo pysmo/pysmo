@@ -1,4 +1,12 @@
-"""Common distance and azimuth calculations using [`pyproj.Geod`][]."""
+"""Distance and azimuth calculations between `Location` points.
+
+[`distance`][pysmo.tools.azdist.distance],
+[`azimuth`][pysmo.tools.azdist.azimuth], and
+[`backazimuth`][pysmo.tools.azdist.backazimuth] use [`pyproj.Geod`][] on a
+reference ellipsoid. [`haversine`][pysmo.tools.azdist.haversine] uses the
+haversine formula on a spherical Earth, the conventional model for
+seismological epicentral distance.
+"""
 
 import math
 
@@ -9,7 +17,7 @@ from pysmo import Location
 __all__ = ["azimuth", "backazimuth", "distance", "haversine"]
 
 DEFAULT_ELLPS = "WGS84"
-"""Default model for distance and azimuth calculations."""
+"""Default reference ellipsoid for distance and azimuth calculations."""
 
 
 def _azdist(
@@ -18,13 +26,13 @@ def _azdist(
     """Return forward/backazimuth and distance using pyproj (proj4 bindings).
 
     Args:
-        location_1: location of point 1.
-        location_2: location of point 2.
+        location_1: Location of point 1.
+        location_2: Location of point 2.
         ellps: Ellipsoid to use for calculations.
 
     Returns:
-        az: Azimuth
-        baz: Backazimuth
+        az: Azimuth in degrees.
+        baz: Backazimuth in degrees.
         dist: Distance between the points in metres.
     """
     g = Geod(ellps=ellps)
@@ -46,12 +54,12 @@ def _azdist(
 def azimuth(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
-    """Calculate azimuth between two points.
+    """Calculate the azimuth between two locations.
 
     Args:
-        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        ellps: Ellipsoid to use for azimuth calculation.
+        location_1: Origin location.
+        location_2: Target location.
+        ellps: Ellipsoid to use for the calculation.
 
     Returns:
         Azimuth in degrees from location 1 to location 2.
@@ -76,15 +84,15 @@ def azimuth(
 def backazimuth(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
-    """Calculate backazimuth between two points.
+    """Calculate the backazimuth between two locations.
 
     Args:
-        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        ellps: Ellipsoid to use for backazimuth calculation.
+        location_1: Origin location.
+        location_2: Target location.
+        ellps: Ellipsoid to use for the calculation.
 
     Returns:
-        Backazimuth in degrees from point 2 to point 1.
+        Backazimuth in degrees from location 2 to location 1.
 
     Examples:
         ```python
@@ -106,15 +114,15 @@ def backazimuth(
 def distance(
     location_1: Location, location_2: Location, ellps: str = DEFAULT_ELLPS
 ) -> float:
-    """Calculate the great circle distance (in metres) between two locations.
+    """Calculate the great-circle distance in metres between two locations.
 
     Args:
-        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        ellps: Ellipsoid to use for distance calculation.
+        location_1: Origin location.
+        location_2: Target location.
+        ellps: Ellipsoid to use for the calculation.
 
     Returns:
-        Great Circle Distance in metres.
+        Great-circle distance in metres.
 
     Examples:
         ```python
@@ -134,14 +142,14 @@ def distance(
 
 
 def haversine(location_1: Location, location_2: Location) -> float:
-    """Calculate the great circle distance in degrees between two locations.
+    """Calculate the great-circle distance in degrees between two locations.
 
-    Uses the haversine formula on a spherical Earth, which is the conventional
-    model for seismological epicentral distance.
+    Uses the haversine formula on a spherical Earth, the conventional model
+    for seismological epicentral distance.
 
     Args:
-        location_1: Origin location. Any object implementing the [`Location`][pysmo.Location] protocol.
-        location_2: Target location. Any object implementing the [`Location`][pysmo.Location] protocol.
+        location_1: Origin location.
+        location_2: Target location.
 
     Returns:
         Epicentral distance in degrees.

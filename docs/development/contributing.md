@@ -6,82 +6,57 @@ tags:
 
 # Contributing
 
-Thank you for considering contributing to pysmo. Please read through this
-guide carefully before you start.
-
 ## Ways to contribute
 
-There are several ways to contribute, and not all of them involve writing code:
+Not all of these involve writing code:
 
-- *Questions*: asking for help when something is unclear or you get stuck is
-  one of the easiest ways to contribute. Questions help us identify areas that
-  need attention. Since pysmo development happens publicly on
-  [GitHub](https://github.com/pysmo/pysmo), we ask that you post questions
-  there too — either as a new
-  [issue](https://github.com/pysmo/pysmo/issues) or a
-  [discussion](https://github.com/pysmo/pysmo/discussions). Feel free to
-  answer questions from other users as well (including your own, should you
-  figure it out).
-- *Bug reports*: if something needs fixing, please create a new
-  [issue](https://github.com/pysmo/pysmo/issues), or add information to an
-  existing one if the bug has already been reported. A patch that fixes the
-  bug is also welcome.
-- *Enhancements*: if you can use pysmo, you can also write code that becomes
-  part of it — whether that is a useful function, a new pysmo type, or a tool
-  you built using pysmo.
+- **Questions.** Asking when something is unclear points at documentation that
+    needs work. pysmo is developed in the open, so ask on GitHub, as an
+    [issue](https://github.com/pysmo/pysmo/issues) or a
+    [discussion](https://github.com/pysmo/pysmo/discussions). Answering other
+    people's questions helps just as much.
+- **Bug reports.** Open an [issue](https://github.com/pysmo/pysmo/issues), or
+    add to an existing one. A failing test that reproduces the bug is ideal.
+- **Code.** A useful function, a new type, or a tool built on pysmo can all be
+    contributed. [Code standards](standards.md) covers what is expected.
 
-If you do want to submit code for inclusion in pysmo, please follow the steps
-outlined below.
+## What a contribution contains
 
-## What should be included?
+Well-written code, tests that cover it, and docstrings on anything public.
+Because the documentation is generated from docstrings, a contribution is often
+just two files: the implementation and its test.
 
-A good contribution contains well-written, documented code along with
-meaningful tests to ensure consistent, bug-free behaviour.
+## Submitting a pull request
 
-Since much of the pysmo documentation is generated from docstrings in the
-source code, a contribution may often consist of just two files: the code
-itself and an associated test file.
-
-## Submitting code
-
-As described in [Environment setup](./environment.md#git-repository), pysmo
-development happens on [GitHub](https://github.com). Code submitted via
-[pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
-has a much greater chance of being included than patches sent via email.
-
-The typical workflow is to
-[fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) pysmo,
-configure git to sync your fork with the upstream repository, and then create
-a feature branch for your changes:
+Set up a checkout as described in [Setting up](environment.md), then work on a
+branch:
 
 ```bash
-git checkout -b my_feature
+git checkout -b my-feature
 ```
 
-Before submitting a pull request from your feature branch, please make sure
-you have done the following:
+Before opening the pull request:
 
-- Write code that adheres to the [PEP 8](https://peps.python.org/pep-0008/)
-  style guide.
-- Include unit tests with your submission. If you need help with that, feel
-  free to contact us.
-- Run a code linter and verify that all unit tests pass. The command
-  [`make tests`](./environment.md#makefile) should complete without errors.
-- To keep a clean git history, please
-  [rebase](https://git-scm.com/docs/git-rebase) your feature branch onto the
-  pysmo master branch and squash your commits into a single, well-documented
-  commit. This avoids entries like "fix typo" or "undo changes" in the git
-  log. Do this before submitting your initial pull request.
+- Run `make format`, then `make lint` and `make tests`. All three must pass.
+- [Rebase](https://git-scm.com/docs/git-rebase) onto the current `master` and
+    squash the branch into one well-described commit, so the history carries no
+    "fix typo" steps. Commit messages follow
+    [conventional commits](https://www.conventionalcommits.org); the changelog
+    is generated from them.
 
-Once a pull request is submitted:
+Opening the pull request triggers two automated checks:
 
-- Unit tests run automatically in clean Python environments via
-  [GitHub Actions](https://docs.github.com/en/actions). Please verify that
-  all tests pass. If tests pass locally but fail in the pull request, you may
-  have forgotten to add a dependency to `pyproject.toml` that happened to
-  already be installed on your machine.
-- A documentation build is also triggered automatically. Follow the link that
-  appears in the pull request on GitHub and verify the documentation looks as
-  expected.
-- We will then review your submission and, all being well, include it in
-  pysmo.
+- The test suite runs in clean environments on the supported Python versions. A
+    pass locally but a failure here usually means a dependency is missing from
+    `pyproject.toml`.
+- The documentation is built. Follow the link on the pull request to check how
+    it renders.
+
+A maintainer then reviews the change.
+
+## Contributors
+
+pysmo is built by
+[its contributors](https://github.com/pysmo/pysmo/graphs/contributors). Early
+work on the project came from Omkar Ranadive, Helio Tejedor, Xiaoting Lou, and
+Lay Kuan Loh.

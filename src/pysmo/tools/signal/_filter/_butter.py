@@ -56,7 +56,8 @@ def bandpass[T: Seismogram](
             data. If `False`, modify the input seismogram in place.
 
     Returns:
-        A new Seismogram object containing the filtered data when called with `clone=True`.
+        A new Seismogram containing the filtered data when called with
+        `clone=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
@@ -87,7 +88,7 @@ def bandpass[T: Seismogram](
 
 
 def _zerophase_causal_ratio(corners: PositiveInt) -> float:
-    r"""Ratio between a zero-phase and single-pass Butterworth filter's actual -3dB point.
+    r"""Inward shift of a zero-phase Butterworth filter's actual -3dB point.
 
     A single-pass Butterworth filter's -3dB point sits exactly at its nominal
     design corner. Applying the same filter forward and backward (as
@@ -121,7 +122,7 @@ def _zerophase_causal_ratio(corners: PositiveInt) -> float:
 def causal_band(
     freqmin: float, freqmax: float, corners: PositiveInt
 ) -> tuple[float, float]:
-    r"""Corner frequencies for a causal filter whose actual -3dB point matches a zero-phase filter's.
+    r"""Corner frequencies so a causal filter's -3dB point matches a zero-phase one's.
 
     Use this when adding a causal (single-pass) alternative to an existing
     zero-phase-filtered workflow. Passing the same nominal `freqmin`/
@@ -287,8 +288,8 @@ def causal_band(
         -->
 
         <figure markdown="span">
-        ![Zero-phase vs causal Butterworth magnitude response](../../../images/sybil/causal_band_response.png#only-light){ loading=lazy }
-        ![Zero-phase vs causal Butterworth magnitude response](../../../images/sybil/causal_band_response-dark.png#only-dark){ loading=lazy }
+        ![Magnitude response of a zero-phase Butterworth filter compared with its causal equivalent.](../../../images/sybil/causal_band_response.png#only-light){ loading=lazy }
+        ![Magnitude response of a zero-phase Butterworth filter compared with its causal equivalent.](../../../images/sybil/causal_band_response-dark.png#only-dark){ loading=lazy }
         </figure>
     """
     ratio = _zerophase_causal_ratio(corners)
@@ -305,20 +306,20 @@ def causal_band(
 def zerophase_band(
     freqmin: float, freqmax: float, corners: PositiveInt
 ) -> tuple[float, float]:
-    r"""Corner frequencies for a zero-phase filter whose actual -3dB point matches a causal filter's.
+    r"""Corner frequencies so a zero-phase filter's -3dB point matches a causal one's.
 
     The exact inverse of [`causal_band`][pysmo.tools.signal.causal_band]:
     use this when you have causal (single-pass) design frequencies already
-    chosen — from an existing causal filtering workflow, or from
-    `causal_band` itself — and want the zero-phase nominal frequencies whose
+    chosen (from an existing causal filtering workflow, or from
+    `causal_band` itself) and want the zero-phase nominal frequencies whose
     actual passband matches them, independent of any particular application.
 
     Converts **causal design** corner frequencies to the wider nominal
     frequencies a **zero-phase** filter needs so that its actual (inward-shifted)
     -3dB point lands close to the causal filter's actual (nominal) -3dB point.
 
-    The inverse is exact and closed-form — the same ratio `causal_band`
-    uses, with multiplication and division swapped — not an approximation
+    The inverse is exact and closed-form: the same ratio `causal_band`
+    uses, with multiplication and division swapped, not an approximation
     or an iterative solve. Both corrected edges move outward from the input band,
     the opposite direction from `causal_band`. The same close-but-not-exact
     caveat documented on `causal_band` applies here too: matching -3dB
@@ -328,7 +329,7 @@ def zerophase_band(
     Args:
         freqmin: Causal design minimum frequency (in Hz).
         freqmax: Causal design maximum frequency (in Hz).
-        corners: The zero-phase filter's number of corners (poles) — the
+        corners: The zero-phase filter's number of corners (poles), the
             same `corners` value used to derive the causal filter's design
             frequencies, not the doubled order the causal filter itself uses.
 
@@ -398,7 +399,8 @@ def highpass[T: Seismogram](
             data. If `False`, modify the input seismogram in place.
 
     Returns:
-        A new Seismogram object containing the filtered data when called with `clone=True`.
+        A new Seismogram containing the filtered data when called with
+        `clone=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
@@ -464,7 +466,8 @@ def lowpass[T: Seismogram](
             data. If `False`, modify the input seismogram in place.
 
     Returns:
-        A new Seismogram object containing the filtered data when called with `clone=True`.
+        A new Seismogram containing the filtered data when called with
+        `clone=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     high = freqmax / fe
@@ -534,7 +537,8 @@ def bandstop[T: Seismogram](
             data. If `False`, modify the input seismogram in place.
 
     Returns:
-        A new Seismogram object containing the filtered data when called with `clone=True`.
+        A new Seismogram containing the filtered data when called with
+        `clone=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe

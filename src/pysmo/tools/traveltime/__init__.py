@@ -57,8 +57,8 @@ def travel_times(
 
     Note:
         Each phase is solved on a single turning branch. Where the model
-        produces a travel-time triplication — mainly P and S at short
-        distances for a shallow source — that branch need not be the
+        produces a travel-time triplication (mainly P and S at short
+        distances for a shallow source), that branch need not be the
         first arrival.
 
     Examples:
@@ -111,8 +111,8 @@ def travel_times(
     return {phase: pd.Timedelta(seconds=value) for phase, value in seconds.items()}
 
 
-# `travel_times` is stricter than `TravelTimeBackend` — its `phases` is the
-# `Phase` literal, not plain `str` — so it does not satisfy the protocol
+# `travel_times` is stricter than `TravelTimeBackend`: its `phases` is the
+# `Phase` literal, not plain `str`, so it does not satisfy the protocol
 # directly. An argument-free `partial` does, with no behaviour change:
 # unknown phase names still raise from `travel_times`. Pickles as a
 # reference to `travel_times` (a public, stable symbol), so a saved

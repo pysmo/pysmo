@@ -23,8 +23,8 @@ __all__ = ["MSeed"]
 def _convert_mseed_data(value: object) -> npt.NDArray[np.float64]:
     """Coerce decoded samples to a `float64` array, always via a copy.
 
-    `pymseed` yields whatever libmseed decoded — usually `int32` for
-    STEIM-compressed data — as a zero-copy view into memory owned by the
+    `pymseed` yields whatever libmseed decoded (usually `int32` for
+    STEIM-compressed data) as a zero-copy view into memory owned by the
     trace list. The copy both matches pysmo's floating-point `data`
     convention and detaches the array from that memory, which is freed when
     the trace list is closed.
@@ -50,7 +50,7 @@ class MSeed(SeismogramEndtimeMixin):
     `pymseed` trace-list hierarchy is flattened at read time: each
     contiguous segment becomes one `MSeed`.
 
-    miniSEED carries no station coordinates and no event data — only
+    miniSEED carries no station coordinates and no event data, only
     channel identity, timing and samples. `MSeed` exposes the network,
     station, location and channel codes as read-only properties derived
     from `sourceid` (an `MSeed` is a [`StationCode`][pysmo.StationCode] at
@@ -111,7 +111,7 @@ class MSeed(SeismogramEndtimeMixin):
     """FDSN Source Identifier this segment was read from.
 
     The full URN form as carried in miniSEED and returned by `pymseed`,
-    e.g. `FDSN:IU_ANMO_00_B_H_Z` — the `FDSN:` prefix is kept and the
+    e.g. `FDSN:IU_ANMO_00_B_H_Z`; the `FDSN:` prefix is kept and the
     channel is split into band/source/subsource. This differs from
     [`GeoCsvSeismogram.sourceid`][pysmo.classes.GeoCsvSeismogram.sourceid],
     which keeps the shorter GeoCSV `SID` header form. This is parse-time
@@ -183,7 +183,7 @@ class MSeed(SeismogramEndtimeMixin):
 
     @classmethod
     def from_file(cls, filename: str | PathLike[str]) -> Self:
-        """Create a new instance from a miniSEED file holding exactly one contiguous segment.
+        """Create an instance from a miniSEED file with exactly one contiguous segment.
 
         Args:
             filename: Path to the miniSEED file to read.
@@ -219,7 +219,7 @@ class MSeed(SeismogramEndtimeMixin):
 
     @classmethod
     def from_bytes(cls, data: bytes) -> Self:
-        """Create a new instance from miniSEED bytes holding exactly one contiguous segment.
+        """Create an instance from miniSEED bytes with exactly one contiguous segment.
 
         Args:
             data: Raw miniSEED bytes.
@@ -257,7 +257,7 @@ class MSeed(SeismogramEndtimeMixin):
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
-        """Fetch and parse a seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
+        """Fetch and parse a seismogram from EarthScope's FDSN dataselect service.
 
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with
@@ -283,7 +283,7 @@ class MSeed(SeismogramEndtimeMixin):
             A new MSeed instance.
 
         Raises:
-            ValueError: If no waveform data is returned for the given
+            ValueError: If no waveform data are returned for the given
                 window, or more than one contiguous segment is returned
                 (a data gap, or a wildcarded channel/location code matching
                 more than one channel).
@@ -326,7 +326,7 @@ class MSeed(SeismogramEndtimeMixin):
         """Write this seismogram to a miniSEED file.
 
         Samples are written as `float64` (uncompressed) and the
-        publication version is set to 1 — `sourceid` and timing are
+        publication version is set to 1; `sourceid` and timing are
         preserved, `publication_version` is not. For STEIM integer
         compression, or to write several seismograms into one file, use
         [`pysmo.lib.io.write_mseed`][] directly.

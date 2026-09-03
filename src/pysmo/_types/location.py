@@ -11,7 +11,10 @@ __all__ = ["Location", "MiniLocation"]
 
 
 class Location(Protocol):
-    """Protocol class to define the `Location` type."""
+    """Protocol class to define the `Location` type.
+
+    A geographic point, given as latitude and longitude in degrees.
+    """
 
     latitude: float
     """Latitude in degrees."""
@@ -27,7 +30,9 @@ class Location(Protocol):
 
 @define(kw_only=True)
 class MiniLocation:
-    """Minimal class for use with the [`Location`][pysmo.Location] type.
+    """Minimal implementation of the `Location` type.
+
+    See [`Location`][pysmo.Location].
 
     Examples:
         ```python

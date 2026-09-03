@@ -98,7 +98,7 @@ def test_generate_noise_velocity_power_of_two_npts() -> None:
     delta = pd.Timedelta(seconds=0.1)
     for npts in (256, 512, 1024, 2048):
         result = noise.generate_noise(
-            model=noise.NHNM, npts=npts, delta=delta, return_velocity=True, seed=0
+            model=noise.NHNM, npts=npts, delta=delta, return_velocity=True
         )
         assert len(result.data) == npts, (
             f"return_velocity=True with npts={npts} returned {len(result.data)} samples"
@@ -111,12 +111,13 @@ def test_generate_noise_acceleration_length() -> None:
     for both power-of-two and non-power-of-two npts."""
     delta = pd.Timedelta(seconds=0.1)
     for npts in (256, 1000, 1024, 1500):
-        result = noise.generate_noise(model=noise.NHNM, npts=npts, delta=delta, seed=0)
+        result = noise.generate_noise(model=noise.NHNM, npts=npts, delta=delta)
         assert len(result.data) == npts
 
 
 @pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
+@pytest.mark.usefixtures("seeded_noise_rng")
 def test_generate_noise() -> Figure:
     npts = 10000
     nperseg = int(npts / 4)
@@ -132,11 +133,9 @@ def test_generate_noise() -> Figure:
         T=nhnm.T,
     )
 
-    nhnm_data_acc = noise.generate_noise(
-        model=nhnm, npts=npts, delta=delta, seed=0
-    ).data
+    nhnm_data_acc = noise.generate_noise(model=nhnm, npts=npts, delta=delta).data
     nhnm_data_vel = noise.generate_noise(
-        model=nhnm, npts=npts, delta=delta, return_velocity=True, seed=0
+        model=nhnm, npts=npts, delta=delta, return_velocity=True
     ).data
     freqs_acc, power_acc = signal.welch(
         nhnm_data_acc, sfrec, nperseg=nperseg, nfft=nfft, scaling="density"

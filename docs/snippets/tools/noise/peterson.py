@@ -1,8 +1,11 @@
-"""
-Example script for pysmo.tools.noise
-"""
+"""Generate synthetic noise from Peterson's noise models and check it.
 
-#!/usr/bin/env python
+A random seismogram is generated from each of Peterson's New Low Noise Model
+(NLNM), New High Noise Model (NHNM), and an interpolated model half way
+between them. The power spectral density of every generated seismogram is
+plotted on top of the model it was drawn from, showing that ``generate_noise``
+reproduces the target spectrum.
+"""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,112 +14,73 @@ import pandas as pd
 from pysmo.tools.noise import generate_noise, peterson
 from pysmo.tools.signal import psd
 
+# name, Peterson noise level, plot colour, model label, model line style
+NOISE_LEVELS = [
+    ("low", 0.0, "b", "NLNM", "dashed"),
+    ("mid", 0.5, "g", "interpolated model", "dashdot"),
+    ("high", 1.0, "r", "NHNM", "dotted"),
+]
+
 
 def main(outfile: str = "peterson.png") -> None:
-    # Set parameters
-    npts: int = 200000  # multiple of 4
+    # A long series gives the PSD estimate enough frequency resolution to
+    # track the model curves; npts must be a multiple of 4 for the Welch
+    # segment and FFT lengths below.
+    npts = 200_000
     delta = pd.Timedelta(seconds=0.1)
-    nperseg = int(npts / 4)
-    nfft = int(npts / 2)
-    time_in_seconds = np.linspace(0, npts * delta.total_seconds(), npts)
+    nperseg, nfft = npts // 4, npts // 2
+    times = np.linspace(0.0, npts * delta.total_seconds(), npts)
 
-    # Calculate noise models
-    low_noise_model = peterson(noise_level=0)
-    mid_noise_model = peterson(noise_level=0.5)
-    high_noise_model = peterson(noise_level=1)
+    fig, axes = plt.subplot_mosaic(
+        [
+            ["low", "mid", "high"],
+            ["psd", "psd", "psd"],
+            ["psd", "psd", "psd"],
+            ["psd", "psd", "psd"],
+        ],
+        figsize=(13, 9),
+        layout="tight",
+    )
+    psd_ax = axes["psd"]
 
-    # Generate random noise seismograms
-    low_noise_seismogram = generate_noise(npts=npts, model=low_noise_model, delta=delta)
-    mid_noise_seismogram = generate_noise(npts=npts, model=mid_noise_model, delta=delta)
-    high_noise_seismogram = generate_noise(
-        npts=npts, model=high_noise_model, delta=delta
-    )
+    for name, level, color, model_label, model_style in NOISE_LEVELS:
+        model = peterson(noise_level=level)
+        seismogram = generate_noise(npts=npts, model=model, delta=delta)
+        freqs, power = psd(seismogram, nperseg=nperseg, nfft=nfft)
 
-    # Calculate power spectral density
-    f_low, Pxx_dens_low = psd(low_noise_seismogram, nperseg=nperseg, nfft=nfft)
-    f_mid, Pxx_dens_mid = psd(mid_noise_seismogram, nperseg=nperseg, nfft=nfft)
-    f_high, Pxx_dens_high = psd(high_noise_seismogram, nperseg=nperseg, nfft=nfft)
+        wave_ax = axes[name]
+        wave_ax.plot(times, seismogram.data, color, linewidth=0.2)
+        wave_ax.set_xlim(times[0], times[-1])
+        wave_ax.set_xlabel("Time [s]")
+        wave_ax.locator_params(axis="x", nbins=4)
 
-    _ = plt.figure(figsize=(13, 9), layout="tight")
+        # Skip the zero-frequency bin before converting to period.
+        psd_ax.plot(
+            1 / freqs[1:],
+            10 * np.log10(power[1:]),
+            color,
+            linewidth=0.5,
+            label=f"generated {name} noise",
+        )
+        psd_ax.plot(
+            model.T.total_seconds(),
+            model.psd,
+            color=plt.rcParams["text.color"],  # legible in light and dark themes
+            linewidth=1,
+            linestyle=model_style,
+            label=model_label,
+        )
 
-    # Plot random high and low noise seismograms
-    ax1 = plt.subplot2grid((4, 3), (0, 0))
-    plt.plot(time_in_seconds, high_noise_seismogram.data, "r", linewidth=0.2)
-    plt.ylabel("Ground Accelaration")
-    plt.xlabel("Time [s]")
-    plt.xlim(time_in_seconds[0], time_in_seconds[-1])
-    xticks = np.arange(
-        tmin := time_in_seconds[0], (tmax := time_in_seconds[-1]) + 1, (tmax - tmin) / 5
-    )
-    ax1.set_xticks(xticks)
+    axes["low"].set_ylabel("Ground acceleration")
 
-    ax2 = plt.subplot2grid((4, 3), (0, 1))
-    ax2.set_xticks(xticks)
-    plt.plot(time_in_seconds, mid_noise_seismogram.data, "g", linewidth=0.2)
-    plt.xlabel("Time [s]")
-    plt.xlim(time_in_seconds[0], time_in_seconds[-1])
+    periods = peterson(0.0).T.total_seconds()
+    psd_ax.set_xscale("log")
+    psd_ax.set_xlim(periods[0], periods[-1])
+    psd_ax.set_xlabel("Period [s]")
+    psd_ax.set_ylabel("Power spectral density [dB]")
+    psd_ax.legend()
 
-    ax3 = plt.subplot2grid((4, 3), (0, 2))
-    ax3.set_xticks(xticks)
-    plt.plot(time_in_seconds, low_noise_seismogram.data, "b", linewidth=0.2)
-    plt.xlabel("Time [s]")
-    plt.xlim(time_in_seconds[0], time_in_seconds[-1])
-
-    # Plot PSD of noise
-    _ = plt.subplot2grid((4, 3), (1, 0), rowspan=3, colspan=3)
-    plt.plot(
-        1 / f_high,
-        10 * np.log10(Pxx_dens_high),
-        "r",
-        linewidth=0.5,
-        label="generated high noise",
-    )
-    plt.plot(
-        1 / f_mid,
-        10 * np.log10(Pxx_dens_mid),
-        "g",
-        linewidth=0.5,
-        label="generated medium noise",
-    )
-    plt.plot(
-        1 / f_low,
-        10 * np.log10(Pxx_dens_low),
-        "b",
-        linewidth=0.5,
-        label="generated low noise",
-    )
-    plt.plot(
-        high_noise_model.T.total_seconds(),
-        high_noise_model.psd,
-        color=plt.rcParams["text.color"],
-        linewidth=1,
-        linestyle="dotted",
-        label="NHNM",
-    )
-    plt.plot(
-        mid_noise_model.T.total_seconds(),
-        mid_noise_model.psd,
-        color=plt.rcParams["text.color"],
-        linewidth=1,
-        linestyle="dashdot",
-        label="Interpolated noise model",
-    )
-    plt.plot(
-        low_noise_model.T.total_seconds(),
-        low_noise_model.psd,
-        color=plt.rcParams["text.color"],
-        linewidth=1,
-        linestyle="dashed",
-        label="NLNM",
-    )
-    plt.gca().set_xscale("log")
-    plt.xlim(
-        low_noise_model.T.total_seconds()[0], low_noise_model.T.total_seconds()[-1]
-    )
-    plt.xlabel("Period [s]")
-    plt.ylabel("Power Spectral Density (dB/Hz)")
-    plt.legend()
-    plt.savefig(outfile, transparent=True)
+    fig.savefig(outfile, transparent=True)
     plt.show()
 
 

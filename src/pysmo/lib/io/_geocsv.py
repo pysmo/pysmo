@@ -236,8 +236,8 @@ def merge_geocsv_timeseries(
     """Merge contiguous waveform segments into a single segment.
 
     Zero-sample segments are discarded before merging; the remaining
-    segments must share a channel (SID) and sample rate. The merge itself —
-    chronological ordering, gap/overlap tolerance, and overlap verification —
+    segments must share a channel (SID) and sample rate. The merge itself
+    (chronological ordering, gap/overlap tolerance, and overlap verification)
     is delegated to
     [`merge`][pysmo.functions.merge]; see its
     docstring for details.
@@ -250,7 +250,7 @@ def merge_geocsv_timeseries(
             [`merge`][pysmo.functions.merge].
         auto_delta: Estimate a common sampling interval with
             [`estimate_delta`][pysmo.functions.estimate_delta] instead of
-            requiring segments to share the exact same sample rate — useful
+            requiring segments to share the exact same sample rate; useful
             when reported sample rates only disagree by measurement or
             floating-point noise. Passed through to
             [`merge`][pysmo.functions.merge].
@@ -336,7 +336,7 @@ def _geocsv_block(seismogram: Seismogram) -> str:
     # delta down to zero, raising ZeroDivisionError.
     sample_rate_hz = 1_000_000_000 / seismogram.delta.value
 
-    # np.isfinite(...) guards against `int(inf)` raising OverflowError below —
+    # np.isfinite(...) guards against `int(inf)` raising OverflowError below:
     # inf/-inf trivially satisfy `x == round(x)` but are not representable as
     # int; route them (and NaN) through the float branch instead.
     is_integral = bool(np.all(np.isfinite(data)) and np.all(data == np.round(data)))
@@ -397,15 +397,15 @@ def write_geocsv(
         every `Time` column value are `pd.Timestamp.isoformat()` calls
         (`begin_time` and `begin_time + n * delta` respectively), which
         preserve full precision (including nanoseconds). Sample values are
-        written as `integer` or `float` depending on whether the data is
+        written as `integer` or `float` depending on whether the data are
         integral, so genuinely non-integral data (e.g. a detrended or
-        filtered seismogram) is never silently truncated. A `sourceid`
+        filtered seismogram) are never silently truncated. A `sourceid`
         attribute is used if present (e.g. on a
         [`GeoCsvSeismogram`][pysmo.classes.GeoCsvSeismogram]), but is not
         required by the [`Seismogram`][pysmo.Seismogram] protocol itself,
         so the `# SID:` header line is simply omitted for objects that
-        don't have one. `# field_unit: UTC, Counts` is always written as-is
-        — neither `Seismogram` nor `GeoCsvSeismogram` carries a units
+        don't have one. `# field_unit: UTC, Counts` is always written
+        as-is, and neither `Seismogram` nor `GeoCsvSeismogram` carries a units
         concept, so this label may not describe the data's actual physical
         units (e.g. after response removal); `parse_geocsv`/
         `extract_geocsv_timeseries` never read it back, so this doesn't

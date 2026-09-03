@@ -69,12 +69,12 @@ _ENCODING_VERSION = 1
 
 
 class RawFetcher(Protocol):
-    """Callable `(*, station, starttime, endtime) -> bytes` returning a raw, unparsed fetch response.
+    """Callable `(*, station, starttime, endtime) -> bytes` for a raw fetch response.
 
     A `Protocol` with a keyword-only `__call__`, not a plain `Callable[...]`
     type alias, specifically because the functions this slot is meant to be
-    filled with directly — [`fetch_sac`][pysmo.tools.web.fetch_sac] and
-    [`fetch_geocsvseismogram`][pysmo.tools.web.fetch_geocsvseismogram] — are
+    filled with directly ([`fetch_sac`][pysmo.tools.web.fetch_sac] and
+    [`fetch_geocsvseismogram`][pysmo.tools.web.fetch_geocsvseismogram]) are
     themselves keyword-only. A plain positional `Callable` type cannot
     express that, and calling one positionally raises `TypeError` regardless
     of what a type checker allows.
@@ -93,7 +93,7 @@ type RawParser = Callable[[bytes], Seismogram]
 E.g. a wrapper around [`SAC.from_zip`][pysmo.classes.SAC.from_zip] or
 [`GeoCsvSeismogram.from_text`][pysmo.classes.GeoCsvSeismogram.from_text].
 Must agree with whichever [`RawFetcher`][pysmo.tools.archive.RawFetcher] it
-is paired with — nothing enforces this pairing statically, the same as
+is paired with; nothing enforces this pairing statically, the same as
 `fetch_sac`/`SAC.from_zip` are already paired by convention today.
 """
 
@@ -105,7 +105,7 @@ class SqliteArchiveFetcher:
     Format-agnostic: stores whatever bytes `fetch_raw` returns
     (zlib-compressed), keyed by station identity and time window, and hands
     the decompressed bytes to `parse` on both a cache hit and a miss. A hit
-    never calls `fetch_raw` again — a side effect of this is bit-identical
+    never calls `fetch_raw` again; a side effect of this is bit-identical
     replay of a previously fetched window, rather than only detecting drift
     after the fact. `fetch_raw` runs outside the lock, so two threads racing
     the same not-yet-cached window both fetch before one result is stored.
@@ -127,13 +127,16 @@ class SqliteArchiveFetcher:
     """
 
     fetch_raw: RawFetcher
-    """Fetches a raw response for a station and absolute time window."""
+    """Fetch a raw response for a station and absolute time window."""
 
     parse: RawParser
-    """Parses a raw response (freshly fetched, or read back from cache) into a `Seismogram`."""
+    """Parse a raw response (freshly fetched or from cache) into a `Seismogram`."""
 
     wal: bool = False
-    """Enable WAL mode. Only for a database confirmed to be on local disk — see the class docstring."""
+    """Enable WAL mode.
+
+    Only for a database confirmed to be on local disk (see the class docstring).
+    """
 
     _conn: sqlite3.Connection | None = field(
         init=False, default=None, repr=False, eq=False
@@ -154,13 +157,17 @@ class SqliteArchiveFetcher:
             )
 
     def __getstate__(self) -> dict[str, Any]:
-        """Drop the live connection; the lock is excluded entirely below (no `threading.Lock` is picklable, not even a fresh one)."""
+        """Drop the live connection for pickling.
+
+        The lock is excluded entirely below; no `threading.Lock` is picklable,
+        not even a fresh one.
+        """
         state = attrs_getstate(self, {"_conn": None})
         del state["_lock"]
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
-        """Restore state without triggering any `on_setattr` hooks, then create a fresh lock."""
+        """Restore state without firing `on_setattr` hooks, then make a fresh lock."""
         attrs_setstate(self, state)
         object.__setattr__(self, "_lock", threading.Lock())
 
@@ -168,7 +175,7 @@ class SqliteArchiveFetcher:
         """Close the underlying connection, if one is open.
 
         Not required before the object is garbage-collected or the process
-        exits — normal teardown closes the file descriptor regardless — but
+        exits (normal teardown closes the file descriptor regardless), but
         call it explicitly to release the connection sooner in a
         long-running process holding many such fetchers.
         """
@@ -203,7 +210,7 @@ class SqliteArchiveFetcher:
     def __call__(
         self, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Seismogram:
-        """Return a `Seismogram` for `station` and window, from cache if already fetched.
+        """Return a `Seismogram` for `station` and window, from cache when possible.
 
         Args:
             station: Station to fetch data for.
@@ -211,7 +218,7 @@ class SqliteArchiveFetcher:
             endtime: End of the requested window (UTC).
 
         Returns:
-            Parsed result — from the cache database on a hit, freshly
+            Parsed result: from the cache database on a hit, freshly
             fetched (and then stored) on a miss.
         """
         key = self._key(station, starttime, endtime)

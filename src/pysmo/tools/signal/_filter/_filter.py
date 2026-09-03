@@ -52,7 +52,8 @@ def filter[T: Seismogram](
             function.
 
     Returns:
-        A new Seismogram object containing the filtered data when called with `clone=True`.
+        A new Seismogram containing the filtered data when called with
+        `clone=True`.
 
     Raises:
         ValueError: If `filter_name` is not a registered filter.
