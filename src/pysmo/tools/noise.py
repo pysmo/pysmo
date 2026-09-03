@@ -1,4 +1,4 @@
-"""Generate realistic synthetic noise that matches the naturally observed amplitude spectrum.
+"""Generate synthetic noise matching the naturally observed amplitude spectrum.
 
 Examples:
     Given the spectral amplitude in observed seismic noise on Earth is not flat
@@ -9,35 +9,8 @@ Examples:
     noise models. These are Peterson's NHNM (red), NLNM (blue), and an
     interpolated model that lies between the two (green).
 
-    ```python exec="true" session="tools-noise-peterson"
-    import matplotlib
-
-    matplotlib.use("Agg")
-
-    # fmt: off
-    --8<-- "docs/snippets/tools/noise/peterson.py"
-    # fmt: on
-
-    from pathlib import Path
-
-    target_dir = Path("site/images/tools/noise")
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    main(outfile=str(target_dir / "peterson.png"))
-    plt.close("all")
-    plt.style.use("dark_background")
-    main(outfile=str(target_dir / "peterson_dark.png"))
-    plt.style.use("default")
-
-    print(
-        "![peterson example](../../../images/tools/noise/peterson.png#only-light)"
-        "{ loading=lazy }"
-    )
-    print(
-        "![peterson example](../../../images/tools/noise/peterson_dark.png#only-dark)"
-        "{ loading=lazy }"
-    )
-    ```
+    ![Synthetic noise drawn from the Peterson high-noise, low-noise, and intermediate models.](../../../images/tools/noise/peterson.png#only-light){ loading=lazy }
+    ![Synthetic noise drawn from the Peterson high-noise, low-noise, and intermediate models.](../../../images/tools/noise/peterson_dark.png#only-dark){ loading=lazy }
 
     ??? quote "Example source code"
         ```python title="peterson.py"
@@ -62,7 +35,7 @@ __all__ = ["NoiseModel", "generate_noise", "peterson"]
 
 @dataclass(frozen=True)
 class NoiseModel:
-    """Class to store seismic noise models.
+    """A seismic noise model: power spectral density against period.
 
     Args:
         psd: Power spectral density of ground acceleration [dB].
@@ -208,7 +181,10 @@ NHNM = NoiseModel(
 
 
 def peterson(noise_level: float) -> NoiseModel:
-    """Generate a noise model by interpolating between Peterson's[^1] New Low Noise Model (NLNM) and New High Noise Model (NHNM).
+    """Interpolate a noise model between Peterson's[^1] NLNM and NHNM.
+
+    The New Low Noise Model (NLNM) and New High Noise Model (NHNM) bound the
+    range of seismic background noise observed on Earth.
 
     [^1]: Peterson, Jon R. Observations and Modeling of Seismic Background
         Noise. Report, 93–322, 1993, https://doi.org/10.3133/ofr93322. USGS
@@ -267,7 +243,6 @@ def generate_noise(
     delta: pd.Timedelta = SeismogramDefaults.delta,
     begin_time: pd.Timestamp = SeismogramDefaults.begin_time,
     return_velocity: bool = False,
-    seed: int | None = None,
 ) -> MiniSeismogram:
     """Generate a random seismogram from a noise model.
 
@@ -287,7 +262,6 @@ def generate_noise(
         return_velocity: If `True`, integrate the acceleration spectrum
             (division by `iω` in the frequency domain) to return ground
             velocity instead.
-        seed: Random seed for reproducibility (e.g. in tests).
 
     Raises:
         ValueError: If `npts` is not a positive integer.
@@ -303,15 +277,11 @@ def generate_noise(
         >>> from pysmo import MiniSeismogram
         >>> from pysmo.tools.noise import peterson, generate_noise
         >>> model = peterson(0.0)
-        >>> noise = generate_noise(
-        ...     model=model, npts=64, delta=pd.Timedelta(seconds=1.0), seed=42
-        ... )
+        >>> noise = generate_noise(model=model, npts=64, delta=pd.Timedelta(seconds=1.0))
         >>> isinstance(noise, MiniSeismogram)
         True
         >>> len(noise.data)
         64
-        >>> noise.data[:3]
-        array([-4.20418403e-09, -1.25152943e-08, -8.42501771e-09])
         >>>
         ```
     """
@@ -357,7 +327,7 @@ def generate_noise(
 
     # Phase is randomly generated; DC and Nyquist are forced real, as
     # required for a Hermitian-symmetric spectrum representing a real signal.
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng()
     phase = (rng.random(freqs.size) - 0.5) * np.pi * 2
     phase[0] = 0.0
     phase[-1] = 0.0

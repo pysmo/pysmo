@@ -1,28 +1,5 @@
 <h1 align="center">pysmo</h1>
 
-<div align="center">
-<a href="https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml" target="_blank">
-<img src="https://github.com/pysmo/pysmo/actions/workflows/run-tests.yml/badge.svg" alt="Test Status">
-</img></a>
-<a href="https://github.com/pysmo/pysmo/actions/workflows/build.yml" target="_blank">
-<img src= "https://github.com/pysmo/pysmo/actions/workflows/build.yml/badge.svg" alt="Build Status">
-</img></a>
-<a href="https://pysmo.readthedocs.io/en/latest/?badge=latest" target="_blank">
-<img src="https://readthedocs.org/projects/pysmo/badge/?version=latest" alt="Documentation Status">
-</img></a>
-<a href="https://codecov.io/gh/pysmo/pysmo" target="_blank">
-<img src="https://codecov.io/gh/pysmo/pysmo/branch/master/graph/badge.svg?token=ZsHTBN4rxF" alt="codecov">
-</img></a>
-<a href="https://pypi.org/project/pysmo/" target="_blank">
-<img src="https://img.shields.io/pypi/v/pysmo" alt="PyPI">
-</img></a>
-<a href="https://pypi.org/project/pysmo/" target="_blank">
-<img src="https://img.shields.io/pypi/pyversions/pysmo" alt="Python Versions">
-</img></a>
-<a href="https://github.com/pysmo/pysmo/blob/master/LICENSE" target="_blank">
-<img src="https://img.shields.io/github/license/pysmo/pysmo" alt="License">
-</img></a></div>
-
 <p align="center">
 <em>Documentation:</em> <a href="https://docs.pysmo.org" target="_blank">https://docs.pysmo.org</a>
 </p>
@@ -32,43 +9,46 @@
 
 ---
 
-Pysmo is a seismology library built around a clean separation between data
-storage and data processing. Processing functions are written against small,
-focused interfaces — `Seismogram`, `Station`, `Event`, and so on — rather than
-against specific classes. Any object that satisfies an interface can be used
-with those functions directly.
+Pysmo is a seismology library. It is built around what processing code needs from
+its data, not how those data are stored. Its functions are written against a
+small set of `Protocol` types: `Seismogram`, `Station`, `Event`, and so on.
+Protocols were added to Python in PEP 544. They are a major recent addition to
+its type system.
 
-The benefit is clearest when tackling a new problem. Data can be structured
-however the problem demands, rather than adapted to fit a pre-existing class.
-Functions specific to the problem can then consume that class directly, with
-access to all its fields. More general operations — filtering, normalising,
-resampling — are written against the interfaces and remain reusable across every
-compatible type; pysmo ships with a library of these. Functions written the same
-way for a specific project accumulate over time into a toolkit that works across
-projects — and any that prove broadly useful are welcome as contributions to
-pysmo.
+A protocol is a contract. `Seismogram` lists the attributes a processing function
+needs from a seismogram: the sample data, the sampling interval, the start time.
+A function written against it can use nothing else. That keeps it easy to follow.
+The same function also works with any object that meets the contract. That might
+be pysmo's SAC-file wrapper, one of pysmo's own lightweight classes, or a class
+written for a single study.
 
-Under the hood this is all standard Python typing, which means editors
-understand it too: autocompletion is available on any argument declared as, say,
-`Seismogram`, and mistakes — a missing attribute, a wrong return type — are
-caught before any code is run. No special registration or inheritance is
-required; if an object has the right attributes, it is compatible. Python's
-typing system has advanced considerably in recent versions, and pysmo is written
-to take full advantage of it — which is why older Python is not supported.
+A study whose data fit no existing class can define its own. The class holds
+exactly the fields the analysis needs. A function written for that study is typed
+against the class directly and can use any of its fields. A function for wider
+use is typed against a protocol instead. It works with any class that meets the
+protocol. Extra fields on that class are ignored. Filtering, normalising, and
+resampling work this way, and pysmo ships with a collection of such functions. A
+study function that proves broadly useful can be retyped against a protocol and
+contributed back.
+
+A type checker understands the protocols directly. Most modern editors have one
+built in, and it can also be run as a tool like mypy. A missing attribute or a
+wrong return type is flagged as the code is written. Any argument annotated as
+`Seismogram` gets autocompletion. Pysmo needs typing features from recent Python
+releases, so older versions are unsupported.
 
 ## Quick Start
 
-Pysmo includes concrete classes and processing functions that put everything
-above into practice. Below, two of those classes are used alongside built-in
-functions and a simple user-defined one — the latter works with both without any
-modification, which is the point.
+Pysmo also comes with ready-made classes and processing functions. The example
+below uses two of those classes, some built-in functions, and one short function
+defined on the spot. That last function works with both classes, unchanged.
 
 ```python
 from pysmo import Seismogram, MiniSeismogram
 from pysmo.classes import SAC
 from pysmo.functions import detrend, normalize, resample
 
-# Read a SAC file — access seismogram data via protocol-typed views
+# Read a SAC file
 sac = SAC.from_file("myfile.sac")
 seis = sac.seismogram  # satisfies the Seismogram protocol
 
@@ -77,7 +57,7 @@ detrend(seis)
 normalize(seis)
 resample(seis, seis.delta * 2)
 
-# Write a function that works with ANY Seismogram implementation
+# Write a function that works with any Seismogram implementation
 def print_info(seismogram: Seismogram) -> None:
     print(f"Start: {seismogram.begin_time}")
     print(f"dt: {seismogram.delta}")
@@ -86,11 +66,11 @@ print_info(seis)  # works with SAC
 
 # ...or create a lightweight seismogram from scratch
 mini = MiniSeismogram(data=seis.data, delta=seis.delta, begin_time=seis.begin_time)
-print_info(mini)  # works with MiniSeismogram too — same protocol
+print_info(mini)  # works with MiniSeismogram too, same protocol
 ```
 
-The same holds for a bespoke class written from scratch for a particular
-project, including fields that have no place in the protocol:
+The same holds for a class written from scratch for one project. It can carry
+fields the protocol has no place for:
 
 ```python
 from dataclasses import dataclass
@@ -116,6 +96,6 @@ my_seis = MySeismogram(
     label="teleseismic_P",
 )
 
-print_info(my_seis)   # same function as above — no changes needed
+print_info(my_seis)   # same function as above, no changes needed
 detrend(my_seis)      # built-in functions work too
 ```

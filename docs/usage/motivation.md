@@ -7,16 +7,14 @@ tags:
 
 # Motivation
 
-Typing has become an increasingly important feature of modern Python. This has
-changed how we write code, helped prevent errors, and improved the experience of
-working with modern editors. Pysmo brings these features to the field of
-seismology.
+Typing has become an increasingly important feature of modern Python. It has
+changed how code is written, helped prevent errors, and improved the experience
+of working with modern editors. Pysmo brings these features to seismology.
 
-!!! tip "'Class' vs 'type'"
+!!! tip "'Class' and 'type'"
 
-    <a id="type-tip"></a> In the paragraphs below we use the terms "class" and
-    "type" a lot. We can explore the relationship between these terms in more detail
-    using the built-in [`float`][] type:
+    The paragraphs below use the words "class" and "type" frequently. The
+    relationship between them shows up in the built-in [`float`][] type:
 
     ```python
     >>> a = 1.2 #(1)!
@@ -27,126 +25,113 @@ seismology.
     >>>
     ```
 
-    1. We first assign a float to the variable `a`.
-    2. Then we verify it is indeed a float using the `type` command.
-    3. The type of the float class is... a type!
+    1. Assign a float to `a`.
+    2. Check its type with the `type()` built-in.
+    3. The type of the `float` class is itself a type.
 
-    This example shows that the type of a class is itself a type, so every time we
-    define a class in Python, we also define a type.
+    The type of a class is itself a type, so every class defined in Python also
+    defines a type.
 
 ## The problem with types in seismology
 
-Anyone who has taken a course on programming (in any language) will most likely
-first have been taught about the different data types available. These typically
-consist of simple types like integers, floats, and strings, as well as the more
-complicated arrays, dictionaries, etc. These types are typically clearly defined
-and intuitive to use. For example, it's immediately obvious whether or not it
-makes sense to pass the string "hello world" as input to a program that
-calculates the square root of a number.
+Most introductory programming courses start with the available data types:
+simple ones like integers, floats, and strings, then compound ones like arrays
+and dictionaries. These are clearly defined and intuitive. It is obvious, for
+example, that passing the string `"hello world"` to a routine that computes a
+square root makes no sense.
 
-As one moves from general-purpose programming towards more specialised problem
-solving (e.g. within a particular scientific field), the expected input and
-output for a piece of code is likely to become more complex. We may therefore
-quite easily reach a point where we no longer have that intuitive feeling about
-the data we are working with.
+Moving from general-purpose programming to a specialised field, the inputs and
+outputs of a piece of code tend to get more complex. At some point the intuition
+for the data being handled is gone.
 
-When processing seismological data with Python, we naturally want to consider a
-seismogram to be a Python type of sorts. However, what data that type should
-include depends on the particular requirements of the processing that is
-performed with that seismogram data. Thus, if we define a seismogram type based
-on the needs of one particular application, it might not be suited for another.
-If we attempt to account for many use cases by being as broad as possible when
-defining a type, we are again more at risk of losing the intuitive feeling for
-our type while writing code. This kind of seismogram type would just be an
-abstract construct, rather than having any meaningful connection with how we
-experience a seismogram in nature or when treating it mathematically (and still
-wouldn't be able to guarantee it would work with all possible future use cases).
+Processing seismological data in Python naturally leads to treating a seismogram
+as a type of its own. But which attributes that type should hold depends on what
+the processing needs. A seismogram type defined around one application may not
+suit another. Defining it as broadly as possible to cover many cases brings back
+the same loss of intuition, and the type becomes an abstract construct with
+little connection to a seismogram as observed in nature or handled
+mathematically. It still cannot guarantee it will fit every future use case.
 
 ??? example "File formats in seismology"
 
-    The challenges we face due to different file formats that exist in seismology,
-    and how they are used for processing, are not dissimilar to what was discussed
-    above. Their design naturally focuses on data storage, but they often try to
-    cater towards applications too. We can use
-    [SAC](https://ds.iris.edu/files/sac-manual/manual/file_format.html) as an
-    example for this; SAC is essentially an application with its own file format.
-    Additionally, SAC files are commonly used as input format for third-party
-    applications. This is possible because SAC files allow storing a lot of metadata
-    in their "headers". The approach does have a few drawbacks though:
+    The situation with seismological file formats, and how they are used for
+    processing, is similar. A format's design centres on data storage, but often
+    reaches towards applications as well.
+    [SAC](https://ds.iris.edu/files/sac-manual/manual/file_format.html) is one
+    example: it is essentially an application with its own file format, and SAC
+    files are also a common input format for third-party applications. That works
+    because a SAC file can hold a large amount of metadata in its "headers". The
+    approach has drawbacks:
 
-    - The majority of SAC headers are optional (only 6 are mandatory), so there is
-        no guarantee they are actually set to a value. To prevent this from causing
-        errors, checks need to be built into code to ensure they are actually set.
-    - The large number of headers (over 150) requires intricate knowledge of the
-        file format. Even so, using SAC files probably feels far from intuitive.
-    - SAC files are limited to the headers defined in the format. The only way to
-        store custom data is via the "user defined headers", or if those run out,
-        repurposing other headers to mean something else.
+    - Most SAC headers are optional (only 6 are mandatory), so there is no guarantee
+        a given header is set. Code has to check.
+    - The format defines over 150 headers, which takes detailed knowledge to use,
+        and still rarely feels intuitive.
+    - The headers are fixed by the format. Custom data have to go in the
+        "user-defined headers", or, once those run out, in other headers repurposed
+        to mean something else.
 
 ## The pysmo solution
 
-As it is impossible to know all possible ways a seismogram might be used in the
-future, defining an all-encompassing type for a seismogram for any use case is
-equally impossible (and would be difficult to use anyway). Pysmo instead focuses
-on what different seismograms have *in common* to define a seismogram type. This
-leads to the following approach:
+No one can know every way a seismogram might be used in future, so an
+all-encompassing seismogram type is out of reach, and would be awkward to use in
+any case. Pysmo instead defines a seismogram type from what different
+seismograms have *in common*. The approach:
 
-- Seismogram data are stored in any existing or new format (i.e. Python class).
-    We might call this the "data seismogram". Recall also that any class in
-    Python is also a type that can be used in type annotations.
-- The attributes all seismograms have in common determine the pysmo type. Unlike
-    the data seismogram, it is only used for type annotations, so it doesn't
-    need to be a real class. As mentioned elsewhere,
-    [`Protocol`][typing.Protocol] classes are used for this purpose.
-- Code that requires access to specific attributes or methods of the data
-    seismogram uses that as its type (i.e. as their type annotation).
-- Code that only uses the parts of the data seismogram that all seismograms have
-    in common uses pysmo types instead.
+- Seismogram data are stored in any class, existing or new. Call this the "data
+    seismogram". Any Python class is also a type, usable in annotations.
+- The attributes all seismograms share define the pysmo type. It is used only in
+    annotations, so it need not be a real class: [`Protocol`][typing.Protocol]
+    classes serve this purpose.
+- Code that needs specific attributes or methods of the data seismogram is
+    annotated with that class.
+- Code that uses only the shared attributes is annotated with a pysmo type
+    instead.
 
-This approach gives complete freedom to store and use data in any way, while
-still being able to write reusable code using pysmo types.
+Data can then be stored and used in any way, and code annotated with pysmo types
+stays reusable.
 
-Not every pysmo type shares this exact origin, though —
-[`Seismogram`][pysmo.Seismogram] is a particularly clear-cut case. See
-["Why does this type exist?"](types.md#why-does-this-type-exist) on the
-[types](types.md) page for the other reasons a pysmo type may exist.
+Not every pysmo type has this origin. [`Seismogram`][pysmo.Seismogram] is the
+clearest case of it; for the other reasons a type may exist, see
+["Why does this type exist?"](types.md#why-does-this-type-exist) on the types
+page.
 
 ## Code writing experience
 
-At this point it is worth remembering that type hints in Python are not enforced
-at runtime. They are therefore most useful when used together with a modern
-editor capable of interpreting these type hints. Typically this happens in the
-form of autocomplete and error checking.
+Type hints in Python are not enforced at runtime. They are most useful alongside
+a type-aware editor, usually as autocomplete and error checking.
 
 ### Autocomplete
 
-Once [installed](../first-steps/installation.md), the pysmo types can be
-imported and used just like any class. We can, for example, use the
-[`Seismogram`][pysmo.Seismogram] type to annotate a function. A modern editor is
-then able to tell us what attributes are available for a variable and speed up
-the coding process by offering autocomplete for the attributes:
+Once [installed](../first-steps/installation.md), the pysmo types import and
+behave like any class. Annotating a function argument with the `Seismogram` type
+lets a type-aware editor list the available attributes and offer autocomplete
+for them:
 
-![Editor Autocomplete](../images/editor_autocomplete_dark.png#only-dark)
-![Editor Autocomplete](../images/editor_autocomplete_light.png#only-light)
+![An editor listing a Seismogram's attributes as autocomplete suggestions.](../images/editor_autocomplete_dark.png#only-dark)
+![An editor listing a Seismogram's attributes as autocomplete suggestions.](../images/editor_autocomplete_light.png#only-light)
 
 ### Error checking
 
-Should we for some reason make coding errors such as trying to access a
-non-existent attribute, the editor will give us a warning:
+A coding error such as accessing an attribute that does not exist produces a
+warning in the editor:
 
-![Editor Error](../images/editor_error_dark.png#only-dark){ loading=lazy }
-![Editor Error](../images/editor_error_light.png#only-light){ loading=lazy }
+![An editor flagging access to an attribute the Seismogram type does not define.](../images/editor_error_dark.png#only-dark){ loading=lazy }
+![An editor flagging access to an attribute the Seismogram type does not define.](../images/editor_error_light.png#only-light){ loading=lazy }
 
-These kinds of warnings are not just for catching typos. They will also catch
-programming errors such as trying to set the value of `delta` to a string
-instead of a float.
+These warnings are not only for typos. They also catch errors such as setting
+`delta` to a string instead of a float.
 
-!!! tip "Check types without editor support"
+!!! tip "Type checking without an editor"
 
-    Should your editor for some reason be unable to parse type hints, testing your
-    code for typing errors can still be done with
-    [mypy](https://mypy.readthedocs.io/en/stable/) by running:
+    Editor integration is convenient but not required.
+    [mypy](https://mypy.readthedocs.io/en/stable/) runs the same checks from the
+    command line, over a single file or a whole package:
 
     ```bash
-    $ python -m mypy mycode.py
+    $ uv run mypy mycode.py
     ```
+
+    This is also what runs in continuous integration, where there is no editor. A
+    clean run reports `Success: no issues found`; otherwise each error is printed
+    with its file and line. Add mypy to a project with `uv add --dev mypy`.

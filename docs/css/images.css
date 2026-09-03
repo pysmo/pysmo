@@ -1,0 +1,9 @@
+/*
+ * zensical hides `#only-dark` images in the light colour scheme but ships no
+ * matching rule for the dark scheme, so both halves of a light/dark image pair
+ * render in dark mode. Mirror the built-in rule for `slate`.
+ */
+[data-md-color-scheme="slate"] img[src$="#only-light"],
+[data-md-color-scheme="slate"] img[src$="#gh-light-mode-only"] {
+  display: none;
+}

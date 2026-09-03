@@ -31,7 +31,7 @@ _GRID_STEP_KM = 1.0
 
 # Slack for floating-point depth comparisons, in kilometres: grid
 # resampling in `_profile` and the integration bounds in `integrate`.
-# A micron — far below any physically meaningful depth difference.
+# A micron; far below any physically meaningful depth difference.
 _DEPTH_TOLERANCE_KM = 1e-9
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -240,7 +240,7 @@ def _layer_integrals_vec(
     The same closed forms as the scalar version, one `(tau, delta)` pair
     per layer. This is the hot path: `integrate` calls it once per ray
     parameter over every layer above the turning point, and only sums the
-    layers it knows lie above it — the closed form itself is not valid for a
+    layers it knows lie above it; the closed form itself is not valid for a
     layer below the turning point, so a caller must not sum one.
 
     Args:

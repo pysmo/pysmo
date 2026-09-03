@@ -4,7 +4,7 @@
 [FDSN StationXML](http://www.fdsn.org/xml/station/) document once and returns
 one uninterpreted `_RawStationEpoch` per `<Channel>` epoch (or per
 `<Station>` for a channel-less `level=station` document): NSLC identity,
-coordinates, the validity window, and — when the document carried one — the
+coordinates, the validity window, and (when the document carried one) the
 instrument `_RawResponse`. Interpretation into a
 [`Station`][pysmo.Station]-compatible object with a nested response happens
 one layer up, in [`pysmo.classes.StationXML`][].
@@ -164,14 +164,14 @@ def _normalise_unit_gain(
     """Scale `numerator` so the stage has unit gain at DC (`z = 1`).
 
     Assumes the stage's own `StageGain/Frequency` is 0 Hz (the normal case
-    for a decimation stage; not independently checked here) — the
+    for a decimation stage; not independently checked here); the
     `StageGain/Value` itself is discarded regardless, since
     `InstrumentSensitivity` already carries the end-to-end system gain.
 
     Raises `ValueError` if `numerator` sums to zero, which is correct for
     the decimation FIR/IIR stages this module targets (unit-gain by design)
     but would also reject a deliberately zero-DC-gain stage (e.g. a
-    differentiator-style FIR) — not something the FDSN decimation stages
+    differentiator-style FIR); not something the FDSN decimation stages
     handled here are expected to encode.
     """
     numerator_sum = sum(numerator)
@@ -184,7 +184,11 @@ def _normalise_unit_gain(
 
 
 def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
-    """Parse `stage`'s `<Decimation>` element into `(input_sample_rate, decimation_factor, correction)`; `correction` defaults to `0.0` if `<Correction>` is absent."""
+    """Parse `stage`'s `<Decimation>` element.
+
+    Returns `(input_sample_rate, decimation_factor, correction)`; `correction`
+    defaults to `0.0` when `<Correction>` is absent.
+    """
     decimation = stage.find("fdsn:Decimation", _NS)
     if decimation is None:
         raise ValueError(f"Stage {stage.get('number')} has no <Decimation> element.")
@@ -202,7 +206,7 @@ def _parse_decimation(stage: ET.Element) -> tuple[float, int, float]:
     #
     # <Delay> (the filter's own nominal/estimated delay) is also not read:
     # only <Correction> (what was actually applied to the recorded samples)
-    # matters for reconstructing the recorded data's transfer function —
+    # matters for reconstructing the recorded data's transfer function,
     # matching evalresp's default behaviour of using correction_applied
     # rather than estimated_delay.
     correction_elem = decimation.find("fdsn:Correction", _NS)
@@ -336,7 +340,7 @@ def _parse_response(response: ET.Element) -> _RawResponse:
     normalization_factor: float | None = None
     digital_stages: list[_RawDigitalStage] = []
 
-    # The <Stage number="..."> attribute — not document order — is the
+    # The <Stage number="..."> attribute (not document order) is the
     # authoritative processing sequence (FDSN StationXML schema: "Start from
     # name='1' and iterate sequentially"); a producer is free to emit stages
     # out of order.
@@ -363,7 +367,7 @@ def _parse_response(response: ET.Element) -> _RawResponse:
                 digital_stages.append(digital_stage)
             case ("gain", None):
                 # A pure scalar-gain stage, already folded into
-                # InstrumentSensitivity — nothing to record.
+                # InstrumentSensitivity, so nothing to record.
                 pass
 
     if normalization_factor is None:
@@ -382,7 +386,7 @@ def _parse_response(response: ET.Element) -> _RawResponse:
 def _epoch_coords(
     elem: ET.Element, fallback: tuple[float | None, float | None, float | None]
 ) -> tuple[float | None, float | None, float | None]:
-    """Return `elem`'s lat/lon/elevation, each falling back to `fallback` when absent."""
+    """`elem`'s lat/lon/elevation, each falling back to `fallback` when absent."""
     latitude = _optional_child_float(elem, "Latitude")
     longitude = _optional_child_float(elem, "Longitude")
     elevation = _optional_child_float(elem, "Elevation")
@@ -398,7 +402,7 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
 
     Walks the document once and returns one entry per `<Channel>` epoch (or
     per `<Station>` for a channel-less `level=station` document), in document
-    order — the FDSN station web service does not default to a single
+    order; the FDSN station web service does not default to a single
     "current" epoch, so a query covering a channel's full history returns
     several. Epoch *selection* is left to the caller. `<Response>` is read
     when present (`level=response`) and left as `None` otherwise;
@@ -406,7 +410,7 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
 
     Args:
         xml: Raw StationXML document bytes (any `level` that carries
-            coordinates — `channel`, `station` or `response`).
+            coordinates: `channel`, `station` or `response`).
 
     Returns:
         One uninterpreted epoch per `<Channel>` (or `<Station>`) found, in

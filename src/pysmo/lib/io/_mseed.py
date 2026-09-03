@@ -1,7 +1,7 @@
 """Low-level writing of the miniSEED waveform format.
 
 miniSEED reading is handled directly by
-[`MSeed`][pysmo.classes.MSeed] via EarthScope's `pymseed` — there is no
+[`MSeed`][pysmo.classes.MSeed] via EarthScope's `pymseed`; there is no
 parsing counterpart here. `write_mseed` is the write side, kept in
 `pysmo.lib.io` alongside [`write_geocsv`][pysmo.lib.io.write_geocsv] so
 callers learn one import location for pysmo's format writers.
@@ -57,7 +57,7 @@ def write_mseed(
 
     Each `(identity, seismogram)` pair becomes one trace segment. Pairs
     that resolve to the same FDSN Source Identifier are grouped into one
-    trace with several segments — the natural representation of a channel
+    trace with several segments, the natural representation of a channel
     with a data gap.
 
     Every segment is written with publication (quality) version 1,
@@ -72,7 +72,7 @@ def write_mseed(
             *identity* is any [`StationCode`][pysmo.StationCode] (e.g. a
             [`MiniStationCode`][pysmo.MiniStationCode], an
             [`MSeed`][pysmo.classes.MSeed], or a full
-            [`Station`][pysmo.Station] — extra coordinate fields are
+            [`Station`][pysmo.Station]; extra coordinate fields are
             ignored); it supplies the network, station, location and
             channel codes. *seismogram* is any
             [`Seismogram`][pysmo.Seismogram].
@@ -82,13 +82,13 @@ def write_mseed(
             default `None` picks it from each seismogram's `data.dtype`
             (`int32` → `"i"`, `float32` → `"f"`, `float64` → `"d"`; any
             other dtype raises `TypeError`). An explicit value is applied
-            to every segment as given — a `UserWarning` is emitted per
-            segment whose data does not already match, since `pymseed`
+            to every segment as given, and a `UserWarning` is emitted per
+            segment whose data do not already match, since `pymseed`
             silently truncates or downcasts in that case.
 
     Raises:
-        TypeError: If *sample_type* is `None` and a seismogram's data has a
-            dtype other than `int32`, `float32` or `float64`.
+        TypeError: If *sample_type* is `None` and a seismogram's data array
+            has a dtype other than `int32`, `float32` or `float64`.
         ValueError: If *segments* is empty.
         pymseed.MiniSEEDError: If the data cannot be encoded or written.
 

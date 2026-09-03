@@ -64,14 +64,14 @@ def time_array(seismogram: Seismogram) -> npt.NDArray[np.floating]:
 
 
 def unix_time_array(seismogram: Seismogram) -> npt.NDArray[np.floating]:
-    """Create an array containing unix epoch dates.
+    """Create an array containing Unix epoch times.
 
     Args:
         seismogram: Seismogram object.
 
     Returns:
-        Array containing the unix epoch times (number of seconds since 1970)
-        of each point in the seismogram data.
+        Array containing the Unix epoch time (seconds since 1970) of each
+        point in the seismogram data.
 
     Examples:
         ```python
@@ -141,17 +141,17 @@ def plotseis(
     call `fig.show()` or integrate it into your own application.
 
     Args:
-        seismograms: One or more seismogram objects. If a 'label' attribute is
-            found it will be used to label the trace in the plot.
-        outfile: Optionally save figure to this filename.
-        title: Optionally set figure title.
-        kwargs: Optional keyword arguments passed directly to `matplotlib.pyplot.plot`.
+        seismograms: One or more seismogram objects. A `label` attribute, if
+            present, labels that trace in the plot.
+        outfile: Optionally save the figure to this filename.
+        title: Optionally set the figure title.
+        kwargs: Keyword arguments passed through to `matplotlib.pyplot.plot`.
 
     Returns:
         The matplotlib [`Figure`][matplotlib.figure.Figure] containing the plot.
 
     Raises:
-        TypeError: If the removed `showfig` keyword is passed.
+        TypeError: If the unsupported `showfig` keyword is passed.
 
     Examples:
         ```python

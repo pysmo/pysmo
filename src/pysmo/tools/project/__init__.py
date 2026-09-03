@@ -2,29 +2,31 @@
 """Declare station/event data to fetch on demand, without storing it on disk.
 
 A [`PysmoProject`][pysmo.tools.project.PysmoProject] holds a list of
-[`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects — station +
-optional event + optional explicit window — plus a `seismogram_transform`
+[`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects (a station, an
+optional event, and an optional explicit window) plus a `seismogram_transform`
 callable applied to each freshly downloaded
 [`Seismogram`][pysmo.Seismogram]. It defaults to returning the raw trace as
 a [`MiniSeismogram`][pysmo.MiniSeismogram]; a custom transform is the place
-for whatever data preparation a downstream tool needs — removing the
-instrument response, detrending, resampling — as well as converting the
+for whatever data preparation a downstream tool needs (removing the
+instrument response, detrending, resampling), as well as converting the
 result into the target type that tool expects (e.g.
 [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram], for
 [`ICCS`][pysmo.tools.iccs.ICCS]). Results are cached in memory for the life
-of the object; nothing is ever written to disk by `PysmoProject` itself. The
-`PysmoProject` instance is the reproducible, shareable artefact — pickled,
-not serialised to a bespoke config format, so `seismogram_transform` and
+of the object; nothing is ever written to disk by `PysmoProject` itself.
+
+The `PysmoProject` instance is the reproducible, shareable artefact: it is
+pickled, not serialised to a bespoke config format, so `seismogram_transform`
+and
 `fetch_seismogram` must be real top-level functions in an importable module
 rather than lambdas or closures (pickle serialises functions by reference,
-not by value). A callable `attrs` class with only picklable fields — see the
-example below — is the alternative once the transform needs its own
+not by value). A callable `attrs` class with only picklable fields (see the
+example below) is the alternative once the transform needs its own
 configuration (e.g. filter corner frequencies): it pickles by value, so it
 has no such restriction.
 
 Build `entries` with
 [`build_entries`][pysmo.tools.project.build_entries] from already-narrowed
-lists of events and stations — a filtered cross product. The project is
+lists of events and stations, a filtered cross product. The project is
 generic over the event and station types it is built from, so
 `project.events` / `project.stations` return those concrete types, not the
 bare [`Event`][pysmo.Event] / [`Station`][pysmo.Station] protocols.
@@ -33,14 +35,14 @@ Pair `PysmoProject` with
 [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] as its
 `fetch_seismogram` so a project's entries are only ever fetched once across
 however many sessions the project is used in (see the second example
-below) — a different mechanism from
+below). A different mechanism from
 [`ProjectEntry.checksum`][pysmo.tools.project.ProjectEntry.checksum], which
 only detects drift on the live-network default rather than avoiding it.
 
 ## Basic example
 
 This example builds a small project around a single, real station/event
-pair — IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake, the
+pair: IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake, the
 same reference event used throughout this project's test suite and in
 [`travel_times`][pysmo.tools.traveltime.travel_times]'s own `Examples:`
 block:
@@ -66,9 +68,9 @@ block:
 >>>
 ```
 
-This `seismogram_transform` removes the instrument response — data preparation
-`ICCS` itself assumes has already happened, per its own
-[`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] docstring — then
+This `seismogram_transform` removes the instrument response, the data
+preparation `ICCS` itself assumes has already happened (per its own
+[`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] docstring), then
 converts the result into a `MiniIccsSeismogram`, using the predicted
 arrival on `context` as the initial pick (see
 [`FetchContext`][pysmo.tools.project.FetchContext]). It's a callable
@@ -105,19 +107,20 @@ configurable per instance:
 >>>
 ```
 
-Discovery methods only inspect `entries` — no network access needed:
+Discovery methods only inspect `entries`; no network access needed:
 
 ```python
 >>> len(project.stations)
 1
 >>> project.events_for(station_anmo)
-[MiniEvent(time=Timestamp('2010-02-27 06:34:11.530000+0000', tz='UTC'), latitude=-36.122, longitude=-72.898, depth=22900.0)]
+[MiniEvent(time=Timestamp('2010-02-27 06:34:11.530000+0000', tz='UTC'),
+           latitude=-36.122, longitude=-72.898, depth=22900.0)]
 >>>
 ```
 
 Fetching a seismogram uses `PysmoProject`'s default `fetch_seismogram` for
 the waveform, and `seismogram_transform`'s own fetch for the instrument
-response — both download real data from EarthScope's FDSN web services:
+response; both download real data from EarthScope's FDSN web services:
 
 <!-- skip: start if(not run_real_web_requests) -->
 ```python
@@ -134,7 +137,7 @@ True
 ## A different travel-time model
 
 When an entry carries an event but no explicit window, the window is
-placed around a predicted phase arrival — by default
+placed around a predicted phase arrival, by default
 [`travel_times`][pysmo.tools.traveltime.travel_times] on its own default
 model. `travel_time_backend` swaps that for any callable of the same
 shape ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]).
@@ -165,12 +168,12 @@ cover, or arrival times from an external catalogue.
 Pairing `fetch_seismogram` with
 [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] means a
 station/window already fetched once is read back locally on a later run,
-rather than re-fetched — recommended for real analysis work, over the
+rather than re-fetched; recommended for real analysis work, over the
 always-fresh default used above.
 
 This only pins the waveform, though. `to_mini_iccs_seismogram` (reused
 below unchanged) still fetches a `StationXML` response itself on every call, cached
-or not — an archive-backed `fetch_seismogram` says nothing about whatever
+or not; an archive-backed `fetch_seismogram` says nothing about whatever
 `seismogram_transform` independently fetches:
 
 <!-- skip: start if(not run_real_web_requests) -->
@@ -258,7 +261,7 @@ offline.
 >>>
 ```
 
-Grow it later without rebuilding — a plain `extend`, since the fetch cache
+Grow it later without rebuilding, with a plain `extend`, since the fetch cache
 is keyed by entry content, not list position:
 
 ```python

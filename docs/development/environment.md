@@ -4,110 +4,84 @@ tags:
   - Development
 ---
 
-# Environment setup
+# Setting up
 
-## Git repository
+## Get the code
 
-We use [GitHub](https://github.com) for pysmo development. If you're new to
-git and/or GitHub, we recommend reviewing their
-[documentation](https://docs.github.com/en/get-started). There are two ways
-to get a local copy of the repository:
-
-1. Clone the pysmo repository directly.
-2. Fork the repository on GitHub first, then clone your fork (recommended if
-   you plan on contributing changes back to pysmo).
-
-### Clone directly
-
-To get started quickly, clone the pysmo repository directly:
+pysmo is developed on [GitHub](https://github.com/pysmo/pysmo). To contribute
+changes back,
+[fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) the
+repository first, then clone the fork and add the main repository as a second
+remote:
 
 ```bash
-$ git clone https://github.com/pysmo/pysmo.git
-Cloning into 'pysmo'...
-$ cd pysmo
-```
-
-That's it! Now skip ahead to [Requirements](#requirements).
-
-### Create your own fork
-
-Creating your own
-[fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) lets
-you push changes to GitHub under your own account, making it straightforward
-to submit a [pull request](https://docs.github.com/en/pull-requests). Once
-you have forked pysmo, clone _your_ repository:
-
-```bash
-$ git clone git@github.com:<github-username>/pysmo.git
-Cloning into 'pysmo'...
-$ cd pysmo
-```
-
-!!! note "Why clone over SSH"
-    We used
-    [SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
-    to clone the repository here. With an _ssh-agent_ running, this saves you
-    from having to enter your credentials every time you push to GitHub.
-
-To pull in future changes from the upstream pysmo repository, add it as an
-additional remote:
-
-```bash
+git clone git@github.com:<username>/pysmo.git
+cd pysmo
 git remote add upstream https://github.com/pysmo/pysmo.git
 ```
 
-## Requirements
-
-### Setting up Windows
-
-Setting up the development environment on Windows may require a few additional
-steps:
-
-* Install [Chocolatey](https://chocolatey.org/install#individual), a package
-  manager for Windows that simplifies installing dependencies.
-* Once Chocolatey is installed, run the following commands as administrator
-  (PowerShell or Command Prompt):
-
-  ```powershell
-  PS > choco install make
-  PS > choco install awk
-  ```
-
-### uv
-
-We use [uv](https://docs.astral.sh/uv/) to manage a consistent, isolated
-development environment. Uv creates a Python virtual environment and handles
-package installation, so you can develop and test pysmo without affecting your
-system-wide Python installation.
-
-!!! note "uv installs Python too"
-    uv can also be used to install Python itself.
-
-## Makefile
-
-Pysmo provides a `Makefile` for common development tasks. Running `make`
-without arguments (or with `help`) lists the available commands:
+The `upstream` remote is used to pull in changes made after the fork. Cloning
+over SSH avoids re-entering credentials on every push. A read-only checkout
+without a fork works too:
 
 ```bash
-$ make help
-
-This makefile executes mostly uv commands. To view all uv commands available
-run 'uv help'.
-
-AVAILABLE COMMANDS
-  build                Build distribution.
-  check-uv             Check if uv is installed.
-  clean                Remove existing builds.
-  docs                 Build html docs.
-...
+git clone https://github.com/pysmo/pysmo.git
 ```
 
-To get started, run:
+## Install with uv
+
+pysmo uses [uv](https://docs.astral.sh/uv/) for development. uv manages the
+virtual environment, the Python interpreter, and every dependency from a locked
+set, so a checkout resolves to the same versions on any machine. Install uv,
+then run:
 
 ```bash
-$ make sync
-...
+make sync
 ```
 
-This creates a Python virtual environment for pysmo development (if one does
-not already exist) and installs pysmo along with all its dependencies.
+This calls `uv sync`, which creates `.venv/` and installs pysmo with its
+development, test, and documentation dependencies. uv downloads a suitable
+Python version too if none is present.
+
+Prefix commands with `uv run` to run them inside the environment, for example
+`uv run pytest` or `uv run python`.
+
+!!! tip "Drop the `uv run` prefix"
+
+    [direnv](https://direnv.net) can activate the environment on entering the
+    directory. Create `.envrc`:
+
+    ```bash
+    watch_file pyproject.toml uv.lock
+    uv sync --quiet
+    source .venv/bin/activate
+    ```
+
+    Then run `direnv allow`. `python`, `pytest`, and the rest now run directly.
+
+## Make targets
+
+Several development tasks are more than a single command. The `Makefile` bundles
+them, and each target calls `uv` so nothing needs to be activated first.
+
+| Command          | Action                                                                |
+| ---------------- | --------------------------------------------------------------------- |
+| `make sync`      | Install or update the environment from the lock file.                 |
+| `make format`    | Apply `ruff` formatting, import sorting, and autofixes.               |
+| `make lint`      | Check formatting and lint rules without changing files.               |
+| `make mypy`      | Run the type checker.                                                 |
+| `make tests`     | Run the full suite: `mypy`, `pytest`, coverage, and image comparison. |
+| `make docs`      | Build the documentation into `site/`.                                 |
+| `make live-docs` | Serve the documentation with live reload on `localhost:8000`.         |
+
+`make help` lists them all.
+
+## Testing every supported Python version
+
+`make tests` runs the suite once, on the active interpreter.
+[tox](https://tox.wiki) runs it in a fresh environment for each supported Python
+version, the same matrix continuous integration uses:
+
+```bash
+uvx tox
+```
