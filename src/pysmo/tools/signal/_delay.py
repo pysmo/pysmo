@@ -44,7 +44,7 @@ def _pearson_at_lag(
 def _check_same_delta(
     seismogram1: Seismogram, seismogram2: Seismogram | Sequence[Seismogram]
 ) -> None:
-    """Checks if the sampling interval (delta) of two seismograms or a seismogram and a sequence of seismograms are the same."""
+    """Check that a seismogram and one or more others share the same `delta`."""
 
     ref_delta = seismogram1.delta.total_seconds()
 
@@ -259,7 +259,7 @@ def multi_delay(
     abs_max: bool = False,
     max_shift: NonNegativeTimedelta | None = None,
 ) -> tuple[list[pd.Timedelta], list[float]]:
-    """Calculates delays and correlation coefficients for a list of seismograms against a template.
+    """Compute delays and correlation coefficients for many seismograms vs a template.
 
     This function uses FFT-based cross-correlation to efficiently compute delays
     for multiple seismograms at once against a single template. This is faster
@@ -446,7 +446,7 @@ def multi_multi_delay(
     seismograms: Sequence[Seismogram],
     abs_max: bool,
 ) -> tuple[npt.NDArray[np.timedelta64], npt.NDArray[np.floating]]:
-    """Calculates pairwise delays and correlation coefficients for a sequence of seismograms.
+    """Compute pairwise delays and correlation coefficients for a set of seismograms.
 
     This function cross-correlates every seismogram with every other seismogram
     in the sequence using FFT-based cross-correlation. All FFTs are computed once

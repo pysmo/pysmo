@@ -108,7 +108,7 @@ class QuakeML:
         converter=float, on_setattr=setters.pipe(setters.convert, setters.validate)
     )
     """Hypocentre depth in metres, positive downwards, as recorded in the
-    source catalogue — relative to sea level; may be negative for events
+    source catalogue; relative to sea level, and may be negative for events
     above sea level. (The datum detail lives here, not on
     [`Event.depth`][pysmo.Event.depth], because it is format-specific.)"""
 
@@ -143,13 +143,13 @@ class QuakeML:
         Args:
             xml: Raw QuakeML 1.2 document bytes.
             event_id: Event to select when `xml` describes more than one.
-                Matched against each event's full `publicID`, or — as a
-                short form — against the trailing `eventid=` query-parameter
+                Matched against each event's full `publicID`, or (as a
+                short form) against the trailing `eventid=` query-parameter
                 value or the final path segment of the `publicID`. If
                 `None`, `xml` must describe exactly one event.
             strict: If `True` (default), any unrepresentable event in `xml`
                 fails the call. If `False`, such events are skipped (with a
-                `UserWarning`) before narrowing — so a bad *other* event
+                `UserWarning`) before narrowing, so a bad *other* event
                 doesn't block selecting the one you asked for.
 
         Returns:
@@ -204,7 +204,7 @@ class QuakeML:
             xml: Raw QuakeML 1.2 document bytes.
             strict: If `True` (default), a single unrepresentable event
                 fails the whole parse. If `False`, unrepresentable events
-                are skipped and a `UserWarning` reports how many — useful
+                are skipped and a `UserWarning` reports how many; useful
                 for a broad catalogue where a few malformed origins should
                 not discard the rest.
 
@@ -212,8 +212,8 @@ class QuakeML:
             One QuakeML instance per representable event, in document order.
 
         Raises:
-            ValueError: If `xml` is malformed, or — when `strict` is `True`
-                — contains any event that cannot be represented (see
+            ValueError: If `xml` is malformed, or (when `strict` is `True`)
+                contains any event that cannot be represented (see
                 [`pysmo.classes.QuakeML`][]).
         """
         return [cls._from_raw(raw) for raw in parse_quakeml(xml, strict=strict)]
@@ -292,8 +292,8 @@ class QuakeML:
             One QuakeML instance per representable event, in the service's order.
 
         Raises:
-            ValueError: If the response cannot be parsed, or — when `strict`
-                is `True` — any event in it cannot be represented.
+            ValueError: If the response cannot be parsed, or (when `strict`
+                is `True`) any event in it cannot be represented.
             urllib3.exceptions.ResponseError: If the event web service
                 returns an HTTP error, including a 404 when nothing matches.
         """

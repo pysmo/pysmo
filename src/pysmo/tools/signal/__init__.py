@@ -21,7 +21,7 @@ and return `None`; with `clone=True` they return a modified copy.
 
     The [`Seismogram`][pysmo.Seismogram] type carries no unit label for
     `data`. Functions in this module do not track or convert physical
-    units either — e.g. [`remove_response`][pysmo.tools.signal.remove_response]
+    units either, e.g. [`remove_response`][pysmo.tools.signal.remove_response]
     outputs whatever quantity the given response's `input_units` declares,
     and [`integrate`][pysmo.tools.signal.integrate]/
     [`differentiate`][pysmo.tools.signal.differentiate] shift between

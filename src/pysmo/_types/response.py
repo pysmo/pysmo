@@ -45,7 +45,10 @@ class Response(Protocol):
     """
 
     poles: list[complex]
-    """Response poles, in radians/second (SAC PZ / `LAPLACE (RADIANS/SECOND)` convention)."""
+    """Response poles, in radians/second.
+
+    SAC PZ / `LAPLACE (RADIANS/SECOND)` convention.
+    """
 
     zeros: list[complex]
     """Response zeros, in radians/second."""
@@ -58,8 +61,8 @@ class Response(Protocol):
     analog stage's normalisation factor times the reference-frequency
     sensitivity), or FDSN StationXML's `NormalizationFactor *
     InstrumentSensitivity`. This is *not* the instrument's plain flat-band
-    gain — see [`reference_sensitivity`][pysmo.Response.reference_sensitivity]
-    for that — so dividing raw data by `overall_sensitivity` directly
+    gain (see [`reference_sensitivity`][pysmo.Response.reference_sensitivity]
+    for that), so dividing raw data by `overall_sensitivity` directly
     (rather than combining it with `poles`/`zeros`, or using
     `reference_sensitivity` instead) mis-scales the result by the `A0`
     factor, often several orders of magnitude.
@@ -75,8 +78,8 @@ class Response(Protocol):
     in.
 
     Equivalent to SAC PZ's `SENSITIVITY` header value, or FDSN StationXML's
-    `InstrumentSensitivity/Value`. This — not `overall_sensitivity`, which
-    has `A0` folded in — is the correct divisor for a flat, zero-phase
+    `InstrumentSensitivity/Value`. This (not `overall_sensitivity`, which
+    has `A0` folded in) is the correct divisor for a flat, zero-phase
     approximation of the response (e.g.
     [`remove_response`][pysmo.tools.signal.remove_response]'s
     sensitivity-only path). `None` if unavailable (e.g. a SAC PZ file
@@ -92,7 +95,7 @@ class Response(Protocol):
     Informational only: not validated against a fixed set of units, and not
     read by [`remove_response`][pysmo.tools.signal.remove_response] or
     [`integrate`][pysmo.tools.signal.integrate]/
-    [`differentiate`][pysmo.tools.signal.differentiate] — callers are
+    [`differentiate`][pysmo.tools.signal.differentiate]; callers are
     responsible for interpreting it themselves.
     """
 
@@ -140,7 +143,9 @@ class StagedResponse(Response, Protocol):
 
 @define(kw_only=True)
 class MiniResponse:
-    """Minimal implementation of the [`Response`][pysmo.Response] type.
+    """Minimal implementation of the `Response` type.
+
+    See [`Response`][pysmo.Response].
 
     Examples:
         ```python
@@ -209,7 +214,9 @@ class MiniResponse:
 
 @define(kw_only=True)
 class MiniResponseStage:
-    """Minimal implementation of the [`ResponseStage`][pysmo.ResponseStage] type.
+    """Minimal implementation of the `ResponseStage` type.
+
+    See [`ResponseStage`][pysmo.ResponseStage].
 
     Examples:
         ```python
@@ -283,7 +290,9 @@ class MiniResponseStage:
 
 @define(kw_only=True)
 class MiniStagedResponse(MiniResponse):
-    """Minimal implementation of the [`StagedResponse`][pysmo.StagedResponse] type.
+    """Minimal implementation of the `StagedResponse` type.
+
+    See [`StagedResponse`][pysmo.StagedResponse].
 
     Examples:
         ```python

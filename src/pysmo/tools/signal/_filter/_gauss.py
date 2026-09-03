@@ -25,7 +25,7 @@ def envelope[T: Seismogram](
 def envelope[T: Seismogram](
     seismogram: T, fc: float, alpha: float, *, clone: bool = False
 ) -> T | None:
-    """Calculates the envelope of a gaussian filtered seismogram.
+    """Calculate the envelope of a Gaussian-filtered seismogram.
 
     Args:
         seismogram: Seismogram object.
@@ -74,7 +74,7 @@ def gauss[T: Seismogram](
 def gauss[T: Seismogram](
     seismogram: T, fc: float, alpha: float, *, clone: bool = False
 ) -> T | None:
-    """Returns a gaussian filtered seismogram.
+    """Return a Gaussian-filtered seismogram.
 
     Args:
         seismogram: Seismogram object.
@@ -84,7 +84,7 @@ def gauss[T: Seismogram](
         clone: Operate on a clone of the input seismogram.
 
     Returns:
-        Gaussian filtered seismogram.
+        Gaussian-filtered seismogram.
 
     Raises:
         ValueError: If `seismogram.data` is empty, `seismogram.delta` is not
@@ -121,14 +121,14 @@ def _gauss(
         W:  Frequency axis (Hz) for each FFT bin, including negative
             frequencies. The Gaussian window is applied to |W| so that Hn
             stays conjugate-symmetric (hn is real).
-        Hn: Gaussian-filtered spectrum — input spectrum multiplied by the
+        Hn: Gaussian-filtered spectrum (input spectrum multiplied by the
             Gaussian window centred at fc.
         hn: Filtered seismogram in the time domain (inverse FFT of Hn).
         qn: Hilbert transform of hn, obtained as the imaginary part of the
             analytic signal built from Hn (zero negative frequencies,
-            double positive ones — the standard FFT-domain Hilbert
+            double positive ones, the standard FFT-domain Hilbert
             transform).
-        an: Instantaneous amplitude (envelope) — sqrt(hn² + qn²).
+        an: Instantaneous amplitude (envelope), sqrt(hn² + qn²).
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot apply a Gaussian filter to an empty seismogram.")

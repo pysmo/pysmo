@@ -23,12 +23,12 @@ class Seismogram(Protocol):
     """Protocol class to define the `Seismogram` type.
 
     Examples:
-        Usage for a function that takes a Seismogram compatible class instance as
-        argument and returns the begin time in isoformat:
+        A function annotated with `Seismogram` accepts any compatible class.
+        This one returns the begin time in ISO format:
 
         ```python
         >>> from pysmo import Seismogram
-        >>> from pysmo.classes import SAC  # SAC is a class that "speaks" Seismogram
+        >>> from pysmo.classes import SAC  # SAC implements the Seismogram protocol
         >>>
         >>> def example_function(seis_in: Seismogram) -> str:
         ...     return seis_in.begin_time.isoformat()
@@ -48,9 +48,9 @@ class Seismogram(Protocol):
     """Seismogram data."""
 
     delta: pd.Timedelta
-    """The sampling interval.
+    """Seismogram sampling interval.
 
-    Should be a positive `pd.Timedelta` instance.
+    Must be a positive `pd.Timedelta`.
     """
 
     @property
@@ -64,7 +64,10 @@ class Seismogram(Protocol):
 
 # --8<-- [start:seismogram-mixin]
 class SeismogramEndtimeMixin:
-    """A mixin class that adds a computed `end_time` property to any class that already has `begin_time`, `delta`, and `data`."""
+    """Add a computed `end_time` property.
+
+    Mix into any class that provides `begin_time`, `delta`, and `data`.
+    """
 
     __slots__ = ()
 
@@ -84,7 +87,9 @@ class SeismogramEndtimeMixin:
 
 @define(kw_only=True)
 class MiniSeismogram(SeismogramEndtimeMixin):
-    """Minimal class for use with the [`Seismogram`][pysmo.Seismogram] type.
+    """Minimal implementation of the `Seismogram` type.
+
+    See [`Seismogram`][pysmo.Seismogram].
 
     Examples:
         ```python
@@ -94,7 +99,9 @@ class MiniSeismogram(SeismogramEndtimeMixin):
         >>> import numpy as np
         >>> now = pd.Timestamp.now(timezone.utc)
         >>> delta = pd.Timedelta(seconds=0.1)
-        >>> seismogram = MiniSeismogram(begin_time=now, delta=delta, data=np.random.rand(100))
+        >>> seismogram = MiniSeismogram(
+        ...     begin_time=now, delta=delta, data=np.random.rand(100)
+        ... )
         >>>
         ```
     """

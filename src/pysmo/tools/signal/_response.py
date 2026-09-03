@@ -42,7 +42,7 @@ def _digital_transfer_function(
         )
         if stage.correction:
             # freqz reproduces the filter's own, uncorrected delay; the
-            # recorded data has already had `correction` seconds of that
+            # recorded data have already had `correction` seconds of that
             # delay removed (see ResponseStage.correction), so cancel the
             # same amount here to match what was actually recorded.
             h = h * np.exp(2j * np.pi * freqs * stage.correction)
@@ -100,7 +100,7 @@ def remove_response[T: Seismogram](
 
     Two modes are available, chosen by whether `pre_filt` is given:
 
-    **`pre_filt=None` (default) — sensitivity-only division.** Divides
+    **`pre_filt=None` (default): sensitivity-only division.** Divides
     `seismogram.data` by `response.reference_sensitivity` alone, in the time
     domain. No FFT, no frequency-dependent correction: this is only correct
     where the true instrument response is flat with $\approx 0$ phase, i.e. within
@@ -108,7 +108,7 @@ def remove_response[T: Seismogram](
     is confined to that flat band (the common case for a well-chosen broadband
     instrument). It will *not* correct roll-off near the sensor's corner
     frequencies or any digital decimation stages; for that, use `pre_filt`.
-    Note this divides by `reference_sensitivity`, not `overall_sensitivity` —
+    Note this divides by `reference_sensitivity`, not `overall_sensitivity`;
     the latter has the analog stage's $A_0$ normalisation factor folded in (see
     [`Response.overall_sensitivity`][pysmo.Response.overall_sensitivity]).
 
@@ -117,14 +117,14 @@ def remove_response[T: Seismogram](
     (followed by e.g. EarthScope's fdsnws-station service and `rdseed -p`), the
     `SENSITIVITY` header (`reference_sensitivity`) stays in the sensor's
     native units (e.g. `M/S**2` for an accelerometer), while
-    `poles`/`zeros`/`overall_sensitivity` — and therefore `input_units`, and
-    the full-deconvolution path below — are normalised to displacement. This
+    `poles`/`zeros`/`overall_sensitivity` (and therefore `input_units`, and
+    the full-deconvolution path below) are normalised to displacement. This
     is a convention of the *producer*, not something `SacPZ`/`parse_sacpz`
-    enforce or verify — a hand-written SAC PZ file that doesn't follow it will
+    enforce or verify; a hand-written SAC PZ file that doesn't follow it will
     not exhibit this split. A [`StationXML`][pysmo.classes.StationXML]-derived
     `response` has no such split: both paths agree with `input_units`.
 
-    **`pre_filt` given — spectral deconvolution.** Deconvolves `seismogram.data`
+    **`pre_filt` given: spectral deconvolution.** Deconvolves `seismogram.data`
     by the instrument response's full complex transfer function $H(f)$,
     applying a four-corner cosine taper $\text{taper}(f)$:
 
@@ -139,29 +139,30 @@ def remove_response[T: Seismogram](
     produces non-finite values ($\infty$ or $\text{NaN}$) that poison the entire
     output once inverse-transformed. Consequently, $f_1$ must remain strictly
     above 0 Hz, since velocity- and acceleration-output sensors have a zero at DC
-    by construction (2 or 3 zeros at the origin, respectively — that is what makes
+    by construction (2 or 3 zeros at the origin, respectively; that is what makes
     it a velocity/acceleration sensor, not a displacement one).
 
     The right bound for $f_4$ also depends on whether `response` actually carries
-    digital FIR/IIR decimation stages — not just whether it satisfies
+    digital FIR/IIR decimation stages, not just whether it satisfies
     [`StagedResponse`][pysmo.StagedResponse], since e.g.
-    [`StationXML.response`][pysmo.classes.StationXML.response] always satisfies that protocol but its
-    `stages` is empty for a document with no digital stage on record:
+    [`StationXML.response`][pysmo.classes.StationXML.response] always
+    satisfies that protocol but its `stages` is empty for a document with no
+    digital stage on record:
 
     - **No digital stages** (`stages` empty, e.g. a SAC PZ-derived response, or a
       StationXML document without one): only the analog poles/zeros/sensitivity go
       into $H(f)$. Pushing $f_4$ above roughly 80% of the seismogram's own Nyquist
-      frequency triggers the `UserWarning` described below — the analog-only
+      frequency triggers the `UserWarning` described below; the analog-only
       approximation ignores the roll-off and phase a real digitiser's decimation
       filter would otherwise contribute near its own Nyquist.
     - **Digital stages present** (`stages` non-empty): they are folded into $H(f)$
-      too, so $f_4$ should also stay clear of their own cutoff — bound it by the
+      too, so $f_4$ should also stay clear of their own cutoff: bound it by the
       stages' own Nyquist (half their `input_sample_rate`), not just the
       seismogram's, since a stage's own zeros cluster in its stopband near/above
       that frequency. Stages are also assumed to have had their own filter delay
       already corrected out of the recorded data (`ResponseStage.correction`,
       matching FDSN StationXML's `Decimation/Correction`, as is standard for
-      archived data) — if that assumption doesn't hold for a given `response`,
+      archived data); if that assumption doesn't hold for a given `response`,
       the deconvolved output will carry a spurious time shift equal to that
       correction.
 
@@ -189,8 +190,8 @@ def remove_response[T: Seismogram](
             $f_1$, cosine ramp up to $f_2$, flat through $[f_2, f_3]$, cosine
             ramp down to $f_4$, zero above $f_4$. `None` (the default) skips
             spectral deconvolution entirely and instead divides by
-            `response.reference_sensitivity` in the time domain — see above.
-            Not derived automatically — see Examples for how to choose a
+            `response.reference_sensitivity` in the time domain (see above).
+            Not derived automatically; see Examples for how to choose a
             starting point.
         clone: Operate on a clone of the input seismogram.
 
@@ -213,19 +214,19 @@ def remove_response[T: Seismogram](
             the case for a response parsed from a SAC PZ file, or because it
             does but has no digital stage on record) and `pre_filt`'s upper
             corner is above a conservative 80% of the seismogram's own
-            Nyquist frequency (a heuristic margin, not a precise bound) —
-            the analog-only approximation gets progressively less accurate
+            Nyquist frequency (a heuristic margin, not a precise bound). The analog-only
+            approximation gets progressively less accurate
             towards Nyquist, where a real digitiser's decimation filter
             would otherwise contribute roll-off and phase. Or, if `stages`
             is non-empty and `pre_filt`'s upper corner is above 80% of the
             slowest stage's own Nyquist frequency (half its
-            `input_sample_rate`) — beyond that point `scipy.signal.freqz`
+            `input_sample_rate`); beyond that point `scipy.signal.freqz`
             wraps around and returns an aliased value for that stage instead
             of its actual roll-off.
 
     Examples:
         The examples below build on the same setup: `example.sac`'s own real
-        response — a broadband seismometer and digitiser, from a genuine StationXML
+        response: a broadband seismometer and digitiser, from a genuine StationXML
         document for the actual station and epoch that recorded it.
 
         Sensitivity-only division:
@@ -248,7 +249,7 @@ def remove_response[T: Seismogram](
         seismogram's own Nyquist and the digital stages' (a stage is only meaningful
         up to half its own `input_sample_rate`); $f_1$ is read off the analog poles'
         own corner, below which deconvolution mostly amplifies sensor noise. Neither
-        bound is computed automatically — the right choice is study-dependent (e.g.
+        bound is computed automatically; the right choice is study-dependent (e.g.
         teleseismic earthquakes vs. ambient noise), so this is left to the caller:
 
         ```python
@@ -271,7 +272,7 @@ def remove_response[T: Seismogram](
         !!! tip "Check the data, not just the instrument"
 
             $f_1$–$f_4$ above are chosen from the instrument and the
-            sampling rate — but deconvolution divides by the response
+            sampling rate, but deconvolution divides by the response
             across that whole band, so what actually determines whether the
             result is trustworthy is the *data's* own amplitude at each of
             those frequencies, not just where the instrument and sample
@@ -336,8 +337,8 @@ def remove_response[T: Seismogram](
         -->
 
         <figure markdown="span">
-        ![Sensitivity-only vs full deconvolution](../../../images/sybil/response_removal_comparison.png#only-light){ loading=lazy }
-        ![Sensitivity-only vs full deconvolution](../../../images/sybil/response_removal_comparison-dark.png#only-dark){ loading=lazy }
+        ![Sensitivity-only scaling compared with full instrument-response deconvolution.](../../../images/sybil/response_removal_comparison.png#only-light){ loading=lazy }
+        ![Sensitivity-only scaling compared with full instrument-response deconvolution.](../../../images/sybil/response_removal_comparison-dark.png#only-dark){ loading=lazy }
         </figure>
     """
     if len(seismogram.data) == 0:

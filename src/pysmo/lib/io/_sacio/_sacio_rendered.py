@@ -1205,7 +1205,7 @@ class SacIOBase:
             validators.instance_of(float),
         ),
     )
-    """Event depth below surface (kilometres — previously metres)."""
+    """Event depth below surface (kilometres; previously metres)."""
 
     mag: float | None = field(
         default=None,

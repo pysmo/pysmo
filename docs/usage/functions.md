@@ -13,18 +13,16 @@ tags:
 
 # Functions
 
-Writing functions is the easiest and most common way of using pysmo. Regardless
-of what the functions do, they will most likely follow one of the patterns
-discussed below.
+Writing functions is the most common way of using pysmo. Whatever a function
+does, it will usually follow one of the patterns below.
 
 ## Mutable objects
 
-Before diving in, it is worth recalling how Python handles objects passed to
-functions. Python passes objects by reference, not by value — so a function
-receives the *same* object as the caller, not a copy. For simple types like
-[`int`][] or [`float`][] this rarely matters, because they are immutable. For
-mutable objects such as [`numpy.ndarray`][numpy.ndarray] it matters a great
-deal:
+First, a reminder of how Python handles objects passed to functions. Python
+passes objects by reference, not by value: a function receives the *same* object
+as the caller, not a copy. For immutable types like [`int`][] or [`float`][]
+this rarely matters. For mutable objects such as
+[`numpy.ndarray`][numpy.ndarray] it matters a great deal:
 
 ```python
 >>> import numpy as np
@@ -38,161 +36,153 @@ array([2., 2., 3.])
 ```
 
 The array was modified *inside* the function, yet the change is visible
-*outside* it — because both the caller and the function hold a reference to the
-same object. This behaviour is sometimes desired, but you must be aware of when
-it occurs. We will return to this when we discuss the `clone` argument below.
+*outside* it: both the caller and the function hold a reference to the same
+object. This is sometimes the intent, but it needs to be a deliberate choice.
+The `clone` argument below comes back to this.
 
 ## Pysmo types as input
 
-The simplest way of using pysmo types is in functions that only use them to
-annotate inputs. In these instances, we don't need to be concerned about how
-differences between various compatible classes affect other parts of your code,
-as their "journeys" end here.
+The simplest use of pysmo types is in functions that only use them to annotate
+inputs. Differences between the compatible classes cannot affect the rest of the
+program, because the object goes no further than this function.
 
-For example, the following function takes any [`Seismogram`][pysmo.Seismogram]
-compatible object as input, and returns a [`Timedelta`][pandas.Timedelta]:
+The following function takes any [`Seismogram`][pysmo.Seismogram]-compatible
+object and returns a [`Timedelta`][pandas.Timedelta]:
 
 ```python title="double_delta_td.py"
 --8<-- "docs/snippets/double_delta_td.py"
 ```
 
+Nothing here needs a pysmo type in the return position, so annotating the output
+is straightforward. That changes as soon as a function returns one of its
+pysmo-typed inputs.
+
 ## Pysmo types as output
 
-It gets more complicated when a function returns the data it accepted as input
-(annotated with a pysmo type). While using [`Seismogram`][pysmo.Seismogram] to
-annotate the input allows us to accept any number of different input types, that
-same flexibility means we cannot be certain of what exactly the output type is.
-We can explore this with the following snippet:
+It gets more complicated when a function returns the data it accepted as input.
+Annotating the input with `Seismogram` accepts any compatible type, but that
+same flexibility means the exact output type is unknown. The following snippet
+shows the problem:
 
-```python title="double_delta.py" hl_lines="27-28"
+```python title="double_delta.py" hl_lines="28-29"
 --8<-- "docs/snippets/double_delta.py"
 ```
 
-1. [`reveal_type`][typing.reveal_type] allows us to inspect the actual type of
-    an object. It prints type information at runtime (what it actually is) or
-    when using mypy (what can be inferred from type annotations).
+1. [`reveal_type`][typing.reveal_type] inspects the type of an object. It prints
+    the runtime type when run directly, or the inferred type when run through
+    mypy.
 2. :bulb: As noted [above](#mutable-objects), passing an object to a function
-    does not copy it. Here we use [`deepcopy`][copy.deepcopy] explicitly to
-    create an independent copy before modifying it — leaving the caller's
-    object untouched. Pysmo functions that modify seismograms expose this via a
-    `clone` argument as a convenience. Note that deep-copying can be expensive
-    for large objects.
+    does not copy it. [`deepcopy`][copy.deepcopy] is used here to make an
+    independent copy before modifying it, leaving the caller's object
+    untouched. Pysmo functions that modify seismograms offer this through a
+    `clone` argument. Deep-copying can be expensive for large objects.
 
-Here, we create a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance from a
-SAC file and pass it to the `double_delta` function. Inside the function it gets
-[deep-copied][copy.deepcopy], modified and returned as the same type. We can
-verify this by executing the script, whereby the highlighted lines in the code
-produce the following output:
+The snippet creates a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance
+from a SAC file and passes it to `double_delta`. Inside the function it is
+deep-copied, modified, and returned as the same type. Running the script, the
+highlighted lines produce:
 
 <!-- skip: next -->
 
 ```bash
-$ python double_delta.py
+$ uv run double_delta.py
 Runtime type is 'SacSeismogram'
 Runtime type is 'SacSeismogram'
 ```
 
-As suspected, `my_seis_in` and `my_seis_out` are both of type
-[`SacSeismogram`][pysmo.classes.SacSeismogram] at runtime. Running mypy on the
-code, however, yields a different type for `my_seis_out`:
+At runtime, `my_seis_in` and `my_seis_out` are both `SacSeismogram`. Running
+mypy on the same code gives a different type for `my_seis_out`:
 
 ```bash
-$ mypy double_delta.py
-double_delta.py:26: note: Revealed type is "SacSeismogram"
-double_delta.py:27: note: Revealed type is "Seismogram"
+$ uv run mypy double_delta.py
+double_delta.py:28: note: Revealed type is "SacSeismogram"
+double_delta.py:29: note: Revealed type is "Seismogram"
 Success: no issues found in 1 source file
 ```
 
-This discrepancy is due to the fact that our function is annotated in a way that
-tells us any [`Seismogram`][pysmo.Seismogram] is acceptable as input, and that
-while a [`Seismogram`][pysmo.Seismogram] is returned, we cannot know which type
-*exactly* that is going to be. While this loss of typing information may be
-acceptable for your use case, it is certainly far from ideal.
+The annotation says any `Seismogram` is acceptable as input and that a
+`Seismogram` is returned, but not which concrete type. This loss of type
+information is sometimes acceptable, but it is not ideal.
 
-## Mini types as output
+## Mini classes as output
 
-The reason return types need to be specified, is because the output of one
-function can also be used as input for other functions. If you are chaining
-together multiple functions using pysmo types, you may want to consider using
-"Mini" types as output. These minimal implementations of pysmo type compatible
-classes are simple and efficient. The `double_delta` function would look like
-this:
+Return types matter because the output of one function is often the input to the
+next. When chaining functions that use pysmo types, a "Mini" class is a good
+choice of return type. These minimal implementations of the pysmo types are
+simple and efficient. With one, `double_delta` becomes:
 
 ```python title="double_delta_mini.py"
 --8<-- "docs/snippets/double_delta_mini.py"
 ```
 
-1. Here we use the [`clone_to_mini`][pysmo.functions.clone_to_mini] function to
-    create [`MiniSeismogram`][pysmo.MiniSeismogram] instances from other
-    [`Seismogram`][pysmo.Seismogram] instances. It is typically faster than
-    deep copying.
+1. [`clone_to_mini`][pysmo.functions.clone_to_mini] creates a
+    [`MiniSeismogram`][pysmo.MiniSeismogram] from any `Seismogram`. It is
+    usually faster than deep-copying.
 
-With this approach you could copy your data to a Mini instance early on in your
-processing, perform multiple processing steps on the efficient Mini instance,
-and in a last step copy the processed data back to your original data source.
+This allows the data to be copied to a Mini instance early, processed through
+several steps on that efficient instance, and copied back to the original data
+source at the end.
+
+A Mini return type deliberately changes the type. To hand back the caller's
+exact type instead, use a generic.
 
 ## Same input and output type
 
-Another option to be explicit about the output type of a function, is to declare
-that both the input and output types have to be the same. For pysmo types this
-requires two things:
+Another way to pin down the output type is to require that the input and output
+types match, preserving whatever concrete type the caller passed in. For pysmo
+types this needs two things:
 
-1. We need to save the input type as variable which we can reference for the
-    output type.
-2. We need to place bounds on this variable so that it is limited to the desired
-    pysmo type(s).
+1. Save the input type in a variable that the output type can reference.
+2. Bound that variable so it is limited to the intended pysmo type or types.
 
-This typing strategy involves
-[generics](https://mypy.readthedocs.io/en/stable/generics.html), and changes our
-function to the following:
+This strategy uses
+[generics](https://mypy.readthedocs.io/en/stable/generics.html), and changes the
+function to:
 
-```python title="double_delta_generic.py" hl_lines="8"
+```python title="double_delta_generic.py" hl_lines="9"
 --8<-- "docs/snippets/double_delta_generic.py"
 ```
 
-1. :bulb: This syntax is only valid for Python versions 3.12 and above.
+1. :bulb: This syntax is only valid for Python 3.12 and above.
 
-In our example `[T: Seismogram]` defines a type variable `T` that has to be a
-[`Seismogram`][pysmo.Seismogram]. We then use `T` as before to annotate the
-function. This means that if we use it with e.g. an instance of
-[`MiniSeismogram`][pysmo.MiniSeismogram] as input for `seismogram`, `T` is set
-to [`MiniSeismogram`][pysmo.MiniSeismogram] and the function signature
-effectively becomes:
+`[T: Seismogram]` defines a type variable `T` bound to `Seismogram`, and `T`
+then annotates the function. Passing a `MiniSeismogram` instance as `seismogram`
+sets `T` to `MiniSeismogram`, so the signature effectively becomes:
 
 ```python
 def double_delta_generic(seismogram: MiniSeismogram) -> MiniSeismogram:
   ...
 ```
 
-Or if we use a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance:
+Or with a `SacSeismogram` instance:
 
 ```python
 def double_delta_generic(seismogram: SacSeismogram) -> SacSeismogram:
   ...
 ```
 
-which is also what we used for our example. Therefore, running `mypy` on
+The example uses a `SacSeismogram`, so running `mypy` on
 `double_delta_generic.py` gives:
 
 ```bash
-$ mypy double_delta_generic.py
-double_delta_generic.py:25: note: Revealed type is "SacSeismogram"
-double_delta_generic.py:26: note: Revealed type is "SacSeismogram"
+$ uv run mypy double_delta_generic.py
+double_delta_generic.py:28: note: Revealed type is "SacSeismogram"
+double_delta_generic.py:29: note: Revealed type is "SacSeismogram"
 Success: no issues found in 1 source file
 ```
 
-Crucially, because `T` has an
+Because `T` has an
 [upper bound](https://mypy.readthedocs.io/en/stable/generics.html#type-variables-with-upper-bounds)
-(in this case [`Seismogram`][pysmo.Seismogram]), we get all the usual benefits
-from type hints while coding (autocompletion, error checking, etc.).
+(here `Seismogram`), the usual type-hint benefits still apply while coding:
+autocompletion, error checking, and so on.
 
 ## Output type depends on input parameter
 
-Admittedly, things can get rather complex when input and output types of a
-function depend on each other. Properly annotating such a function requires
-using the [`overload`][typing.overload] decorator to declare all possible type
-combinations that may occur. The pysmo [`detrend`][pysmo.functions.detrend]
-function makes use of this feature:
+The previous two sections tie the return type to the *type* of an argument. A
+return type can also depend on the *value* of an argument. Annotating such a
+function needs the [`overload`][typing.overload] decorator to declare every
+possible combination. The pysmo [`detrend`][pysmo.functions.detrend] function
+uses this:
 
 <!-- skip: next -->
 
@@ -200,26 +190,33 @@ function makes use of this feature:
 --8<-- "src/pysmo/functions/_seismogram.py:detrend"
 ```
 
-Here it looks as if the `detrend` function is declared multiple times. However,
-at runtime the `@overload` decorator tells Python to ignore that particular
-function declaration, as it is only meant to be used by type checkers. Looking
-at the declarations from *bottom to top* we read it as follows:
+The `detrend` function looks like it is declared several times. At runtime the
+`@overload` decorator tells Python to ignore the decorated declarations; they
+are only for type checkers. Read from *bottom to top*:
 
-- The function `detrend` takes two arguments, `seismogram` and `clone`, whereby
-    the type of `seismogram` is stored in the variable `T` (bound by
-    [`Seismogram`][pysmo.Seismogram]), and `clone` is a [`bool`][] with a
-    default value of [`False`][]. The function returns either a [`None`][] or
-    `T` type.
-- If `clone` is [`True`][], then an object of type `T` is returned.
-- If `clone` is [`False`][] (the default value), then [`None`][] is returned.
-    Note that we don't need to use `T` here; as we don't reuse `T` elsewhere in
-    this function declaration, it doesn't make much sense to use a type variable
-    in the first place.
+- `detrend` takes two arguments. The type of `seismogram` is captured in the
+    variable `T` (bound by `Seismogram`), and `clone` is a [`bool`][] defaulting
+    to [`False`][]. The function returns either [`None`][] or a value of type
+    `T`.
+- If `clone` is [`True`][], an object of type `T` is returned.
+- If `clone` is `False` (the default), `None` is returned. `T` is not needed
+    here: it is not reused elsewhere in this declaration, so a type variable
+    serves no purpose.
 
 !!! tip "Overloads get easier"
 
-    This may seem a bit overwhelming at first, but you will quickly find that the
-    patterns frequently repeat themselves, and that you can simply copy-paste a lot
-    of the overloaded function declarations. Remember also that the time invested
-    here likely more than offsets the amount of time spent hunting down avoidable
-    bugs in your code.
+    The patterns repeat, and overloaded declarations can largely be copied from one
+    function to the next. The time spent writing them is usually less than the time
+    lost to the bugs they prevent.
+
+## Choosing a return type
+
+- A function that only **accepts** pysmo types needs nothing special: annotate
+    the inputs and return whatever suits.
+- A function that **returns** a pysmo-typed object has three options:
+  - Return a Mini class when a canonical, efficient type is acceptable. This
+        suits chains of several functions.
+  - Use a generic (`[T: Seismogram]`) when the caller's exact type must be
+        preserved.
+  - Use `overload` when the return type depends on the value of an argument,
+        such as `clone`.

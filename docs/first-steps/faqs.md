@@ -8,31 +8,50 @@ tags:
 
 ## What is pysmo?
 
-Pysmo is a Python library for seismology that defines lightweight
-[Protocol][typing.Protocol]-based *types* describing what seismic data looks
-like, without prescribing how it must be stored. Any class that matches a pysmo
-type — regardless of where it comes from — can be used with pysmo functions.
-This makes your code more modular, more reusable, and easier to maintain.
+Pysmo is a Python library for seismology. It defines lightweight
+[`Protocol`][typing.Protocol]-based *types* that describe the attributes seismic
+data have, without prescribing how those data must be stored. Any class that
+matches a pysmo type can be passed to pysmo functions, wherever the class comes
+from. A function written against a type works with every conforming class, in
+this project or another.
 
-## How does pysmo relate to ObsPy?
+## What does pysmo *not* do?
 
-Pysmo is designed to complement existing tools rather than replace them. If you
-already use a library like [ObsPy](https://obspy.org), you can continue doing so
-and adapt its classes to conform to pysmo types. This lets you benefit from both
-ecosystems: the rich functionality of the other library, and the clean,
-type-safe interfaces that pysmo provides.
+Pysmo is a library, not a framework. It does not impose a workflow, manage data
+downloads, or provide a full processing pipeline. Its scope is deliberately
+narrow: define types, and provide functions that operate on them. How data are
+stored, where they come from, and how processing is organised are all outside
+its scope.
+
+## When is pysmo the best fit?
+
+Pysmo fits best when writing *new* code that should be reusable across projects,
+data sources, or storage formats. Once the application-specific classes conform
+to pysmo types, the shared processing steps are written once. A function that
+does what a project needs may already exist, written earlier or by someone else.
+
+Pysmo types are much smaller than a typical monolithic seismogram class, so
+populating one does not require a single file holding everything. Individual
+attributes can come from wherever suits: a database, a web service, local files,
+or a combination. New data formats need no changes to pysmo itself, only a class
+that conforms to the existing types.
+
+## How does pysmo relate to other seismology libraries?
+
+Pysmo complements other tools rather than replacing them. A seismology library
+already in use can stay: its classes can be adapted to conform to pysmo types,
+which keeps its own functionality available alongside pysmo's typed interfaces.
 
 ## Do I need to rewrite my existing code to use pysmo?
 
-No. Pysmo types are [Protocol][typing.Protocol] classes, which means any class
-that has the right attributes and methods is automatically compatible — there is
-no need to inherit from a pysmo base class. In many cases, minor adjustments to
-an existing class are all that is needed for it to conform to a pysmo type.
-Crucially, these adjustments are purely additive, so they will not break any
-code that already uses the class. The diagram below illustrates this: a bespoke
-class and two third-party classes all conform to the same pysmo type, making
-them usable with any function that accepts that type. At the same time, the
-third-party classes continue to work with their own existing functions.
+No. Pysmo types are `Protocol` classes, so any class with the right attributes
+and methods is compatible automatically. There is no pysmo base class to inherit
+from. Often a few small adjustments are enough to make an existing class conform
+to a pysmo type. Those adjustments are additive, so they do not break code that
+already uses the class. The diagram below shows the result: a bespoke class and
+two third-party classes all conform to one pysmo type and work with any function
+that accepts it, while the third-party classes keep working with their own
+functions.
 
 ```mermaid
 flowchart TD
@@ -49,87 +68,56 @@ flowchart TD
     e1@{ animate: true }
 ```
 
-## What does pysmo *not* do?
-
-Pysmo is a library, not a framework. It does not impose a particular workflow,
-manage data downloads, or provide a full processing pipeline. Its scope is
-deliberately narrow: define types, and provide functions that operate on those
-types. Everything else — how you store your data, where you fetch it from, how
-you orchestrate your processing — is up to you.
-
 ## Is pysmo complicated?
 
-There is a bit of a learning curve at first, but once the core ideas click,
-things actually become easier than before. Your editor can autocomplete
-attributes, catch type mismatches before you run anything, and guide you toward
-correct usage — all of which means faster coding and fewer errors. Pysmo also
-relies heavily on standard Python concepts — type hints,
-[Protocol][typing.Protocol] classes, and dataclasses. These are not
-pysmo-specific; they are part of modern Python and are widely used across the
-broader Python ecosystem. Learning to use them effectively will improve your
-Python skills in general, regardless of whether you continue using pysmo.
+There is a learning curve at first. Once the core ideas are familiar, the
+day-to-day work gets easier: the editor can autocomplete attributes and flag
+type mismatches before the code runs. Pysmo builds on standard Python: type
+hints, `Protocol` classes, and dataclasses. None of these are pysmo-specific.
+They are part of modern Python and are used widely across the ecosystem.
 
 !!! tip "Pysmo uses advanced typing features"
 
-    Pysmo does make use of typing features that go beyond basic type annotations.
-    Python's type system has progressed considerably in recent versions, and pysmo
-    leans into that. You do not need to fully understand these features to use
-    pysmo, but they are what allow your editor or type checker to catch errors
-    before you even run your code. The [first steps](index.md) page and the
-    [tutorial](tutorial.md) walk through these ideas step by step.
-
-## When is pysmo the best fit?
-
-Pysmo is at its best when you are writing *new* code and want it to be reusable
-across different projects, data sources, or storage formats. If the
-application-specific classes conform to pysmo types, you only need to write
-shared processing steps once. Over time you may even find that you — or someone
-else — have already written a function that does exactly what you need.
-
-Because pysmo types are much smaller than a typical monolithic seismogram class,
-populating them does not require a single file that contains everything.
-Instead, individual attributes can be sourced from wherever makes sense — a
-database, a web service, local files, or any combination of the above. Pysmo
-does not need to anticipate every possible way data might be structured in the
-future — new challenges and new data formats can be accommodated simply by
-writing classes that conform to the existing types.
+    Pysmo uses typing features that go beyond basic annotations. Python's type
+    system has advanced considerably in recent versions, and pysmo relies on that. A
+    full understanding of these features is not required to use pysmo, but they are
+    why the editor or type checker can catch errors before the code runs. The
+    [first steps](index.md) page and the [tutorial](tutorial.md) introduce them step
+    by step.
 
 ## Does pysmo enforce types at runtime?
 
-No. Pysmo uses Python's type hinting system, which is checked *statically* by
-tools like [mypy](https://mypy.readthedocs.io) or your IDE — not at runtime.
-This means Python will not stop you from passing the wrong type to a function,
-but a type checker will warn you before you ever run the code. If you need
-runtime validation, consider pairing pysmo with a library like
+No. Pysmo uses Python's type hints, which are checked *statically* by tools like
+[mypy](https://mypy.readthedocs.io) or the editor, not at runtime. Python itself
+will still run code that passes the wrong type to a function, but the type
+checker flags it first. For runtime validation, pair pysmo with a library like
 [attrs](https://www.attrs.org) or [pydantic](https://docs.pydantic.dev).
 
 !!! note "Static types vs runtime validation"
 
-    While pysmo *types* do not perform runtime checks, some of the classes and
-    functions shipped with pysmo do validate their inputs at runtime. The
-    distinction is that the types define an interface for static analysis, whereas
-    the concrete implementations may choose to enforce constraints when they are
-    actually used.
+    Pysmo *types* do no runtime checking, but some of the classes and functions
+    shipped with pysmo do validate their inputs. The types define an interface for
+    static analysis; the concrete implementations may enforce constraints when used.
 
 ## What if no pysmo type fits my data?
 
-Pysmo types are intentionally minimal, so they cover the attributes that are
-common across a wide range of use cases. If your data has additional attributes,
-you can simply add them to your own class alongside the pysmo-compatible ones —
-pysmo only cares that the required attributes are present, not that they are the
-*only* ones. If you believe a new type would benefit the wider community, feel
-free to propose one on [GitHub](https://github.com/pysmo/pysmo).
+Pysmo types are intentionally minimal, covering the attributes common across a
+wide range of use cases. A class can carry any number of extra attributes
+alongside the pysmo-compatible ones. A pysmo type requires only that its
+attributes are present, not that they are the *only* ones. A type that would
+benefit the wider community can be proposed on
+[GitHub](https://github.com/pysmo/pysmo).
 
 ## Where can I get help?
 
-If you get stuck or have a question, the best place to ask is on the pysmo
+Questions are best asked on the pysmo
 [GitHub Discussions](https://github.com/pysmo/pysmo/discussions) page. For bug
-reports or feature requests, please open an
+reports or feature requests, open an
 [issue](https://github.com/pysmo/pysmo/issues).
 
 ## How can I help?
 
-Pysmo is an open-source project and welcomes contributions of all kinds —
-whether that is asking questions, reporting bugs, or writing code. Head over to
-the [contributing guide](../development/contributing.md) to find out how you can
-get involved.
+Pysmo is an open-source project and welcomes contributions of all kinds: asking
+questions, reporting bugs, or writing code. The
+[contributing guide](../development/contributing.md) explains how to get
+involved.

@@ -70,7 +70,7 @@ only a small portion of the input seismogram data are used. These smaller
 portions are generated on the fly in two ways, each with a causally-filtered
 counterpart used by picking-oriented tools. The ICCS algorithm itself
 always runs on the zero-phase variant, as does MCCC, regardless of which
-one is currently displayed — see
+one is currently displayed; see
 [`ICCS.corners`][pysmo.tools.iccs.ICCS.corners], which sets the zero-phase
 filter's order and from which the causal variant's own order is derived:
 
@@ -146,14 +146,14 @@ serving different purposes:
   to the algorithm, across repeated calls. After a call, the operator inspects
   the resulting stack and individual seismograms visually, and may decide
   that the pick, time window, minimum correlation coefficient, or bandpass
-  filter need adjusting — e.g. narrowing the time window once the phase
+  filter need adjusting, e.g. narrowing the time window once the phase
   arrival is clearly visible, or raising `min_cc` once obviously poor
   seismograms have been excluded. This module provides interactive functions
-  for making exactly these adjustments —
-  [`update_pick`][pysmo.tools.iccs.update_pick],
+  for making exactly these adjustments
+  ([`update_pick`][pysmo.tools.iccs.update_pick],
   [`update_timewindow`][pysmo.tools.iccs.update_timewindow],
   [`update_min_cc`][pysmo.tools.iccs.update_min_cc], and
-  [`update_bandpass`][pysmo.tools.iccs.update_bandpass] — after which the
+  [`update_bandpass`][pysmo.tools.iccs.update_bandpass]), after which the
   instance is called again. How many times this happens, and when to stop, is
   entirely up to the operator; nothing in the algorithm tracks or limits it.
 
@@ -262,8 +262,8 @@ plot the initial [`stack`][pysmo.tools.iccs.ICCS.stack] and
 ```
 -->
 
-![Initial stack](../../../images/sybil/iccs_stack_initial.png#only-light){ loading=lazy }
-![Initial stack](../../../images/sybil/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
+![The initial ICCS stack, before any alignment has run.](../../../images/sybil/iccs_stack_initial.png#only-light){ loading=lazy }
+![The initial ICCS stack, before any alignment has run.](../../../images/sybil/iccs_stack_initial-dark.png#only-dark){ loading=lazy }
 
 No phase emergence is visible in the stack yet. To run the ICCS
 algorithm, simply call (execute) the ICCS instance:
@@ -280,7 +280,7 @@ algorithm, simply call (execute) the ICCS instance:
 ```
 >>> def _annotate_flipped(ax):
 ...     # find the trace whose trough is deepest relative to its own
-...     # peak -- the visual signature of the reversed-polarity
+...     # peak: the visual signature of the reversed-polarity
 ...     # seismogram, for readers viewing the saved image
 ...     candidates = [
 ...         line
@@ -315,14 +315,14 @@ algorithm, simply call (execute) the ICCS instance:
 ```
 -->
 
-![Stack after first run](../../../images/sybil/iccs_stack_first_run.png#only-light){ loading=lazy }
-![Stack after first run](../../../images/sybil/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
+![The stack after one ICCS run, with the aligned phase arrival now visible.](../../../images/sybil/iccs_stack_first_run.png#only-light){ loading=lazy }
+![The stack after one ICCS run, with the aligned phase arrival now visible.](../../../images/sybil/iccs_stack_first_run-dark.png#only-dark){ loading=lazy }
 
 Despite the random noise seismogram, the phase arrival is now visible in
 the stack, and most correlation coefficients are high. The noise
 seismogram's correlation is clearly the lowest, but the
 reversed-polarity seismogram's is only mediocre rather than obviously
-bad — precisely the case [`ICCS`][pysmo.tools.iccs.ICCS] is designed to
+bad, precisely the case [`ICCS`][pysmo.tools.iccs.ICCS] is designed to
 catch automatically, since a real dataset of hundreds of seismograms
 cannot be checked individually by eye. It is annotated above: the trace
 whose largest excursion points downward rather than upward, easy to miss
@@ -350,12 +350,12 @@ this one:
 ```
 -->
 
-![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip.png#only-light){ loading=lazy }
-![Stack after run with autoflip](../../../images/sybil/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
+![The stack after autoflip corrects the reversed-polarity seismogram.](../../../images/sybil/iccs_stack_autoflip.png#only-light){ loading=lazy }
+![The stack after autoflip corrects the reversed-polarity seismogram.](../../../images/sybil/iccs_stack_autoflip-dark.png#only-dark){ loading=lazy }
 
 The previously-mediocre seismogram is now among the best-fitting of all
-seven. The noise seismogram is unaffected — no polarity reversal fixes
-what is not a real signal — and remains the clear outlier. Running ICCS
+seven. The noise seismogram is unaffected (no polarity reversal fixes
+what is not a real signal) and remains the clear outlier. Running ICCS
 again with `autoselect=True` deselects seismograms whose fit is
 genuinely poor, rather than merely reversed:
 
@@ -380,8 +380,8 @@ genuinely poor, rather than merely reversed:
 ```
 -->
 
-![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect.png#only-light){ loading=lazy }
-![Stack after run with autoselect](../../../images/sybil/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
+![The stack after autoselect deselects the noise seismogram.](../../../images/sybil/iccs_stack_autoselect.png#only-light){ loading=lazy }
+![The stack after autoselect deselects the noise seismogram.](../../../images/sybil/iccs_stack_autoselect-dark.png#only-dark){ loading=lazy }
 
 Only the noise seismogram is deselected; every real seismogram,
 including the one that needed flipping, now contributes to the stack.

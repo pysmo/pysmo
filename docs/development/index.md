@@ -2,34 +2,30 @@
 tags:
   - Development
 ---
+
 # Development
 
-A central feature of pysmo is that any code using pysmo is easily reusable.
-This means that code you write with pysmo could potentially become part of
-pysmo itself. Whether you're maintaining your own fork or contributing back to
-pysmo, it's important to understand the code organisation and repository
-structure.
+This chapter is for working on pysmo itself: fixing a bug, adding a function or
+a type, or maintaining a fork.
 
-## Getting started
+Code written against the pysmo types is reusable by design, so a function
+written for one study can often become a pysmo contribution with little change.
+The [Usage](../usage/index.md) chapter covers the style that makes this
+possible. This chapter covers the repository and the workflow around it.
 
-Begin developing pysmo by exploring the
-[source code](https://github.com/pysmo/pysmo/tree/HEAD/src/pysmo) to
-familiarise yourself with the code organisation.
+## Project layout
 
-### Docstrings as documentation
+Four things in the repository root matter for development:
 
-Much of the information about how pysmo is organised lives in the docstrings
-of the source code itself — particularly in the `__init__.py` files of each
-module. These docstrings describe the purpose and scope of each module and are
-also rendered in the [API reference][pysmo] section of this documentation. When
-adding new features, make sure to keep the relevant docstrings up to date.
+- `src/` holds the pysmo source code.
+- `tests/` holds the test suite, mirroring the layout of `src/`.
+- `docs/` holds everything behind [docs.pysmo.org](https://docs.pysmo.org).
+- `Makefile` collects shortcuts for the common development tasks.
 
-### Project layout
+## Documentation lives in the source
 
-The repository root folder contains a relatively simple layout. The four most
-important items are:
-
-1. `src`: this directory contains the pysmo source code.
-2. `docs`: anything to do with documentation happens here.
-3. `tests`: we use this directory to hold unit tests.
-4. `Makefile`: most things can be managed with this makefile.
+Each module documents its purpose and scope in its `__init__.py` docstring, and
+the [API reference][pysmo] is generated from those docstrings together with the
+ones on individual functions and classes. There is no separate API document to
+keep in step: editing the code and editing its reference documentation are the
+same action. A change in behaviour is not finished until the docstring matches.

@@ -12,7 +12,12 @@ __all__ = ["Event", "MiniEvent"]
 
 
 class Event(LocationWithDepth, Protocol):
-    """Protocol class to define the `Event` type."""
+    """Protocol class to define the `Event` type.
+
+    A seismic event: a hypocentre from
+    [`LocationWithDepth`][pysmo.LocationWithDepth] together with an origin
+    time.
+    """
 
     time: pd.Timestamp
     """Event origin time."""
@@ -20,7 +25,9 @@ class Event(LocationWithDepth, Protocol):
 
 @define(kw_only=True)
 class MiniEvent:
-    """Minimal class for use with the [`Event`][pysmo.Event] type.
+    """Minimal implementation of the `Event` type.
+
+    See [`Event`][pysmo.Event].
 
     Examples:
         ```python

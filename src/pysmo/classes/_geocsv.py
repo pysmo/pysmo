@@ -105,7 +105,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     )
     """FDSN Source Identifier as carried in the GeoCSV `SID` header.
 
-    Stored verbatim as parsed, e.g. `IU_ANMO_00_LHZ` — no `FDSN:` URN
+    Stored verbatim as parsed, e.g. `IU_ANMO_00_LHZ`, with no `FDSN:` URN
     prefix, and the channel is not split into band/source/subsource. This
     differs from [`MSeed.sourceid`][pysmo.classes.MSeed.sourceid], which
     keeps the full URN form. This is parse-time metadata: it describes the
@@ -156,7 +156,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
-        """Fetch and parse a seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
+        """Fetch and parse a seismogram from EarthScope's FDSN dataselect service.
 
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with
@@ -175,7 +175,7 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             A new GeoCsvSeismogram instance.
 
         Raises:
-            ValueError: If no waveform data is returned for the given window,
+            ValueError: If no waveform data are returned for the given window,
                 or the returned segments cannot be merged into a continuous
                 trace (data gaps, differing channels or sample rates).
             urllib3.exceptions.ResponseError: If the dataselect web service

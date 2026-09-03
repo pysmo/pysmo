@@ -3,19 +3,19 @@
 A SAC PZ file (as produced by e.g. EarthScope's fdsnws-station service) encodes
 one instrument's analog response as poles, zeros, and a single `CONSTANT`
 (the product of the analog normalisation factor `A0` and the overall system
-sensitivity — see
+sensitivity; see
 [`Response.overall_sensitivity`][pysmo.Response.overall_sensitivity]). A text
 body may contain several concatenated records (one per channel epoch); each
 is introduced by a `* NETWORK`/`* STATION`/`* LOCATION`/`* CHANNEL`/
 `* START`/`* END` comment header, plus an optional `* SENSITIVITY` header
 giving the plain reference-frequency sensitivity with `A0` excluded (see
-[`Response.reference_sensitivity`][pysmo.Response.reference_sensitivity]) —
+[`Response.reference_sensitivity`][pysmo.Response.reference_sensitivity]);
 present in real EarthScope output, but not guaranteed for hand-written SAC PZ
 text.
 
 [`parse_sacpz`][pysmo.lib.io.parse_sacpz] splits a text body into raw,
 uninterpreted `_RawSacPzResponse` records without constructing any `pysmo`
-type — mirroring the "parse, don't interpret" split used by
+type, mirroring the "parse, don't interpret" split used by
 [`parse_geocsv`][pysmo.lib.io.parse_geocsv] and
 [`parse_stationxml`][pysmo.lib.io.parse_stationxml]. Interpretation into a
 [`Response`][pysmo.Response]-compatible object happens one layer up, in

@@ -32,7 +32,7 @@ class SacPZ:
     file (as produced by e.g. EarthScope's fdsnws-station service) and
     exposes it as a [`Response`][pysmo.Response]-compatible object. `SacPZ` only ever
     satisfies [`Response`][pysmo.Response], never
-    [`StagedResponse`][pysmo.StagedResponse] — the SAC PZ format has no
+    [`StagedResponse`][pysmo.StagedResponse]; the SAC PZ format has no
     digital-stage fields to parse.
 
     Examples:
@@ -96,7 +96,7 @@ class SacPZ:
 
     input_units: str = field(validator=validators.instance_of(str))
     """Physical units produced by removing this response via full spectral
-    deconvolution — not necessarily via the sensitivity-only path, see
+    deconvolution, not necessarily via the sensitivity-only path; see
     [`remove_response`][pysmo.tools.signal.remove_response] for why.
 
     See [`Response.input_units`][pysmo.Response.input_units] for more details.
@@ -143,7 +143,7 @@ class SacPZ:
             a bulk/concatenated multi-record text body.
 
         Examples:
-            Reading a SAC PZ file already saved to disk — the common case for
+            Reading a SAC PZ file already saved to disk, the common case for
             archived/legacy data, e.g. extracted from an old SEED volume with
             `rdseed -p`, rather than fetched live from EarthScope:
 
@@ -166,7 +166,7 @@ class SacPZ:
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
-        """Fetch and parse an instrument response as SAC PZ from EarthScope's fdsnws-station service, selecting one epoch.
+        """Fetch and parse one epoch of instrument response, as SAC PZ.
 
         The response comes from `fdsnws-station` with
         `level=response&format=sacpz`, EarthScope's designated replacement
@@ -224,7 +224,7 @@ class SacPZ:
         """Create one instance per record in a bulk/concatenated SAC PZ text body.
 
         Unlike [`from_text`][pysmo.classes.SacPZ.from_text], this does not
-        require (or merge to) a single record — a SACPZ retrieval that is
+        require (or merge to) a single record: a SACPZ retrieval that is
         not pinned to a single channel epoch returns multiple concatenated
         records, each with its own `network`/`station`/`location`/`channel`/
         `start_date`/`end_date` provenance, which callers can filter

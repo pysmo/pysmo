@@ -1,4 +1,11 @@
-"""Constrained type aliases used in pysmo."""
+"""Annotated type aliases that document value constraints.
+
+Each alias pairs a base type with an
+[`annotated_types`](https://github.com/annotated-types/annotated-types)
+constraint. They are used for attribute and parameter annotations where a
+value has to satisfy more than its type, and the constraint is shown in the
+[API reference][pysmo].
+"""
 
 from datetime import UTC
 from typing import Annotated
@@ -11,22 +18,22 @@ from annotated_types import Ge, Gt, Interval, Le, Lt, Predicate, Timezone
 # ---------------------------------------------------------------------------
 
 type UnitFloat = Annotated[float | int, Interval(ge=0, le=1)]
-"""Float between 0.0 and 1.0, or int that is 0 or 1."""
+"""Number between 0 and 1, inclusive."""
 
 type PositiveInt = Annotated[int, Gt(0)]
-"""Positive Integers greater than 0."""
+"""Integer greater than 0."""
 
 type PositiveNumber = Annotated[int | float, Gt(0)]
-"""Positive Numbers (Float or Int) greater than 0."""
+"""Number greater than 0."""
 
 type NonZeroNumber = Annotated[int | float, Predicate(lambda x: x != 0)]
-"""Non-zero Numbers (Float or Int) of either sign."""
+"""Number other than 0, of either sign."""
 
 type NegativeNumber = Annotated[int | float, Lt(0)]
-"""Negative Numbers (Float or Int) less than 0."""
+"""Number less than 0."""
 
 type NonNegativeNumber = Annotated[int | float, Ge(0)]
-"""Non-negative Numbers (Float or Int) greater than or equal to 0."""
+"""Number greater than or equal to 0."""
 
 # ---------------------------------------------------------------------------
 # pandas Timedelta/Timestamp Type Aliases with Constraints
@@ -35,16 +42,16 @@ type NonNegativeNumber = Annotated[int | float, Ge(0)]
 _ZERO_TD = pd.Timedelta(0)
 
 type PositiveTimedelta = Annotated[pd.Timedelta, Gt(_ZERO_TD)]
-"""Positive Timedelta."""
+"""Timedelta greater than 0."""
 
 type NegativeTimedelta = Annotated[pd.Timedelta, Lt(_ZERO_TD)]
-"""Negative Timedelta."""
+"""Timedelta less than 0."""
 
 type NonNegativeTimedelta = Annotated[pd.Timedelta, Ge(_ZERO_TD)]
-"""Non-negative Timedelta (includes 0 total_seconds)."""
+"""Timedelta greater than or equal to 0."""
 
 type NonPositiveTimedelta = Annotated[pd.Timedelta, Le(_ZERO_TD)]
-"""Non-positive Timedelta (includes 0 total_seconds)."""
+"""Timedelta less than or equal to 0."""
 
 type UtcTimestamp = Annotated[pd.Timestamp, Timezone(tz=UTC)]
-"""Timestamp with utc timezone information."""
+"""Timestamp with a UTC timezone."""

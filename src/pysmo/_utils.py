@@ -17,7 +17,7 @@ def as_sequence[T](value: T | Sequence[T]) -> Sequence[T]:
 
 
 def export_module_names(globals_dict: dict[str, Any], module_name: str) -> None:
-    """Updates the __module__ attribute of all objects in __all__ to match the current module name.
+    """Set `__module__` on every object in `__all__` to the calling module's name.
 
     Args:
         globals_dict: The globals() dictionary of the calling module.
@@ -34,19 +34,20 @@ def export_module_names(globals_dict: dict[str, Any], module_name: str) -> None:
 def attrs_getstate(
     instance: AttrsInstance, overrides: dict[str, Any]
 ) -> dict[str, Any]:
-    """Build pickle state for an attrs instance, replacing fields that must not survive a pickle round trip.
+    """Build pickle state for an attrs instance.
 
+    Fields that must not survive a pickle round trip are replaced.
     For an attrs class with `slots=True` (the `@define` default), there is
     no `self.__dict__` to hand to the default pickling protocol, so state
-    must be built from the class's own fields instead — the same thing
+    must be built from the class's own fields instead, the same thing
     attrs' own auto-generated `__getstate__` already does for any slotted
     class that defines no `__getstate__`/`__setstate__` of its own. This
     helper (paired with [`attrs_setstate`][pysmo._utils.attrs_setstate])
     exists only for the one thing attrs has no declarative hook for: forcing
     specific fields (a live connection, an in-memory cache, a lock) to a
     fresh value on every pickle, regardless of their current value. Once a
-    class defines its own `__getstate__`/`__setstate__` — as any class using
-    this helper must — attrs' `auto_detect` sees them and stops generating
+    class defines its own `__getstate__`/`__setstate__` (as any class using
+    this helper must), attrs' `auto_detect` sees them and stops generating
     its own version entirely (it is all-or-nothing, the same mechanism that
     skips auto-generating `__repr__`/`__eq__` when a class defines its own),
     so there is no way to keep attrs' generated behaviour and only override
@@ -69,9 +70,9 @@ def attrs_setstate(instance: AttrsInstance, state: dict[str, Any]) -> None:
 
     Restoring exact prior state is not a semantic mutation those hooks
     should react to, and some fields' hooks may assume other fields are
-    already set — an order-of-restoration hazard plain `setattr` would risk.
+    already set, an order-of-restoration hazard plain `setattr` would risk.
     Mirrors attrs' own auto-generated `__setstate__` for slotted classes,
-    which restores via `object.__setattr__` for the identical reason — see
+    which restores via `object.__setattr__` for the identical reason; see
     [`attrs_getstate`][pysmo._utils.attrs_getstate] for why that
     auto-generated version can't be reused directly here.
     """
