@@ -13,11 +13,11 @@ __all__ = ["ProjectEntry", "build_entries"]
 
 @define(kw_only=True)
 class ProjectEntry[TStation: Station, TEvent: Event = Event]:
-    """One station/event selection within a [`PysmoProject`][pysmo.tools.project.PysmoProject].
+    """One station/event selection within a `PysmoProject`.
 
     Pairs a station with either an event (for a phase-arrival-relative
     window, resolved at fetch time) or an explicit absolute time window
-    (for event-less or continuous data), or both — an explicit window
+    (for event-less or continuous data), or both; an explicit window
     always takes precedence over one derived from `event`. See
     [`PysmoProject`][pysmo.tools.project.PysmoProject] for how the window is
     actually resolved.
@@ -31,7 +31,7 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     entries keeps those concrete types (e.g. `project.events` comes back as
     `list[QuakeML]`, not `list[Event]`). An event-less entry leaves `TEvent`
     at its default, [`Event`][pysmo.Event]. A list mixing event-bearing and
-    event-less entries has no single inferred element type — annotate it
+    event-less entries has no single inferred element type, so annotate it
     (`list[ProjectEntry[MyStation, MyEvent]]`) or reach for
     [`build_entries`][pysmo.tools.project.build_entries], which produces a
     homogeneous list.
@@ -41,45 +41,51 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     """Station to fetch waveform data for."""
 
     event: TEvent | None = None
-    """Event used to derive a phase-arrival-relative window, if `starttime`/`endtime` are not set."""
+    """Event for deriving a phase-arrival-relative window (if no explicit times)."""
 
     starttime: pd.Timestamp | None = field(
         default=None,
         converter=converters.optional(convert_to_utc_timestamp),
         on_setattr=setters.convert,
     )
-    """Explicit start of the fetch window (UTC). Overrides `event` when set together with `endtime`."""
+    """Explicit start of the fetch window (UTC).
+
+    Overrides `event` when set together with `endtime`.
+    """
 
     endtime: pd.Timestamp | None = field(
         default=None,
         converter=converters.optional(convert_to_utc_timestamp),
         on_setattr=setters.convert,
     )
-    """Explicit end of the fetch window (UTC). Overrides `event` when set together with `starttime`."""
+    """Explicit end of the fetch window (UTC).
+
+    Overrides `event` when set together with `starttime`.
+    """
 
     checksum: str | None = field(default=None)
     """Checksum of the fetched seismogram, set on first fetch; `None` until then.
 
     A mismatch on a later fetch means the underlying archive data changed
-    since this entry was first fetched — see
+    since this entry was first fetched; see
     [`PysmoProject.on_checksum_mismatch`][pysmo.tools.project.PysmoProject.on_checksum_mismatch]
     for how that is reported. Deliberately mutated by
     [`PysmoProject`][pysmo.tools.project.PysmoProject] as a side effect of
     fetching, so it is captured the next time the containing project is
-    pickled — this is what makes it a durable reproducibility pin rather
+    pickled; this is what makes it a durable reproducibility pin rather
     than a one-session-only check.
 
     Because this field is mutated in place, a `ProjectEntry` shared across
     two different `PysmoProject` instances (e.g. reused deliberately in an
     iterative workflow, or accidentally via a shared `entries` list) has its
-    checksum set/checked by *whichever* project fetches it first — the
+    checksum set/checked by *whichever* project fetches it first; the
     entry doesn't belong to one project. Sharing entries across projects is
     fine; sharing them without being aware their checksum state is joint,
     not per-project, is the surprise to avoid.
     """
 
     def __attrs_post_init__(self) -> None:
-        """Reject a window that is only half-specified, reversed, or absent with no event."""
+        """Reject a half-specified, reversed, or (event-less) absent window."""
         if (self.starttime is None) != (self.endtime is None):
             raise ValueError(
                 "ProjectEntry needs both starttime and endtime, or neither."
@@ -105,7 +111,7 @@ def build_entries[TStation: Station, TEvent: Event](
     """Build project entries from a filtered cross product of stations and events.
 
     One [`ProjectEntry`][pysmo.tools.project.ProjectEntry] per (station,
-    event) pair for which `predicate` returns `True` — every pair if
+    event) pair for which `predicate` returns `True`, or every pair if
     `predicate` is `None`. `stations` and `events` are expected to be
     already narrowed to the working set; this function pairs, it does not
     narrow or transform.

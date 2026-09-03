@@ -298,7 +298,7 @@ class SacIO(SacIOBase):
 
     @property
     def lcalda(self) -> Literal[True]:
-        """TRUE if DIST, AZ, BAZ, and GCARC are to be calculated from station and event coordinates.
+        """TRUE if DIST, AZ, BAZ, and GCARC are computed from station/event coordinates.
 
         Note: Always calculated, never stored
             Above fields are all read only properties in this class, so
@@ -308,7 +308,10 @@ class SacIO(SacIOBase):
 
     @property
     def ref_datetime(self) -> datetime | None:
-        """GMT reference time and date, as a Python `datetime` object."""
+        """GMT reference time and date, as a Python `datetime` object.
+
+        See [`datetime`][datetime.datetime].
+        """
         if (
             self.nzyear is None
             or self.nzjday is None
@@ -366,7 +369,7 @@ class SacIO(SacIOBase):
         self.read_buffer(filename.read_bytes())
 
     def write(self, filename: str | PathLike[str]) -> None:
-        """Writes data and header values to a SAC file.
+        """Write data and headers to a SAC file.
 
         The file is written via a temporary file and an atomic replace, so a
         failure mid-write cannot destroy an existing valid file. When the target

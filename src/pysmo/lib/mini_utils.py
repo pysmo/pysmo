@@ -1,4 +1,4 @@
-"""Mini utils."""
+"""Match objects and protocols to pysmo's Mini classes."""
 
 import inspect
 import types
@@ -37,7 +37,7 @@ def _get_flattened_types(tp: object) -> tuple[type, ...]:
 def _structural_match(obj: object, proto: type) -> bool:
     """Whether `obj` (an instance or a class) has every member `proto` requires.
 
-    Name-based structural check — signatures and types are a type-checker
+    Name-based structural check; signatures and types are a type-checker
     concern, not checked here. Uses `inspect.getattr_static`, so a member
     defined as a property whose getter would raise still counts as present.
     """
@@ -50,7 +50,7 @@ def _structural_match(obj: object, proto: type) -> bool:
 
 
 def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
-    """Returns valid Mini classes that implement the given pysmo Protocol.
+    """Return the Mini classes that implement a given pysmo protocol.
 
     This function resolves the input protocol (handling modern type aliases and
     unions) and filters the available 'Mini' classes to find those that
@@ -100,7 +100,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 
 
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
-    """Returns pysmo types that objects may be an instance of.
+    """Return the pysmo types an object may be an instance of.
 
     Args:
         obj: The object (or class) to check.

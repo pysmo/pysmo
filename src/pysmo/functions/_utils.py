@@ -1,4 +1,4 @@
-"""Functions for 'Mini' classes."""
+"""Copy attributes between Mini instances and other pysmo objects."""
 
 from copy import copy
 from typing import TYPE_CHECKING, Any
@@ -18,10 +18,10 @@ __all__ = [
 def copy_from_mini(
     source: "_AnyMini", target: "_AnyProto", update: dict[str, Any] | None = None
 ) -> None:
-    """Copy attributes from a Mini instance to matching other one.
+    """Copy attributes from a Mini instance onto a compatible object.
 
-    This function [copies][copy.copy] all attributes in the `source` Mini class
-    instance to a compatible `target` instance.
+    [Copies][copy.copy] every attribute of the `source` Mini instance onto a
+    compatible `target` instance.
 
     Args:
         source: The Mini instance to copy attributes from.
@@ -34,8 +34,8 @@ def copy_from_mini(
             provided with the `update` keyword argument).
 
     Tip: See Also
-        [`clone_to_mini`][pysmo.functions.clone_to_mini]: Create a new
-        instance of a Mini class from a matching other one.
+        [`clone_to_mini`][pysmo.functions.clone_to_mini]: Create a Mini
+        instance from a compatible object.
     """
 
     update = update or {}
@@ -58,12 +58,12 @@ def copy_from_mini(
 def clone_to_mini[TMini: _AnyMini](
     mini_cls: type[TMini], source: "_AnyProto", update: dict[str, Any] | None = None
 ) -> TMini:
-    """Create a new instance of a Mini class from a matching other one.
+    """Create a Mini class instance from a compatible object.
 
-    This function creates a clone of an existing class by
-    [copying][copy.copy] the attributes defined in `mini_cls` from the source
-    to the target. Attributes only present in the source object are ignored,
-    potentially resulting in a smaller and more performant object.
+    Clones `source` by [copying][copy.copy] the attributes `mini_cls` defines
+    from it onto a new `mini_cls` instance. Attributes present only on
+    `source` are ignored, so the result can be smaller and faster to work
+    with.
 
     If the source instance is missing an attribute for which a default is
     defined in the target class, then that default value for that attribute is
@@ -76,7 +76,7 @@ def clone_to_mini[TMini: _AnyMini](
         update: Update or add attributes in the returned `mini_cls` instance.
 
     Returns:
-        A new Mini instance type mini_cls.
+        A new `mini_cls` instance.
 
     Raises:
         AttributeError: If the `source` instance does not contain all
@@ -106,7 +106,7 @@ def clone_to_mini[TMini: _AnyMini](
 
     Tip: See Also
         [`copy_from_mini`][pysmo.functions.copy_from_mini]: Copy attributes
-        from a Mini instance to matching other one.
+        from a Mini instance onto a compatible object.
     """
 
     update = update or {}
