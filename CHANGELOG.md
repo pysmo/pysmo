@@ -50,6 +50,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Improve conventions, tutorial, and other usage/dev pages
 - Add titles to admonitions across docstrings
 - Drop unenforceable datum claim from depth docstrings
+- Overhaul documentation
 
 ### 📦 Miscellaneous
 
