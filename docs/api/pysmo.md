@@ -6,3 +6,6 @@
       inherited_members: true
       members_order: __all__
       summary: true
+      filters:
+        - "!^_"
+        - "!conftest"

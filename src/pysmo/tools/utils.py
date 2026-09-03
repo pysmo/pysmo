@@ -1,4 +1,4 @@
-"""Pysmo's little helpers."""
+"""Small helper functions shared across pysmo."""
 
 from collections.abc import Sequence
 from uuid import UUID

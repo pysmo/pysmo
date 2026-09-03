@@ -4,7 +4,7 @@ Thin wrappers around FDSN web services (EarthScope's, except `fetch_quakeml`,
 which targets USGS since EarthScope retired its event service).
 `fetch_stationxml`, `fetch_station_inventory`, `fetch_sacpz`,
 `fetch_geocsvseismogram`, `fetch_sac`, `fetch_mseed`, and `fetch_quakeml`
-return raw, unparsed responses — mostly a lower-level counterpart to a
+return raw, unparsed responses, mostly a lower-level counterpart to a
 class's own parsing entry point (e.g.
 [`SAC.fetch`][pysmo.classes.SAC.fetch],
 [`QuakeML.all_from_bytes`][pysmo.classes.QuakeML.all_from_bytes]), useful on
@@ -73,7 +73,7 @@ def fetch_stationxml(*, station: Station) -> bytes:
     [`StationXML.fetch`][pysmo.classes.StationXML.fetch]: returns the
     StationXML document unparsed and uninterpreted, covering every response
     epoch on record for the requested channel. Save it to disk to defer
-    parsing to later — offline, without another network request — via
+    parsing to later (offline, without another network request) via
     [`StationXML.from_bytes`][pysmo.classes.StationXML.from_bytes] or
     [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes].
 
@@ -129,7 +129,7 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
     A lower-level counterpart to
     [`SacPZ.fetch`][pysmo.classes.SacPZ.fetch]: returns the response
     metadata unparsed and uninterpreted. Save it to disk to defer parsing
-    to later — offline, without another network request — via
+    to later (offline, without another network request) via
     [`SacPZ.from_text`][pysmo.classes.SacPZ.from_text] or
     [`SacPZ.all_from_text`][pysmo.classes.SacPZ.all_from_text].
 
@@ -193,7 +193,7 @@ def _fetch_dataselect(
     """Fetch raw bytes from the FDSN dataselect service for a station/window.
 
     Shared request plumbing for `fetch_geocsvseismogram`, `fetch_sac` and
-    `fetch_mseed` — they differ only in the `format` value.
+    `fetch_mseed`; they differ only in the `format` value.
     """
     starttime = convert_to_utc_timestamp(starttime)
     endtime = convert_to_utc_timestamp(endtime)
@@ -222,7 +222,7 @@ def fetch_geocsvseismogram(
     A lower-level counterpart to
     [`GeoCsvSeismogram.fetch`][pysmo.classes.GeoCsvSeismogram.fetch]:
     returns the waveform unparsed and uninterpreted. Save it to disk to
-    defer parsing to later — offline, without another network request —
+    defer parsing to later (offline, without another network request)
     via [`GeoCsvSeismogram.from_text`][pysmo.classes.GeoCsvSeismogram.from_text].
 
     Args:
@@ -276,8 +276,8 @@ def fetch_sac(
     A lower-level counterpart to [`SAC.fetch`][pysmo.classes.SAC.fetch]:
     returns the zip archive returned by the dataselect web service
     unparsed and uninterpreted, without extracting or reading any of its
-    members. Save it to disk to defer parsing to later — offline, without
-    another network request — via
+    members. Save it to disk to defer parsing to later (offline, without another
+    network request) via
     [`SAC.from_zip`][pysmo.classes.SAC.from_zip] or
     [`SAC.all_from_zip`][pysmo.classes.SAC.all_from_zip].
 
@@ -331,8 +331,8 @@ def fetch_mseed(
 
     A lower-level counterpart to [`MSeed.fetch`][pysmo.classes.MSeed.fetch]:
     returns the miniSEED body returned by the dataselect web service
-    unparsed and uninterpreted. Save it to disk to defer parsing to later —
-    offline, without another network request — via
+    unparsed and uninterpreted. Save it to disk to defer parsing to later (offline, without another
+    network request) via
     [`MSeed.from_bytes`][pysmo.classes.MSeed.from_bytes] or
     [`MSeed.all_from_bytes`][pysmo.classes.MSeed.all_from_bytes].
 
@@ -432,7 +432,7 @@ def fetch_quakeml(
         minradius: Inner radius for a radial search, in degrees.
         maxradius: Outer radius for a radial search, in degrees.
         mindepth_km: Minimum event depth, in **kilometres** (the
-            fdsnws-event filter unit — the parsed
+            fdsnws-event filter unit; the parsed
             [`QuakeML.depth`][pysmo.classes.QuakeML] is in metres).
         maxdepth_km: Maximum event depth, in **kilometres**.
         minmagnitude: Minimum event magnitude.
@@ -442,7 +442,7 @@ def fetch_quakeml(
         eventid: Select a single event by the service's event id.
         limit: Maximum number of events to return.
         offset: Return events starting from this 1-based position.
-        orderby: Sort order — one of `"time"`, `"time-asc"`, `"magnitude"`,
+        orderby: Sort order, one of `"time"`, `"time-asc"`, `"magnitude"`,
             `"magnitude-asc"`.
         catalog: Restrict to a named catalog.
         contributor: Restrict to a named contributor.
@@ -527,12 +527,12 @@ def fetch_station_inventory(
     includerestricted: bool | None = None,
     matchtimeseries: bool | None = None,
 ) -> bytes:
-    """Fetch raw FDSN StationXML inventory bytes from the EarthScope fdsnws-station service.
+    """Fetch raw FDSN StationXML inventory bytes from EarthScope's fdsnws-station.
 
     A bulk, query-style counterpart to
     [`fetch_stationxml`][pysmo.tools.web.fetch_stationxml] (which is
     single-station and `level=response`). Returns a `level=channel`
-    document covering every `<Channel>` epoch matching the query — parse it
+    document covering every `<Channel>` epoch matching the query; parse it
     with [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes]
     and narrow in memory (the results carry no `response`).
 
@@ -543,10 +543,10 @@ def fetch_station_inventory(
     (`network="IU,II"`, `channel="BH?"`).
 
     Args:
-        network: Network code(s) — comma-list and `*` / `?` wildcards allowed.
+        network: Network code(s); comma-list and `*` / `?` wildcards allowed.
         station: Station code(s), defaulting to all.
         location: Location code(s), defaulting to all.
-        channel: Channel code(s) — comma-list and wildcards allowed.
+        channel: Channel code(s); comma-list and wildcards allowed.
         starttime: Keep metadata epochs intersecting at or after this time
             (UTC). Does not collapse to one epoch per channel.
         endtime: Keep metadata epochs intersecting at or before this time (UTC).

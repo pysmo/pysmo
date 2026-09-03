@@ -136,11 +136,11 @@ class _SacNested:
 
 @define(kw_only=True)
 class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
-    """Helper class for SAC seismogram attributes.
+    """Expose a SAC file's waveform as a pysmo `Seismogram`.
 
-    The `SacSeismogram` class maps SAC attributes to match the pysmo
-    [`Seismogram`][pysmo.Seismogram] type. An instance is created for each
-    new [`SAC`][pysmo.classes.SAC] instance.
+    Maps the relevant SAC headers to the
+    [`Seismogram`][pysmo.Seismogram] attributes. An instance is created for
+    each new [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
         A SacSeismogram can be passed to any function that expects the pysmo
@@ -206,10 +206,10 @@ class SacSeismogram(_SacNested, SeismogramEndtimeMixin):
 
 @define(kw_only=True)
 class SacStation(_SacNested):
-    """Helper class for SAC station attributes.
+    """Expose a SAC file's headers as a pysmo `Station`.
 
-    The `SacStation` class maps SAC attributes to match the pysmo
-    [`Station`][pysmo.Station] type. An instance is created for each new
+    Maps the relevant SAC headers to the [`Station`][pysmo.Station]
+    attributes. An instance is created for each new
     [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
@@ -319,11 +319,10 @@ class SacStation(_SacNested):
 
 @define(kw_only=True)
 class SacEvent(_SacNested):
-    """Helper class for SAC event attributes.
+    """Expose a SAC file's headers as a pysmo `Event`.
 
-    The `SacEvent` class maps SAC attributes to match the pysmo
-    [`Event`][pysmo.Event] type. An instance is created for each new
-    [`SAC`][pysmo.classes.SAC] instance.
+    Maps the relevant SAC headers to the [`Event`][pysmo.Event] attributes.
+    An instance is created for each new [`SAC`][pysmo.classes.SAC] instance.
 
     Examples:
         A SacEvent can be passed to any function that expects the pysmo
@@ -479,10 +478,10 @@ class OptionalSacTimestamp:
 
 
 class SacTimestamps(_SacNested):
-    """Helper class to access times stored in SAC headers as [`Timestamp`][pandas.Timestamp] objects.
+    """Access times stored in SAC headers as `Timestamp` objects.
 
-    The `SacTimestamps` class maps raw SAC time headers — relative to a
-    file's own reference time — to absolute [`Timestamp`][pandas.Timestamp]
+    The `SacTimestamps` class maps raw SAC time headers (relative to a
+    file's own reference time) to absolute [`Timestamp`][pandas.Timestamp]
     objects. An instance of this class is created for each new
     [`SAC`][pysmo.classes.SAC] instance.
 
@@ -672,7 +671,8 @@ class SAC:
     native names (e.g. `SAC.native.evla`), for users familiar with the SAC file
     format who need it.
 
-    Fixed for the lifetime of the instance: [`seismogram`][pysmo.classes.SAC.seismogram],
+    Fixed for the lifetime of the instance:
+    [`seismogram`][pysmo.classes.SAC.seismogram],
     [`station`][pysmo.classes.SAC.station], [`event`][pysmo.classes.SAC.event]
     and [`timestamps`][pysmo.classes.SAC.timestamps] are bound to this object
     at construction time, so reassigning it would silently orphan them. To
@@ -692,7 +692,7 @@ class SAC:
     """This SAC object exposed as an [`Event`][pysmo.Event]."""
 
     timestamps: SacTimestamps = field(init=False)
-    """Maps SAC time headers such as B, E, O, T0-T9 to
+    """This SAC object's time headers (B, E, O, T0-T9, and so on) exposed as
     [`Timestamp`][pandas.Timestamp] objects."""
 
     def __attrs_post_init__(self) -> None:
@@ -732,7 +732,7 @@ class SAC:
             A new SAC instance.
 
         Raises:
-            NotImplementedError: If the data isn't evenly-spaced
+            NotImplementedError: If the data aren't evenly-spaced
                 time-series data (IFTYPE=ITIME, LEVEN=True). Use
                 [`SacIO.from_buffer`][pysmo.lib.io.SacIO.from_buffer]
                 directly for other SAC file types.
@@ -762,7 +762,7 @@ class SAC:
             data: Raw bytes of a SAC file.
 
         Raises:
-            NotImplementedError: If the data isn't evenly-spaced
+            NotImplementedError: If the data aren't evenly-spaced
                 time-series data (IFTYPE=ITIME, LEVEN=True); the existing
                 instance is left unchanged in this case.
         """
@@ -779,7 +779,7 @@ class SAC:
 
     @classmethod
     def from_zip(cls, archive: bytes) -> Self:
-        """Create a new instance from a zip archive containing exactly one continuous SAC segment.
+        """Create an instance from a zip archive holding one continuous SAC segment.
 
         Args:
             archive: Raw zip archive bytes containing exactly one SAC file
@@ -824,7 +824,7 @@ class SAC:
     def fetch(
         cls, *, station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
     ) -> Self:
-        """Fetch and parse a SAC seismogram from the EarthScope FDSN dataselect web service, for an absolute time window.
+        """Fetch and parse a SAC seismogram from EarthScope's FDSN dataselect service.
 
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with
@@ -849,7 +849,7 @@ class SAC:
             A new SAC instance.
 
         Raises:
-            ValueError: If no waveform data is returned for the given
+            ValueError: If no waveform data are returned for the given
                 window, if more than one continuous segment is returned
                 (e.g. due to a data gap, an instrument/metadata epoch
                 change, overlapping records, or a wildcarded channel/
@@ -883,7 +883,7 @@ class SAC:
 
         # dataselect returns an empty (zero-length) body, not a
         # zero-member zip archive, when a request is well-formed but
-        # matches no data (HTTP 204, the FDSN default `nodata` handling) —
+        # matches no data (HTTP 204, the FDSN default `nodata` handling);
         # confirmed live.
         if not archive:
             raise ValueError(
@@ -898,7 +898,7 @@ class SAC:
         """Create one instance per SAC file in a zip archive.
 
         Unlike [`from_zip`][pysmo.classes.SAC.from_zip], this does not
-        require exactly one segment — a response covering a data gap, an
+        require exactly one segment: a response covering a data gap, an
         instrument/metadata epoch change, or a wildcarded channel/location
         code returns several, which callers can inspect or merge
         themselves.

@@ -72,7 +72,7 @@ def _make_mask(iccs: ICCS, all_seismograms: bool) -> list[bool]:
 def _variant_suffix(apply: bool, causal: bool) -> str:
     """Return a label suffix identifying the causal/zero-phase filter variant.
 
-    Only shown when `apply` is `True` — when it's `False`, causal and
+    Only shown when `apply` is `True`; when it's `False`, causal and
     zero-phase preparation are identical, so labelling one as "(causal)"
     would be misleading.
 
@@ -80,7 +80,7 @@ def _variant_suffix(apply: bool, causal: bool) -> str:
     directly: `update_bandpass`'s live preview only writes
     `iccs.bandpass_apply` on a cache miss (see `_update_matrix`/
     `_update_stack`), so it can lag behind the widget's actual current
-    state on a cache hit — callers there must pass the freshly-read
+    state on a cache hit, so callers there must pass the freshly-read
     checkbox state instead of the (possibly stale) `iccs` attribute.
     """
     if not apply:
@@ -91,7 +91,7 @@ def _variant_suffix(apply: bool, causal: bool) -> str:
 def _apply_bandpass_params(
     iccs: ICCS, apply: bool, fmin: float, fmax: float, corners: int
 ) -> bool:
-    """Apply new bandpass_apply/bandpass_fmin/bandpass_fmax/corners without spurious rejections.
+    """Apply new bandpass parameters together, without spurious rejections.
 
     ICCS's per-field validators check each new value against the *other*
     fields' current values, so setting bandpass_fmin, bandpass_fmax, and
@@ -103,14 +103,14 @@ def _apply_bandpass_params(
     Avoided by validating the full target via
     [`causal_band`][pysmo.tools.signal.causal_band] first, then writing
     fields moving in the *permissive* direction (`bandpass_fmin` down,
-    `bandpass_fmax` up, `corners` up) before the *restrictive* ones — a
+    `bandpass_fmax` up, `corners` up) before the *restrictive* ones: a
     permissive write can only make an already-valid combination more valid,
     and by the time a restrictive field is written the others are already
     at their validated target, so it succeeds too.
 
     Returns:
         `True` if the target combination was valid and applied (cache
-        cleared). `False` if invalid — `iccs` is left unchanged.
+        cleared). `False` if invalid: `iccs` is left unchanged.
     """
     if fmin >= fmax:
         return False
@@ -154,7 +154,7 @@ def _draw_stack_or_matrix(
     """Draw the stack or matrix-image plot.
 
     For dialogs that don't need the returned artist references back (i.e.
-    no live-updating preview — see `update_bandpass` for the one dialog
+    no live-updating preview; see `update_bandpass` for the one dialog
     that does and can't use this).
     """
     if use_matrix_image:
@@ -173,8 +173,8 @@ def _widget_gridspec(
     """Build a GridSpec for the widget area below a dialog's main plot axes.
 
     Each entry in `height_ratios` becomes its own row (as *relative* weights
-    within the `[bottom, top]` span, matplotlib's normal `GridSpec` meaning —
-    not absolute fractions), stacked top-to-bottom — the last entry is
+    within the `[bottom, top]` span, matplotlib's normal `GridSpec` meaning,
+    not absolute fractions), stacked top-to-bottom, where the last entry is
     conventionally the Save/Cancel buttons row. Rows are separate GridSpec
     cells, so widgets placed in different rows can never visually overlap
     (unlike hand-placed `fig.add_axes` rectangles, which have no such
@@ -204,7 +204,8 @@ def _add_save_cancel_buttons(
     """Add Save and Cancel buttons to the given axes.
 
     Returns:
-        Tuple of (save_button, cancel_button). Must be stored to prevent garbage collection.
+        Tuple of (save_button, cancel_button). Must be stored to prevent
+        garbage collection.
     """
     b_save = Button(ax_save, "Save", color="darkgreen", hovercolor="green")
     b_save.on_clicked(on_save)
@@ -215,7 +216,7 @@ def _add_save_cancel_buttons(
 
 
 class _ScrollIndexTracker:
-    """Helper class to track scrolling for the min_cc picker."""
+    """Track the scroll position for the min_cc picker."""
 
     def __init__(self, ax: Axes, fig: Figure) -> None:
         self.scroll_index = ax.get_ylim()[1]
@@ -257,8 +258,8 @@ def _draw_stack_initial(
         ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -344,8 +345,8 @@ def draw_common_stack(
         ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -364,8 +365,8 @@ def _draw_matrix_image_initial(
         ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -434,8 +435,8 @@ def draw_common_matrix_image(
         ax: Axes to plot on.
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -489,8 +490,8 @@ def plot_stack(
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -533,8 +534,8 @@ def plot_stack(
         ```
         -->
 
-        ![View the context stack](../../../images/sybil/iccs_context_stack.png#only-light){ loading=lazy }
-        ![View the context stack](../../../images/sybil/iccs_context_stack-dark.png#only-dark){ loading=lazy }
+        ![The ICCS stack padded beyond the cross-correlation window, which is highlighted in green.](../../../images/sybil/iccs_context_stack.png#only-light){ loading=lazy }
+        ![The ICCS stack padded beyond the cross-correlation window, which is highlighted in green.](../../../images/sybil/iccs_context_stack-dark.png#only-dark){ loading=lazy }
 
         To view the stack exactly as it is used in the cross-correlations, set
         the `context` argument to `False`:
@@ -559,8 +560,8 @@ def plot_stack(
         ```
         -->
 
-        ![View the cc stack](../../../images/sybil/iccs_cc_stack.png#only-light){ loading=lazy }
-        ![View the cc stack](../../../images/sybil/iccs_cc_stack-dark.png#only-dark){ loading=lazy }
+        ![The ICCS stack restricted to the exact window used for the cross-correlations.](../../../images/sybil/iccs_cc_stack.png#only-light){ loading=lazy }
+        ![The ICCS stack restricted to the exact window used for the cross-correlations.](../../../images/sybil/iccs_cc_stack-dark.png#only-dark){ loading=lazy }
 
         To view the causally-filtered variant used by picking-oriented tools
         (avoiding the acausal precursor smearing a zero-phase filter
@@ -614,8 +615,8 @@ def plot_matrix_image(
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
@@ -655,8 +656,8 @@ def plot_matrix_image(
         ```
         -->
 
-        ![Matrix image of context seismograms](../../../images/sybil/iccs_context_image.png#only-light){ loading=lazy }
-        ![Matrix image of context seismograms](../../../images/sybil/iccs_context_image-dark.png#only-dark){ loading=lazy }
+        ![Selected seismograms as a matrix image, padded beyond the cross-correlation window.](../../../images/sybil/iccs_context_image.png#only-light){ loading=lazy }
+        ![Selected seismograms as a matrix image, padded beyond the cross-correlation window.](../../../images/sybil/iccs_context_image-dark.png#only-dark){ loading=lazy }
 
         To view the matrix image composed of seismograms as used in the
         cross-correlations, set the `context` argument to `False`:
@@ -681,8 +682,8 @@ def plot_matrix_image(
         ```
         -->
 
-        ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image.png#only-light){ loading=lazy }
-        ![View the matrix image of cc seismograms](../../../images/sybil/iccs_cc_image-dark.png#only-dark){ loading=lazy }
+        ![Selected seismograms as a matrix image, restricted to the cross-correlation window.](../../../images/sybil/iccs_cc_image.png#only-light){ loading=lazy }
+        ![Selected seismograms as a matrix image, restricted to the cross-correlation window.](../../../images/sybil/iccs_cc_image-dark.png#only-dark){ loading=lazy }
 
         To view the causally-filtered variant used by picking-oriented tools
         (avoiding the acausal precursor smearing a zero-phase filter
@@ -734,16 +735,17 @@ def update_pick(
     causal: bool = True,
     return_fig: bool = True,
 ) -> tuple[Figure, Axes, tuple[Cursor, Line2D, Button, Button]] | None:
-    """Manually pick [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] and apply it to all seismograms.
+    """Manually pick `t1` and apply it to all seismograms.
 
     This function launches an interactive figure to manually pick a new phase
-    arrival, and then apply it to all seismograms.
+    arrival on the [`t1`][pysmo.tools.iccs.IccsSeismogram.t1] attribute, and
+    then apply it to all seismograms.
 
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_matrix_image: Use the
@@ -787,8 +789,8 @@ def update_pick(
         ```
         -->
 
-        ![Picking a new T1](../../../images/sybil/iccs_update_pick.png#only-light){ loading=lazy }
-        ![Picking a new T1](../../../images/sybil/iccs_update_pick-dark.png#only-dark){ loading=lazy }
+        ![Interactively picking a new reference time on the ICCS stack.](../../../images/sybil/iccs_update_pick.png#only-light){ loading=lazy }
+        ![Interactively picking a new reference time on the ICCS stack.](../../../images/sybil/iccs_update_pick-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     _draw_stack_or_matrix(ax, iccs, context, all_seismograms, causal, use_matrix_image)
@@ -894,8 +896,8 @@ def update_timewindow(
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_matrix_image: Use the
@@ -950,8 +952,8 @@ def update_timewindow(
         ```
         -->
 
-        ![Picking a new time window](../../../images/sybil/iccs_update_timewindow.png#only-light){ loading=lazy }
-        ![Picking a new time window](../../../images/sybil/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
+        ![Interactively adjusting the cross-correlation time window on the ICCS stack.](../../../images/sybil/iccs_update_timewindow.png#only-light){ loading=lazy }
+        ![Interactively adjusting the cross-correlation time window on the ICCS stack.](../../../images/sybil/iccs_update_timewindow-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     _draw_stack_or_matrix(ax, iccs, context, all_seismograms, causal, use_matrix_image)
@@ -1055,7 +1057,7 @@ def update_min_cc(
     ]
     | None
 ):
-    """Interactively pick a new [`min_cc`][pysmo.tools.iccs.ICCS.min_cc].
+    """Interactively pick a new `min_cc`.
 
     This function launches an interactive figure to manually pick a new
     [`min_cc`][pysmo.tools.iccs.ICCS.min_cc], which is used when
@@ -1065,14 +1067,14 @@ def update_min_cc(
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         causal: Determines the filter phase behaviour:
             - `True`: causally-filtered (single-pass) seismograms are used.
             - `False`: zero-phase filtered seismograms are used. This is the
-              default for this function — it sorts/thresholds by correlation
+              default for this function: it sorts/thresholds by correlation
               coefficient, and zero-phase is what's actually used for the
               correlation being thresholded, so it's the more representative
               view.
@@ -1107,8 +1109,8 @@ def update_min_cc(
         ```
         -->
 
-        ![Picking a new min_cc in matrix image](../../../images/sybil/iccs_update_min_cc.png#only-light){ loading=lazy }
-        ![Picking a new min_cc in matrix image](../../../images/sybil/iccs_update_min_cc-dark.png#only-dark){ loading=lazy }
+        ![Interactively setting the minimum correlation coefficient on the matrix image.](../../../images/sybil/iccs_update_min_cc.png#only-light){ loading=lazy }
+        ![Interactively setting the minimum correlation coefficient on the matrix image.](../../../images/sybil/iccs_update_min_cc-dark.png#only-dark){ loading=lazy }
     """
     fig, ax = plt.subplots(figsize=(10, 6))
     matrix = draw_common_matrix_image(ax, iccs, context, all_seismograms, causal)
@@ -1242,15 +1244,15 @@ def update_bandpass(
     [`bandpass_fmin`][pysmo.tools.iccs.ICCS.bandpass_fmin],
     [`bandpass_fmax`][pysmo.tools.iccs.ICCS.bandpass_fmax], and
     [`corners`][pysmo.tools.iccs.ICCS.corners] with a live preview. A radio
-    button toggles the preview between the causal and zero-phase variants —
+    button toggles the preview between the causal and zero-phase variants;
     this is UI-only, not a saved parameter, since both renderings are
     relevant while tuning rather than there being a default to pick.
 
     Args:
         iccs: Instance of the [`ICCS`][pysmo.tools.iccs.ICCS] class.
         context: Determines which seismograms are used:
-            - `True`: [`context_seismograms`][pysmo.tools.iccs.ICCS.context_seismograms] are used.
-            - `False`: [`cc_seismograms`][pysmo.tools.iccs.ICCS.cc_seismograms] are used.
+            - `True`: `context_seismograms` are used.
+            - `False`: `cc_seismograms` are used.
         all_seismograms: If `True`, all seismograms are shown in the plot instead of the
             selected ones only.
         use_matrix_image: Use the
@@ -1289,8 +1291,8 @@ def update_bandpass(
         ```
         -->
 
-        ![Updating bandpass filter parameters](../../../images/sybil/iccs_update_bandpass.png#only-light){ loading=lazy }
-        ![Updating bandpass filter parameters](../../../images/sybil/iccs_update_bandpass-dark.png#only-dark){ loading=lazy }
+        ![Interactively adjusting the bandpass filter parameters on the ICCS stack.](../../../images/sybil/iccs_update_bandpass.png#only-light){ loading=lazy }
+        ![Interactively adjusting the bandpass filter parameters on the ICCS stack.](../../../images/sybil/iccs_update_bandpass-dark.png#only-dark){ loading=lazy }
     """
     _orig_apply = iccs.bandpass_apply
     _orig_fmin = iccs.bandpass_fmin
@@ -1511,7 +1513,7 @@ def update_bandpass(
         layout="horizontal",
         label_props={"color": [_fg, _fg], "fontsize": [11, 11]},
     )
-    # RadioButtons has no option to centre the group — measure how much
+    # RadioButtons has no option to centre the group; measure how much
     # width it actually used, once rendered, and shift to centre it.
     fig.canvas.draw()
     content_right = radio.labels[-1].get_window_extent().x1

@@ -48,16 +48,15 @@ nav = [
   ] },
   { "Development" = [
     "development/index.md",
-    "development/style.md",
-    "development/testing.md",
     "development/environment.md",
+    "development/standards.md",
     "development/contributing.md",
-    "development/contributors.md",
   ] },
   "changelog.md",
 ]
 
 extra_css = [
+  "css/images.css",
   "css/mermaid.css",
   # "css/mkdocstrings.css",
   "https://unpkg.com/katex@0/dist/katex.min.css",
@@ -162,6 +161,9 @@ custom_fences = [
 alternate_style = true
 [project.plugins.markdown-exec]
 
+[project.plugins.macros]
+module_name = "docs/macros"
+
 [project.plugins.mkdocstrings.handlers.python]
 paths = ["src"]
 inventories = [
@@ -201,3 +203,7 @@ signature_crossrefs = true
 [project.plugins.mkdocstrings.handlers.python.options.extra]
 trim_doctest_flags = true
 type_parameter_headings = true
+
+[project.markdown_extensions.zensical.extensions.glightbox]
+auto_themed = true
+auto_caption = true

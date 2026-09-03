@@ -22,7 +22,10 @@ __all__ = ["IccsResult", "IccsSeismogram", "McccResult", "MiniIccsSeismogram"]
 
 @define(frozen=True)
 class IccsResult:
-    """Result returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__]."""
+    """Result of running the ICCS algorithm.
+
+    Returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__].
+    """
 
     convergence: npt.NDArray[np.floating]
     """Convergence criterion value after each iteration."""
@@ -33,12 +36,13 @@ class IccsResult:
 
 @define(frozen=True)
 class McccResult:
-    """Result returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc].
+    """Result of the MCCC arrival-time refinement step.
 
-    Every list is positional, in the order MCCC processed the seismograms:
+    Returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc]. Every
+    list is positional, in the order MCCC processed the seismograms:
     all of `ICCS.seismograms` when `run_mccc(all_seismograms=True)`, otherwise
     only the selected ones in `ICCS.selected_cc_seismograms` order. There is
-    no seismogram identity in the result — the caller must line the lists up
+    no seismogram identity in the result; the caller must line the lists up
     against the same seismogram sequence itself.
     """
 
@@ -58,7 +62,8 @@ class McccResult:
     """Per-seismogram mean cross-correlation coefficient (waveform quality)."""
 
     cc_stds: list[float]
-    """Per-seismogram standard deviation of cross-correlation coefficients (waveform consistency)."""
+    """Per-seismogram standard deviation of the cross-correlation
+    coefficients (waveform consistency)."""
 
 
 class ConvergenceMethod(StrEnum):
@@ -82,7 +87,7 @@ class IccsSeismogram(Seismogram, Protocol):
     Setting this directly on a seismogram already in an
     [`ICCS`][pysmo.tools.iccs.ICCS] instance's
     [`seismograms`][pysmo.tools.iccs.ICCS.seismograms] list bypasses that
-    instance's cache — see the warning there.
+    instance's cache (see the warning there).
     """
 
     flip: bool
@@ -97,7 +102,7 @@ class IccsSeismogram(Seismogram, Protocol):
 
 @define(kw_only=True)
 class MiniIccsSeismogram(SeismogramEndtimeMixin):
-    """Minimal implementation of the [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] type.
+    """Minimal implementation of the `IccsSeismogram` type.
 
     Examples:
         Because [`IccsSeismogram`][pysmo.tools.iccs.IccsSeismogram] inherits

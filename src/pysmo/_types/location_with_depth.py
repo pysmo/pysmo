@@ -10,7 +10,11 @@ __all__ = ["LocationWithDepth", "MiniLocationWithDepth"]
 
 
 class LocationWithDepth(Location, Protocol):
-    """Protocol class to define the `LocationWithDepth` type."""
+    """Protocol class to define the `LocationWithDepth` type.
+
+    A [`Location`][pysmo.Location] that also carries a depth, such as an
+    earthquake hypocentre.
+    """
 
     depth: float
     """Location depth in metres, positive downwards."""
@@ -18,7 +22,9 @@ class LocationWithDepth(Location, Protocol):
 
 @define(kw_only=True)
 class MiniLocationWithDepth:
-    """Minimal class for use with the [`LocationWithDepth`][pysmo.LocationWithDepth] type.
+    """Minimal implementation of the `LocationWithDepth` type.
+
+    See [`LocationWithDepth`][pysmo.LocationWithDepth].
 
     Examples:
         ```python
