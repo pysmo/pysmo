@@ -174,15 +174,26 @@ class SqliteArchiveFetcher:
     def close(self) -> None:
         """Close the underlying connection, if one is open.
 
-        Not required before the object is garbage-collected or the process
-        exits (normal teardown closes the file descriptor regardless), but
-        call it explicitly to release the connection sooner in a
+        Not required for correctness, since `__del__` closes it on garbage
+        collection. Call it explicitly to release the connection sooner in a
         long-running process holding many such fetchers.
         """
         with self._lock:
             if self._conn is not None:
                 self._conn.close()
                 self._conn = None
+
+    def __del__(self) -> None:
+        """Close the connection on garbage collection.
+
+        `sqlite3` emits a `ResourceWarning` if it has to finalise a live
+        connection itself, so close it here rather than leave it to the
+        connection's own finaliser. No lock is taken, since nothing else can
+        hold a reference by the time this runs.
+        """
+        conn = getattr(self, "_conn", None)
+        if conn is not None:
+            conn.close()
 
     def _connect(self) -> sqlite3.Connection:
         with self._lock:
