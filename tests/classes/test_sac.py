@@ -44,7 +44,6 @@ class TestSAC:
         with pytest.raises(TypeError):
             sac.event.latitude
 
-    @pytest.mark.depends(on=["test_create_instance"])
     def test_defaults(self) -> None:
         sac = SAC()
 
@@ -64,12 +63,10 @@ class TestSAC:
         with pytest.raises(TypeError):
             sac.event.time
 
-    @pytest.mark.depends(on=["test_create_instance"])
     def test_create_instance_from_file(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         assert isinstance(sac, SAC)
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_native_is_frozen(self, sacfile: Path) -> None:
         """Reassigning `native` would orphan the nested helpers (they bind
         to the `SacIO` instance at construction time), so it must be
@@ -89,7 +86,6 @@ class TestSAC:
         assert sac.seismogram._parent is sac.native
         assert sac.timestamps._parent is sac.native
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_from_file_rejects_incompatible_native(self) -> None:
         """SacIO can read spectral/unevenly-spaced files, but SAC must not
         silently expose them through `seismogram` as if they were a normal,
@@ -99,12 +95,10 @@ class TestSAC:
         with pytest.raises(NotImplementedError, match="LEVEN=True"):
             SAC.from_file(UNEVEN_FIXTURE)
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_from_bytes_rejects_incompatible_native(self) -> None:
         with pytest.raises(NotImplementedError, match="IFTYPE=ITIME"):
             SAC.from_bytes(IRLIM_FIXTURE.read_bytes())
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         npts_before = len(sac.seismogram.data)
@@ -113,7 +107,6 @@ class TestSAC:
         # a rejected read must not have disturbed the existing instance
         assert len(sac.seismogram.data) == npts_before
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_read_bytes_rejects_incompatible_native(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         npts_before = len(sac.seismogram.data)
@@ -121,7 +114,6 @@ class TestSAC:
             sac.read_bytes(IRLIM_FIXTURE.read_bytes())
         assert len(sac.seismogram.data) == npts_before
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_seismogram(self, sacfile: Path) -> None:
         sacseis = SAC.from_file(sacfile).seismogram
         sacio = SacIO.from_file(sacfile)
@@ -190,7 +182,6 @@ class TestSAC:
             len(sacseis.data) - 1
         )
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_station(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacstation = sac.station
@@ -250,7 +241,6 @@ class TestSAC:
         with pytest.raises(TypeError):
             sacstation.channel
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_as_event(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacevent = sac.event
@@ -289,7 +279,6 @@ class TestSAC:
         with pytest.raises(TypeError):
             sacevent.depth
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_sac_timestamps(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacio = SacIO.from_file(sacfile)
@@ -315,7 +304,6 @@ class TestSAC:
         sac.timestamps.b = naive_now
         assert sac.timestamps.b.tzinfo == UTC
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_nested_objects_reject_unknown_attributes(self, sacfile: Path) -> None:
         """Unknown attributes on the nested helper objects must raise."""
 
@@ -329,7 +317,6 @@ class TestSAC:
         with pytest.raises(AttributeError):
             sac.timestamps.t10 = 60  # type: ignore[attr-defined]
 
-    @pytest.mark.depends(on=["test_create_instance_from_file"])
     def test_set_sac_from_timestamp_optional_none(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sac.event._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, None)
