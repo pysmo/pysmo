@@ -79,7 +79,6 @@ def test_envelope_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) 
     )
 
 
-@pytest.mark.depends(on=["test_envelope", "test_gauss"])
 @pytest.mark.mpl_image_compare(remove_text=True)
 def test_plot_gauss_env(sac_seismogram: Seismogram) -> matplotlib.figure.Figure:
     """Test plotting gauss and envelope functions."""
