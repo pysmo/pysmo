@@ -153,13 +153,11 @@ def test_create_instance() -> None:
     assert isinstance(sac, SacIO)
 
 
-@pytest.mark.depends(on=["test_create_instance"])
 def test_defaults() -> None:
     sac = SacIO()
     assert sac.b == 0
 
 
-@pytest.mark.depends(on=["test_create_instance"])
 def test_ref_datetime() -> None:
     sac = SacIO()
     assert sac.kzdate is None
@@ -175,7 +173,6 @@ def test_ref_datetime() -> None:
     )
 
 
-@pytest.mark.depends(on=["test_create_instance"])
 def test_create_instance_from_file(sacfile: Path, sacfile_no_b: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert isinstance(sac, SacIO)
@@ -183,7 +180,6 @@ def test_create_instance_from_file(sacfile: Path, sacfile_no_b: Path) -> None:
         SacIO.from_file(sacfile_no_b)
 
 
-@pytest.mark.depends(on=["test_create_instance"])
 def test_write_to_file(empty_file: Path) -> None:
     sac = SacIO()
     sac.write(empty_file)
@@ -201,7 +197,6 @@ def test_write_to_file(empty_file: Path) -> None:
 # ─────────────────────────── Read all headers ──────────────────────────────
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_header_types(sacfile: Path) -> None:
     """Verify that reading headers from a file satisfies type contracts."""
     sac = SacIO.from_file(sacfile)
@@ -237,7 +232,6 @@ def test_read_header_types(sacfile: Path) -> None:
         )
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_headers_semantic(sacfile: Path) -> None:
     """Verify key header values that have seismological semantic significance."""
     sac = SacIO.from_file(sacfile)
@@ -265,7 +259,6 @@ def test_read_headers_semantic(sacfile: Path) -> None:
         _ = sac.nonexistingheader  # type: ignore[attr-defined]
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_headers_snapshot(sacfile: Path, snapshot: SnapshotAssertion) -> None:
     """Full header snapshot — catches regressions in SAC header reading."""
     sac = SacIO.from_file(sacfile)
@@ -293,7 +286,6 @@ def test_read_headers_snapshot(sacfile: Path, snapshot: SnapshotAssertion) -> No
     assert headers == snapshot
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_v6_v7(sacfile_v6: Path, sacfile_v7: Path) -> None:
     sac6 = SacIO.from_file(sacfile_v6)
     sac7 = SacIO.from_file(sacfile_v7)
@@ -303,7 +295,6 @@ def test_v6_v7(sacfile_v6: Path, sacfile_v7: Path) -> None:
     sac7 = SacIO.from_file(sacfile_v7)
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_sacfile_IB(sacfile_IB: Path) -> None:
     sac = SacIO.from_file(sacfile_IB)
     assert sac.iztype == "b"
@@ -314,7 +305,6 @@ def test_sacfile_IB(sacfile_IB: Path) -> None:
 # by pysmo, per the no-round-trip fixture rule.
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_irlim(sacfile_irlim: Path) -> None:
     sac = SacIO.from_file(sacfile_irlim)
     assert sac.iftype == "rlim"
@@ -328,7 +318,6 @@ def test_read_irlim(sacfile_irlim: Path) -> None:
     assert sac.nsnpts == 1000
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_iamph(sacfile_iamph: Path) -> None:
     sac = SacIO.from_file(sacfile_iamph)
     assert sac.iftype == "amph"
@@ -338,7 +327,6 @@ def test_read_iamph(sacfile_iamph: Path) -> None:
     npt.assert_allclose(sac.data2[:3], [3.141593, -0.199703, 0.90148], atol=1e-5)
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_uneven(sacfile_uneven: Path) -> None:
     sac = SacIO.from_file(sacfile_uneven)
     assert sac.iftype == "time"
@@ -349,7 +337,6 @@ def test_read_uneven(sacfile_uneven: Path) -> None:
     npt.assert_allclose(sac.data2[:3], [10.0, 10.01, 10.02], atol=1e-6)
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_ixy(sacfile_ixy: Path) -> None:
     sac = SacIO.from_file(sacfile_ixy)
     assert sac.iftype == "xy"
@@ -359,7 +346,6 @@ def test_read_ixy(sacfile_ixy: Path) -> None:
     npt.assert_allclose(sac.data2[:3], [10.0, 10.01, 10.02], atol=1e-6)
 
 
-@pytest.mark.depends(on=["test_read_irlim"])
 def test_two_block_v7_write_read_roundtrip(sacfile_irlim: Path) -> None:
     """Also exercises the footer-offset fix: a two-block v7 file's footer
     must land after data2, not right after data1."""
@@ -374,7 +360,6 @@ def test_two_block_v7_write_read_roundtrip(sacfile_irlim: Path) -> None:
     assert reread.nsnpts == sac.nsnpts
 
 
-@pytest.mark.depends(on=["test_read_uneven"])
 def test_two_block_v6_write_read_roundtrip(sacfile_uneven: Path) -> None:
     sac = SacIO.from_file(sacfile_uneven)
     sac.write(sacfile_uneven)
@@ -387,7 +372,6 @@ def test_two_block_v6_write_read_roundtrip(sacfile_uneven: Path) -> None:
 @pytest.mark.skipif(
     sys.platform == "win32", reason="POSIX permission bits not meaningful on Windows"
 )
-@pytest.mark.depends(on=["test_write_to_file"])
 def test_write_preserves_mode_of_existing_file(tmp_path: Path) -> None:
     target = tmp_path / "out.sac"
     target.touch()
@@ -399,7 +383,6 @@ def test_write_preserves_mode_of_existing_file(tmp_path: Path) -> None:
 @pytest.mark.skipif(
     sys.platform == "win32", reason="symlink creation needs privileges on Windows"
 )
-@pytest.mark.depends(on=["test_write_to_file"])
 def test_write_follows_symlink_target(tmp_path: Path) -> None:
     real = tmp_path / "real.sac"
     SacIO(b=1.0, data=np.random.rand(100)).write(real)
@@ -413,7 +396,6 @@ def test_write_follows_symlink_target(tmp_path: Path) -> None:
     assert not list(tmp_path.glob("*.sac.tmp"))
 
 
-@pytest.mark.depends(on=["test_read_irlim"])
 def test_write_mismatched_data2_length_raises(
     sacfile_irlim: Path, empty_file: Path
 ) -> None:
@@ -438,14 +420,12 @@ def _patch_header(buffer: bytes, start: int, fmt: str, value: object) -> bytes:
     return buffer[:start] + packed + buffer[start + len(packed) :]
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_invalid_iftype_raises(sacfile: Path) -> None:
     buffer = _patch_header(sacfile.read_bytes(), start=340, fmt="i", value=99)
     with pytest.raises(ValueError, match="IFTYPE"):
         SacIO.from_buffer(buffer)
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_truncated_second_block_raises(sacfile: Path) -> None:
     """A LEVEN=False/spectral file must carry a second NPTS-length data
     section; a buffer claiming one but missing it is truncated, not just
@@ -455,7 +435,6 @@ def test_read_truncated_second_block_raises(sacfile: Path) -> None:
         SacIO.from_buffer(buffer)
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_read_data(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert all(
@@ -635,7 +614,6 @@ def test_readonly_attr(sacfile: Path, attr: str) -> None:
 # ─────────────────────────── Misc behaviour ────────────────────────────────
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_data(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     newdata = np.array([132, 232, 3465, 111])
@@ -646,7 +624,6 @@ def test_change_data(sacfile: Path) -> None:
     assert sac.depmen == sum(newdata) / sac.npts
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_iztype_prevents_zero_time_change() -> None:
     """Cannot change the header nominated as zero-time to a non-zero value."""
     sac = SacIO(iztype="o")
@@ -655,7 +632,6 @@ def test_iztype_prevents_zero_time_change() -> None:
         sac.o = 123.0
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_iztype_is_read_only(sacfile: Path) -> None:
     """iztype can only be changed via change_ref_time."""
     sac = SacIO.from_file(sacfile)
@@ -663,7 +639,6 @@ def test_iztype_is_read_only(sacfile: Path) -> None:
         sac.iztype = "o"
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     old_ref = sac.ref_datetime
@@ -690,14 +665,12 @@ def test_change_ref_time(sacfile: Path) -> None:
     assert new_ref + timedelta(seconds=new_b) == old_ref + timedelta(seconds=old_b)
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_invalid_header(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     with pytest.raises(ValueError):
         sac.change_ref_time("e")
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_requires_ref_datetime() -> None:
     sac = SacIO()
     sac.o = 10.0
@@ -705,7 +678,6 @@ def test_change_ref_time_requires_ref_datetime() -> None:
         sac.change_ref_time("o")
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_change_ref_time_requires_header_value(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     assert sac.a is None
@@ -713,7 +685,6 @@ def test_change_ref_time_requires_header_value(sacfile: Path) -> None:
         sac.change_ref_time("a")
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_read_after_change_ref_time(sacfile: Path) -> None:
     """Reloading a file must not raise because of a stale iztype-pinned
     header value left over from before the reload."""
@@ -727,7 +698,6 @@ def test_read_after_change_ref_time(sacfile: Path) -> None:
     assert sac.o == pytest.approx(-594.5390014648438)
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     """A header this file doesn't define must not keep a stale value from
     a previously loaded file when reusing an existing instance."""
@@ -740,7 +710,6 @@ def test_read_resets_stale_optional_headers(sacfile: Path) -> None:
     assert sac.a is None
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_uneven"])
 def test_read_resets_stale_delta_for_uneven_file(
     sacfile: Path, sacfile_uneven: Path
 ) -> None:
@@ -773,7 +742,6 @@ def test_sb_sdelta_set_and_clear() -> None:
     assert sac.sdelta is None
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic"])
 def test_read_resets_stale_sb_sdelta(sacfile: Path) -> None:
     """sb/sdelta have no primary-header slot, so they aren't covered by the
     SAC_HEADERS-driven reset loop and need their own reset on reload."""
@@ -787,7 +755,6 @@ def test_read_resets_stale_sb_sdelta(sacfile: Path) -> None:
     assert sac.sdelta is None
 
 
-@pytest.mark.depends(on=["test_create_instance_from_file"])
 def test_sb_sdelta_write_read_roundtrip(sacfile_v7: Path) -> None:
     """sb/sdelta only exist in the v7 footer, so a plain assignment check
     doesn't confirm they're actually serialized there."""
@@ -803,7 +770,6 @@ def test_sb_sdelta_write_read_roundtrip(sacfile_v7: Path) -> None:
     assert reread.sdelta == 0.05
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_pickling(sacfile: Path, empty_file: Path) -> None:
     sac = SacIO.from_file(sacfile)
     picklefile = empty_file
@@ -815,7 +781,6 @@ def test_pickling(sacfile: Path, empty_file: Path) -> None:
     assert sac.b == sac2.b
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_deepcopy(sacfile: Path) -> None:
     sac = SacIO.from_file(sacfile)
     sac2 = copy.deepcopy(sac)
@@ -826,7 +791,6 @@ def test_deepcopy(sacfile: Path) -> None:
     assert sac.e != sac2.e
 
 
-@pytest.mark.depends(on=["test_read_headers_semantic", "test_read_data"])
 def test_file_and_buffer(sacfile: Path) -> None:
     from_file = SacIO.from_file(sacfile)
     with open(sacfile, "rb") as f:

@@ -30,7 +30,6 @@ def test_NoiseModel() -> None:
         model.psd[3] *= 2
 
 
-@pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
 def test_peterson() -> Figure:
     nlnm = noise.peterson(0.0)
@@ -87,7 +86,6 @@ def test_peterson() -> Figure:
     return fig
 
 
-@pytest.mark.depends(on=["test_NoiseModel"])
 def test_generate_noise_velocity_power_of_two_npts() -> None:
     """generate_noise with return_velocity=True must return exactly npts samples
     when npts is an exact power of two.
@@ -105,7 +103,6 @@ def test_generate_noise_velocity_power_of_two_npts() -> None:
         )
 
 
-@pytest.mark.depends(on=["test_NoiseModel"])
 def test_generate_noise_acceleration_length() -> None:
     """generate_noise without return_velocity must also return exactly npts samples
     for both power-of-two and non-power-of-two npts."""
@@ -115,7 +112,6 @@ def test_generate_noise_acceleration_length() -> None:
         assert len(result.data) == npts
 
 
-@pytest.mark.depends(on=["test_NoiseModel"])
 @pytest.mark.mpl_image_compare(remove_text=True, style="default")
 @pytest.mark.usefixtures("seeded_noise_rng")
 def test_generate_noise() -> Figure:

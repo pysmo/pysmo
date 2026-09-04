@@ -17,7 +17,6 @@ class TestMiniLocation:
         assert minilocation.latitude == 1.1
         assert minilocation.longitude == 2.2
 
-    @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
         """Test changing attributes."""
 
