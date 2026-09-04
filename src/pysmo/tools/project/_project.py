@@ -227,7 +227,10 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     instance instead. That is the *recommended* value for real analysis
     work, not a power-user option on equal footing with the default; see its
     own docstring for why, and how it differs from `ProjectEntry.checksum`'s
-    live-fetch drift detection. It only pins the waveform, though: see the
+    live-fetch drift detection. Leave its `max_bytes` at the default
+    (unlimited) for this to hold: a finite `max_bytes` evicts old entries and
+    re-fetches them on next access, reintroducing the drift a cache is meant
+    to rule out. It only pins the waveform, though: see the
     [module documentation][pysmo.tools.project]'s second example for the
     gotcha it does not cover, `seismogram_transform` making its own
     additional fetches. Any other callable of the right shape (e.g. one
