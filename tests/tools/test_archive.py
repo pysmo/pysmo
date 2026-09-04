@@ -1,7 +1,9 @@
 """Tests for pysmo.tools.archive."""
 
+import gc
 import pickle
 import sqlite3
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -186,6 +188,30 @@ class TestClose:
 
         archive.close()  # no-op, must not raise
         assert archive._conn is None
+
+    def test_garbage_collection_closes_connection_without_warning(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        station: MiniStation,
+        starttime: pd.Timestamp,
+        endtime: pd.Timestamp,
+    ) -> None:
+        archive = SqliteArchiveFetcher(
+            path=tmp_path / "archive.sqlite3",
+            fetch_raw=fake_fetch_raw,
+            parse=fake_parse,
+        )
+        archive(station, starttime, endtime)
+
+        # sqlite3 raises ResourceWarning from the connection's own finaliser,
+        # which surfaces via sys.unraisablehook rather than the warnings filter.
+        unraisable: list[object] = []
+        monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+        del archive
+        gc.collect()
+
+        assert unraisable == []
 
 
 class TestConcurrentWriteRace:

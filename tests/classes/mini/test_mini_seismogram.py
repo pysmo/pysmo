@@ -16,7 +16,6 @@ class TestMiniSeismogram:
         miniseis = MiniSeismogram()
         assert isinstance(miniseis, MiniSeismogram)
 
-    @pytest.mark.depends(name="test_create_instance")
     def test_defaults(self) -> None:
         """Test default attributes."""
 
@@ -37,7 +36,6 @@ class TestMiniSeismogram:
         assert miniseis.data.size == 0
         assert len(miniseis.data) == 0
 
-    @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
         miniseis = MiniSeismogram()
         random_data = np.random.rand(1000)
@@ -91,7 +89,6 @@ class TestMiniSeismogram:
         assert len(miniseis.data) == 0
         assert miniseis.begin_time == miniseis.end_time
 
-    @pytest.mark.depends(name="test_create_instance")
     def test_rejects_unknown_attributes(self) -> None:
         """Unknown attributes must raise, not silently succeed."""
 
@@ -99,7 +96,6 @@ class TestMiniSeismogram:
         with pytest.raises(AttributeError):
             miniseis.t0 = 60  # type: ignore[attr-defined]
 
-    @pytest.mark.depends(name="test_change_attributes")
     def test_as_seismogram(self) -> None:
         """check if it works in a functionfor Seismogram types."""
 

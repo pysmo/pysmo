@@ -24,7 +24,6 @@ class TestMiniEvent:
         )
         assert isinstance(minievent, MiniEvent)
 
-    @pytest.mark.depends(name="test_create_instance")
     def test_change_attributes(self) -> None:
         latitude, longitude, depth, time = (
             1.1,
