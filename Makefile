@@ -9,6 +9,10 @@ else
   PYTHON_VERSION := python3
 endif
 
+# pytest-xdist worker count; override on a constrained machine, e.g.
+# `make tests PYTEST_WORKERS=4`.
+PYTEST_WORKERS ?= auto
+
 help: ## List all commands.
 	@echo -e "\nThis makefile executes mostly uv commands. To view all uv commands available run 'uv help'."
 	@echo -e "\n\033[1mCommands:\033[0m"
@@ -58,8 +62,10 @@ sync: check-uv ## Install this project and its dependencies in a virtual environ
 test-figs: check-uv ## Generate baseline figures for testing (then manually move them to the test directories).
 	uv run py.test --run-real-web-requests --mpl-generate-path=baseline
 
+# --dist loadfile: Sybil doc examples in one file share a namespace and must
+# run in order on one worker.
 tests: check-uv mypy ## Run all tests with pytest.
-	uv run pytest --cov --cov-report=term-missing --mpl
+	uv run pytest -n $(PYTEST_WORKERS) --dist loadfile --cov --cov-report=term-missing --mpl
 
 test-web-live: check-uv ## Run tests that hit the real EarthScope web services.
 	uv run pytest --run-real-web-requests --mpl tests/lib/io/test_sacio.py tests/tools/test_web_live.py tests/integration/
