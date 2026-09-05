@@ -35,7 +35,9 @@ Pair `PysmoProject` with
 [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] as its
 `fetch_seismogram` so a project's entries are only ever fetched once across
 however many sessions the project is used in (see the second example
-below). A different mechanism from
+below), provided `max_bytes` is left at its unlimited default; a finite
+`max_bytes` evicts old entries, which are then re-fetched on next access. A
+different mechanism from
 [`ProjectEntry.checksum`][pysmo.tools.project.ProjectEntry.checksum], which
 only detects drift on the live-network default rather than avoiding it.
 
