@@ -110,6 +110,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(traveltime)** [**breaking**] In-house tau-p solver replacing the retired EarthScope service
 - **(traveltime)** Resolve upper-mantle triplications to the first arrival
 - **(quakeml)** Add strict=False to skip unrepresentable events
+- **(archive)** Add FIFO max_bytes eviction to SqliteArchiveFetcher
 
 ### 🧪 Testing
 
