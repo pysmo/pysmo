@@ -12,7 +12,7 @@ class SeismogramFilter(Protocol):
         self,
         seismogram: Seismogram,
         *args: Any,
-        clone: Literal[False] = ...,
+        replace: Literal[False] = ...,
         **kwargs: Any,
     ) -> None: ...
 
@@ -21,7 +21,7 @@ class SeismogramFilter(Protocol):
         self,
         seismogram: T,
         *args: Any,
-        clone: Literal[True],
+        replace: Literal[True],
         **kwargs: Any,
     ) -> T: ...
 
@@ -29,7 +29,7 @@ class SeismogramFilter(Protocol):
         self,
         seismogram: Seismogram,
         *args: Any,
-        clone: bool = False,
+        replace: bool = False,
         **kwargs: Any,
     ) -> Seismogram | None: ...
 

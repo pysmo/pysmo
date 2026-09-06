@@ -17,7 +17,7 @@ def filter(
     seismogram: Seismogram,
     filter_name: FilterName,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
     **filter_options: bool | int | float,
 ) -> None: ...
 
@@ -27,7 +27,7 @@ def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
     **filter_options: bool | int | float,
 ) -> T: ...
 
@@ -36,7 +36,7 @@ def filter[T: Seismogram](
     seismogram: T,
     filter_name: FilterName,
     *,
-    clone: bool = False,
+    replace: bool = False,
     **filter_options: bool | int | float,
 ) -> T | None:
     """Apply a specified filter to the input seismogram.
@@ -46,26 +46,27 @@ def filter[T: Seismogram](
     Args:
         seismogram: The input seismogram to be filtered.
         filter_name: The type of filter to apply.
-        clone: If `True`, return a new Seismogram object with the filtered
-            data. If `False`, modify the input seismogram in place.
+        replace: If `True`, return a new Seismogram and leave the input
+            untouched. If `False`, modify the input seismogram in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
         **filter_options: Filter parameters passed to the specified filter
             function.
 
     Returns:
         A new Seismogram containing the filtered data when called with
-        `clone=True`.
+        `replace=True`.
 
     Raises:
         ValueError: If `filter_name` is not a registered filter.
 
     Examples:
         ```python
-        >>> from pysmo.classes import SAC
+        >>> from pysmo.classes import MSeed
         >>> from pysmo.tools.signal import filter
-        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> seis = MSeed.from_file("example.mseed")
         >>>
         >>> # create a new filtered seismogram with a lowpass filter
-        >>> filtered_seis = filter(seis, "lowpass", freqmax=0.5, clone=True)
+        >>> filtered_seis = filter(seis, "lowpass", freqmax=0.5, replace=True)
         >>>
         >>> # or update in place with a bandpass filter
         >>> filter(seis, "bandpass", freqmin=0.1, freqmax=0.5)
@@ -83,7 +84,7 @@ def filter[T: Seismogram](
             f"Filter '{filter_name}' is not registered. Available: {valid_filters}"
         ) from None
 
-    if clone:
-        return filter_func(seismogram, clone=True, **filter_options)
-    filter_func(seismogram, clone=False, **filter_options)
+    if replace:
+        return filter_func(seismogram, replace=True, **filter_options)
+    filter_func(seismogram, replace=False, **filter_options)
     return None

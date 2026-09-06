@@ -36,7 +36,7 @@ Pysmo separates **types** (protocols), **storage** (concrete classes), and **pro
 
 ### Functions (`src/pysmo/functions/`)
 
-Low-level building blocks operating on protocol types. Functions that modify seismograms follow a **clone pattern**: called without `clone` they mutate in place and return `None`; called with `clone=True` they return a `deepcopy`. Avoid `obj = fn(obj, clone=True)` — use in-place mutation instead.
+Low-level building blocks operating on protocol types. Functions that modify seismograms follow a **replace pattern**: called without `replace` they mutate in place and return `None`; called with `replace=True` they leave the input untouched and return a new seismogram, rebuilt from the input with only `data` (and `begin_time`/`delta` where relevant) substituted. Not every concrete type supports it — `SacSeismogram` raises `TypeError`. Avoid `obj = fn(obj, replace=True)` — use in-place mutation instead.
 
 ### Tools (`src/pysmo/tools/`)
 

@@ -13,9 +13,11 @@ Where a suitable implementation already exists in SciPy (e.g.
 reimplementing it; others implement seismology-specific algorithms with no
 direct SciPy equivalent.
 
-Functions that modify seismogram data follow the same `clone` convention as
-[`pysmo.functions`][]: without `clone` they operate in place
-and return `None`; with `clone=True` they return a modified copy.
+Functions that modify seismogram data follow the same `replace` convention as
+[`pysmo.functions`][]: without `replace` they operate in place and return
+`None`; with `replace=True` they leave the input untouched and return a new
+seismogram. Not every concrete type supports `replace=True`; see
+[`pysmo.functions`][] for how the new object is built and what carries over.
 
 !!! note "No unit tracking"
 

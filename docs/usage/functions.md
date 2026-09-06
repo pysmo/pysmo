@@ -38,7 +38,7 @@ array([2., 2., 3.])
 The array was modified *inside* the function, yet the change is visible
 *outside* it: both the caller and the function hold a reference to the same
 object. This is sometimes the intent, but it needs to be a deliberate choice.
-The `clone` argument below comes back to this.
+The `replace` argument below comes back to this.
 
 ## Pysmo types as input
 
@@ -75,7 +75,14 @@ shows the problem:
     does not copy it. [`deepcopy`][copy.deepcopy] is used here to make an
     independent copy before modifying it, leaving the caller's object
     untouched. Pysmo functions that modify seismograms offer this through a
-    `clone` argument. Deep-copying can be expensive for large objects.
+    `replace` argument, which returns a new seismogram with only the changed
+    attributes substituted. It works for value-object types such as
+    [`MiniSeismogram`][pysmo.MiniSeismogram] but raises `TypeError` for a
+    [`SacSeismogram`][pysmo.classes.SacSeismogram], whose `data` is a live
+    view into an open SAC file rather than a stored field. The manual
+    `deepcopy` shown here is a teaching device, not a recommendation. To
+    work on independent SAC data, copy the [`SAC`][pysmo.classes.SAC] object
+    itself.
 
 The snippet creates a [`SacSeismogram`][pysmo.classes.SacSeismogram] instance
 from a SAC file and passes it to `double_delta`. Inside the function it is
@@ -195,11 +202,11 @@ The `detrend` function looks like it is declared several times. At runtime the
 are only for type checkers. Read from *bottom to top*:
 
 - `detrend` takes two arguments. The type of `seismogram` is captured in the
-    variable `T` (bound by `Seismogram`), and `clone` is a [`bool`][] defaulting
-    to [`False`][]. The function returns either [`None`][] or a value of type
-    `T`.
-- If `clone` is [`True`][], an object of type `T` is returned.
-- If `clone` is `False` (the default), `None` is returned. `T` is not needed
+    variable `T` (bound by `Seismogram`), and `replace` is a [`bool`][]
+    defaulting to [`False`][]. The function returns either [`None`][] or a value
+    of type `T`.
+- If `replace` is [`True`][], an object of type `T` is returned.
+- If `replace` is `False` (the default), `None` is returned. `T` is not needed
     here: it is not reused elsewhere in this declaration, so a type variable
     serves no purpose.
 
@@ -219,4 +226,4 @@ are only for type checkers. Read from *bottom to top*:
   - Use a generic (`[T: Seismogram]`) when the caller's exact type must be
         preserved.
   - Use `overload` when the return type depends on the value of an argument,
-        such as `clone`.
+        such as `replace`.

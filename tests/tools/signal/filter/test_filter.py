@@ -1,7 +1,7 @@
 """Unit tests for the filter() convenience wrapper in _filter.py.
 
 This module tests that filter() correctly dispatches to registered filter
-functions, supports both clone modes, passes keyword arguments through, and
+functions, supports both replace modes, passes keyword arguments through, and
 raises ValueError for unregistered filter names.
 """
 

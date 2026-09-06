@@ -89,7 +89,8 @@ With keyword arguments:
         )
 
 The helper automatically:
-- Tests both clone=True and clone=False modes
+- Tests both replace=True and replace=False modes (replace=True skipped for
+  projection types such as SacSeismogram, which raise TypeError)
 - Verifies both produce identical results
 - Checks data arrays match using numpy.testing.assert_array_equal
 - Validates time attributes (begin_time, delta, length)
@@ -105,6 +106,7 @@ from typing import Any
 import numpy as np
 
 from pysmo import Seismogram
+from pysmo.classes import SacSeismogram
 
 try:
     from syrupy.assertion import SnapshotAssertion
@@ -123,13 +125,15 @@ def assert_seismogram_modification(
     snapshot_decimals: int = 6,
     **kwargs: Any,
 ) -> Seismogram:
-    """Test that a seismogram modification function works correctly with both clone modes.
+    """Test that a seismogram modification function works correctly with both replace modes.
 
     This helper function tests modification functions that support both:
-    1. clone=True: Returns a new modified Seismogram
-    2. clone=False (default): Modifies the Seismogram in-place
+    1. replace=True: Returns a new modified Seismogram, input untouched
+    2. replace=False (default): Modifies the Seismogram in-place
 
-    It verifies that both approaches produce identical results and runs any
+    For projection types (SacSeismogram) replace=True raises TypeError and
+    only the in-place branch is exercised. It verifies that both approaches
+    produce identical results and runs any
     custom assertions on the modified seismogram. Optionally compares against
     expected data using numpy array assertions with configurable tolerances or
     syrupy snapshot testing.
@@ -137,7 +141,7 @@ def assert_seismogram_modification(
     Args:
         seismogram: The input Seismogram to be modified (any implementation).
         modification_func: The function that modifies the seismogram.
-            Must accept the seismogram as first argument and support a 'clone'
+            Must accept the seismogram as first argument and support a 'replace'
             parameter.
         *args: Positional arguments to pass to modification_func (after seismogram).
         custom_assertions: Optional callback function that receives the modified
@@ -159,13 +163,14 @@ def assert_seismogram_modification(
             order 1e-4 or smaller) needs a higher value or 6 decimals rounds
             away most of the signal. Only used when expected_data is a
             SnapshotAssertion.
-        **kwargs: Keyword arguments to pass to modification_func (except 'clone').
+        **kwargs: Keyword arguments to pass to modification_func (except 'replace').
 
     Returns:
-        The cloned modified seismogram (result of calling with clone=True).
+        The modified seismogram (the replace=True result where supported,
+        otherwise the in-place result).
 
     Raises:
-        AssertionError: If clone and in-place modifications produce different results,
+        AssertionError: If replace and in-place modifications produce different results,
             if custom_assertions fail, or if expected_data comparison fails.
 
     Examples:
@@ -196,40 +201,60 @@ def assert_seismogram_modification(
         ...     expected_data=snapshot,  # syrupy snapshot fixture
         ... )
     """
-    # Test with clone=True - should return a new modified seismogram
-    cloned_modified = modification_func(seismogram, *args, clone=True, **kwargs)
-    assert cloned_modified is not None, (
-        "Function with clone=True should return a Seismogram"
-    )
+    # Test with replace=True - should return a new modified seismogram and
+    # leave the input untouched. Projection types (SacSeismogram) do not
+    # support replace=True and raise TypeError; those skip this branch. A
+    # TypeError from a value-object type is a real bug, not an expected skip.
+    original_copy = deepcopy(seismogram)
+    try:
+        replaced_modified = modification_func(seismogram, *args, replace=True, **kwargs)
+    except TypeError:
+        assert isinstance(seismogram, SacSeismogram), (
+            f"replace=True raised TypeError for {type(seismogram).__name__}, "
+            "which is not a projection type and should support it"
+        )
+        replaced_modified = None
+    else:
+        assert replaced_modified is not None, (
+            "Function with replace=True should return a Seismogram"
+        )
+        np.testing.assert_array_equal(
+            seismogram.data,
+            original_copy.data,
+            err_msg="replace=True modified the input seismogram",
+        )
 
-    # Test with clone=False (in-place) - should modify and return None or the seismogram
+    # Test with replace=False (in-place) - modifies and returns None
     inplace_copy = deepcopy(seismogram)
-    result = modification_func(inplace_copy, *args, clone=False, **kwargs)
+    result = modification_func(inplace_copy, *args, replace=False, **kwargs)
 
     # Handle functions that may return the seismogram or None
     inplace_modified = result if result is not None else inplace_copy
 
-    # Verify both approaches produce identical data
-    np.testing.assert_array_equal(
-        cloned_modified.data,
-        inplace_modified.data,
-        err_msg="Clone and in-place modifications produced different data",
-    )
+    if replaced_modified is not None:
+        # Verify both approaches produce identical data
+        np.testing.assert_array_equal(
+            replaced_modified.data,
+            inplace_modified.data,
+            err_msg="replace and in-place modifications produced different data",
+        )
 
-    # Verify time attributes match
-    assert cloned_modified.begin_time == inplace_modified.begin_time, (
-        "Clone and in-place modifications have different begin_time"
-    )
-    assert cloned_modified.delta == inplace_modified.delta, (
-        "Clone and in-place modifications have different delta"
-    )
-    assert len(cloned_modified.data) == len(inplace_modified.data), (
-        "Clone and in-place modifications have different lengths"
-    )
+        # Verify time attributes match
+        assert replaced_modified.begin_time == inplace_modified.begin_time, (
+            "replace and in-place modifications have different begin_time"
+        )
+        assert replaced_modified.delta == inplace_modified.delta, (
+            "replace and in-place modifications have different delta"
+        )
+        assert len(replaced_modified.data) == len(inplace_modified.data), (
+            "replace and in-place modifications have different lengths"
+        )
+
+    modified = replaced_modified if replaced_modified is not None else inplace_modified
 
     # Run custom assertions if provided
     if custom_assertions is not None:
-        custom_assertions(cloned_modified)
+        custom_assertions(modified)
 
     # Validate against expected data if provided
     if expected_data is not None:
@@ -239,12 +264,12 @@ def assert_seismogram_modification(
         ):
             # Use syrupy's assert_match method for snapshot comparison
             # Round data to reduce snapshot size and improve precision control
-            rounded_data = np.around(cloned_modified.data, decimals=snapshot_decimals)
+            rounded_data = np.around(modified.data, decimals=snapshot_decimals)
             expected_data.assert_match(rounded_data)
         elif isinstance(expected_data, np.ndarray):
             # Use numpy's assert_allclose for array comparison
             np.testing.assert_allclose(
-                cloned_modified.data,
+                modified.data,
                 expected_data,
                 rtol=rtol,
                 atol=atol,
@@ -253,11 +278,11 @@ def assert_seismogram_modification(
         else:
             # Fallback: try direct comparison (might be a list or other sequence)
             np.testing.assert_allclose(
-                cloned_modified.data,
+                modified.data,
                 expected_data,
                 rtol=rtol,
                 atol=atol,
                 err_msg="Modified data does not match expected data within tolerance",
             )
 
-    return cloned_modified
+    return modified

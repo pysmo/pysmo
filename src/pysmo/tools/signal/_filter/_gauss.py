@@ -1,4 +1,4 @@
-from copy import deepcopy
+import copy
 from typing import Literal, overload
 
 import numpy as np
@@ -11,19 +11,19 @@ from ._registry import register_filter
 
 @overload
 def envelope(
-    seismogram: Seismogram, fc: float, alpha: float, *, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, *, replace: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def envelope[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, *, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, *, replace: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def envelope[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, *, clone: bool = False
+    seismogram: T, fc: float, alpha: float, *, replace: bool = False
 ) -> T | None:
     """Calculate the envelope of a Gaussian-filtered seismogram.
 
@@ -32,7 +32,9 @@ def envelope[T: Seismogram](
         fc: Centre frequency of the Gaussian filter (in Hz).
         alpha: Dimensionless shape parameter controlling the filter width.
             Larger values produce a narrower (more selective) filter.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Seismogram containing the envelope.
@@ -43,36 +45,37 @@ def envelope[T: Seismogram](
 
     Examples:
         ```python
-        >>> from pysmo.classes import SAC
+        >>> from pysmo.classes import MSeed
         >>> from pysmo.tools.signal import envelope
-        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> seis = MSeed.from_file("example.mseed")
         >>> fc = 0.02 # Centre Gaussian filter at 0.02 Hz (50s period)
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> envelope_seis = envelope(seis, fc, alpha, clone=True)
+        >>> envelope_seis = envelope(seis, fc, alpha, replace=True)
         >>>
         ```
     """
-    if clone:
-        seismogram = deepcopy(seismogram)
-    seismogram.data = _gauss(seismogram, fc, alpha)[0]
-    return seismogram if clone else None
+    envelope_data = _gauss(seismogram, fc, alpha)[0]
+    if replace:
+        return copy.replace(seismogram, data=envelope_data)  # type: ignore[arg-type]
+    seismogram.data = envelope_data
+    return None
 
 
 @overload
 def gauss(
-    seismogram: Seismogram, fc: float, alpha: float, *, clone: Literal[False] = ...
+    seismogram: Seismogram, fc: float, alpha: float, *, replace: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def gauss[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, *, clone: Literal[True]
+    seismogram: T, fc: float, alpha: float, *, replace: Literal[True]
 ) -> T: ...
 
 
 @register_filter
 def gauss[T: Seismogram](
-    seismogram: T, fc: float, alpha: float, *, clone: bool = False
+    seismogram: T, fc: float, alpha: float, *, replace: bool = False
 ) -> T | None:
     """Return a Gaussian-filtered seismogram.
 
@@ -81,7 +84,9 @@ def gauss[T: Seismogram](
         fc: Centre frequency of the Gaussian filter (in Hz).
         alpha: Dimensionless shape parameter controlling the filter width.
             Larger values produce a narrower (more selective) filter.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Gaussian-filtered seismogram.
@@ -92,19 +97,20 @@ def gauss[T: Seismogram](
 
     Examples:
         ```python
-        >>> from pysmo.classes import SAC
+        >>> from pysmo.classes import MSeed
         >>> from pysmo.tools.signal import gauss
-        >>> seis = SAC.from_file("example.sac").seismogram
+        >>> seis = MSeed.from_file("example.mseed")
         >>> fc = 0.02 # Centre Gaussian filter at 0.02 Hz (50s period)
         >>> alpha = 50 # Set alpha (which determines filterwidth) to 50
-        >>> gauss_seis = gauss(seis, fc, alpha, clone=True)
+        >>> gauss_seis = gauss(seis, fc, alpha, replace=True)
         >>>
         ```
     """
-    if clone:
-        seismogram = deepcopy(seismogram)
-    seismogram.data = _gauss(seismogram, fc, alpha)[1]
-    return seismogram if clone else None
+    gauss_data = _gauss(seismogram, fc, alpha)[1]
+    if replace:
+        return copy.replace(seismogram, data=gauss_data)  # type: ignore[arg-type]
+    seismogram.data = gauss_data
+    return None
 
 
 def _gauss(
