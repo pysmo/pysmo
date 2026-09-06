@@ -1,6 +1,6 @@
+import copy
 import statistics
 from collections.abc import Sequence
-from copy import deepcopy
 from itertools import pairwise
 from math import floor
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
@@ -43,7 +43,7 @@ def crop(
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 @overload
 def crop[T: Seismogram](
@@ -51,7 +51,7 @@ def crop[T: Seismogram](
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -60,7 +60,7 @@ def crop[T: Seismogram](
     begin_time: pd.Timestamp,
     end_time: pd.Timestamp,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Shorten a seismogram to new begin and end times.
 
@@ -73,10 +73,12 @@ def crop[T: Seismogram](
         seismogram: [`Seismogram`][pysmo.Seismogram] object.
         begin_time: New begin time.
         end_time: New end time.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Cropped [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Cropped [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Raises:
         ValueError: If new begin time is after new end time.
@@ -100,33 +102,41 @@ def crop[T: Seismogram](
     start_index = time2index(seismogram, begin_time)
     end_index = time2index(seismogram, end_time)
 
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+    new_data = seismogram.data[start_index : end_index + 1]
+    new_begin_time = seismogram.begin_time + seismogram.delta * start_index
 
-    seismogram.data = seismogram.data[start_index : end_index + 1]
-    seismogram.begin_time += seismogram.delta * start_index
+    if replace:
+        return copy.replace(
+            seismogram,  # type: ignore[arg-type]
+            data=new_data.copy(),
+            begin_time=new_begin_time,
+        )
 
-    return seismogram if clone is True else None
+    seismogram.data = new_data
+    seismogram.begin_time = new_begin_time
+    return None
 
 
 # --8<-- [start:detrend]
 @overload
-def detrend(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
+def detrend(seismogram: Seismogram, *, replace: Literal[False] = ...) -> None: ...
 
 
 @overload
-def detrend[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
+def detrend[T: Seismogram](seismogram: T, *, replace: Literal[True]) -> T: ...
 
 
-def detrend[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
+def detrend[T: Seismogram](seismogram: T, *, replace: bool = False) -> T | None:
     """Remove linear and/or constant trends from a seismogram.
 
     Args:
         seismogram: Seismogram object.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Detrended [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Detrended [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Examples:
         ```python
@@ -143,13 +153,12 @@ def detrend[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
         >>>
         ```
     """
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+    detrended = scipy.signal.detrend(seismogram.data)
 
-    seismogram.data = scipy.signal.detrend(seismogram.data)
+    if replace:
+        return copy.replace(seismogram, data=detrended)  # type: ignore[arg-type]
 
-    if clone is True:
-        return seismogram
+    seismogram.data = detrended
     return None
 
 
@@ -162,7 +171,7 @@ def normalize(
     t1: pd.Timestamp | None = ...,
     t2: pd.Timestamp | None = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 @overload
 def normalize[T: Seismogram](
@@ -170,7 +179,7 @@ def normalize[T: Seismogram](
     t1: pd.Timestamp | None = ...,
     t2: pd.Timestamp | None = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -179,7 +188,7 @@ def normalize[T: Seismogram](
     t1: pd.Timestamp | None = None,
     t2: pd.Timestamp | None = None,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Normalise a seismogram with its absolute max value.
 
@@ -189,10 +198,12 @@ def normalize[T: Seismogram](
             starts from the beginning of the seismogram.
         t2: End of the window used to find the maximum. If `None`, the search
             continues to the end of the seismogram.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Normalised [`Seismogram`][pysmo.Seismogram] object if `clone=True`.
+        Normalised [`Seismogram`][pysmo.Seismogram] object if `replace=True`.
 
     Raises:
         ValueError: If the absolute maximum of the data (within the optional
@@ -229,14 +240,13 @@ def normalize[T: Seismogram](
             + "is given) is zero."
         )
 
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+    if replace:
+        return copy.replace(
+            seismogram,  # type: ignore[arg-type]
+            data=seismogram.data / abs_max,
+        )
 
     seismogram.data /= abs_max
-
-    if clone is True:
-        return seismogram
-
     return None
 
 
@@ -247,7 +257,7 @@ def pad[T: Seismogram](
     end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     *,
-    clone: Literal[True],
+    replace: Literal[True],
     **kwargs: Any,
 ) -> T: ...
 
@@ -259,7 +269,7 @@ def pad(
     end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     *,
-    clone: Literal[False] = False,
+    replace: Literal[False] = False,
     **kwargs: Any,
 ) -> None: ...
 
@@ -270,7 +280,7 @@ def pad[T: Seismogram](
     end_time: pd.Timestamp,
     mode: "_ModeKind | _ModeFunc" = "constant",
     *,
-    clone: bool = False,
+    replace: bool = False,
     **kwargs: Any,
 ) -> T | None:
     """Pad seismogram data.
@@ -287,11 +297,13 @@ def pad[T: Seismogram](
         begin_time: New begin time.
         end_time: New end time.
         mode: Pad mode to use (see [`numpy.pad`][] for all modes).
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
         kwargs: Keyword arguments to pass to [`numpy.pad`][].
 
     Returns:
-        Padded [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Padded [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Raises:
         ValueError: If new begin time is after new end time.
@@ -325,13 +337,33 @@ def pad[T: Seismogram](
     start_index = time2index(seismogram, begin_time, allow_out_of_bounds=True)
     end_index = time2index(seismogram, end_time, allow_out_of_bounds=True)
 
-    if clone is True:
-        seismogram = deepcopy(seismogram)
-
     pad_before = max(0, -start_index)
     pad_after = max(0, end_index - (len(seismogram.data) - 1))
+    padding_needed = pad_before > 0 or pad_after > 0
 
-    if pad_before > 0 or pad_after > 0:
+    if replace:
+        if padding_needed:
+            new_data = np.pad(
+                seismogram.data,
+                pad_width=(pad_before, pad_after),
+                mode=mode,
+                **kwargs,
+            )
+            new_begin_time = seismogram.begin_time + seismogram.delta * min(
+                0, start_index
+            )
+        else:
+            # replace=True must always hand back a fully independent object,
+            # even when there is nothing to pad.
+            new_data = seismogram.data.copy()
+            new_begin_time = seismogram.begin_time
+        return copy.replace(
+            seismogram,  # type: ignore[arg-type]
+            data=new_data,
+            begin_time=new_begin_time,
+        )
+
+    if padding_needed:
         seismogram.data = np.pad(
             seismogram.data,
             pad_width=(pad_before, pad_after),
@@ -340,23 +372,23 @@ def pad[T: Seismogram](
         )
         seismogram.begin_time += seismogram.delta * min(0, start_index)
 
-    return seismogram if clone else None
+    return None
 
 
 @overload
 def resample(
-    seismogram: Seismogram, delta: PositiveTimedelta, *, clone: Literal[False] = ...
+    seismogram: Seismogram, delta: PositiveTimedelta, *, replace: Literal[False] = ...
 ) -> None: ...
 
 
 @overload
 def resample[T: Seismogram](
-    seismogram: T, delta: PositiveTimedelta, *, clone: Literal[True]
+    seismogram: T, delta: PositiveTimedelta, *, replace: Literal[True]
 ) -> T: ...
 
 
 def resample[T: Seismogram](
-    seismogram: T, delta: PositiveTimedelta, *, clone: bool = False
+    seismogram: T, delta: PositiveTimedelta, *, replace: bool = False
 ) -> T | None:
     """Resample Seismogram data using the Fourier method.
 
@@ -367,10 +399,12 @@ def resample[T: Seismogram](
     Args:
         seismogram: Seismogram object.
         delta: New sampling interval.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Resampled [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Resampled [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Examples:
         ```python
@@ -387,16 +421,27 @@ def resample[T: Seismogram](
         >>>
         ```
     """
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+    if replace:
+        if delta != seismogram.delta:
+            npts = int(len(seismogram.data) * seismogram.delta / delta)
+            new_data = scipy.signal.resample(seismogram.data, npts)
+            new_delta = delta
+        else:
+            # replace=True must always hand back a fully independent object,
+            # even when the sampling interval is unchanged.
+            new_data = seismogram.data.copy()
+            new_delta = seismogram.delta
+        return copy.replace(
+            seismogram,  # type: ignore[arg-type]
+            data=new_data,
+            delta=new_delta,
+        )
 
     if delta != seismogram.delta:
         npts = int(len(seismogram.data) * seismogram.delta / delta)
         seismogram.data = scipy.signal.resample(seismogram.data, npts)
         seismogram.delta = delta
 
-    if clone is True:
-        return seismogram
     return None
 
 
@@ -449,7 +494,7 @@ def merge(
     delta: PositiveTimedelta | None = ...,
     auto_delta: Literal[False] = ...,
     gap_tolerance_factor: NonNegativeNumber = ...,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -460,7 +505,7 @@ def merge(
     delta: None = ...,
     auto_delta: Literal[True],
     gap_tolerance_factor: NonNegativeNumber = ...,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -471,7 +516,7 @@ def merge[T: Seismogram](
     delta: PositiveTimedelta | None = ...,
     auto_delta: Literal[False] = ...,
     gap_tolerance_factor: NonNegativeNumber = ...,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -482,7 +527,7 @@ def merge[T: Seismogram](
     delta: None = ...,
     auto_delta: Literal[True],
     gap_tolerance_factor: NonNegativeNumber = ...,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -492,7 +537,7 @@ def merge[T: Seismogram](
     delta: PositiveTimedelta | None = None,
     auto_delta: bool = False,
     gap_tolerance_factor: NonNegativeNumber = 0.5,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Merge contiguous seismograms into a single seismogram.
 
@@ -518,17 +563,19 @@ def merge[T: Seismogram](
     floating-point noise from e.g. prior resampling); they are verified and
     the duplicates are discarded rather than concatenated.
 
-    When `clone=False`, the first seismogram in `seismograms` (as given,
+    When `replace=False`, the first seismogram in `seismograms` (as given,
     not necessarily the chronologically first, and regardless of whether it
     is itself empty) is modified in place and becomes the merged result: its
     `begin_time` and `data` are overwritten to reflect the full,
     chronologically-ordered merge of the non-empty seismograms. Other input
-    seismograms are never modified.
+    seismograms are never modified. When `replace=True`, no input seismogram
+    is modified and a new merged seismogram is returned instead (not
+    supported by every concrete type; see [`pysmo.functions`][]).
 
     Args:
         seismograms: Seismograms to merge. May be given in any order; any mix
             of types satisfying the [`Seismogram`][pysmo.Seismogram] protocol
-            works at runtime. When `clone=True`, the return type is inferred
+            works at runtime. When `replace=True`, the return type is inferred
             from `seismograms`; for a bare list/tuple literal mixing concrete
             types, annotate it as `Sequence[Seismogram]` to keep the call
             type-checked (see Examples).
@@ -544,11 +591,13 @@ def merge[T: Seismogram](
             runtime too.
         gap_tolerance_factor: Maximum allowed boundary timestamp jitter between
             consecutive seismograms, as a fraction of the sampling interval.
-        clone: Operate on a clone of the first input seismogram.
+        replace: Return a new merged seismogram and leave every input
+            untouched, instead of modifying the first input in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Merged [`Seismogram`][pysmo.Seismogram] object if called with
-        `clone=True`.
+        `replace=True`.
 
     Raises:
         ValueError: If both `delta` and `auto_delta` are given, `seismograms`
@@ -575,7 +624,7 @@ def merge[T: Seismogram](
         ...     delta=pd.Timedelta(seconds=1),
         ...     data=np.array([4.0, 5.0]),
         ... )
-        >>> merged = merge([first, second], clone=True)
+        >>> merged = merge([first, second], replace=True)
         >>> merged.data
         array([1., 2., 3., 4., 5.])
         >>> merged.begin_time
@@ -601,7 +650,7 @@ def merge[T: Seismogram](
         ...     sourceid="IU_ANMO_00_LHZ",
         ... )
         >>> mixed: Sequence[Seismogram] = [merged, geocsv_seis]
-        >>> merged_mixed = merge(mixed, clone=True)
+        >>> merged_mixed = merge(mixed, replace=True)
         >>> merged_mixed.data
         array([1., 2., 3., 4., 5., 6., 7.])
         >>>
@@ -630,7 +679,7 @@ def merge[T: Seismogram](
         ...     data=np.array([4.0, 5.0, 6.0]),
         ... )
         >>> auto_merged = merge(
-        ...     [steady, jittery], auto_delta=True, clone=True
+        ...     [steady, jittery], auto_delta=True, replace=True
         ... )
         >>> auto_merged.delta
         Timedelta('0 days 00:00:01')
@@ -657,11 +706,7 @@ def merge[T: Seismogram](
     if not seismograms:
         raise ValueError("No seismograms to merge.")
 
-    working = (
-        [deepcopy(seismogram) for seismogram in seismograms]
-        if clone
-        else list(seismograms)
-    )
+    working = list(seismograms)
 
     non_empty = [seismogram for seismogram in working if len(seismogram.data)]
     if not non_empty:
@@ -685,8 +730,8 @@ def merge[T: Seismogram](
                 continue
             if seismogram.delta == delta:
                 continue
-            if clone or index > 0:
-                working[index] = resample(seismogram, delta, clone=True)
+            if replace or index > 0:
+                working[index] = resample(seismogram, delta, replace=True)
             else:
                 resample(seismogram, delta)
         non_empty = [seismogram for seismogram in working if len(seismogram.data)]
@@ -720,10 +765,8 @@ def merge[T: Seismogram](
                 )
             overlap_samples[index] = samples
 
-    merged = cast(T, working[0])
-    merged.begin_time = ordered[0].begin_time
-    merged.delta = reference_delta
-    merged.data = np.concatenate(
+    merged_begin_time = ordered[0].begin_time
+    merged_data = np.concatenate(
         [ordered[0].data]
         + [
             seismogram.data[samples:]
@@ -731,8 +774,18 @@ def merge[T: Seismogram](
         ]
     )
 
-    if clone:
-        return merged
+    if replace:
+        return copy.replace(
+            working[0],  # type: ignore[arg-type]
+            data=merged_data,
+            begin_time=merged_begin_time,
+            delta=reference_delta,
+        )
+
+    merged = cast(T, working[0])
+    merged.begin_time = merged_begin_time
+    merged.delta = reference_delta
+    merged.data = merged_data
     return None
 
 
@@ -742,7 +795,7 @@ def taper(
     taper_width: NonNegativeTimedelta | UnitFloat,
     window_type: _WindowType = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -752,7 +805,7 @@ def taper[T: Seismogram](
     taper_width: NonNegativeTimedelta | UnitFloat,
     window_type: _WindowType = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -761,7 +814,7 @@ def taper[T: Seismogram](
     taper_width: NonNegativeTimedelta | UnitFloat,
     window_type: _WindowType = "hann",
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Apply a symmetric taper to the ends of a Seismogram.
 
@@ -797,10 +850,12 @@ def taper[T: Seismogram](
         taper_width: Width of the taper to use.
         window_type: Function to calculate taper shape (see
             [`get_window`][scipy.signal.windows.get_window] for valid inputs).
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Tapered [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Tapered [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Note: No taper below 2 samples
         If `taper_width` resolves to fewer than 2 samples, no taper is applied.
@@ -835,18 +890,17 @@ def taper[T: Seismogram](
             "'taper_width' is too large. Total taper width exceeds the duration of the seismogram."
         )
 
-    if clone is True:
-        seismogram = deepcopy(seismogram)
+    data = seismogram.data.copy() if replace else seismogram.data
 
     # Need at least 2 samples to apply a taper
     if nsamples >= 2:
         window = scipy.signal.windows.get_window(window_type, nsamples, fftbins=False)
         ramp_samples = nsamples // 2
-        seismogram.data[:ramp_samples] *= window[:ramp_samples]
-        seismogram.data[-ramp_samples:] *= window[-ramp_samples:]
+        data[:ramp_samples] *= window[:ramp_samples]
+        data[-ramp_samples:] *= window[-ramp_samples:]
 
-    if clone is True:
-        return seismogram
+    if replace:
+        return copy.replace(seismogram, data=data)  # type: ignore[arg-type]
     return None
 
 
@@ -912,7 +966,7 @@ def window(
     window_type: _WindowType = ...,
     same_shape: bool = False,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -925,7 +979,7 @@ def window[T: Seismogram](
     window_type: _WindowType = ...,
     *,
     same_shape: bool = False,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -937,7 +991,7 @@ def window[T: Seismogram](
     window_type: _WindowType = "hann",
     same_shape: bool = False,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Return an optionally padded and tapered window of a seismogram.
 
@@ -970,10 +1024,12 @@ def window[T: Seismogram](
         window_type: Taper method to use (see [`taper`][pysmo.functions.taper]).
         same_shape: If True, pad the seismogram to its original length after
             windowing.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
-        Windowed [`Seismogram`][pysmo.Seismogram] object if called with `clone=True`.
+        Windowed [`Seismogram`][pysmo.Seismogram] object if called with `replace=True`.
 
     Raises:
         ValueError: If `window_end_time` is not after `window_begin_time`, or
@@ -988,17 +1044,17 @@ def window[T: Seismogram](
 
         ```python
         >>> from pysmo.functions import window, detrend
-        >>> from pysmo.classes import SAC
+        >>> from pysmo.classes import MSeed
         >>> from pysmo.tools.plotutils import plotseis
         >>> import pandas as pd
         >>>
-        >>> sac_seis = SAC.from_file("example.sac").seismogram
+        >>> seis = MSeed.from_file("example.mseed")
         >>> ramp_width = pd.Timedelta(seconds=300)
-        >>> window_begin_time = sac_seis.begin_time + pd.Timedelta(seconds=600)
+        >>> window_begin_time = seis.begin_time + pd.Timedelta(seconds=600)
         >>> window_end_time = window_begin_time + pd.Timedelta(seconds=1200)
-        >>> windowed_seis = window(sac_seis, window_begin_time, window_end_time, ramp_width, same_shape=True, clone=True)
-        >>> detrend(sac_seis)
-        >>> fig = plotseis(sac_seis, windowed_seis)
+        >>> windowed_seis = window(seis, window_begin_time, window_end_time, ramp_width, same_shape=True, replace=True)
+        >>> detrend(seis)
+        >>> fig = plotseis(seis, windowed_seis)
         >>>
         ```
 
@@ -1008,11 +1064,11 @@ def window[T: Seismogram](
         >>> plt.close("all")
         >>> if savedir:
         ...     plt.style.use("dark_background")
-        ...     fig = plotseis(sac_seis, windowed_seis)
+        ...     fig = plotseis(seis, windowed_seis)
         ...     fig.savefig(savedir / "functions_window-dark.png", transparent=True)
         ...
         ...     plt.style.use("default")
-        ...     fig = plotseis(sac_seis, windowed_seis)
+        ...     fig = plotseis(seis, windowed_seis)
         ...     fig.savefig(savedir / "functions_window.png", transparent=True)
         >>>
         ```
@@ -1050,8 +1106,8 @@ def window[T: Seismogram](
     window_begin_time -= ramp_duration
     window_end_time += ramp_duration
 
-    if clone is True:
-        seismogram = crop(seismogram, window_begin_time, window_end_time, clone=True)
+    if replace:
+        seismogram = crop(seismogram, window_begin_time, window_end_time, replace=True)
     else:
         crop(seismogram, window_begin_time, window_end_time)
     detrend(seismogram)
@@ -1059,6 +1115,6 @@ def window[T: Seismogram](
     if same_shape is True:
         pad(seismogram, begin_time, end_time)
 
-    if clone is True:
+    if replace:
         return seismogram
     return None

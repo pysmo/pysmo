@@ -1,4 +1,4 @@
-from copy import deepcopy
+import copy
 from typing import Literal, overload
 
 from scipy.signal import iirfilter, sosfilt, sosfiltfilt
@@ -17,7 +17,7 @@ def bandpass(
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -29,7 +29,7 @@ def bandpass[T: Seismogram](
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -41,7 +41,7 @@ def bandpass[T: Seismogram](
     corners: PositiveInt = 2,
     zerophase: bool = False,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Apply a bandpass filter to the input seismogram.
 
@@ -52,12 +52,13 @@ def bandpass[T: Seismogram](
         corners: The number of corners (poles) for the Butterworth filter.
         zerophase: If `True`, apply the filter in both forward and reverse
             directions to achieve zero phase distortion.
-        clone: If `True`, return a new Seismogram object with the filtered
-            data. If `False`, modify the input seismogram in place.
+        replace: If `True`, return a new Seismogram and leave the input
+            untouched. If `False`, modify the input seismogram in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
 
     Returns:
         A new Seismogram containing the filtered data when called with
-        `clone=True`.
+        `replace=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
@@ -76,15 +77,16 @@ def bandpass[T: Seismogram](
 
     sos = iirfilter(corners, [low, high], btype="band", ftype="butter", output="sos")
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     if zerophase:
-        seismogram.data = sosfiltfilt(sos, seismogram.data)
+        filtered = sosfiltfilt(sos, seismogram.data)
     else:
-        seismogram.data = sosfilt(sos, seismogram.data)
+        filtered = sosfilt(sos, seismogram.data)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=filtered)  # type: ignore[arg-type]
+
+    seismogram.data = filtered
+    return None
 
 
 def _zerophase_causal_ratio(corners: PositiveInt) -> float:
@@ -363,7 +365,7 @@ def highpass(
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -374,7 +376,7 @@ def highpass[T: Seismogram](
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -385,7 +387,7 @@ def highpass[T: Seismogram](
     corners: PositiveInt = 2,
     zerophase: bool = False,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Apply a highpass filter to the input seismogram.
 
@@ -395,12 +397,13 @@ def highpass[T: Seismogram](
         corners: The number of corners (poles) for the Butterworth filter.
         zerophase: If `True`, apply the filter in both forward and reverse
             directions to achieve zero phase distortion.
-        clone: If `True`, return a new Seismogram object with the filtered
-            data. If `False`, modify the input seismogram in place.
+        replace: If `True`, return a new Seismogram and leave the input
+            untouched. If `False`, modify the input seismogram in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
 
     Returns:
         A new Seismogram containing the filtered data when called with
-        `clone=True`.
+        `replace=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
@@ -412,15 +415,16 @@ def highpass[T: Seismogram](
 
     sos = iirfilter(corners, low, btype="high", ftype="butter", output="sos")
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     if zerophase:
-        seismogram.data = sosfiltfilt(sos, seismogram.data)
+        filtered = sosfiltfilt(sos, seismogram.data)
     else:
-        seismogram.data = sosfilt(sos, seismogram.data)
+        filtered = sosfilt(sos, seismogram.data)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=filtered)  # type: ignore[arg-type]
+
+    seismogram.data = filtered
+    return None
 
 
 @overload
@@ -430,7 +434,7 @@ def lowpass(
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -441,7 +445,7 @@ def lowpass[T: Seismogram](
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -452,7 +456,7 @@ def lowpass[T: Seismogram](
     corners: PositiveInt = 2,
     zerophase: bool = False,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Apply a lowpass filter to the input seismogram.
 
@@ -462,12 +466,13 @@ def lowpass[T: Seismogram](
         corners: The number of corners (poles) for the Butterworth filter.
         zerophase: If `True`, apply the filter in both forward and reverse
             directions to achieve zero phase distortion.
-        clone: If `True`, return a new Seismogram object with the filtered
-            data. If `False`, modify the input seismogram in place.
+        replace: If `True`, return a new Seismogram and leave the input
+            untouched. If `False`, modify the input seismogram in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
 
     Returns:
         A new Seismogram containing the filtered data when called with
-        `clone=True`.
+        `replace=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     high = freqmax / fe
@@ -479,15 +484,16 @@ def lowpass[T: Seismogram](
 
     sos = iirfilter(corners, high, btype="low", ftype="butter", output="sos")
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     if zerophase:
-        seismogram.data = sosfiltfilt(sos, seismogram.data)
+        filtered = sosfiltfilt(sos, seismogram.data)
     else:
-        seismogram.data = sosfilt(sos, seismogram.data)
+        filtered = sosfilt(sos, seismogram.data)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=filtered)  # type: ignore[arg-type]
+
+    seismogram.data = filtered
+    return None
 
 
 @overload
@@ -498,7 +504,7 @@ def bandstop(
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -510,7 +516,7 @@ def bandstop[T: Seismogram](
     corners: PositiveInt = ...,
     zerophase: bool = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -522,7 +528,7 @@ def bandstop[T: Seismogram](
     corners: PositiveInt = 2,
     zerophase: bool = False,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     """Apply a bandstop filter to the input seismogram.
 
@@ -533,12 +539,13 @@ def bandstop[T: Seismogram](
         corners: The number of corners (poles) for the Butterworth filter.
         zerophase: If `True`, apply the filter in both forward and reverse
             directions to achieve zero phase distortion.
-        clone: If `True`, return a new Seismogram object with the filtered
-            data. If `False`, modify the input seismogram in place.
+        replace: If `True`, return a new Seismogram and leave the input
+            untouched. If `False`, modify the input seismogram in place. Not
+            supported by every concrete type (see [`pysmo.functions`][]).
 
     Returns:
         A new Seismogram containing the filtered data when called with
-        `clone=True`.
+        `replace=True`.
     """
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
@@ -559,12 +566,13 @@ def bandstop[T: Seismogram](
         corners, [low, high], btype="bandstop", ftype="butter", output="sos"
     )
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     if zerophase:
-        seismogram.data = sosfiltfilt(sos, seismogram.data)
+        filtered = sosfiltfilt(sos, seismogram.data)
     else:
-        seismogram.data = sosfilt(sos, seismogram.data)
+        filtered = sosfilt(sos, seismogram.data)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=filtered)  # type: ignore[arg-type]
+
+    seismogram.data = filtered
+    return None
