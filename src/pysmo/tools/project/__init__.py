@@ -90,12 +90,11 @@ configurable per instance:
 ...         response = StationXML.fetch(
 ...             station=context.entry.station, time=context.starttime
 ...         ).response
-...         corrected = remove_response(
-...             seismogram, response, pre_filt=self.pre_filt, clone=True
+...         corrected = clone_to_mini(
+...             MiniIccsSeismogram, seismogram, update={"t0": context.predicted}
 ...         )
-...         return clone_to_mini(
-...             MiniIccsSeismogram, corrected, update={"t0": context.predicted}
-...         )
+...         remove_response(corrected, response, pre_filt=self.pre_filt)
+...         return corrected
 ...
 >>> to_mini_iccs_seismogram = ToMiniIccsSeismogramWithResponseRemoved(
 ...     # Teleseismic P on IU.ANMO's LHZ (1 Hz) channel: comfortably above

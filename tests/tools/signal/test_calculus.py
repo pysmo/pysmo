@@ -36,7 +36,7 @@ class TestDifferentiate:
         omega = 2 * np.pi * 1.0
         expected = omega * np.cos(omega * t)
 
-        result = differentiate(sine_seismogram, clone=True)
+        result = differentiate(sine_seismogram, replace=True)
         npt.assert_allclose(result.data, expected, atol=1e-6)
 
     def test_constant_offset_differentiates_to_zero(self, dt: float) -> None:
@@ -45,10 +45,10 @@ class TestDifferentiate:
             delta=pd.Timedelta(seconds=dt),
             data=np.full(64, 3.0),
         )
-        result = differentiate(seismogram, clone=True)
+        result = differentiate(seismogram, replace=True)
         npt.assert_allclose(result.data, 0.0, atol=1e-9)
 
-    def test_clone_matches_in_place(self, sine_seismogram: MiniSeismogram) -> None:
+    def test_replace_matches_in_place(self, sine_seismogram: MiniSeismogram) -> None:
         assert_seismogram_modification(sine_seismogram, differentiate)
 
     def test_empty_seismogram_raises(self, dt: float) -> None:
@@ -75,14 +75,14 @@ class TestIntegrate:
         )
         expected = np.sin(omega * t)
 
-        result = integrate(cosine_seismogram, clone=True)
+        result = integrate(cosine_seismogram, replace=True)
         npt.assert_allclose(result.data, expected, atol=1e-6)
 
     def test_round_trip_with_differentiate(
         self, sine_seismogram: MiniSeismogram
     ) -> None:
-        differentiated = differentiate(sine_seismogram, clone=True)
-        recovered = integrate(differentiated, clone=True)
+        differentiated = differentiate(sine_seismogram, replace=True)
+        recovered = integrate(differentiated, replace=True)
         npt.assert_allclose(recovered.data, sine_seismogram.data, atol=1e-6)
 
     def test_dc_bin_forced_to_zero_not_inf_or_nan(self, dt: float) -> None:
@@ -91,10 +91,10 @@ class TestIntegrate:
             delta=pd.Timedelta(seconds=dt),
             data=np.full(64, 3.0),
         )
-        result = integrate(seismogram, clone=True)
+        result = integrate(seismogram, replace=True)
         assert np.all(np.isfinite(result.data))
 
-    def test_clone_matches_in_place(self, sine_seismogram: MiniSeismogram) -> None:
+    def test_replace_matches_in_place(self, sine_seismogram: MiniSeismogram) -> None:
         assert_seismogram_modification(sine_seismogram, integrate)
 
     def test_empty_seismogram_raises(self, dt: float) -> None:

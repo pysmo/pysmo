@@ -1,7 +1,7 @@
 """Instrument response removal."""
 
+import copy
 import warnings
-from copy import deepcopy
 from typing import Literal, TypeIs, cast, overload
 
 import numpy as np
@@ -75,7 +75,7 @@ def remove_response(
     response: Response,
     pre_filt: tuple[float, float, float, float] | None = ...,
     *,
-    clone: Literal[False] = ...,
+    replace: Literal[False] = ...,
 ) -> None: ...
 
 
@@ -85,7 +85,7 @@ def remove_response[T: Seismogram](
     response: Response,
     pre_filt: tuple[float, float, float, float] | None = ...,
     *,
-    clone: Literal[True],
+    replace: Literal[True],
 ) -> T: ...
 
 
@@ -94,7 +94,7 @@ def remove_response[T: Seismogram](
     response: Response,
     pre_filt: tuple[float, float, float, float] | None = None,
     *,
-    clone: bool = False,
+    replace: bool = False,
 ) -> T | None:
     r"""Remove an instrument response from a seismogram.
 
@@ -193,11 +193,13 @@ def remove_response[T: Seismogram](
             `response.reference_sensitivity` in the time domain (see above).
             Not derived automatically; see Examples for how to choose a
             starting point.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Processed [`Seismogram`][pysmo.Seismogram] object if called with
-        `clone=True`.
+        `replace=True`.
 
     Raises:
         ValueError: If `seismogram.data` is empty; if `pre_filt` is `None`
@@ -225,7 +227,7 @@ def remove_response[T: Seismogram](
             of its actual roll-off.
 
     Examples:
-        The examples below build on the same setup: `example.sac`'s own real
+        The examples below build on the same setup: `example.mseed`'s own real
         response: a broadband seismometer and digitiser, from a genuine StationXML
         document for the actual station and epoch that recorded it.
 
@@ -233,12 +235,12 @@ def remove_response[T: Seismogram](
 
         ```python
         >>> from pathlib import Path
-        >>> from pysmo.classes import SAC, StationXML
+        >>> from pysmo.classes import MSeed, StationXML
         >>> from pysmo.tools.signal import remove_response
         >>> xml = Path("example_response.xml").read_bytes()
-        >>> original = SAC.from_file("example.sac").seismogram
+        >>> original = MSeed.from_file("example.mseed")
         >>> response = StationXML.from_bytes(xml, time=original.begin_time).response
-        >>> seismogram = remove_response(original, response, clone=True)
+        >>> seismogram = remove_response(original, response, replace=True)
         >>> len(seismogram.data) == len(original.data)
         True
         >>>
@@ -261,9 +263,9 @@ def remove_response[T: Seismogram](
         >>> f1 = min(abs(pole) for pole in response.poles if pole != 0) / 10
         >>> f2 = f1 * 10
         >>> pre_filt = (f1, f2, f3, f4)
-        >>> prepped = detrend(original, clone=True)
+        >>> prepped = detrend(original, replace=True)
         >>> taper(prepped, 0.05)
-        >>> deconvolved = remove_response(prepped, response, pre_filt=pre_filt, clone=True)
+        >>> deconvolved = remove_response(prepped, response, pre_filt=pre_filt, replace=True)
         >>> len(deconvolved.data) == len(original.data)
         True
         >>>
@@ -287,7 +289,7 @@ def remove_response[T: Seismogram](
 
         ```python
         >>> import numpy as np
-        >>> gain_only = remove_response(prepped, response, clone=True)
+        >>> gain_only = remove_response(prepped, response, replace=True)
         >>> gain_only_rms = np.sqrt(np.mean(gain_only.data**2))
         >>> deconvolved_rms = np.sqrt(np.mean(deconvolved.data**2))
         >>> round(float(gain_only_rms / deconvolved_rms), 3)  # ~1: amplitude match
@@ -356,10 +358,11 @@ def remove_response[T: Seismogram](
                 + "InstrumentSensitivity/Value) or pass pre_filt for full "
                 + "spectral deconvolution, which only needs overall_sensitivity."
             )
-        if clone:
-            seismogram = deepcopy(seismogram)
-        seismogram.data = seismogram.data / response.reference_sensitivity
-        return seismogram if clone else None
+        scaled = seismogram.data / response.reference_sensitivity
+        if replace:
+            return copy.replace(seismogram, data=scaled)  # type: ignore[arg-type]
+        seismogram.data = scaled
+        return None
 
     dt = seismogram.delta.total_seconds()
     if dt <= 0:
@@ -382,9 +385,6 @@ def remove_response[T: Seismogram](
             f"pre_filt's upper corner ({f4}) exceeds the seismogram's "
             + f"Nyquist frequency ({nyquist})."
         )
-
-    if clone:
-        seismogram = deepcopy(seismogram)
 
     freqs = np.fft.rfftfreq(len(seismogram.data), d=dt)
 
@@ -433,6 +433,10 @@ def remove_response[T: Seismogram](
     )
 
     spectrum = np.fft.rfft(seismogram.data)
-    seismogram.data = np.fft.irfft(spectrum * filt, n=len(seismogram.data))
+    deconvolved = np.fft.irfft(spectrum * filt, n=len(seismogram.data))
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=deconvolved)  # type: ignore[arg-type]
+
+    seismogram.data = deconvolved
+    return None

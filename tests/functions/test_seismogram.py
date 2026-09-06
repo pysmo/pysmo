@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from syrupy.assertion import SnapshotAssertion
 
 from pysmo import MiniSeismogram, Seismogram
+from pysmo.classes import SacSeismogram
 from pysmo.functions._seismogram import _WindowType
 from pysmo.tools.plotutils import time_array
 from tests.conftest import contiguous_seismogram_pairs, mini_seismograms
@@ -51,9 +52,9 @@ def test_normalize(seismogram: Seismogram) -> None:
 
     normalized_seis.data[:10] += 3
     normalized_seis.data[-10:] += 3
-    normalized_seis2 = normalize(
-        normalized_seis,
-        clone=True,
+    normalized_seis2 = deepcopy(normalized_seis)
+    normalize(
+        normalized_seis2,
         t1=normalized_seis.begin_time + 10 * normalized_seis.delta,
         t2=normalized_seis.end_time - 10 * normalized_seis.delta,
     )
@@ -276,11 +277,11 @@ def test_merge_auto_delta_resamples_jittery_deltas() -> None:
         data=np.array([4.0, 5.0, 6.0]),
     )
 
-    merged = merge([first, second], auto_delta=True, clone=True)
+    merged = merge([first, second], auto_delta=True, replace=True)
     assert merged.delta == pd.Timedelta(seconds=1)
     np.testing.assert_allclose(merged.data, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
 
-    # Neither input is mutated when clone=True.
+    # Neither input is mutated when replace=True.
     assert second.delta == pd.Timedelta(seconds=1) + pd.Timedelta(nanoseconds=1)
 
 
@@ -299,7 +300,7 @@ def test_merge() -> None:
         data=np.array([4.0, 5.0]),
     )
 
-    merged = merge([first, second], clone=True)
+    merged = merge([first, second], replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
     assert merged.begin_time == first.begin_time
     assert merged.delta == first.delta
@@ -326,11 +327,11 @@ def test_merge_out_of_order_input() -> None:
     )
 
     # `second` is passed first, even though `first` starts earlier.
-    merged = merge([second, first], clone=True)
+    merged = merge([second, first], replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
     assert merged.begin_time == first.begin_time
 
-    # clone=False still mutates and returns the literal first list entry
+    # replace=False still mutates and returns the literal first list entry
     # (`second`), even though it is not chronologically first.
     result = merge([second, first])
     assert result is None
@@ -361,7 +362,7 @@ def test_merge_empty_seismogram_discarded() -> None:
         data=np.array([4.0, 5.0]),
     )
 
-    merged = merge([first, empty, second], clone=True)
+    merged = merge([first, empty, second], replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
     assert merged.begin_time == first.begin_time
 
@@ -386,15 +387,15 @@ def test_merge_first_empty_is_still_mutation_target() -> None:
         data=np.array([4.0, 5.0]),
     )
 
-    # clone=True: the clone is based on `empty` (the first list entry),
-    # even though it started out empty.
-    merged = merge([empty, first, second], clone=True)
+    # replace=True: the new object is based on `empty` (the first list
+    # entry), even though it started out empty.
+    merged = merge([empty, first, second], replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
     assert merged.begin_time == first.begin_time
     assert merged.delta == first.delta
     assert empty.data.size == 0  # the original `empty` object is untouched
 
-    # clone=False: `empty` itself is mutated in place and becomes the
+    # replace=False: `empty` itself is mutated in place and becomes the
     # merged result, even though it started out empty.
     result = merge([empty, first, second])
     assert result is None
@@ -445,7 +446,7 @@ def test_merge_with_resampling() -> None:
         data=np.full(8, 2.0),
     )
 
-    merged = merge([first, second], delta=pd.Timedelta(seconds=1), clone=True)
+    merged = merge([first, second], delta=pd.Timedelta(seconds=1), replace=True)
     np.testing.assert_allclose(
         merged.data, np.array([1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0])
     )
@@ -453,7 +454,7 @@ def test_merge_with_resampling() -> None:
     assert second.delta == pd.Timedelta(milliseconds=500)
 
 
-def test_merge_with_resampling_no_clone() -> None:
+def test_merge_with_resampling_in_place() -> None:
     from pysmo import MiniSeismogram
     from pysmo.functions import merge
 
@@ -536,7 +537,7 @@ def test_merge_allows_tiny_boundary_jitter() -> None:
         data=np.full(2, 2.0),
     )
 
-    merged = merge([first, second], clone=True)
+    merged = merge([first, second], replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 1.0, 1.0, 2.0, 2.0]))
 
 
@@ -557,7 +558,7 @@ def test_merge_matching_overlap_is_trimmed() -> None:
         data=np.array([3.0, 4.0, 5.0]),
     )
 
-    merged = merge([first, second], gap_tolerance_factor=1.0, clone=True)
+    merged = merge([first, second], gap_tolerance_factor=1.0, replace=True)
     np.testing.assert_array_equal(merged.data, np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
     assert merged.begin_time == first.begin_time
     assert merged.end_time == first.begin_time + merged.delta * 4
@@ -688,8 +689,14 @@ def test_crop(seismogram: Seismogram) -> None:
         seis3.data = seis3.data[:100]
         new_begin_time = seis3.begin_time + seis3.delta
         new_end_time = seis3.end_time - seis3.delta
-        cropped_seis = crop(seis3, new_begin_time, new_end_time, clone=True)
-        assert all(cropped_seis.data == seis3.data[1:-1])
+        try:
+            cropped_seis = crop(seis3, new_begin_time, new_end_time, replace=True)
+        except TypeError:
+            # replace=True is unsupported only for projection types
+            # (SacSeismogram); a TypeError from a value object is a real bug.
+            assert isinstance(seis3, SacSeismogram)
+        else:
+            assert all(cropped_seis.data == seis3.data[1:-1])
 
 
 def test_crop_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> None:
@@ -715,14 +722,17 @@ def test_crop_snapshot(seismogram: Seismogram, snapshot: SnapshotAssertion) -> N
 class TestTaper:
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_taper(self, seismogram: Seismogram) -> Figure:
-        from pysmo.functions import taper
+        from pysmo.functions import clone_to_mini, taper
 
+        # replace=True is unsupported for SacSeismogram; exercise the taper
+        # behaviour on a value-object copy instead.
+        seismogram = clone_to_mini(MiniSeismogram, seismogram)
         seismogram.data = np.ones(len(seismogram.data))
 
         with pytest.raises(TypeError):
-            _ = taper(seismogram, "abc", clone=True)  # type: ignore
+            _ = taper(seismogram, "abc", replace=True)  # type: ignore
         with pytest.raises(ValueError):
-            _ = taper(seismogram, 1.7, clone=True)
+            _ = taper(seismogram, 1.7, replace=True)
         fig = plt.figure()
         time = time_array(seismogram)
         plt.plot(time, seismogram.data, scalex=True, scaley=True)
@@ -738,13 +748,13 @@ class TestTaper:
             ("general_hamming", 0.75),
         ]
         for method in methods:
-            seis_taper = taper(seismogram, 0.5, method, clone=True)
+            seis_taper = taper(seismogram, 0.5, method, replace=True)
             plt.plot(time, seis_taper.data, scalex=True, scaley=True)
             seis_taper = taper(
                 seismogram,
                 (seismogram.end_time - seismogram.begin_time) * 0.5,
                 method,
-                clone=True,
+                replace=True,
             )
             plt.plot(time, seis_taper.data, scalex=True, scaley=True)
         plt.xlabel("Time")
@@ -758,8 +768,11 @@ class TestWindow:
     TAPER_WIDTH: pd.Timedelta | float = pd.Timedelta(seconds=100)
 
     def test_window(self, seismogram: Seismogram) -> None:
-        from pysmo.functions import time2index, window
+        from pysmo.functions import clone_to_mini, time2index, window
 
+        # replace=True is unsupported for SacSeismogram; exercise window on a
+        # value-object copy instead.
+        seismogram = clone_to_mini(MiniSeismogram, seismogram)
         taper_width = self.TAPER_WIDTH
 
         window_begin_time = seismogram.begin_time + pd.Timedelta(seconds=150)
@@ -770,7 +783,7 @@ class TestWindow:
             window_end_time,
             taper_width,
             same_shape=True,
-            clone=True,
+            replace=True,
         )
         assert windowed_seis.begin_time.timestamp() == pytest.approx(
             seismogram.begin_time.timestamp()
@@ -888,7 +901,7 @@ def test_crop_randomised_window(seis: MiniSeismogram, k1: int, k2: int) -> None:
     t2 = seis.end_time - k2 * seis.delta
     assume(t1 <= t2)
 
-    cropped = crop(seis, t1, t2, clone=True)
+    cropped = crop(seis, t1, t2, replace=True)
     assert len(cropped.data) <= len(seis.data)
     assert cropped.begin_time >= t1
     assert cropped.end_time <= t2 + seis.delta
@@ -899,7 +912,7 @@ def test_crop_randomised_window(seis: MiniSeismogram, k1: int, k2: int) -> None:
 def test_crop_identity(seis: MiniSeismogram) -> None:
     from pysmo.functions import crop
 
-    cropped = crop(seis, seis.begin_time, seis.end_time, clone=True)
+    cropped = crop(seis, seis.begin_time, seis.end_time, replace=True)
     np.testing.assert_array_equal(cropped.data, seis.data)
     assert cropped.begin_time == seis.begin_time
     assert cropped.delta == seis.delta
@@ -911,7 +924,7 @@ def test_normalize_peak_is_one(seis: MiniSeismogram) -> None:
     from pysmo.functions import normalize
 
     assume(np.max(np.abs(seis.data)) > 1e-10)
-    result = normalize(seis, clone=True)
+    result = normalize(seis, replace=True)
     assert np.max(np.abs(result.data)) == pytest.approx(1.0)
 
 
@@ -931,8 +944,8 @@ def test_normalize_scaling_invariance(seis: MiniSeismogram, scalar: float) -> No
         delta=seis.delta,
         begin_time=seis.begin_time,
     )
-    norm1 = normalize(seis, clone=True)
-    norm2 = normalize(scaled_seis, clone=True)
+    norm1 = normalize(seis, replace=True)
+    norm2 = normalize(scaled_seis, replace=True)
     np.testing.assert_allclose(norm1.data, norm2.data, rtol=1e-5, atol=1e-8)
 
 
@@ -947,7 +960,7 @@ def test_pad_preserves_data(seis: MiniSeismogram, pre_pad: int, post_pad: int) -
 
     new_begin = seis.begin_time - pre_pad * seis.delta
     new_end = seis.end_time + post_pad * seis.delta
-    padded = pad(seis, new_begin, new_end, clone=True)
+    padded = pad(seis, new_begin, new_end, replace=True)
     assert len(padded.data) == len(seis.data) + pre_pad + post_pad
     # Original data sits at the exact pre_pad offset
     np.testing.assert_array_equal(
@@ -964,7 +977,7 @@ def test_merge_contiguous_data_conservation(
     from pysmo.functions import merge
 
     seis1, seis2 = pair
-    merged = merge([seis1, seis2], clone=True)
+    merged = merge([seis1, seis2], replace=True)
     assert merged is not None
     assert len(merged.data) == len(seis1.data) + len(seis2.data)
     np.testing.assert_array_equal(
@@ -983,8 +996,8 @@ def test_merge_chronological_sorting(
     from pysmo.functions import merge
 
     seis1, seis2 = pair
-    merged_forward = merge([seis1, seis2], clone=True)
-    merged_reversed = merge([seis2, seis1], clone=True)
+    merged_forward = merge([seis1, seis2], replace=True)
+    merged_reversed = merge([seis2, seis1], replace=True)
     assert merged_forward is not None and merged_reversed is not None
     np.testing.assert_array_equal(merged_forward.data, merged_reversed.data)
     assert merged_forward.begin_time == merged_reversed.begin_time
@@ -995,7 +1008,7 @@ def test_merge_chronological_sorting(
 def test_merge_single_input_identity(seis: MiniSeismogram) -> None:
     from pysmo.functions import merge
 
-    merged = merge([seis], clone=True)
+    merged = merge([seis], replace=True)
     assert merged is not None
     np.testing.assert_array_equal(merged.data, seis.data)
     assert merged.begin_time == seis.begin_time

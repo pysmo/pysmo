@@ -305,13 +305,13 @@ def merge_geocsv_timeseries(
             mini_seismograms,
             auto_delta=True,
             gap_tolerance_factor=gap_tolerance_factor,
-            clone=True,
+            replace=True,
         )
     else:
         merged = merge(
             mini_seismograms,
             gap_tolerance_factor=gap_tolerance_factor,
-            clone=True,
+            replace=True,
         )
     return _TimeseriesSegment(
         start_time=merged.begin_time,
