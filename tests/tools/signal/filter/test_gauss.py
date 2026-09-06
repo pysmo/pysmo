@@ -84,9 +84,13 @@ def test_plot_gauss_env(sac_seismogram: Seismogram) -> matplotlib.figure.Figure:
     """Test plotting gauss and envelope functions."""
     fc = 0.02  # Centre Gaussian filter at 0.02 Hz (50s period)
     alpha = 50  # Set alpha (which determines filterwidth) to 50
-    seismogram = sac_seismogram
+    from pysmo import MiniSeismogram
+    from pysmo.functions import clone_to_mini
+
+    # replace=True is unsupported for SacSeismogram; use a value-object copy.
+    seismogram = clone_to_mini(MiniSeismogram, sac_seismogram)
     seismogram.data = seismogram.data - np.mean(seismogram.data)
-    gauss_seis = gauss(seismogram, fc, alpha, clone=True)
-    env_seis = envelope(seismogram, fc, alpha, clone=True)
+    gauss_seis = gauss(seismogram, fc, alpha, replace=True)
+    env_seis = envelope(seismogram, fc, alpha, replace=True)
     fig = plotseis(seismogram, gauss_seis, env_seis)
     return fig

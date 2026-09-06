@@ -86,7 +86,9 @@ class TestRoundTrip:
         # actually nonzero, letting the round trip stay exact.
         half_bin = freqs[1] / 2
         pre_filt = (half_bin / 2, half_bin, freqs[-1] - half_bin, freqs[-1])
-        recovered = remove_response(seismogram, response, pre_filt=pre_filt, clone=True)
+        recovered = remove_response(
+            seismogram, response, pre_filt=pre_filt, replace=True
+        )
 
         npt.assert_allclose(recovered.data, ground_motion, rtol=1e-6, atol=1e-6)
 
@@ -139,7 +141,7 @@ class TestRoundTrip:
             ),
             staged_response,
             pre_filt=pre_filt,
-            clone=True,
+            replace=True,
         )
         recovered_analog_only = remove_response(
             MiniSeismogram(
@@ -149,7 +151,7 @@ class TestRoundTrip:
             ),
             analog_only_response,
             pre_filt=pre_filt,
-            clone=True,
+            replace=True,
         )
 
         # Content in the FIR stage's stopband is attenuated by the stage's
@@ -305,7 +307,7 @@ class TestDigitalStageCorrection:
                 ],
             )
             return remove_response(
-                seismogram, response, pre_filt=pre_filt, clone=True
+                seismogram, response, pre_filt=pre_filt, replace=True
             ).data
 
         error_with_correction = np.sqrt(
@@ -357,10 +359,10 @@ class TestEmptyStages:
         pre_filt = (half_bin / 2, half_bin, freqs[-1] - half_bin, freqs[-1])
 
         result_plain = remove_response(
-            seismogram1, response, pre_filt=pre_filt, clone=True
+            seismogram1, response, pre_filt=pre_filt, replace=True
         )
         result_staged = remove_response(
-            seismogram2, staged_response, pre_filt=pre_filt, clone=True
+            seismogram2, staged_response, pre_filt=pre_filt, replace=True
         )
 
         npt.assert_array_equal(result_plain.data, result_staged.data)
@@ -389,7 +391,7 @@ class TestSensitivityOnly:
             reference_sensitivity=4.0,
             input_units="M/S",
         )
-        removed = remove_response(seismogram, response, clone=True)
+        removed = remove_response(seismogram, response, replace=True)
         npt.assert_array_equal(removed.data, ground_motion / 4.0)
 
     def test_ignores_digital_stages(self, dt: float, ground_motion: np.ndarray) -> None:
@@ -412,7 +414,7 @@ class TestSensitivityOnly:
                 )
             ],
         )
-        removed = remove_response(seismogram, response, clone=True)
+        removed = remove_response(seismogram, response, replace=True)
         npt.assert_array_equal(removed.data, ground_motion / 4.0)
 
     def test_missing_reference_sensitivity_raises(
@@ -454,7 +456,7 @@ class TestZeroHandling:
             seismogram,
             response,
             pre_filt=(1e-6, 1e-5, 0.8 * nyquist, 0.9 * nyquist),
-            clone=True,
+            replace=True,
         )
         assert np.all(np.isfinite(removed.data))
 
@@ -483,7 +485,7 @@ class TestZeroHandling:
             seismogram,
             response,
             pre_filt=(freqs[1] / 2, freqs[10], freqs[-10], freqs[-1] - freqs[1] / 2),
-            clone=True,
+            replace=True,
         )
         assert not np.all(np.isfinite(removed.data))
 
@@ -735,8 +737,10 @@ class TestSnapshot:
         )
 
 
-class TestClone:
-    def test_clone_matches_in_place(self, dt: float, ground_motion: np.ndarray) -> None:
+class TestReplace:
+    def test_replace_matches_in_place(
+        self, dt: float, ground_motion: np.ndarray
+    ) -> None:
         seismogram = MiniSeismogram(
             begin_time=pd.Timestamp("2010-01-01T00:00:00Z"),
             delta=pd.Timedelta(seconds=dt),
@@ -751,7 +755,7 @@ class TestClone:
         )
         assert_seismogram_modification(seismogram, remove_response, response)
 
-    def test_clone_matches_in_place_with_pre_filt(
+    def test_replace_matches_in_place_with_pre_filt(
         self, dt: float, ground_motion: np.ndarray
     ) -> None:
         nyquist = 0.5 / dt
