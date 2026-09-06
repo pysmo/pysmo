@@ -1,7 +1,7 @@
 """Unit tests for Butterworth filter functions in _butter.py.
 
 This module tests the bandpass, highpass, lowpass, and bandstop filter functions.
-Each function is tested for both clone modes, parameter validation, and zerophase modes.
+Each function is tested for both replace modes, parameter validation, and zerophase modes.
 """
 
 import numpy as np
@@ -114,7 +114,7 @@ class TestBandpass(BaseButterFilterTest):
         """Test bandpass filter with default parameters.
 
         Verify that the bandpass filter correctly filters the data and that
-        both clone modes produce identical results.
+        both replace modes produce identical results.
         """
         freqmin = 0.1  # 0.1 Hz
         freqmax = 0.5  # 0.5 Hz
@@ -220,7 +220,7 @@ class TestHighpass(BaseButterFilterTest):
         """Test highpass filter with default parameters.
 
         Verify that the highpass filter correctly filters the data and that
-        both clone modes produce identical results.
+        both replace modes produce identical results.
         """
         freqmin = 0.1  # 0.1 Hz
         corners = 2
@@ -296,7 +296,7 @@ class TestLowpass(BaseButterFilterTest):
         """Test lowpass filter with default parameters.
 
         Verify that the lowpass filter correctly filters the data and that
-        both clone modes produce identical results.
+        both replace modes produce identical results.
         """
         freqmax = 0.5  # 0.5 Hz
         corners = 2
@@ -372,7 +372,7 @@ class TestBandstop(BaseButterFilterTest):
         """Test bandstop filter with default parameters.
 
         Verify that the bandstop filter correctly filters the data and that
-        both clone modes produce identical results.
+        both replace modes produce identical results.
         """
         freqmin = 0.1  # 0.1 Hz
         freqmax = 0.5  # 0.5 Hz

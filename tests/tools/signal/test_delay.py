@@ -79,7 +79,7 @@ def test_delay_with_seismogram(seismogram: Seismogram) -> None:
     rand_int = int(random.uniform(10, 100))
     seismogram1 = clone_to_mini(MiniSeismogram, seismogram)
     seismogram1.data = seismogram.data[1000:10000]
-    seismogram1 = detrend(seismogram1, clone=True)
+    seismogram1 = detrend(seismogram1, replace=True)
 
     seismogram2 = clone_to_mini(MiniSeismogram, seismogram1)
     seismogram2.delta = seismogram1.delta * 2
@@ -386,7 +386,7 @@ def test_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     """
     template = clone_to_mini(MiniSeismogram, seismogram)
     template.data = seismogram.data[1000:10000]
-    template = detrend(template, clone=True)
+    template = detrend(template, replace=True)
 
     shifts = [0, 15, -20]
     seismograms = []
@@ -555,7 +555,7 @@ def test_multi_multi_delay_with_seismogram(seismogram: Seismogram) -> None:
     """
     base = clone_to_mini(MiniSeismogram, seismogram)
     base.data = seismogram.data[1000:10000]
-    base = detrend(base, clone=True)
+    base = detrend(base, replace=True)
 
     shifts = [0, 10, -20]
     seismograms = []
@@ -794,7 +794,7 @@ def test_mccc_with_seismogram(seismogram: Seismogram) -> None:
     """
     base = clone_to_mini(MiniSeismogram, seismogram)
     base.data = seismogram.data[1000:10000]
-    base = detrend(base, clone=True)
+    base = detrend(base, replace=True)
 
     shifts = [0, 10, -20]
     seismograms = []

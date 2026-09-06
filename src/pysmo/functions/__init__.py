@@ -7,29 +7,71 @@ common operations on [`pysmo`][] types. They are intended as building blocks
 for constructing more complex processing workflows.
 --8<-- [end:in-the-box]
 
-Many functions accept a `clone` argument that controls whether the function
-operates on the input directly or first creates a clone (via
-[`deepcopy`][copy.deepcopy]) and returns the modified copy. For example:
+Many functions accept a `replace` argument. Without it they modify the
+seismogram in place and return `None`; with `replace=True` they leave the
+input untouched and return a new seismogram. For example:
 
 ```python
 >>> from pysmo.functions import resample
->>> from pysmo.classes import SAC
->>> sac_seis = SAC.from_file("example.sac").seismogram
->>> new_delta = sac_seis.delta * 2
+>>> from pysmo.classes import MSeed
+>>> seis = MSeed.from_file("example.mseed")
+>>> new_delta = seis.delta * 2
 >>>
->>> # create a clone and modify data in clone instead of sac_seis:
->>> new_sac_seis = resample(sac_seis, new_delta, clone=True)
+>>> # return a new seismogram, leaving seis untouched:
+>>> new_seis = resample(seis, new_delta, replace=True)
 >>>
->>> # modify data in sac_seis directly:
->>> resample(sac_seis, new_delta)
+>>> # modify data in seis directly:
+>>> resample(seis, new_delta)
 >>>
 ```
 
-Note: Needless deepcopy
-    Reassigning the clone back to the same name (`sac_seis = resample(sac_seis,
-    new_delta, clone=True)`) ends up equivalent to modifying `sac_seis` in
-    place, but pays for a [`deepcopy`][copy.deepcopy] to get there. Call
-    `resample(sac_seis, new_delta)` directly instead.
+The new object is built from the input with [`copy.replace`][],
+substituting only the freshly computed [`data`][pysmo.Seismogram.data]
+(and, where the operation moves or resamples the time axis, the
+corresponding [`begin_time`][pysmo.Seismogram.begin_time] or
+[`delta`][pysmo.Seismogram.delta]). Every other attribute is carried
+straight over from the input.
+
+Warning: Attributes outside the `Seismogram` protocol
+    A concrete class often carries more than `begin_time`, `delta` and
+    `data`: identity, provenance or acquisition metadata. `replace=True`
+    keeps those values as they were, even where the operation has made them
+    a poor description of the new data, and copies them shallowly. If such
+    an attribute is itself mutable, the input and the returned seismogram
+    share the same object, so mutating it through one is visible through
+    the other.
+
+Not every concrete type supports `replace=True`: rebuilding the object this
+way needs the substituted attributes to be constructor parameters.
+[`MiniSeismogram`][pysmo.MiniSeismogram], [`MSeed`][pysmo.classes.MSeed] and
+other value objects qualify; [`SacSeismogram`][pysmo.classes.SacSeismogram]
+does not, because its `data` is a live view into an open SAC file rather
+than a stored field.
+
+```python
+>>> from pysmo.functions import clone_to_mini, detrend
+>>> from pysmo import MiniSeismogram
+>>> from pysmo.classes import SAC
+>>> sac = SAC.from_file("example.sac")
+>>>
+>>> # replace=True cannot rebuild a SacSeismogram:
+>>> detrend(sac.seismogram, replace=True)
+Traceback (most recent call last):
+...
+TypeError: ...
+>>>
+>>> # convert to a value object first (or copy the whole SAC object):
+>>> detrended = detrend(clone_to_mini(MiniSeismogram, sac.seismogram), replace=True)
+>>> type(detrended).__name__
+'MiniSeismogram'
+>>>
+```
+
+Note: Needless copy
+    Reassigning the result back to the same name (`seis = resample(seis,
+    new_delta, replace=True)`) ends up equivalent to modifying `seis` in
+    place, but pays for a copy to get there. Call `resample(seis, new_delta)`
+    directly instead.
 
 Hint: More functions live in `pysmo.tools`
     Additional functions may be found in [`pysmo.tools`][].

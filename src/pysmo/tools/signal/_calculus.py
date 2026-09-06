@@ -1,6 +1,6 @@
 """Frequency-domain integration and differentiation."""
 
-from copy import deepcopy
+import copy
 from typing import Literal, overload
 
 import numpy as np
@@ -11,14 +11,14 @@ __all__ = ["differentiate", "integrate"]
 
 
 @overload
-def differentiate(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
+def differentiate(seismogram: Seismogram, *, replace: Literal[False] = ...) -> None: ...
 
 
 @overload
-def differentiate[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
+def differentiate[T: Seismogram](seismogram: T, *, replace: Literal[True]) -> T: ...
 
 
-def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
+def differentiate[T: Seismogram](seismogram: T, *, replace: bool = False) -> T | None:
     r"""Differentiate a seismogram in the frequency domain.
 
     Multiplies the FFT of `seismogram.data` by $i\omega$ at each
@@ -30,11 +30,13 @@ def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | N
 
     Args:
         seismogram: Seismogram object.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Differentiated [`Seismogram`][pysmo.Seismogram] object if called with
-        `clone=True`.
+        `replace=True`.
 
     Raises:
         ValueError: If `seismogram.data` is empty.
@@ -58,7 +60,7 @@ def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | N
         ...     delta=pd.Timedelta(seconds=dt),
         ...     data=np.sin(omega * t),
         ... )
-        >>> velocity = differentiate(seismogram, clone=True)
+        >>> velocity = differentiate(seismogram, replace=True)
         >>> expected = omega * np.cos(omega * t)
         >>> np.allclose(velocity.data, expected, atol=1e-6)
         True
@@ -70,9 +72,6 @@ def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | N
     if seismogram.delta.total_seconds() <= 0:
         raise ValueError("Seismogram delta must be positive.")
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     dt = seismogram.delta.total_seconds()
     npts = len(seismogram.data)
     freqs = np.fft.rfftfreq(npts, d=dt)
@@ -80,20 +79,24 @@ def differentiate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | N
 
     spectrum = np.fft.rfft(seismogram.data)
     spectrum *= 1j * omega
-    seismogram.data = np.fft.irfft(spectrum, n=npts)
+    differentiated = np.fft.irfft(spectrum, n=npts)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=differentiated)  # type: ignore[arg-type]
+
+    seismogram.data = differentiated
+    return None
 
 
 @overload
-def integrate(seismogram: Seismogram, *, clone: Literal[False] = ...) -> None: ...
+def integrate(seismogram: Seismogram, *, replace: Literal[False] = ...) -> None: ...
 
 
 @overload
-def integrate[T: Seismogram](seismogram: T, *, clone: Literal[True]) -> T: ...
+def integrate[T: Seismogram](seismogram: T, *, replace: Literal[True]) -> T: ...
 
 
-def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
+def integrate[T: Seismogram](seismogram: T, *, replace: bool = False) -> T | None:
     r"""Integrate a seismogram in the frequency domain.
 
     Divides the FFT of `seismogram.data` by $i\omega$ at each
@@ -104,11 +107,13 @@ def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
 
     Args:
         seismogram: Seismogram object.
-        clone: Operate on a clone of the input seismogram.
+        replace: Return a new seismogram and leave the input untouched,
+            instead of modifying it in place. Not supported by every
+            concrete type (see [`pysmo.functions`][]).
 
     Returns:
         Integrated [`Seismogram`][pysmo.Seismogram] object if called with
-        `clone=True`.
+        `replace=True`.
 
     Raises:
         ValueError: If `seismogram.data` is empty.
@@ -132,7 +137,7 @@ def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
         ...     delta=pd.Timedelta(seconds=dt),
         ...     data=omega * np.cos(omega * t),
         ... )
-        >>> displacement = integrate(seismogram, clone=True)
+        >>> displacement = integrate(seismogram, replace=True)
         >>> expected = np.sin(omega * t)
         >>> np.allclose(displacement.data, expected, atol=1e-6)
         True
@@ -144,9 +149,6 @@ def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
     if seismogram.delta.total_seconds() <= 0:
         raise ValueError("Seismogram delta must be positive.")
 
-    if clone:
-        seismogram = deepcopy(seismogram)
-
     dt = seismogram.delta.total_seconds()
     npts = len(seismogram.data)
     freqs = np.fft.rfftfreq(npts, d=dt)
@@ -155,6 +157,10 @@ def integrate[T: Seismogram](seismogram: T, *, clone: bool = False) -> T | None:
     spectrum = np.fft.rfft(seismogram.data)
     integrated_spectrum = np.zeros_like(spectrum)
     integrated_spectrum[1:] = spectrum[1:] / (1j * omega[1:])
-    seismogram.data = np.fft.irfft(integrated_spectrum, n=npts)
+    integrated = np.fft.irfft(integrated_spectrum, n=npts)
 
-    return seismogram if clone else None
+    if replace:
+        return copy.replace(seismogram, data=integrated)  # type: ignore[arg-type]
+
+    seismogram.data = integrated
+    return None
