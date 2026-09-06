@@ -87,6 +87,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - [**breaking**] Drop @runtime_checkable from protocol types
 - **(plotutils)** [**breaking**] Plotseis returns the figure without displaying it
 - Cosmetic cleanups from the review
+- **(functions)** Rename `clone` argument to `replace`
 
 ### 🚀 New Features
 
