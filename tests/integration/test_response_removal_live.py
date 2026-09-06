@@ -93,7 +93,7 @@ def test_remove_response_pipeline_live(
     assert epoch.channel == "BHZ"
     assert len(response.stages) > 0
 
-    prepped = detrend(seismogram, clone=True)
+    prepped = detrend(seismogram, replace=True)
     taper(prepped, 0.05)
 
     nyquist = 0.5 / prepped.delta.total_seconds()
@@ -104,8 +104,8 @@ def test_remove_response_pipeline_live(
     f2 = f1 * 10
     pre_filt = (f1, f2, f3, f4)
 
-    gain_only = remove_response(prepped, response, clone=True)
-    deconvolved = remove_response(prepped, response, pre_filt=pre_filt, clone=True)
+    gain_only = remove_response(prepped, response, replace=True)
+    deconvolved = remove_response(prepped, response, pre_filt=pre_filt, replace=True)
 
     assert np.all(np.isfinite(gain_only.data))
     assert np.all(np.isfinite(deconvolved.data))
