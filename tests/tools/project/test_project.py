@@ -17,6 +17,7 @@ from pysmo.tools.project import (
     FetchContext,
     ProjectEntry,
     PysmoProject,
+    UnknownEntryIdentity,
     build_entries,
 )
 
@@ -494,6 +495,71 @@ class TestSeismogramsFor:
         assert project.seismograms_for(event_other) == []
 
 
+class TestGet:
+    def test_get_happy_path(
+        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        entry = project.entries[0]
+        result = project.get(entry.identity)
+        assert len(FETCH_CALLS) == 1
+        assert FETCH_CALLS[0][0] == "ANMO"
+        assert list(result.data) == [1.0, 2.0, 3.0]
+
+    def test_get_cold_miss_and_subsequent_cached(
+        self,
+        station_anmo: MiniStation,
+        station_cacb: MiniStation,
+        event_maule: MiniEvent,
+    ) -> None:
+        entry1 = ProjectEntry(station=station_anmo, event=event_maule)
+        entry2 = ProjectEntry(station=station_cacb, event=event_maule)
+        project = PysmoProject(
+            entries=[entry1, entry2],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+
+        # Cold project, fetch only entry1 by identity
+        r1 = project.get(entry1.identity)
+        assert len(FETCH_CALLS) == 1
+        assert FETCH_CALLS[0][0] == "ANMO"
+
+        # Subsequent call uses cache
+        r1_again = project.get(entry1.identity)
+        assert len(FETCH_CALLS) == 1
+        assert r1 == r1_again
+
+        # Fetching entry2 fetches only entry2
+        _ = project.get(entry2.identity)
+        assert len(FETCH_CALLS) == 2
+        assert FETCH_CALLS[1][0] == "CACB"
+
+    def test_get_unknown_identity_raises(self, project: ProjectT) -> None:
+        fake_id = "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        with pytest.raises(UnknownEntryIdentity) as exc_info:
+            project.get(fake_id)
+        assert exc_info.value.identity == fake_id
+        assert isinstance(exc_info.value, LookupError)
+
+    def test_get_multiple_matches_raises_value_error(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        entry1 = ProjectEntry(station=station_anmo, event=event_maule)
+        entry2 = ProjectEntry(station=station_anmo, event=event_maule)
+        project = PysmoProject(
+            entries=[entry1, entry2],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        assert entry1.identity == entry2.identity
+        with pytest.raises(
+            ValueError, match="More than one entry resolves to identity"
+        ):
+            project.get(entry1.identity)
+
+
 class TestPickling:
     def test_cache_empty_after_round_trip_but_entries_survive(
         self, station_anmo: MiniStation, event_maule: MiniEvent
@@ -537,6 +603,36 @@ class TestPickling:
         used.seismogram(station_anmo, event_maule)  # populates used._cache only
 
         assert used == unused
+
+    def test_format_version_mismatch_raises_on_unpickle(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        project = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        state = project.__getstate__()
+        state["_format_version"] = 999
+        with pytest.raises(
+            ValueError, match=r"state format v999; this pysmo .* uses v1"
+        ):
+            project.__setstate__(state)
+
+    def test_missing_format_version_defaults_to_zero_and_raises(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        project = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        state = project.__getstate__()
+        del state["_format_version"]
+        with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v1"):
+            project.__setstate__(state)
 
 
 class TestThreadSafety:
@@ -747,6 +843,51 @@ def test_default_fetch_seismogram_live(
     )
     seismogram = project.seismogram(station_anmo, event_maule)
     assert len(seismogram.data) > 0
+
+
+class TestProjectResolutionContextDigest:
+    def test_digest_stable_across_fetch_seismogram_swap(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        project = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        d1 = project.resolution_context_digest
+
+        project.fetch_seismogram = other_fake_fetch_seismogram
+        assert project.resolution_context_digest == d1
+
+    def test_digest_changes_on_phase_swap(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        project = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+            phase="P",
+        )
+        d1 = project.resolution_context_digest
+
+        project.phase = "S"
+        assert project.resolution_context_digest != d1
+
+    def test_digest_changes_on_transform_swap(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        project = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            travel_time_backend=fake_travel_time_backend,
+        )
+        d1 = project.resolution_context_digest
+
+        project.seismogram_transform = other_identity_transform
+        assert project.resolution_context_digest != d1
 
 
 class TestBuildEntries:
