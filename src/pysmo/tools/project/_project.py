@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import threading
 import warnings
-from collections.abc import Callable
 from typing import Any, ClassVar, Literal
 
 import pandas as pd
@@ -15,13 +14,17 @@ from pysmo import Event, MiniSeismogram, Seismogram, Station, __version__
 from pysmo._utils import attrs_getstate, attrs_setstate
 from pysmo.classes import MSeed
 from pysmo.functions import clone_to_mini
-from pysmo.lib.validators import convert_to_timedelta
-from pysmo.tools.azdist import haversine
-from pysmo.tools.traveltime import TravelTimeBackend, builtin_backend
-from pysmo.typing import NonPositiveTimedelta, PositiveTimedelta
 
 from ._entry import ProjectEntry
 from ._identity import UnknownEntryIdentity, entry_identity, resolution_context_digest
+from ._phasewindow import PhaseWindow
+from ._types import (
+    FetchContext,
+    SeismogramFetcher,
+    SeismogramTransform,
+    WindowResolver,
+    WindowResult,
+)
 
 __all__ = ["FetchContext", "PysmoProject"]
 
@@ -75,50 +78,14 @@ def _on_setattr_clear_cache[T](
     return value
 
 
-@define(kw_only=True, frozen=True)
-class FetchContext[TStation: Station, TEvent: Event]:
-    """Context passed to `seismogram_transform` with the downloaded seismogram.
-
-    Bundles the originating [`ProjectEntry`][pysmo.tools.project.ProjectEntry]
-    with what this specific fetch resolved but that doesn't belong on
-    `ProjectEntry` itself. Recomputed fresh on every fetch, never persisted
-    (unlike `entry.checksum`, which is deliberately pinned).
-
-    Note the deliberate naming overlap with `entry.starttime`/`entry.endtime`:
-    those are the entry's possibly-`None` *explicit override* (see
-    [`ProjectEntry`][pysmo.tools.project.ProjectEntry]), while
-    `starttime`/`endtime` here are always-populated and reflect the window
-    that was *actually used*: identical to the entry's own when an explicit
-    override was given, resolved from `predicted` otherwise. A transform
-    wanting "the window this fetch actually covered" should read
-    `context.starttime`/`context.endtime`, not
-    `context.entry.starttime`/`context.entry.endtime`.
-    """
-
-    entry: ProjectEntry[TStation, TEvent]
-    """The entry this seismogram was fetched for."""
-
-    starttime: pd.Timestamp
-    """Absolute start of the window actually used for this fetch."""
-
-    endtime: pd.Timestamp
-    """Absolute end of the window actually used for this fetch."""
-
-    predicted: pd.Timestamp | None
-    """Predicted phase arrival used to derive the window, or `None` if
-    `entry.starttime`/`entry.endtime` were used directly."""
-
-
-type _EventKey = tuple[float, float, float, pd.Timestamp] | None
-"""(latitude, longitude, depth, time): everything `_resolve_window` actually
-reads off `Event` (via `haversine` and `entry.event.time`), not just `time`.
-Keying on `time` alone would collide two distinct events sharing an origin
-time but not a location, since they resolve to different windows via
-`haversine`."""
-
-type _CacheKey = tuple[
-    str, str, str, str, _EventKey, pd.Timestamp | None, pd.Timestamp | None
-]
+type _CacheKey = str
+"""An [`entry.identity`][pysmo.tools.project.ProjectEntry.identity] string:
+the entry's content fingerprint (station codes, event hypocentre, explicit
+window). A `WindowResolver` is a pure function of the entry, so two entries
+with the same identity resolve to the same window; keying on identity is
+strategy-agnostic (it encodes nothing about what a resolver reads) yet keeps
+distinct events apart, which a resolved-window key does not for two explicit
+windows that happen to coincide."""
 
 
 @define(kw_only=True)
@@ -126,12 +93,12 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     """Declares station/event data to fetch on demand and transform into `TSeismogram`.
 
     A `PysmoProject` holds a flat list of
-    [`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects plus the
-    parameters needed to resolve each entry's fetch window and the
-    `seismogram_transform` callable that turns a freshly downloaded
-    [`Seismogram`][pysmo.Seismogram] into the caller's target type
-    `TSeismogram`. No waveform data are stored on the instance between calls
-    beyond an in-memory cache of already-fetched-and-transformed results.
+    [`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects plus three
+    pluggable callables: `window` resolves each entry's fetch window,
+    `fetch_seismogram` downloads the trace, and `seismogram_transform` turns
+    it into the caller's target type `TSeismogram`. No waveform data are
+    stored on the instance between calls beyond an in-memory cache of
+    already-fetched-and-transformed results.
 
     Generic over the station and event types of its `entries` (matching
     [`ProjectEntry`][pysmo.tools.project.ProjectEntry]'s parameter order)
@@ -157,13 +124,13 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         two threads racing the same not-yet-cached entry both still fetch
         before one result wins and is cached.
 
-        Reassigning a window parameter (`phase`, `pre_pick`, …) on one
+        Reassigning `window` (or any other cache-affecting field) on one
         thread while another is mid-fetch is also safe: the in-flight fetch
         still returns a result, it just isn't cached (the next call
         recomputes it with the current parameters).
     """
 
-    _FORMAT_VERSION: ClassVar[int] = 1
+    _FORMAT_VERSION: ClassVar[int] = 2
 
     entries: list[ProjectEntry[TStation, TEvent]] = field(
         factory=list, on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
@@ -179,9 +146,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     keyed by entry content).
     """
 
-    seismogram_transform: Callable[
-        [Seismogram, FetchContext[TStation, TEvent]], TSeismogram
-    ] = field(
+    seismogram_transform: SeismogramTransform[TStation, TEvent, TSeismogram] = field(
         # The default returns `MiniSeismogram`, which is `TSeismogram`'s own
         # default, but mypy still can't match a concrete return against the
         # bare type parameter in the class body.
@@ -190,40 +155,26 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     )
     """Convert a freshly downloaded seismogram into the target type `TSeismogram`.
 
-    Called with the downloaded seismogram and a
-    [`FetchContext`][pysmo.tools.project.FetchContext] carrying the
-    originating entry and this fetch's resolved window and predicted arrival.
-    Defaults to returning the raw trace as a
-    [`MiniSeismogram`][pysmo.MiniSeismogram]. Response removal, detrending
-    and resampling are never applied unless a custom transform does so
-    explicitly, and a custom transform is where that ordinary data
-    preparation belongs: it is the one place every fetch already passes
-    through, and it is free to do anything else it needs, including its own
-    additional fetches (e.g. instrument response metadata via
-    [`StationXML.fetch`][pysmo.classes.StationXML.fetch], demonstrated in the
-    [module documentation][pysmo.tools.project]'s own example; this design
-    does not fetch or know about response data itself, deliberately).
-
-    To be pickled with its `PysmoProject`, it must be a top-level function in
-    an importable module, not a lambda or closure. A callable `attrs` class
-    with only picklable fields (same example) is the alternative once the
-    transform needs its own configuration.
+    Any [`SeismogramTransform`][pysmo.tools.project.SeismogramTransform] (see
+    there for the call contract). Defaults to returning the raw trace as a
+    [`MiniSeismogram`][pysmo.MiniSeismogram], with no processing: a custom
+    transform is where response removal, detrending and resampling belong,
+    and it may issue its own additional fetches, as the
+    [module documentation][pysmo.tools.project]'s example does for instrument
+    response metadata. A callable `attrs` class with only picklable fields is
+    the way to give the transform its own configuration.
     """
 
-    fetch_seismogram: Callable[[Station, pd.Timestamp, pd.Timestamp], Seismogram] = (
-        field(
-            default=_default_fetch_seismogram,
-            on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache),
-        )
+    fetch_seismogram: SeismogramFetcher = field(
+        default=_default_fetch_seismogram,
+        on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache),
     )
     """Download a seismogram for a station and absolute time window.
 
-    Defaults to a private helper wrapping
+    Any [`SeismogramFetcher`][pysmo.tools.project.SeismogramFetcher] (see
+    there for the call contract). Defaults to a private helper wrapping
     [`MSeed.fetch`][pysmo.classes.MSeed.fetch], the explicit "always fresh,
-    never cached" choice. The fetched trace is normalised to a
-    [`MiniSeismogram`][pysmo.MiniSeismogram] by the default
-    `seismogram_transform`, so the project's return type is unchanged by the
-    fetch format.
+    never cached" choice.
 
     For any project where reproducibility matters, substitute a
     [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher]
@@ -236,66 +187,21 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     to rule out. It only pins the waveform, though: see the
     [module documentation][pysmo.tools.project]'s second example for the
     gotcha it does not cover, `seismogram_transform` making its own
-    additional fetches. Any other callable of the right shape (e.g. one
-    wrapping [`SAC.fetch`][pysmo.classes.SAC.fetch]) also works, changing the
-    retrieval path without subclassing. Must be picklable by reference (a
-    top-level function, or an attrs instance with only picklable fields, not
-    a lambda or closure), the same constraint as `seismogram_transform`.
+    additional fetches.
     """
 
-    phase: str = field(
-        default="P", on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
-    )
-    """Seismic phase used to derive a window from an entry's `event`.
-
-    With the default `travel_time_backend` this must be one of the phases
-    in [`Phase`][pysmo.tools.traveltime.Phase]; any other name raises when
-    a window is next resolved. A custom backend may accept a wider set.
-    """
-
-    pre_pick: NonPositiveTimedelta = field(
-        default=pd.Timedelta(minutes=-2),
-        converter=convert_to_timedelta,
-        validator=[
-            validators.instance_of(pd.Timedelta),
-            validators.le(pd.Timedelta(0)),
-        ],
-        on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
-        ),
-    )
-    """Offset from the predicted arrival to the window start; zero or negative."""
-
-    post_pick: PositiveTimedelta = field(
-        default=pd.Timedelta(minutes=8),
-        converter=convert_to_timedelta,
-        validator=[
-            validators.instance_of(pd.Timedelta),
-            validators.gt(pd.Timedelta(0)),
-        ],
-        on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
-        ),
-    )
-    """Offset from the predicted arrival to the window end. Must be positive."""
-
-    travel_time_backend: TravelTimeBackend = field(
-        default=builtin_backend,
+    window: WindowResolver[TStation, TEvent] = field(
+        default=PhaseWindow(),
         on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache),
     )
-    """Predicts the phase arrival a window is built around.
+    """Resolve an entry's fetch window when it carries no explicit one.
 
-    Defaults to pysmo's built-in solver,
-    [`travel_times`][pysmo.tools.traveltime.travel_times]. Replace it with
-    any callable of the same shape
-    ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]), for
-    another velocity model (see the
-    [module documentation][pysmo.tools.project]), a phase the built-in
-    solver does not cover, or arrival times from an external source. Must
-    be picklable: a top-level function, a
-    [`functools.partial`][] of one, or an attrs instance
-    with only picklable fields, like `fetch_seismogram`; not a lambda or
-    closure.
+    Any [`WindowResolver`][pysmo.tools.project.WindowResolver] (see there for
+    the call contract). Defaults to
+    [`PhaseWindow`][pysmo.tools.project.PhaseWindow], which places the window
+    around a predicted phase arrival. An entry with an explicit
+    `starttime`/`endtime` bypasses this entirely, so a custom resolver only
+    ever handles the event-derived case.
     """
 
     on_checksum_mismatch: Literal["warn", "raise", "ignore"] = field(
@@ -359,12 +265,10 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
 
         Cleared automatically whenever
         [`entries`][pysmo.tools.project.PysmoProject.entries],
+        [`window`][pysmo.tools.project.PysmoProject.window],
         [`seismogram_transform`][pysmo.tools.project.PysmoProject.seismogram_transform],
-        [`fetch_seismogram`][pysmo.tools.project.PysmoProject.fetch_seismogram],
-        [`phase`][pysmo.tools.project.PysmoProject.phase],
-        [`pre_pick`][pysmo.tools.project.PysmoProject.pre_pick],
-        [`post_pick`][pysmo.tools.project.PysmoProject.post_pick], or
-        [`travel_time_backend`][pysmo.tools.project.PysmoProject.travel_time_backend]
+        or
+        [`fetch_seismogram`][pysmo.tools.project.PysmoProject.fetch_seismogram]
         is *reassigned*.
 
         Call this manually after any in-place mutation of
@@ -375,38 +279,6 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         with self._lock:
             self._cache.clear()
             self._cache_generation += 1
-
-    def _resolve_window(
-        self, entry: ProjectEntry[TStation, TEvent]
-    ) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp | None]:
-        """Resolve the absolute fetch window and predicted arrival for one entry.
-
-        Returns:
-            `(starttime, endtime, predicted_arrival)`; `predicted_arrival`
-            is `None` when `entry.starttime`/`entry.endtime` were used
-            directly rather than derived from `entry.event`.
-
-        Raises:
-            ValueError: If `entry` has neither a usable explicit window nor
-                an event to derive one from, or if no `phase` arrival is
-                predicted for this station/event geometry.
-        """
-        if entry.starttime is not None and entry.endtime is not None:
-            return entry.starttime, entry.endtime, None
-        if entry.event is not None:
-            dist = haversine(entry.event, entry.station)
-            tt = self.travel_time_backend(
-                depth=entry.event.depth, distance=dist, phases=[self.phase]
-            )
-            if self.phase not in tt:
-                raise ValueError(
-                    f"No {self.phase!r} arrival predicted for "
-                    + f"{entry.station.network}.{entry.station.name} at this "
-                    + "distance/depth."
-                )
-            predicted = entry.event.time + tt[self.phase]
-            return predicted + self.pre_pick, predicted + self.post_pick, predicted
-        raise ValueError("ProjectEntry needs either an explicit window or an event.")
 
     def _fetch(
         self, entry: ProjectEntry[TStation, TEvent], *, _stacklevel: int = 3
@@ -421,49 +293,43 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             entry: The station/event/window selection to fetch.
 
         Returns:
-            The transformed result for `entry`, from cache if this exact
-            entry has been fetched before.
+            The transformed result for `entry`, from cache if an entry with
+            the same [`identity`][pysmo.tools.project.ProjectEntry.identity]
+            has been fetched before.
 
         Raises:
-            ValueError: If `entry` has neither a usable window nor an event
-                (via `_resolve_window`); if the underlying fetch raises
-                (e.g. no waveform data for the resolved window); or if the
-                checksum no longer matches and `on_checksum_mismatch="raise"`.
+            ValueError: If `window` cannot resolve a window for `entry`; if
+                the underlying fetch raises (e.g. no waveform data for the
+                resolved window); or if the checksum no longer matches and
+                `on_checksum_mismatch="raise"`.
         """
-        event_key: _EventKey = (
-            (
-                entry.event.latitude,
-                entry.event.longitude,
-                entry.event.depth,
-                entry.event.time,
-            )
-            if entry.event is not None
-            else None
-        )
-        key: _CacheKey = (
-            entry.station.network,
-            entry.station.name,
-            entry.station.location,
-            entry.station.channel,
-            event_key,
-            entry.starttime,
-            entry.endtime,
-        )
+        key: _CacheKey = entry_identity(entry)
         with self._lock:
             cached = self._cache.get(key)
             generation = self._cache_generation
         if cached is None:
-            # Deliberately outside the lock; see the class docstring's
-            # thread-safety note: two threads racing the same not-yet-cached
-            # key both fetch here (a stampede) before one result wins.
-            starttime, endtime, predicted = self._resolve_window(entry)
-            seismogram = self.fetch_seismogram(entry.station, starttime, endtime)
+            # Resolve the window only on a miss: an explicit window on the
+            # entry wins (it is entry data, not resolution policy), else the
+            # `window` resolver derives one. Resolution and the fetch both
+            # run outside the lock (see the class docstring's thread-safety
+            # note): a concurrent `self.window` reassignment is a tolerated
+            # torn read, `generation` (read above) guards the write-back, and
+            # two threads racing the same key both fetch before one wins.
+            if entry.starttime is not None and entry.endtime is not None:
+                window = WindowResult(
+                    starttime=entry.starttime, endtime=entry.endtime, reference=None
+                )
+            else:
+                window = self.window(entry)
+            seismogram = self.fetch_seismogram(
+                entry.station, window.starttime, window.endtime
+            )
             checksum = _checksum(seismogram)
             context = FetchContext(
                 entry=entry,
-                starttime=starttime,
-                endtime=endtime,
-                predicted=predicted,
+                starttime=window.starttime,
+                endtime=window.endtime,
+                reference=window.reference,
             )
             fresh = (checksum, self.seismogram_transform(seismogram, context))
             with self._lock:
@@ -471,8 +337,8 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                     cached = self._cache.setdefault(key, fresh)
                 else:
                     # A parameter changed (clearing the cache) while this
-                    # fetch was in flight: `key` doesn't encode it, so return
-                    # this result once without caching it under a stale key.
+                    # fetch was in flight: return this result once without
+                    # caching it under a now-stale key.
                     cached = fresh
 
         checksum, result = cached
@@ -533,14 +399,14 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     def resolution_context_digest(self) -> str:
         """Digest over the project parameters that determine fetched content.
 
-        Covers `phase`, `pre_pick`, `post_pick`, `travel_time_backend`, and
-        `seismogram_transform`. Reassigning `fetch_seismogram` (e.g. to an
-        offline archive cache) leaves the digest unchanged.
+        Covers `window` and `seismogram_transform`. Reassigning
+        `fetch_seismogram` (e.g. to an offline archive cache) leaves the
+        digest unchanged.
 
         Examples:
             >>> from pysmo.tools.project import PysmoProject
             >>> project = PysmoProject()
-            >>> project.resolution_context_digest.startswith("rc1:")
+            >>> project.resolution_context_digest.startswith("rc2:")
             True
             >>> len(project.resolution_context_digest)
             68

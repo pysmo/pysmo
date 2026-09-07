@@ -32,13 +32,7 @@ if TYPE_CHECKING:
         """The `PysmoProject` attributes `resolution_context_digest` reads."""
 
         @property
-        def phase(self) -> str: ...
-        @property
-        def pre_pick(self) -> pd.Timedelta: ...
-        @property
-        def post_pick(self) -> pd.Timedelta: ...
-        @property
-        def travel_time_backend(self) -> Any: ...
+        def window(self) -> Any: ...
         @property
         def seismogram_transform(self) -> Any: ...
 
@@ -188,8 +182,19 @@ def callable_identity(fn: Any) -> str:
         return f"partial:{func_id}:{payload}"
 
     if attrs.has(type(fn)):
-        raw_dict = attrs.asdict(fn, recurse=True)
-        payload = _canonical(_prepare_json_value(raw_dict))
+        fields_payload: dict[str, Any] = {}
+        for attribute in attrs.fields(type(fn)):
+            value = getattr(fn, attribute.name)
+            if attrs.has(type(value)) or (
+                callable(value) and not isinstance(value, (str, bytes))
+            ):
+                # A nested callable field (e.g. a travel-time backend held as
+                # a `functools.partial`) that `_prepare_json_value` cannot
+                # reduce: digest it recursively instead.
+                fields_payload[attribute.name] = callable_identity(value)
+            else:
+                fields_payload[attribute.name] = _prepare_json_value(value)
+        payload = _canonical(fields_payload)
         digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
         return f"attrs:{type(fn).__module__}:{type(fn).__qualname__}:{digest}"
 
@@ -224,17 +229,13 @@ def callable_identity(fn: Any) -> str:
 def resolution_context_digest(project: _IdentityProject) -> str:
     """Digest over the project parameters that determine fetched content.
 
-    Covers `phase`, `pre_pick`, `post_pick`, `travel_time_backend`, and
-    `seismogram_transform`. Reassigning `fetch_seismogram` (e.g. to an offline
-    archive cache) leaves the digest unchanged.
+    Covers `window` and `seismogram_transform`. Reassigning `fetch_seismogram`
+    (e.g. to an offline archive cache) leaves the digest unchanged.
     """
     payload = {
-        "schema": "rc1",
-        "phase": project.phase,
-        "pre_pick_ns": project.pre_pick.value,
-        "post_pick_ns": project.post_pick.value,
-        "travel_time_backend": callable_identity(project.travel_time_backend),
+        "schema": "rc2",
+        "window": callable_identity(project.window),
         "seismogram_transform": callable_identity(project.seismogram_transform),
     }
     digest = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return f"rc1:{digest}"
+    return f"rc2:{digest}"
