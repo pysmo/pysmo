@@ -27,8 +27,14 @@ def export_module_names(globals_dict: dict[str, Any], module_name: str) -> None:
 
     for name in all_names:
         obj = globals_dict.get(name)
-        if obj is not None and hasattr(obj, "__module__"):
+        if obj is None or not hasattr(obj, "__module__"):
+            continue
+        try:
             obj.__module__ = module_name
+        except AttributeError:
+            # `TypeAliasType` (a `type X = ...` alias) has a read-only
+            # `__module__`; griffe resolves it via `__all__` re-export anyway.
+            pass
 
 
 def attrs_getstate(

@@ -15,9 +15,11 @@ import pytest
 from pysmo import Event, MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.tools.project import (
     FetchContext,
+    PhaseWindow,
     ProjectEntry,
     PysmoProject,
     UnknownEntryIdentity,
+    WindowResult,
     build_entries,
 )
 
@@ -68,17 +70,10 @@ def fake_travel_time_backend(
     return {"P": pd.Timedelta(seconds=100.0), "S": pd.Timedelta(seconds=200.0)}
 
 
-def other_travel_time_backend(
-    *, depth: float, distance: float, phases: Sequence[str]
-) -> dict[str, pd.Timedelta]:
-    return {"P": pd.Timedelta(seconds=300.0), "S": pd.Timedelta(seconds=400.0)}
-
-
-def no_arrival_travel_time_backend(
-    *, depth: float, distance: float, phases: Sequence[str]
-) -> dict[str, pd.Timedelta]:
-    """Stands in for a geometry with no predicted arrival for the requested phase."""
-    return {}
+def phase_window(**kwargs: object) -> PhaseWindow:
+    """A `PhaseWindow` on the fake backend, unless a kwarg overrides it."""
+    kwargs.setdefault("travel_time_backend", fake_travel_time_backend)
+    return PhaseWindow(**kwargs)  # type: ignore[arg-type]
 
 
 @pytest.fixture(autouse=True)
@@ -93,7 +88,7 @@ def project(station_anmo: MiniStation, event_maule: MiniEvent) -> ProjectT:
         entries=[ProjectEntry(station=station_anmo, event=event_maule)],
         seismogram_transform=identity_transform,
         fetch_seismogram=fake_fetch_seismogram,
-        travel_time_backend=fake_travel_time_backend,
+        window=phase_window(),
     )
 
 
@@ -131,84 +126,6 @@ class TestProjectEntry:
         assert entry.starttime == pd.Timestamp("2024-01-01T00:00:00Z")
         assert entry.endtime == pd.Timestamp("2024-01-01T00:01:00Z")
         assert entry.starttime.tz is not None
-
-
-class TestResolveWindow:
-    def test_explicit_window_wins_over_event(
-        self,
-        project: ProjectT,
-        station_anmo: MiniStation,
-        event_maule: MiniEvent,
-    ) -> None:
-        explicit_start = pd.Timestamp("2020-01-01T00:00:00Z")
-        explicit_end = pd.Timestamp("2020-01-01T00:01:00Z")
-        entry = ProjectEntry(
-            station=station_anmo,
-            event=event_maule,
-            starttime=explicit_start,
-            endtime=explicit_end,
-        )
-        starttime, endtime, predicted = project._resolve_window(entry)
-        assert (starttime, endtime, predicted) == (explicit_start, explicit_end, None)
-
-    def test_window_derived_from_event(
-        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
-    ) -> None:
-        entry = ProjectEntry(station=station_anmo, event=event_maule)
-        starttime, endtime, predicted = project._resolve_window(entry)
-
-        expected_predicted = event_maule.time + pd.Timedelta(seconds=100.0)
-        assert predicted == expected_predicted
-        assert starttime == expected_predicted + project.pre_pick
-        assert endtime == expected_predicted + project.post_pick
-
-    def test_neither_window_nor_event_raises(
-        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
-    ) -> None:
-        # A bare entry is rejected at construction; _resolve_window keeps its
-        # own guard for an entry mutated back to that state afterwards.
-        entry = ProjectEntry(station=station_anmo, event=event_maule)
-        entry.event = None
-        with pytest.raises(ValueError, match="explicit window or an event"):
-            project._resolve_window(entry)
-
-    def test_no_predicted_arrival_for_phase_raises_value_error(
-        self, station_anmo: MiniStation, event_maule: MiniEvent
-    ) -> None:
-        project: ProjectT = PysmoProject(
-            entries=[],
-            seismogram_transform=identity_transform,
-            fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=no_arrival_travel_time_backend,
-        )
-        entry = ProjectEntry(station=station_anmo, event=event_maule)
-        with pytest.raises(ValueError, match="No 'P' arrival predicted"):
-            project._resolve_window(entry)
-
-
-class TestPickPickValidators:
-    def test_pre_pick_zero_is_valid(self) -> None:
-        PysmoProject(seismogram_transform=identity_transform, pre_pick=pd.Timedelta(0))
-
-    def test_pre_pick_positive_raises(self) -> None:
-        with pytest.raises(ValueError):
-            PysmoProject(
-                seismogram_transform=identity_transform,
-                pre_pick=pd.Timedelta(seconds=1),
-            )
-
-    def test_post_pick_zero_raises(self) -> None:
-        with pytest.raises(ValueError):
-            PysmoProject(
-                seismogram_transform=identity_transform, post_pick=pd.Timedelta(0)
-            )
-
-    def test_post_pick_negative_raises(self) -> None:
-        with pytest.raises(ValueError):
-            PysmoProject(
-                seismogram_transform=identity_transform,
-                post_pick=pd.Timedelta(seconds=-1),
-            )
 
 
 class TestQuerySurface:
@@ -296,7 +213,7 @@ class TestFetchAll:
             ],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         results = project.fetch_all()
         assert len(results) == 2
@@ -312,6 +229,28 @@ class TestSeismogramCaching:
         project.seismogram(station_anmo, event_maule)
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 1
+
+    def test_cache_hit_does_not_re_resolve_the_window(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        calls = {"n": 0}
+        base = phase_window()
+
+        def counting_window(
+            entry: ProjectEntry[MiniStation, MiniEvent],
+        ) -> WindowResult:
+            calls["n"] += 1
+            return base(entry)
+
+        project: ProjectT = PysmoProject(
+            entries=[ProjectEntry(station=station_anmo, event=event_maule)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            window=counting_window,
+        )
+        project.seismogram(station_anmo, event_maule)
+        project.seismogram(station_anmo, event_maule)
+        assert calls["n"] == 1
 
     def test_distinct_entries_produce_distinct_cache_entries(
         self, station_anmo: MiniStation, event_maule: MiniEvent
@@ -331,7 +270,7 @@ class TestSeismogramCaching:
             ],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.seismogram(station_anmo, event_maule)
         project.seismogram(other_channel_station, event_maule)
@@ -352,11 +291,60 @@ class TestSeismogramCaching:
             entries=[event_entry, explicit_entry],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project._fetch(event_entry)
         project._fetch(explicit_entry)
         assert len(FETCH_CALLS) == 2
+
+    def test_entries_with_the_same_identity_share_one_fetch(
+        self, station_anmo: MiniStation, event_maule: MiniEvent
+    ) -> None:
+        # Two entries with the same identity (same station and event) share a
+        # single fetch and result.
+        entry_a = ProjectEntry(station=station_anmo, event=event_maule)
+        entry_b = ProjectEntry(station=station_anmo, event=event_maule)
+        project = PysmoProject(
+            entries=[entry_a, entry_b],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            window=phase_window(),
+        )
+        assert project._fetch(entry_a) is project._fetch(entry_b)
+        assert len(FETCH_CALLS) == 1
+
+    def test_same_explicit_window_different_events_not_merged(
+        self, station_anmo: MiniStation, event_maule: MiniEvent, event_other: MiniEvent
+    ) -> None:
+        # Two entries sharing a station and an identical explicit window but
+        # carrying different events stay distinct: a transform reading
+        # context.entry.event must not get one event's result for the other.
+        t0 = pd.Timestamp("2020-01-01T00:00:00Z")
+        t1 = pd.Timestamp("2020-01-01T00:10:00Z")
+        entry_a = ProjectEntry(
+            station=station_anmo, event=event_maule, starttime=t0, endtime=t1
+        )
+        entry_b = ProjectEntry(
+            station=station_anmo, event=event_other, starttime=t0, endtime=t1
+        )
+        seen_events: list[object] = []
+
+        def tag_transform(
+            seismogram: Seismogram, context: FetchContext[MiniStation, MiniEvent]
+        ) -> Seismogram:
+            seen_events.append(context.entry.event)
+            return seismogram
+
+        project = PysmoProject(
+            entries=[entry_a, entry_b],
+            seismogram_transform=tag_transform,
+            fetch_seismogram=fake_fetch_seismogram,
+            window=phase_window(),
+        )
+        project._fetch(entry_a)
+        project._fetch(entry_b)
+        assert len(FETCH_CALLS) == 2
+        assert seen_events == [event_maule, event_other]
 
 
 class TestSeismogramErrors:
@@ -391,39 +379,22 @@ class TestSeismogramErrors:
 
 
 class TestCacheInvalidation:
-    def test_phase_change_triggers_refetch(
+    def test_window_reassignment_triggers_refetch(
         self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
         project.seismogram(station_anmo, event_maule)
-        project.phase = "S"
+        project.window = phase_window(phase="S")
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 2
         assert FETCH_CALLS[0][1] != FETCH_CALLS[1][1]
 
-    def test_pre_pick_change_triggers_refetch(
+    def test_window_field_change_triggers_refetch(
         self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
         project.seismogram(station_anmo, event_maule)
-        project.pre_pick = pd.Timedelta(minutes=-1)
+        project.window = phase_window(pre_pick=pd.Timedelta(minutes=-1))
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 2
-
-    def test_post_pick_change_triggers_refetch(
-        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
-    ) -> None:
-        project.seismogram(station_anmo, event_maule)
-        project.post_pick = pd.Timedelta(minutes=9)
-        project.seismogram(station_anmo, event_maule)
-        assert len(FETCH_CALLS) == 2
-
-    def test_travel_time_backend_change_triggers_refetch(
-        self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
-    ) -> None:
-        project.seismogram(station_anmo, event_maule)
-        project.travel_time_backend = other_travel_time_backend
-        project.seismogram(station_anmo, event_maule)
-        assert len(FETCH_CALLS) == 2
-        assert FETCH_CALLS[0][1] != FETCH_CALLS[1][1]
 
     def test_fetch_seismogram_change_triggers_refetch(
         self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
@@ -445,7 +416,7 @@ class TestCacheInvalidation:
         self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
         project.seismogram(station_anmo, event_maule)
-        project.phase = "P"  # same value it already was
+        project.window = phase_window()  # equal to the value it already was
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 1
 
@@ -453,11 +424,12 @@ class TestCacheInvalidation:
         self, project: ProjectT, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
         project.seismogram(station_anmo, event_maule)
-        # A different Timedelta object with an equal value -- exercises the
-        # `==` branch, not the `is` identity short-circuit.
-        assert project.pre_pick == pd.Timedelta(seconds=-120)
-        assert project.pre_pick is not pd.Timedelta(seconds=-120)
-        project.pre_pick = pd.Timedelta(seconds=-120)
+        # A fresh PhaseWindow with equal fields -- exercises the `==` branch,
+        # not the `is` identity short-circuit.
+        replacement = phase_window()
+        assert project.window == replacement
+        assert project.window is not replacement
+        project.window = replacement
         project.seismogram(station_anmo, event_maule)
         assert len(FETCH_CALLS) == 1
 
@@ -482,7 +454,7 @@ class TestSeismogramsFor:
             ],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         results = project.seismograms_for(event_maule)
         assert len(results) == 2
@@ -517,7 +489,7 @@ class TestGet:
             entries=[entry1, entry2],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
 
         # Cold project, fetch only entry1 by identity
@@ -551,7 +523,7 @@ class TestGet:
             entries=[entry1, entry2],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         assert entry1.identity == entry2.identity
         with pytest.raises(
@@ -568,7 +540,7 @@ class TestPickling:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.seismogram(station_anmo, event_maule)
         assert len(project._cache) == 1
@@ -592,13 +564,13 @@ class TestPickling:
             entries=entries,
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         unused = PysmoProject(
             entries=entries,
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         used.seismogram(station_anmo, event_maule)  # populates used._cache only
 
@@ -611,12 +583,12 @@ class TestPickling:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         state = project.__getstate__()
         state["_format_version"] = 999
         with pytest.raises(
-            ValueError, match=r"state format v999; this pysmo .* uses v1"
+            ValueError, match=r"state format v999; this pysmo .* uses v2"
         ):
             project.__setstate__(state)
 
@@ -627,11 +599,11 @@ class TestPickling:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         state = project.__getstate__()
         del state["_format_version"]
-        with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v1"):
+        with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v2"):
             project.__setstate__(state)
 
 
@@ -649,7 +621,7 @@ class TestThreadSafety:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=slow_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         results: list[Seismogram] = []
         results_lock = threading.Lock()
@@ -686,7 +658,7 @@ class TestThreadSafety:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=blocking_fetch,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         results: list[Seismogram] = []
 
@@ -696,7 +668,7 @@ class TestThreadSafety:
         thread = threading.Thread(target=worker)
         thread.start()
         assert fetch_started.wait(timeout=5)
-        project.phase = "S"  # clears the cache and bumps the generation
+        project.window = phase_window(phase="S")  # clears cache, bumps generation
         may_finish.set()
         thread.join(timeout=5)
 
@@ -724,7 +696,7 @@ class TestChecksum:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.seismogram(station_anmo, event_maule)
         original_checksum = project.entries[0].checksum
@@ -745,7 +717,7 @@ class TestChecksum:
             entries=[entry],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
             on_checksum_mismatch=policy,
         )
         project.seismogram(station_anmo, event_maule)
@@ -773,7 +745,7 @@ class TestChecksum:
             entries=[entry],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.seismogram(station_anmo, event_maule)
         FETCH_DATA_OVERRIDE[station_anmo.name] = [9.0, 9.0, 9.0]
@@ -794,7 +766,7 @@ class TestChecksum:
             entries=[entry],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.seismogram(station_anmo, event_maule)
         FETCH_DATA_OVERRIDE[station_anmo.name] = [9.0, 9.0, 9.0]
@@ -824,7 +796,7 @@ def test_default_fetch_seismogram_uses_miniseed(
 
     project = PysmoProject(
         entries=[ProjectEntry(station=station_anmo, event=event_maule)],
-        travel_time_backend=fake_travel_time_backend,
+        window=phase_window(),
     )
     seismogram = project.seismogram(station_anmo, event_maule)
 
@@ -853,26 +825,25 @@ class TestProjectResolutionContextDigest:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         d1 = project.resolution_context_digest
 
         project.fetch_seismogram = other_fake_fetch_seismogram
         assert project.resolution_context_digest == d1
 
-    def test_digest_changes_on_phase_swap(
+    def test_digest_changes_on_window_swap(
         self, station_anmo: MiniStation, event_maule: MiniEvent
     ) -> None:
         project = PysmoProject(
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
-            phase="P",
+            window=phase_window(phase="P"),
         )
         d1 = project.resolution_context_digest
 
-        project.phase = "S"
+        project.window = phase_window(phase="S")
         assert project.resolution_context_digest != d1
 
     def test_digest_changes_on_transform_swap(
@@ -882,7 +853,7 @@ class TestProjectResolutionContextDigest:
             entries=[ProjectEntry(station=station_anmo, event=event_maule)],
             seismogram_transform=identity_transform,
             fetch_seismogram=fake_fetch_seismogram,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         d1 = project.resolution_context_digest
 
@@ -952,7 +923,7 @@ class TestBuildEntries:
             entries=build_entries([station_anmo], [event_maule]),
             fetch_seismogram=fake_fetch_seismogram,
             seismogram_transform=identity_transform,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         first = project.seismogram(station_anmo, event_maule)
 
@@ -986,7 +957,7 @@ class TestBuildEntries:
             entries=build_entries([station_anmo, station_cacb], [event_maule]),
             fetch_seismogram=fake_fetch_seismogram,
             seismogram_transform=identity_transform,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         anmo_result = project.seismogram(station_anmo, event_maule)
         cacb_result = project.seismogram(station_cacb, event_maule)
@@ -1015,7 +986,7 @@ class TestBuildEntries:
             entries=build_entries([station_anmo, station_cacb], [event_maule]),
             fetch_seismogram=fake_fetch_seismogram,
             seismogram_transform=identity_transform,
-            travel_time_backend=fake_travel_time_backend,
+            window=phase_window(),
         )
         project.fetch_all()
 
