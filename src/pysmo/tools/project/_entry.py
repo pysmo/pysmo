@@ -1,12 +1,15 @@
 """The ProjectEntry class and the build_entries helper."""
 
 from collections.abc import Callable, Iterable
+from typing import Any
 
 import pandas as pd
 from attrs import converters, define, field, setters
 
 from pysmo import Event, Station
 from pysmo.lib.validators import convert_to_utc_timestamp
+
+from ._identity import entry_identity, entry_identity_components
 
 __all__ = ["ProjectEntry", "build_entries"]
 
@@ -83,6 +86,72 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     fine; sharing them without being aware their checksum state is joint,
     not per-project, is the surprise to avoid.
     """
+
+    @property
+    def identity_components(self) -> dict[str, Any]:
+        """This entry's normalised natural key as a nested dict, before hashing.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from pysmo import MiniEvent, MiniStation
+            >>> from pysmo.tools.project import ProjectEntry
+            >>> station = MiniStation(
+            ...     name="ANMO",
+            ...     network="IU",
+            ...     location="00",
+            ...     channel="BHZ",
+            ...     latitude=34.9459,
+            ...     longitude=-106.4571,
+            ... )
+            >>> event = MiniEvent(
+            ...     latitude=-36.122,
+            ...     longitude=-72.898,
+            ...     depth=22900.0,
+            ...     time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
+            ... )
+            >>> entry = ProjectEntry(station=station, event=event)
+            >>> components = entry.identity_components
+            >>> components["schema"]
+            'v1'
+            >>> components["station"]["name"]
+            'ANMO'
+        """
+        return entry_identity_components(self)
+
+    @property
+    def identity(self) -> str:
+        """Stable identity string for this entry, computed without fetching.
+
+        Derived from the natural key: `'v1:'` and a sha256 hexdigest. Persist it
+        and pass it to
+        [`PysmoProject.get`][pysmo.tools.project.PysmoProject.get] to retrieve
+        the entry's seismogram later.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from pysmo import MiniEvent, MiniStation
+            >>> from pysmo.tools.project import ProjectEntry
+            >>> station = MiniStation(
+            ...     name="ANMO",
+            ...     network="IU",
+            ...     location="00",
+            ...     channel="BHZ",
+            ...     latitude=34.9459,
+            ...     longitude=-106.4571,
+            ... )
+            >>> event = MiniEvent(
+            ...     latitude=-36.122,
+            ...     longitude=-72.898,
+            ...     depth=22900.0,
+            ...     time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
+            ... )
+            >>> entry = ProjectEntry(station=station, event=event)
+            >>> entry.identity.startswith("v1:")
+            True
+            >>> len(entry.identity)
+            67
+        """
+        return entry_identity(self)
 
     def __attrs_post_init__(self) -> None:
         """Reject a half-specified, reversed, or (event-less) absent window."""

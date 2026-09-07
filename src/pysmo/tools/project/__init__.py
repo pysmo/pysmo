@@ -44,10 +44,7 @@ only detects drift on the live-network default rather than avoiding it.
 ## Basic example
 
 This example builds a small project around a single, real station/event
-pair: IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake, the
-same reference event used throughout this project's test suite and in
-[`travel_times`][pysmo.tools.traveltime.travel_times]'s own `Examples:`
-block:
+pair: IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake:
 
 ```python
 >>> import pandas as pd
@@ -271,12 +268,54 @@ is keyed by entry content, not list position:
 2
 >>>
 ```
+
+## Addressing entries
+
+[`entry.identity`][pysmo.tools.project.ProjectEntry.identity] is a stable
+string derived from the entry's natural key (normalised station code, event
+hypocentre and origin time, or explicit window), computed without any fetch.
+Persist it, and later pass it to
+[`project.get(identity)`][pysmo.tools.project.PysmoProject.get] to fetch and
+transform that one entry; `get` works on a project whose entries have never
+been fetched.
+
+[`project.resolution_context_digest`][pysmo.tools.project.PysmoProject.resolution_context_digest]
+is a single digest over the parameters that decide what a fetch returns
+(`phase`, `pre_pick`, `post_pick`, `travel_time_backend`,
+`seismogram_transform`). A consumer records it alongside the identities and
+checks it once per session to detect that the project definition has moved
+under it. Reassigning `fetch_seismogram` does not change the digest.
+
+The three are distinct:
+- `entry.identity` is computable before any fetch, and is the persistable
+  address.
+- `project.resolution_context_digest` catches a definition change before a
+  fetch is issued.
+- `entry.checksum` catches a change in the fetched bytes, and only exists
+  after a fetch.
 """
 
 from ..._utils import export_module_names
 from ._entry import ProjectEntry, build_entries
+from ._identity import (
+    UnknownEntryIdentity,
+    callable_identity,
+    entry_identity,
+    entry_identity_components,
+    resolution_context_digest,
+)
 from ._project import FetchContext, PysmoProject
 
-__all__ = ["FetchContext", "ProjectEntry", "PysmoProject", "build_entries"]
+__all__ = [
+    "FetchContext",
+    "ProjectEntry",
+    "PysmoProject",
+    "UnknownEntryIdentity",
+    "build_entries",
+    "callable_identity",
+    "entry_identity",
+    "entry_identity_components",
+    "resolution_context_digest",
+]
 
 export_module_names(globals(), __name__)
