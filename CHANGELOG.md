@@ -112,6 +112,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(traveltime)** Resolve upper-mantle triplications to the first arrival
 - **(quakeml)** Add strict=False to skip unrepresentable events
 - **(archive)** Add FIFO max_bytes eviction to SqliteArchiveFetcher
+- **(project)** Add cold-computable entry identity and get() addressing
 
 ### 🧪 Testing
 
