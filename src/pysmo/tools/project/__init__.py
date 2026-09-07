@@ -4,9 +4,9 @@
 A [`PysmoProject`][pysmo.tools.project.PysmoProject] holds a list of
 [`ProjectEntry`][pysmo.tools.project.ProjectEntry] objects (a station, an
 optional event, and an optional explicit window) plus a `seismogram_transform`
-callable applied to each freshly downloaded
-[`Seismogram`][pysmo.Seismogram]. It defaults to returning the raw trace as
-a [`MiniSeismogram`][pysmo.MiniSeismogram]; a custom transform is the place
+callable applied to each freshly downloaded [`Seismogram`][pysmo.Seismogram].
+It defaults to returning the raw trace as a
+[`MiniSeismogram`][pysmo.MiniSeismogram]; a custom transform is the place
 for whatever data preparation a downstream tool needs (removing the
 instrument response, detrending, resampling), as well as converting the
 result into the target type that tool expects (e.g.
@@ -15,14 +15,17 @@ result into the target type that tool expects (e.g.
 of the object; nothing is ever written to disk by `PysmoProject` itself.
 
 The `PysmoProject` instance is the reproducible, shareable artefact: it is
-pickled, not serialised to a bespoke config format, so `seismogram_transform`
-and
-`fetch_seismogram` must be real top-level functions in an importable module
-rather than lambdas or closures (pickle serialises functions by reference,
-not by value). A callable `attrs` class with only picklable fields (see the
-example below) is the alternative once the transform needs its own
-configuration (e.g. filter corner frequencies): it pickles by value, so it
-has no such restriction.
+pickled, not serialised to a bespoke config format, so its three pluggable
+callables (`window`, `fetch_seismogram`, `seismogram_transform`) must be real
+top-level functions in an importable module rather than lambdas or closures
+(pickle serialises functions by reference, not by value). A callable that
+needs its own configuration (e.g. filter corner frequencies) should be a
+callable [`attrs`][] class with only picklable fields (see the example below):
+it pickles by value, and its declared fields are what let
+`resolution_context_digest` fingerprint `window` and `seismogram_transform`.
+A plain callable class pickles too, but the digest cannot read one.
+[`PhaseWindow`][pysmo.tools.project.PhaseWindow], the default `window`, is
+one such class.
 
 Build `entries` with
 [`build_entries`][pysmo.tools.project.build_entries] from already-narrowed
@@ -70,8 +73,8 @@ pair: IU.ANMO recording the 2010-02-27 Maule, Chile M8.8 earthquake:
 This `seismogram_transform` removes the instrument response, the data
 preparation `ICCS` itself assumes has already happened (per its own
 [`bandpass_apply`][pysmo.tools.iccs.ICCS.bandpass_apply] docstring), then
-converts the result into a `MiniIccsSeismogram`, using the predicted
-arrival on `context` as the initial pick (see
+converts the result into a `MiniIccsSeismogram`, using `context.reference`
+(the predicted arrival) as the initial pick (see
 [`FetchContext`][pysmo.tools.project.FetchContext]). It's a callable
 `attrs` class rather than a plain function specifically so `pre_filt` is
 configurable per instance:
@@ -88,7 +91,7 @@ configurable per instance:
 ...             station=context.entry.station, time=context.starttime
 ...         ).response
 ...         corrected = clone_to_mini(
-...             MiniIccsSeismogram, seismogram, update={"t0": context.predicted}
+...             MiniIccsSeismogram, seismogram, update={"t0": context.reference}
 ...         )
 ...         remove_response(corrected, response, pre_filt=self.pre_filt)
 ...         return corrected
@@ -132,25 +135,51 @@ True
 ```
 <!-- skip: end -->
 
-## A different travel-time model
+## The fetch window
 
-When an entry carries an event but no explicit window, the window is
-placed around a predicted phase arrival, by default
-[`travel_times`][pysmo.tools.traveltime.travel_times] on its own default
-model. `travel_time_backend` swaps that for any callable of the same
-shape ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]).
-Here it is the same solver on the ak135 model, via
-[`functools.partial`][]:
+An entry's window comes from one of two places.
+
+The first is the entry itself. If it sets `starttime` and `endtime`, that
+window is used as-is and `window` is never called. A `ProjectEntry` with no
+event is rejected unless it sets an explicit window, so every event-less
+entry takes this path. An entry that carries an event can also set an
+explicit window, to override the event-derived one.
+
+```python
+>>> pre_maule_noise = PysmoProject(
+...     entries=[
+...         ProjectEntry(
+...             station=station_anmo,
+...             starttime="2010-02-27T05:00:00Z",
+...             endtime="2010-02-27T06:00:00Z",
+...         )
+...     ],
+... )
+>>> pre_maule_noise.events
+[]
+>>> pre_maule_noise.events_for(station_anmo)
+[None]
+>>>
+```
+
+The second is the `window` resolver. It runs when an entry has an event but
+no explicit window. The default resolver is
+[`PhaseWindow`][pysmo.tools.project.PhaseWindow]. It returns a span around
+the predicted phase arrival. Its `phase`, `pre_pick`, `post_pick`, and
+`travel_time_backend` fields live on the `PhaseWindow`, not on
+`PysmoProject`. The example below sets `travel_time_backend` to the
+built-in solver on the ak135 model:
 
 ```python
 >>> from functools import partial
+>>> from pysmo.tools.project import PhaseWindow
 >>> from pysmo.tools.traveltime import travel_times
 >>>
 >>> project_ak135 = PysmoProject(
 ...     entries=[ProjectEntry(station=station_anmo, event=event_maule)],
-...     travel_time_backend=partial(travel_times, model="ak135"),
+...     window=PhaseWindow(travel_time_backend=partial(travel_times, model="ak135")),
 ... )
->>> arrivals = project_ak135.travel_time_backend(
+>>> arrivals = project_ak135.window.travel_time_backend(
 ...     depth=event_maule.depth, distance=60.0, phases=["P"]
 ... )
 >>> round(arrivals["P"].total_seconds(), 1)
@@ -158,8 +187,8 @@ Here it is the same solver on the ak135 model, via
 >>>
 ```
 
-The same hook takes a solver for a phase the built-in one does not
-cover, or arrival times from an external catalogue.
+Any [`WindowResolver`][pysmo.tools.project.WindowResolver] can take the
+place of `PhaseWindow`.
 
 ## Caching downloads
 
@@ -281,10 +310,10 @@ been fetched.
 
 [`project.resolution_context_digest`][pysmo.tools.project.PysmoProject.resolution_context_digest]
 is a single digest over the parameters that decide what a fetch returns
-(`phase`, `pre_pick`, `post_pick`, `travel_time_backend`,
-`seismogram_transform`). A consumer records it alongside the identities and
-checks it once per session to detect that the project definition has moved
-under it. Reassigning `fetch_seismogram` does not change the digest.
+(`window` and `seismogram_transform`). A consumer records it alongside the
+identities and checks it once per session to detect that the project
+definition has moved under it. Reassigning `fetch_seismogram` does not
+change the digest.
 
 The three are distinct:
 - `entry.identity` is computable before any fetch, and is the persistable
@@ -304,13 +333,26 @@ from ._identity import (
     entry_identity_components,
     resolution_context_digest,
 )
-from ._project import FetchContext, PysmoProject
+from ._phasewindow import PhaseWindow
+from ._project import PysmoProject
+from ._types import (
+    FetchContext,
+    SeismogramFetcher,
+    SeismogramTransform,
+    WindowResolver,
+    WindowResult,
+)
 
 __all__ = [
     "FetchContext",
+    "PhaseWindow",
     "ProjectEntry",
     "PysmoProject",
+    "SeismogramFetcher",
+    "SeismogramTransform",
     "UnknownEntryIdentity",
+    "WindowResolver",
+    "WindowResult",
     "build_entries",
     "callable_identity",
     "entry_identity",
