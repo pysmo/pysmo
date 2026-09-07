@@ -6,12 +6,12 @@ import hashlib
 import threading
 import warnings
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import pandas as pd
 from attrs import Attribute, define, field, setters, validators
 
-from pysmo import Event, MiniSeismogram, Seismogram, Station
+from pysmo import Event, MiniSeismogram, Seismogram, Station, __version__
 from pysmo._utils import attrs_getstate, attrs_setstate
 from pysmo.classes import MSeed
 from pysmo.functions import clone_to_mini
@@ -21,6 +21,7 @@ from pysmo.tools.traveltime import TravelTimeBackend, builtin_backend
 from pysmo.typing import NonPositiveTimedelta, PositiveTimedelta
 
 from ._entry import ProjectEntry
+from ._identity import UnknownEntryIdentity, entry_identity, resolution_context_digest
 
 __all__ = ["FetchContext", "PysmoProject"]
 
@@ -161,6 +162,8 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         still returns a result, it just isn't cached (the next call
         recomputes it with the current parameters).
     """
+
+    _FORMAT_VERSION: ClassVar[int] = 1
 
     entries: list[ProjectEntry[TStation, TEvent]] = field(
         factory=list, on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
@@ -334,10 +337,20 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         """Drop the fetch cache and lock, neither of which can survive pickling."""
         state = attrs_getstate(self, {"_cache": {}, "_cache_generation": 0})
         del state["_lock"]
+        state["_format_version"] = self._FORMAT_VERSION
+        state["_pysmo_version"] = __version__
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore state without firing `on_setattr` hooks, then make a fresh lock."""
+        pickled_format = state.pop("_format_version", 0)
+        pickled_pysmo = state.pop("_pysmo_version", "unknown")
+        if pickled_format != self._FORMAT_VERSION:
+            raise ValueError(
+                f"This PysmoProject was pickled by pysmo {pickled_pysmo} in state "
+                + f"format v{pickled_format}; this pysmo ({__version__}) uses "
+                + f"v{self._FORMAT_VERSION}. Re-create the project."
+            )
         attrs_setstate(self, state)
         object.__setattr__(self, "_lock", threading.Lock())
 
@@ -516,6 +529,24 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                 seen.append(entry.event)
         return seen
 
+    @property
+    def resolution_context_digest(self) -> str:
+        """Digest over the project parameters that determine fetched content.
+
+        Covers `phase`, `pre_pick`, `post_pick`, `travel_time_backend`, and
+        `seismogram_transform`. Reassigning `fetch_seismogram` (e.g. to an
+        offline archive cache) leaves the digest unchanged.
+
+        Examples:
+            >>> from pysmo.tools.project import PysmoProject
+            >>> project = PysmoProject()
+            >>> project.resolution_context_digest.startswith("rc1:")
+            True
+            >>> len(project.resolution_context_digest)
+            68
+        """
+        return resolution_context_digest(self)
+
     def events_for(self, station: TStation) -> list[TEvent | None]:
         """Events available for one station, in first-seen order.
 
@@ -570,6 +601,54 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             raise ValueError(
                 "More than one entry matches this station/event combination."
             )
+        return self._fetch(matches[0], _stacklevel=_stacklevel)
+
+    def get(self, identity: str, *, _stacklevel: int = 3) -> TSeismogram:
+        """Fetch (or return from cache) the result for an entry by its identity.
+
+        Args:
+            identity: An [`entry.identity`][pysmo.tools.project.ProjectEntry.identity]
+                string. The entry need not have been fetched before.
+
+        Returns:
+            The transformed result for the matching entry.
+
+        Raises:
+            UnknownEntryIdentity: If no entry matches this identity.
+            ValueError: If more than one entry matches: an authoring mistake,
+                surfaced rather than silently resolved by picking one.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from pysmo import MiniEvent, MiniSeismogram, MiniStation, Station
+            >>> from pysmo.tools.project import ProjectEntry, PysmoProject
+            >>> def fake_fetch(station: Station, t0: pd.Timestamp, t1: pd.Timestamp):
+            ...     return MiniSeismogram(
+            ...         begin_time=t0, delta=pd.Timedelta(seconds=1), data=[1.0, 2.0]
+            ...     )
+            >>> station = MiniStation(
+            ...     name="ANMO",
+            ...     network="IU",
+            ...     location="00",
+            ...     channel="BHZ",
+            ...     latitude=34.9459,
+            ...     longitude=-106.4571,
+            ... )
+            >>> entry = ProjectEntry(
+            ...     station=station,
+            ...     starttime=pd.Timestamp("2020-01-01T00:00:00Z"),
+            ...     endtime=pd.Timestamp("2020-01-01T00:10:00Z"),
+            ... )
+            >>> project = PysmoProject(entries=[entry], fetch_seismogram=fake_fetch)
+            >>> seis = project.get(entry.identity)
+            >>> len(seis.data)
+            2
+        """
+        matches = [e for e in self.entries if entry_identity(e) == identity]
+        if not matches:
+            raise UnknownEntryIdentity(identity)
+        if len(matches) > 1:
+            raise ValueError(f"More than one entry resolves to identity {identity!r}.")
         return self._fetch(matches[0], _stacklevel=_stacklevel)
 
     def seismograms_for(self, event: TEvent) -> list[TSeismogram]:
