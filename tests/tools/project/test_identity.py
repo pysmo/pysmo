@@ -12,6 +12,7 @@ import pytest
 from pysmo import MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.tools.project import (
     FetchContext,
+    PhaseWindow,
     ProjectEntry,
     PysmoProject,
     callable_identity,
@@ -371,6 +372,18 @@ class TestCallableIdentity:
         assert callable_identity(inst1) != callable_identity(inst3)
         assert callable_identity(inst1).startswith("attrs:")
 
+    def test_attrs_instance_with_nested_callable_field(self) -> None:
+        # PhaseWindow holds `travel_time_backend` as a functools.partial,
+        # which `_prepare_json_value` cannot reduce; the attrs branch must
+        # recurse into it.
+        base = PhaseWindow()
+        assert callable_identity(base) == callable_identity(PhaseWindow())
+        swapped = PhaseWindow(
+            travel_time_backend=functools.partial(travel_times, model="ak135")
+        )
+        assert callable_identity(swapped) != callable_identity(base)
+        assert callable_identity(base).startswith("attrs:")
+
     def test_unsupported_callables_raise_type_error(self) -> None:
         # Lambda
         with pytest.raises(TypeError, match="Closures and lambdas are not supported"):
@@ -405,25 +418,31 @@ class TestResolutionContextDigest:
     def test_format_and_stability(self) -> None:
         project: ProjectT = PysmoProject()
         digest = resolution_context_digest(project)
-        assert re.match(r"^rc1:[0-9a-f]{64}$", digest) is not None
-        assert digest.startswith("rc1:")
+        assert re.match(r"^rc2:[0-9a-f]{64}$", digest) is not None
+        assert digest.startswith("rc2:")
         assert len(digest) == 68
 
     def test_digest_changes_on_relevant_parameters(self) -> None:
-        p1: ProjectT = PysmoProject(phase="P")
+        p1: ProjectT = PysmoProject(window=PhaseWindow(phase="P"))
         d1 = resolution_context_digest(p1)
 
-        p2: ProjectT = PysmoProject(phase="S")
+        p2: ProjectT = PysmoProject(window=PhaseWindow(phase="S"))
         assert resolution_context_digest(p2) != d1
 
-        p3: ProjectT = PysmoProject(pre_pick=pd.Timedelta(minutes=-3))
+        p3: ProjectT = PysmoProject(
+            window=PhaseWindow(pre_pick=pd.Timedelta(minutes=-3))
+        )
         assert resolution_context_digest(p3) != d1
 
-        p4: ProjectT = PysmoProject(post_pick=pd.Timedelta(minutes=10))
+        p4: ProjectT = PysmoProject(
+            window=PhaseWindow(post_pick=pd.Timedelta(minutes=10))
+        )
         assert resolution_context_digest(p4) != d1
 
         p5: ProjectT = PysmoProject(
-            travel_time_backend=functools.partial(travel_times, model="ak135")
+            window=PhaseWindow(
+                travel_time_backend=functools.partial(travel_times, model="ak135")
+            )
         )
         assert resolution_context_digest(p5) != d1
 
