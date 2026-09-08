@@ -114,6 +114,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(archive)** Add FIFO max_bytes eviction to SqliteArchiveFetcher
 - **(project)** Add cold-computable entry identity and get() addressing
 - **(project)** [**breaking**] Make the fetch window a pluggable seam
+- **(project)** Add optional name label to PysmoProject
 
 ### 🧪 Testing
 
