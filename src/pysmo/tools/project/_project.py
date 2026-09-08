@@ -100,6 +100,11 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     stored on the instance between calls beyond an in-memory cache of
     already-fetched-and-transformed results.
 
+    An optional `name` can label the project for identification by tools
+    that hold more than one project. It is free-text and carries no
+    semantics: it is not a key, does not affect cache invalidation, and is
+    not part of `resolution_context_digest` or any entry identity.
+
     Generic over the station and event types of its `entries` (matching
     [`ProjectEntry`][pysmo.tools.project.ProjectEntry]'s parameter order)
     and the return type of `seismogram_transform`, all three inferred at
@@ -113,6 +118,12 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
 
     See the [module documentation][pysmo.tools.project] for a worked
     example.
+
+    Note: Persistence
+        A `PysmoProject` travels as a pickle. The in-memory cache and lock
+        are dropped during pickling and reconstructed on unpickling. An
+        optional `name` is preserved across pickles; unpickling a project
+        serialised without a `name` defaults it to `None`.
 
     Note: Thread-safety
         The in-memory fetch cache is safe to touch from multiple threads
@@ -131,6 +142,19 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     """
 
     _FORMAT_VERSION: ClassVar[int] = 2
+
+    name: str | None = field(
+        default=None,
+        validator=validators.optional(validators.instance_of(str)),
+    )
+    """Optional free-text label for this project.
+
+    Useful for identification by downstream tools that hold multiple
+    projects. This is purely a label, not a key: no uniqueness is enforced,
+    renaming does not invalidate the fetch cache, and it is not part of
+    [`resolution_context_digest`][pysmo.tools.project.PysmoProject.resolution_context_digest]
+    or any entry identity.
+    """
 
     entries: list[ProjectEntry[TStation, TEvent]] = field(
         factory=list, on_setattr=setters.pipe(setters.convert, _on_setattr_clear_cache)
@@ -257,6 +281,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                 + f"format v{pickled_format}; this pysmo ({__version__}) uses "
                 + f"v{self._FORMAT_VERSION}. Re-create the project."
             )
+        state.setdefault("name", None)
         attrs_setstate(self, state)
         object.__setattr__(self, "_lock", threading.Lock())
 
