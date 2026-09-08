@@ -22,6 +22,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- Fixed merge
 - Fix typo
 - Adjust tutorial to new naming in sac class
 - Add event time to SacEvent ([#120](https://github.com/pysmo/pysmo/issues/120))
@@ -118,6 +119,20 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 ### 🔍 Other Changes
 
+- Initial commit
+- Initial import of pysmo.sac
+- Minor formatting changes
+- Need init.py in pysmo dir so that sac part is picked up
+- Small cleanup
+- Ade
+- Update README.md
+- Update README.md
+- Temp save for sac
+- Reverted
+- Filename wrong
+- New version
+- Don't want to track the buld directory
+- Change
 - Don't track .DS_Store files.
 - Convert to py3
 - Setup travis
@@ -396,27 +411,4 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Replace undocumented fixture, fix abs_max test, rework ex… ([#287](https://github.com/pysmo/pysmo/issues/287))
 - Expand hypothesis property tests and refactor sac header tests
 - Parallelise the test suite with pytest-xdist
-
-## [0.5.1] - 2014-08-07
-
-### 🐛 Bug Fixes
-
-- Fixed merge
-
-### 🔍 Other Changes
-
-- Initial commit
-- Initial import of pysmo.sac
-- Minor formatting changes
-- Need init.py in pysmo dir so that sac part is picked up
-- Small cleanup
-- Ade
-- Update README.md
-- Update README.md
-- Temp save for sac
-- Reverted
-- Filename wrong
-- New version
-- Don't want to track the buld directory
-- Change
 
