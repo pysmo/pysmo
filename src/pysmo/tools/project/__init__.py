@@ -18,7 +18,8 @@ The `PysmoProject` instance is the reproducible, shareable artefact: it is
 pickled, not serialised to a bespoke config format, so its three pluggable
 callables (`window`, `fetch_seismogram`, `seismogram_transform`) must be real
 top-level functions in an importable module rather than lambdas or closures
-(pickle serialises functions by reference, not by value). A callable that
+(pickle serialises functions by reference, not by value). An optional `name`
+labels the project for identification when persisted. A callable that
 needs its own configuration (e.g. filter corner frequencies) should be a
 callable [`attrs`][] class with only picklable fields (see the example below):
 it pickles by value, and its declared fields are what let

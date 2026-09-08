@@ -11,6 +11,8 @@ from typing import Literal
 
 import pandas as pd
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from pysmo import Event, MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.tools.project import (
@@ -193,6 +195,27 @@ class TestQuerySurface:
             seismogram_transform=identity_transform,
         )
         assert project.stations_for(None) == [station_anmo]
+
+    def test_name_defaults_to_none(self) -> None:
+        project: ProjectT = PysmoProject()
+        assert project.name is None
+
+    @given(st.text())
+    def test_name_accepts_any_str(self, name: str) -> None:
+        project: ProjectT = PysmoProject(name=name)
+        assert project.name == name
+
+    @given(
+        st.one_of(
+            st.integers(),
+            st.floats(allow_nan=False),
+            st.binary(),
+            st.lists(st.text()),
+        )
+    )
+    def test_name_rejects_non_str(self, value: object) -> None:
+        with pytest.raises(TypeError):
+            PysmoProject(name=value)  # type: ignore[arg-type]
 
 
 class TestFetchAll:
@@ -439,6 +462,51 @@ class TestCacheInvalidation:
         project.clear_cache()
         assert project._cache_generation == 2
 
+    @given(st.text())
+    def test_renaming_does_not_clear_cache(self, new_name: str) -> None:
+        fetch_count = 0
+
+        def counting_fetch(
+            station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp
+        ) -> Seismogram:
+            nonlocal fetch_count
+            fetch_count += 1
+            return MiniSeismogram(
+                begin_time=starttime, delta=pd.Timedelta(seconds=1), data=[1.0, 2.0]
+            )
+
+        station = MiniStation(
+            name="ANMO",
+            network="IU",
+            location="00",
+            channel="LHZ",
+            latitude=34.945981,
+            longitude=-106.457133,
+        )
+        event = MiniEvent(
+            latitude=-36.122,
+            longitude=-72.898,
+            depth=22900.0,
+            time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
+        )
+        project: ProjectT = PysmoProject(
+            entries=[ProjectEntry(station=station, event=event)],
+            seismogram_transform=identity_transform,
+            fetch_seismogram=counting_fetch,  # type: ignore[arg-type]
+            window=phase_window(),
+        )
+        project.seismogram(station, event)
+        assert len(project._cache) == 1
+        assert project._cache_generation == 0
+        assert fetch_count == 1
+
+        project.name = new_name
+        assert len(project._cache) == 1
+        assert project._cache_generation == 0
+
+        project.seismogram(station, event)
+        assert fetch_count == 1  # no re-fetch: cache still intact
+
 
 class TestSeismogramsFor:
     def test_one_result_per_station_in_order(
@@ -605,6 +673,49 @@ class TestPickling:
         del state["_format_version"]
         with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v2"):
             project.__setstate__(state)
+
+    @given(st.text() | st.none())
+    def test_name_round_trips_through_pickle(self, name: str | None) -> None:
+        project: ProjectT = PysmoProject(name=name)
+        restored: ProjectT = pickle.loads(pickle.dumps(project))
+        assert restored.name == name
+
+    def test_missing_name_in_state_dict_restores_with_none(self) -> None:
+        project: ProjectT = PysmoProject()
+        state = project.__getstate__()
+        del state["name"]
+        restored = PysmoProject.__new__(PysmoProject)
+        restored.__setstate__(state)
+        assert restored.name is None
+
+    @given(st.text(), st.text())
+    def test_equality_with_name(self, name_a: str, name_b: str) -> None:
+        station = MiniStation(
+            name="ANMO",
+            network="IU",
+            location="00",
+            channel="LHZ",
+            latitude=34.945981,
+            longitude=-106.457133,
+        )
+        event = MiniEvent(
+            latitude=-36.122,
+            longitude=-72.898,
+            depth=22900.0,
+            time=pd.Timestamp("2010-02-27T06:34:11.53Z"),
+        )
+        entries = [ProjectEntry(station=station, event=event)]
+        p_a1 = PysmoProject(name=name_a, entries=entries)
+        p_a2 = PysmoProject(name=name_a, entries=entries)
+        p_b = PysmoProject(name=name_b, entries=entries)
+        p_none = PysmoProject(name=None, entries=entries)
+
+        assert p_a1 == p_a2
+        if name_a == name_b:
+            assert p_a1 == p_b
+        else:
+            assert p_a1 != p_b
+        assert p_a1 != p_none
 
 
 class TestThreadSafety:
