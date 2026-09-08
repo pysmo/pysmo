@@ -8,6 +8,8 @@ from typing import Any
 import attrs
 import pandas as pd
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from pysmo import MiniEvent, MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.tools.project import (
@@ -454,4 +456,10 @@ class TestResolutionContextDigest:
     def test_digest_excludes_fetch_seismogram(self) -> None:
         p1: ProjectT = PysmoProject(fetch_seismogram=dummy_fetch)
         p2: ProjectT = PysmoProject(fetch_seismogram=another_dummy_fetch)
+        assert resolution_context_digest(p1) == resolution_context_digest(p2)
+
+    @given(st.text() | st.none(), st.text() | st.none())
+    def test_digest_excludes_name(self, name_a: str | None, name_b: str | None) -> None:
+        p1: ProjectT = PysmoProject(name=name_a)
+        p2: ProjectT = PysmoProject(name=name_b)
         assert resolution_context_digest(p1) == resolution_context_digest(p2)
