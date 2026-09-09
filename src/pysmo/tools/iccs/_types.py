@@ -31,7 +31,7 @@ class IccsResult:
     """Convergence criterion value after each iteration."""
 
     converged: bool
-    """Whether the convergence limit was reached before `max_iter` iterations."""
+    """Whether the convergence limit was reached within `max_iter` iterations."""
 
 
 @define(frozen=True)
@@ -64,6 +64,12 @@ class McccResult:
     cc_stds: list[float]
     """Per-seismogram standard deviation of the cross-correlation
     coefficients (waveform consistency)."""
+
+    refused: list[int]
+    """Positions in these lists whose pick was left unrefined because the MCCC
+    shift would have moved the window (with its taper ramp) outside the data.
+    Their `errors`/`cc_means`/`cc_stds` entries still refer to the unrefined
+    pick."""
 
 
 class ConvergenceMethod(StrEnum):
