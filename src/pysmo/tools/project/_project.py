@@ -109,6 +109,13 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         optional `name` is preserved across pickles; unpickling a project
         serialised without a `name` defaults it to `None`.
 
+        Unpickling executes code, so load only a project file you produced or
+        trust (see the [module documentation][pysmo.tools.project]). The
+        format-version check on load reports an incompatible pickle; it is
+        not a security boundary and runs after unpickling. There is no
+        cross-version migration: a pickle from an earlier state format must
+        be rebuilt from its source.
+
     Note: Thread-safety
         The in-memory fetch cache is safe to touch from multiple threads
         calling [`seismogram`][pysmo.tools.project.PysmoProject.seismogram],
@@ -257,6 +264,8 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore state without firing `on_setattr` hooks, then make a fresh lock."""
+        # Format-compatibility gate only; pickle.load above has already run
+        # any code in the file, so this is not a trust check.
         pickled_format = state.pop("_format_version", 0)
         pickled_pysmo = state.pop("_pysmo_version", "unknown")
         if pickled_format != self._FORMAT_VERSION:
