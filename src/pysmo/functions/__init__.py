@@ -73,6 +73,13 @@ Note: Needless copy
     place, but pays for a copy to get there. Call `resample(seis, new_delta)`
     directly instead.
 
+Three helpers work with a seismogram as JSON:
+[`seismogram_to_json`][pysmo.functions.seismogram_to_json] encodes a
+value-object seismogram as a portable JSON document and
+[`seismogram_from_json`][pysmo.functions.seismogram_from_json] reconstructs
+it, while [`seismogram_checksum`][pysmo.functions.seismogram_checksum]
+fingerprints one for change detection.
+
 Hint: More functions live in `pysmo.tools`
     Additional functions may be found in [`pysmo.tools`][].
 """
@@ -82,6 +89,7 @@ from .._utils import export_module_names
 _internal_names = set(dir())
 
 from ._seismogram import *
+from ._serialize import *
 from ._utils import *
 
 __all__ = [s for s in dir() if not s.startswith("_") and s not in _internal_names]

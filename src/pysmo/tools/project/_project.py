@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import threading
 import warnings
 from typing import Any, ClassVar, Literal
@@ -13,7 +12,7 @@ from attrs import Attribute, define, field, setters, validators
 from pysmo import Event, MiniSeismogram, Seismogram, Station, __version__
 from pysmo._utils import attrs_getstate, attrs_setstate
 from pysmo.classes import MSeed
-from pysmo.functions import clone_to_mini
+from pysmo.functions import clone_to_mini, seismogram_checksum
 
 from ._entry import ProjectEntry
 from ._identity import UnknownEntryIdentity, entry_identity, resolution_context_digest
@@ -49,21 +48,6 @@ def _seismogram_to_mini_seismogram[TStation: Station, TEvent: Event](
     explicit opt-in via a custom `seismogram_transform`.
     """
     return clone_to_mini(MiniSeismogram, seismogram)
-
-
-def _checksum(seismogram: Seismogram) -> str:
-    """Checksum a freshly downloaded seismogram, before `seismogram_transform` runs.
-
-    Hashed pre-transform deliberately: the transform's output (e.g. a
-    `MiniIccsSeismogram`) can be mutated downstream by whatever consumes it
-    (`ICCS` changes `t0`/`t1`/`flip`/`select` during a run); hashing after
-    the transform would pick up that unrelated mutation as false "drift".
-    """
-    h = hashlib.sha256()
-    h.update(seismogram.data.tobytes())
-    h.update(str(seismogram.begin_time).encode())
-    h.update(str(seismogram.delta).encode())
-    return f"sha256:{h.hexdigest()}"
 
 
 def _on_setattr_clear_cache[T](
@@ -201,11 +185,11 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
     never cached" choice.
 
     For any project where reproducibility matters, substitute a
-    [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher]
-    instance instead. That is the *recommended* value for real analysis
-    work, not a power-user option on equal footing with the default; see its
-    own docstring for why, and how it differs from `ProjectEntry.checksum`'s
-    live-fetch drift detection. Leave its `max_bytes` at the default
+    [`FetchCache`][pysmo.tools.cache.FetchCache] instance instead. That is
+    the *recommended* value for real analysis work, not a power-user option
+    on equal footing with the default; see its own docstring for why, and
+    how it differs from `ProjectEntry.checksum`'s live-fetch drift
+    detection. Leave its `max_bytes` at the default
     (unlimited) for this to hold: a finite `max_bytes` evicts old entries and
     re-fetches them on next access, reintroducing the drift a cache is meant
     to rule out. It only pins the waveform, though: see the
@@ -349,7 +333,10 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             seismogram = self.fetch_seismogram(
                 entry.station, window.starttime, window.endtime
             )
-            checksum = _checksum(seismogram)
+            # Checksum the raw trace pre-transform: the transform's output can
+            # be mutated by downstream consumers (`ICCS` edits `t0`/`t1`/`flip`
+            # during a run), which would otherwise read back as false drift.
+            checksum = seismogram_checksum(seismogram)
             context = FetchContext(
                 entry=entry,
                 starttime=window.starttime,
@@ -379,7 +366,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             message = (
                 f"Fetched data for {entry.station.network}.{entry.station.name} "
                 + "no longer matches the checksum recorded when this entry was "
-                + "first fetched: the archive was revised, or fetch_seismogram "
+                + "first fetched: the cache was revised, or fetch_seismogram "
                 + "now yields the same samples in a different dtype."
             )
             if self.on_checksum_mismatch == "raise":
@@ -425,7 +412,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         """Digest over the project parameters that determine fetched content.
 
         Covers `window` and `seismogram_transform`. Reassigning
-        `fetch_seismogram` (e.g. to an offline archive cache) leaves the
+        `fetch_seismogram` (e.g. to an on-disk fetch cache) leaves the
         digest unchanged.
 
         Examples:
@@ -566,11 +553,10 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         """Fetch every entry in the project.
 
         With the default, always-fresh `fetch_seismogram`, this just warms
-        `_cache` for the session. With an archive-backed `fetch_seismogram`
-        (e.g.
-        [`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher]),
-        this is what actually populates the archive: a single, explicit
-        "get everything this project needs into the archive" call, rather
+        `_cache` for the session. With a cache-backed `fetch_seismogram`
+        (e.g. [`FetchCache`][pysmo.tools.cache.FetchCache]), this is what
+        actually populates the on-disk cache: a single, explicit "get
+        everything this project needs onto disk" call, rather
         than relying on incidental use of `seismogram`/`seismograms_for` to
         cover every entry eventually.
 

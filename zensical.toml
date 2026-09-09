@@ -33,8 +33,8 @@ nav = [
     "api/pysmo/lib.md",
     { "pysmo.tools" = [
       "api/pysmo/tools/index.md",
-      "api/pysmo/tools/archive.md",
       "api/pysmo/tools/azdist.md",
+      "api/pysmo/tools/cache.md",
       "api/pysmo/tools/iccs.md",
       "api/pysmo/tools/noise.md",
       "api/pysmo/tools/plotutils.md",

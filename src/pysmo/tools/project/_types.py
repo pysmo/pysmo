@@ -117,8 +117,8 @@ Called with a [`Station`][pysmo.Station] and the resolved
 "Always fresh" by contract: [`PysmoProject`][pysmo.tools.project.PysmoProject]
 keeps its own in-memory cache, so a fetcher normally hits the network every
 time rather than consulting a cache of its own. Swap in a
-[`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] for a
-reproducible on-disk archive instead. Must be picklable by reference.
+[`FetchCache`][pysmo.tools.cache.FetchCache] for a reproducible on-disk
+cache instead. Must be picklable by reference.
 """
 
 type SeismogramTransform[TStation: Station, TEvent: Event, TSeismogram] = Callable[
@@ -132,5 +132,7 @@ entry and this fetch's resolved window. The one place ordinary data
 preparation (response removal, detrending, resampling) belongs, and free to
 issue its own additional fetches (e.g. instrument response metadata via
 [`StationXML.fetch`][pysmo.classes.StationXML.fetch]). Must be picklable by
-reference.
+reference. Wrap it in a
+[`TransformCache`][pysmo.tools.project.TransformCache] to cache its output
+(and those additional fetches) on disk.
 """
