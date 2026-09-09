@@ -394,6 +394,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(project)** Add cold-computable entry identity and get() addressing
 - **(project)** [**breaking**] Make the fetch window a pluggable seam
 - **(project)** Add optional name label to PysmoProject
+- **(tools)** Replace SqliteArchiveFetcher with a byte-oriented cache
 
 ### 🧪 Testing
 
