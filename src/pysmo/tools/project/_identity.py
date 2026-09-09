@@ -184,6 +184,12 @@ def callable_identity(fn: Any) -> str:
     if attrs.has(type(fn)):
         fields_payload: dict[str, Any] = {}
         for attribute in attrs.fields(type(fn)):
+            if not attribute.init:
+                # Identity is the callable's configuration: the arguments it
+                # was built from. `init=False` fields (a live connection, a
+                # lock, a lazily built helper) are internal state, never
+                # config, and some are not serialisable at all.
+                continue
             value = getattr(fn, attribute.name)
             if attrs.has(type(value)) or (
                 callable(value) and not isinstance(value, (str, bytes))

@@ -36,14 +36,16 @@ generic over the event and station types it is built from, so
 bare [`Event`][pysmo.Event] / [`Station`][pysmo.Station] protocols.
 
 Pair `PysmoProject` with
-[`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] as its
-`fetch_seismogram` so a project's entries are only ever fetched once across
-however many sessions the project is used in (see the second example
-below), provided `max_bytes` is left at its unlimited default; a finite
-`max_bytes` evicts old entries, which are then re-fetched on next access. A
-different mechanism from
+[`FetchCache`][pysmo.tools.cache.FetchCache] as its `fetch_seismogram` so a
+project's entries are only ever fetched once across however many sessions
+the project is used in (see the second example below), provided `max_bytes`
+is left at its unlimited default; a finite `max_bytes` evicts old entries,
+which are then re-fetched on next access. A different mechanism from
 [`ProjectEntry.checksum`][pysmo.tools.project.ProjectEntry.checksum], which
 only detects drift on the live-network default rather than avoiding it.
+Wrap `seismogram_transform` in a
+[`TransformCache`][pysmo.tools.project.TransformCache] to cache the
+transformed result, and whatever the transform fetches itself, on disk too.
 
 ## Basic example
 
@@ -194,35 +196,43 @@ place of `PhaseWindow`.
 ## Caching downloads
 
 Pairing `fetch_seismogram` with
-[`SqliteArchiveFetcher`][pysmo.tools.archive.SqliteArchiveFetcher] means a
-station/window already fetched once is read back locally on a later run,
-rather than re-fetched; recommended for real analysis work, over the
-always-fresh default used above.
+[`FetchCache`][pysmo.tools.cache.FetchCache] means a station/window already
+fetched once is read back locally on a later run, rather than re-fetched;
+recommended for real analysis work, over the always-fresh default used
+above.
 
-This only pins the waveform, though. `to_mini_iccs_seismogram` (reused
-below unchanged) still fetches a `StationXML` response itself on every call, cached
-or not; an archive-backed `fetch_seismogram` says nothing about whatever
-`seismogram_transform` independently fetches:
+That only pins the waveform, though. `to_mini_iccs_seismogram` still
+fetches a `StationXML` response itself on every call, and re-runs the
+response removal, cached or not; a cache-backed `fetch_seismogram` says
+nothing about whatever `seismogram_transform` independently does. Wrapping
+the transform in a
+[`TransformCache`][pysmo.tools.project.TransformCache] closes that gap: its
+output is stored as JSON and reconstructed on a hit, transform and
+secondary fetches skipped entirely.
 
 <!-- skip: start if(not run_real_web_requests) -->
 ```python
 >>> from pysmo.classes import SAC
->>> from pysmo.tools.archive import SqliteArchiveFetcher
+>>> from pysmo.tools.cache import FetchCache
+>>> from pysmo.tools.project import TransformCache
 >>> from pysmo.tools.web import fetch_sac
 >>>
 >>> def parse_sac_zip(raw: bytes) -> Seismogram:
 ...     return SAC.from_zip(raw).seismogram
 ...
->>> archive = SqliteArchiveFetcher(
+>>> waveform_cache = FetchCache(
 ...     path="project_cache.sqlite3", fetch_raw=fetch_sac, parse=parse_sac_zip
+... )
+>>> transform_cache = TransformCache(
+...     path="transform_cache.sqlite3", transform=to_mini_iccs_seismogram
 ... )
 >>> cached_project = PysmoProject(
 ...     entries=[ProjectEntry(station=station_anmo, event=event_maule)],
-...     seismogram_transform=to_mini_iccs_seismogram,
-...     fetch_seismogram=archive,
+...     seismogram_transform=transform_cache,
+...     fetch_seismogram=waveform_cache,
 ... )
->>> one = cached_project.seismogram(station_anmo, event_maule)  # waveform miss: fetches, stores
->>> one_again = cached_project.seismogram(station_anmo, event_maule)  # waveform hit; response still fetched
+>>> one = cached_project.seismogram(station_anmo, event_maule)  # miss: fetches, transforms, stores
+>>> one_again = cached_project.seismogram(station_anmo, event_maule)  # hit: nothing fetched or transformed
 >>> isinstance(one_again, MiniIccsSeismogram)
 True
 >>>
@@ -336,6 +346,7 @@ from ._identity import (
 )
 from ._phasewindow import PhaseWindow
 from ._project import PysmoProject
+from ._transformcache import TransformCache
 from ._types import (
     FetchContext,
     SeismogramFetcher,
@@ -351,6 +362,7 @@ __all__ = [
     "PysmoProject",
     "SeismogramFetcher",
     "SeismogramTransform",
+    "TransformCache",
     "UnknownEntryIdentity",
     "WindowResolver",
     "WindowResult",
