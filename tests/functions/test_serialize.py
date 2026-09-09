@@ -48,6 +48,7 @@ class TestChecksum:
         "update",
         [
             {"data": np.array([1.0, 2.0, 3.0, 5.0])},
+            {"data": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)},
             {"begin_time": pd.Timestamp("2010-02-27T06:41:00Z")},
             {"delta": pd.Timedelta(seconds=2)},
         ],
@@ -57,6 +58,19 @@ class TestChecksum:
     ) -> None:
         changed = clone_to_mini(MiniSeismogram, seismogram, update=update)
         assert seismogram_checksum(changed) != seismogram_checksum(seismogram)
+
+    def test_sensitive_to_shape_at_equal_bytes(self) -> None:
+        flat = MiniSeismogram(
+            begin_time=pd.Timestamp("2010-02-27T06:40:00Z"),
+            delta=pd.Timedelta(seconds=1),
+            data=np.arange(4.0),
+        )
+        reshaped = MiniSeismogram(
+            begin_time=flat.begin_time,
+            delta=flat.delta,
+            data=np.arange(4.0).reshape(2, 2),
+        )
+        assert seismogram_checksum(flat) != seismogram_checksum(reshaped)
 
 
 class TestGate:
@@ -100,6 +114,16 @@ class TestRoundTrip:
         assert restored == original
         assert np.array_equal(restored.data, seismogram.data)
 
+    def test_nan_samples_round_trip_and_pass_verify(self) -> None:
+        gappy = MiniSeismogram(
+            begin_time=pd.Timestamp("2010-02-27T06:40:00Z"),
+            delta=pd.Timedelta(seconds=1),
+            data=np.array([1.0, np.nan, 3.0, np.nan]),
+        )
+        blob = seismogram_to_json(gappy, verify=True)  # no false "lossy" raise
+        restored = seismogram_from_json(blob)
+        assert np.array_equal(restored.data, gappy.data, equal_nan=True)
+
     def test_decoded_data_is_writable(self, seismogram: MiniSeismogram) -> None:
         restored = seismogram_from_json(seismogram_to_json(seismogram))
         restored.data[0] = 99.0  # would raise if the buffer were read-only
@@ -142,9 +166,52 @@ class TestEncodeErrors:
 
 class TestDecodeErrors:
     def test_rejects_a_non_attrs_target(self) -> None:
-        blob = json.dumps({"cls": "builtins:dict", "v": 1, "payload": {}}).encode()
+        blob = json.dumps({"cls": "pysmo:Seismogram", "v": 1, "payload": {}}).encode()
+        with pytest.raises(TypeError, match="not an attrs class"):
+            seismogram_from_json(blob, cls=dict)  # type: ignore[type-var]
         with pytest.raises(TypeError, match="not an attrs class"):
             seismogram_from_json(blob)
+
+    @pytest.mark.parametrize(
+        "blob",
+        [
+            b"not json at all",
+            json.dumps([1, 2, 3]).encode(),
+            json.dumps({"cls": "pysmo:MiniSeismogram", "payload": {}}).encode(),
+        ],
+    )
+    def test_rejects_a_malformed_document(self, blob: bytes) -> None:
+        with pytest.raises(TypeError):
+            seismogram_from_json(blob)
+
+    def test_rejects_an_unsupported_version(self, seismogram: MiniSeismogram) -> None:
+        tampered = json.loads(seismogram_to_json(seismogram))
+        tampered["v"] = 99
+        with pytest.raises(TypeError, match="version 99"):
+            seismogram_from_json(json.dumps(tampered).encode())
+
+    @pytest.mark.parametrize("module", ["subprocess", "this_module_is_not_pysmo"])
+    def test_refuses_to_import_an_untrusted_module(self, module: str) -> None:
+        import sys
+
+        already_loaded = module in sys.modules
+        blob = json.dumps({"cls": f"{module}:Thing", "v": 1, "payload": {}}).encode()
+        with pytest.raises(TypeError, match="not in the trusted set"):
+            seismogram_from_json(blob)
+        if not already_loaded:
+            assert module not in sys.modules
+
+    def test_trusted_modules_can_be_widened(self, seismogram: MiniSeismogram) -> None:
+        blob = seismogram_to_json(seismogram)
+        assert seismogram_from_json(blob, trusted_modules=("pysmo", "other")) == (
+            seismogram
+        )
+
+    def test_rejects_a_hostile_ndarray_dtype(self, seismogram: MiniSeismogram) -> None:
+        tampered = json.loads(seismogram_to_json(seismogram))
+        tampered["payload"]["data"]["dtype"] = "object"
+        with pytest.raises(TypeError, match="does not fit"):
+            seismogram_from_json(json.dumps(tampered).encode())
 
     def test_reports_a_moved_class_cleanly(self) -> None:
         blob = json.dumps(

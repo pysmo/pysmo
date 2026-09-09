@@ -23,6 +23,11 @@ from ._types import FetchContext, SeismogramTransform
 
 __all__ = ["TransformCache"]
 
+_ENCODING_VERSION = 1000 + _SEISMOGRAM_JSON_VERSION
+"""`BlobCache` layout version for a transform-cache file. Offset from
+`cache._FETCH_ENCODING_VERSION`'s range so a raw-fetch cache and a
+JSON-document cache cannot be opened on each other's files."""
+
 
 @define(kw_only=True)
 class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
@@ -141,6 +146,13 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     unless the transform output is known to be a plain
     [`MiniSeismogram`][pysmo.MiniSeismogram]."""
 
+    trusted_modules: tuple[str, ...] = ("pysmo",)
+    """Top-level packages a cached result's type may be imported from when it
+    is rebuilt on a hit. The pysmo value objects
+    ([`MiniSeismogram`][pysmo.MiniSeismogram] and friends) are covered by the
+    default; widen it only if the wrapped transform returns a value object
+    defined in your own package."""
+
     _cache: BlobCache = field(init=False, repr=False, eq=False)
 
     def __attrs_post_init__(self) -> None:
@@ -150,7 +162,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     def _build_cache(self) -> BlobCache:
         return BlobCache(
             path=self.path,
-            encoding_version=_SEISMOGRAM_JSON_VERSION,
+            encoding_version=_ENCODING_VERSION,
             wal=self.wal,
             max_bytes=self.max_bytes,
         )
@@ -203,4 +215,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
             return seismogram_to_json(result, verify=self.verify)
 
         blob = self._cache.get(key, produce)
-        return cast(TSeismogram, seismogram_from_json(blob))
+        return cast(
+            TSeismogram,
+            seismogram_from_json(blob, trusted_modules=self.trusted_modules),
+        )

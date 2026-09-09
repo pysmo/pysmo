@@ -28,7 +28,20 @@ _SEISMOGRAM_JSON_VERSION = 1
 `seismogram_to_json` document; bump on any change to the payload shape or the
 leaf hooks below."""
 
+_SUPPORTED_JSON_VERSIONS = frozenset({1})
+"""Envelope versions `seismogram_from_json` will decode."""
+
+_DEFAULT_TRUSTED_MODULES = ("pysmo",)
+"""Top-level packages `seismogram_from_json` will import a recorded class from
+when no explicit `cls` is passed. Anything else needs `cls`, so a tampered
+document cannot name an arbitrary importable module."""
+
 _SEISMOGRAM_LEAVES = ("begin_time", "delta", "data")
+
+_NUMERIC_DTYPE_KINDS = frozenset("biufc")
+"""ndarray dtype kinds the codec will reconstruct: bool, signed/unsigned int,
+float, complex. Excludes object, void and string, which reinterpret arbitrary
+bytes."""
 
 
 def _unstructure_ndarray(array: npt.NDArray[Any]) -> dict[str, Any]:
@@ -41,9 +54,12 @@ def _unstructure_ndarray(array: npt.NDArray[Any]) -> dict[str, Any]:
 
 
 def _structure_ndarray(value: dict[str, Any], _: Any) -> npt.NDArray[Any]:
+    dtype = np.dtype(value["dtype"])
+    if dtype.hasobject or dtype.kind not in _NUMERIC_DTYPE_KINDS:
+        raise ValueError(f"unsupported ndarray dtype {value['dtype']!r}")
     raw = base64.b64decode(value["b64"])
     # .copy() so the reconstructed array is writable, not a read-only buffer view.
-    return np.frombuffer(raw, dtype=value["dtype"]).reshape(value["shape"]).copy()
+    return np.frombuffer(raw, dtype=dtype).reshape(value["shape"]).copy()
 
 
 def _is_ndarray_type(candidate: Any) -> bool:
@@ -58,8 +74,9 @@ def _make_converter() -> Converter:
     """A `cattrs` converter that round-trips a value-object seismogram through JSON.
 
     Handles the three leaf types a [`Seismogram`][pysmo.Seismogram] carries
-    (`pd.Timestamp`, `pd.Timedelta`, `np.ndarray`) plus the untyped `extra`
-    mapping on [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram].
+    (`pd.Timestamp`, `pd.Timedelta`, `np.ndarray`) plus an untyped
+    `dict[Hashable, Any]` mapping, which is passed through shallowly: keys and
+    values must already be JSON primitives, lists, or nested dicts of the same.
     """
     converter = Converter()
     converter.register_unstructure_hook(pd.Timestamp, lambda ts: ts.value)
@@ -76,6 +93,21 @@ def _make_converter() -> Converter:
 
 
 _converter = _make_converter()
+
+
+def _hash_field(h: Any, name: bytes, value: bytes) -> None:
+    """Feed a length-prefixed, name-tagged field into a hash.
+
+    The length prefix and name tag keep concatenated fields from being
+    rearranged into a colliding byte stream.
+    """
+    h.update(name)
+    h.update(len(value).to_bytes(8, "big"))
+    h.update(value)
+
+
+def _int64(value: int) -> bytes:
+    return int(value).to_bytes(8, "big", signed=True)
 
 
 def seismogram_checksum(seismogram: Seismogram) -> str:
@@ -109,11 +141,14 @@ def seismogram_checksum(seismogram: Seismogram) -> str:
         >>>
     """
     h = hashlib.sha256()
-    h.update(seismogram.data.tobytes())
+    data = np.ascontiguousarray(seismogram.data)
+    _hash_field(h, b"dtype", data.dtype.str.encode())
+    _hash_field(h, b"shape", repr(tuple(int(n) for n in data.shape)).encode())
+    _hash_field(h, b"data", data.tobytes())
     # `.value` (integer nanoseconds) rather than `str()`: a fixed
     # representation that does not shift with the pandas version.
-    h.update(str(seismogram.begin_time.value).encode())
-    h.update(str(seismogram.delta.value).encode())
+    _hash_field(h, b"begin_time", _int64(seismogram.begin_time.value))
+    _hash_field(h, b"delta", _int64(seismogram.delta.value))
     return f"sha256:{h.hexdigest()}"
 
 
@@ -164,7 +199,9 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
             raising `TypeError` on any mismatch. Catches a codec that silently
             drops information on a rich field (a non-primitive value in
             [`MiniIccsSeismogram.extra`][pysmo.tools.iccs.MiniIccsSeismogram],
-            say).
+            say). `data` is compared with `equal_nan`, so a genuine `NaN`
+            sample (a data gap, a masked window) is not reported as a lossy
+            round trip.
 
     Returns:
         The UTF-8 JSON document.
@@ -208,6 +245,8 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
             "payload": _converter.unstructure(seismogram),
         }
         blob = json.dumps(envelope).encode("utf-8")
+    except MemoryError:
+        raise
     except Exception as exc:
         raise TypeError(
             f"{type(seismogram).__name__} has a field the seismogram codec "
@@ -216,13 +255,15 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
         ) from exc
     if verify:
         try:
-            matches = seismogram_from_json(blob) == seismogram
+            restored = seismogram_from_json(blob, cls=type(seismogram))
+        except MemoryError:
+            raise
         except Exception as exc:
             raise TypeError(
                 f"{type(seismogram).__name__} does not survive a JSON round trip "
                 + f"({exc}); a codec hook is lossy for one of its fields."
             ) from exc
-        if matches is not True:
+        if not _round_trip_faithful(restored, seismogram):
             raise TypeError(
                 f"{type(seismogram).__name__} does not survive a JSON round trip "
                 + "(decoded value differs); a codec hook is lossy for one of its "
@@ -231,18 +272,52 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
     return blob
 
 
-@overload
-def seismogram_from_json(blob: bytes, cls: None = ...) -> Seismogram: ...
+def _round_trip_faithful(restored: object, original: Seismogram) -> bool:
+    """Whether every field of `restored` matches `original`.
+
+    `data` is compared with `equal_nan` so a real `NaN` sample is not a false
+    "lossy hook" report; every other field with plain equality, so a hook that
+    changes a value's type (a tuple decoded as a list) is still caught.
+    """
+    cls = type(original)
+    if type(restored) is not cls or not attrs.has(cls):
+        return False
+    for f in attrs.fields(cls):
+        left = getattr(restored, f.name)
+        right = getattr(original, f.name)
+        if isinstance(right, np.ndarray):
+            equal_nan = np.issubdtype(right.dtype, np.inexact)
+            if not np.array_equal(left, right, equal_nan=bool(equal_nan)):
+                return False
+        elif (left == right) is not True:
+            return False
+    return True
 
 
 @overload
-def seismogram_from_json[T: Seismogram](blob: bytes, cls: type[T]) -> T: ...
+def seismogram_from_json(
+    blob: bytes, cls: None = ..., *, trusted_modules: tuple[str, ...] = ...
+) -> Seismogram: ...
+
+
+@overload
+def seismogram_from_json[T: Seismogram](
+    blob: bytes, cls: type[T], *, trusted_modules: tuple[str, ...] = ...
+) -> T: ...
 
 
 def seismogram_from_json(
-    blob: bytes, cls: type[Seismogram] | None = None
+    blob: bytes,
+    cls: type[Seismogram] | None = None,
+    *,
+    trusted_modules: tuple[str, ...] = _DEFAULT_TRUSTED_MODULES,
 ) -> Seismogram:
     """Reconstruct a seismogram from a `seismogram_to_json` document.
+
+    The document is data, not code: no part of it is executed. When `cls` is
+    `None` the recorded `module:qualname` is imported to rebuild the type, but
+    only from a package in `trusted_modules` — a tampered document cannot name
+    an arbitrary importable module to trigger its import side effects.
 
     Args:
         blob: The document produced by
@@ -251,15 +326,19 @@ def seismogram_from_json(
             `None`, the `module:qualname` recorded in the document is
             imported and the result is typed as
             [`Seismogram`][pysmo.Seismogram]; pass `cls` explicitly when the
-            type may have moved since it was encoded, or to keep the concrete
-            return type.
+            type may have moved since it was encoded, to keep the concrete
+            return type, or to rebuild a type from outside `trusted_modules`.
+        trusted_modules: Top-level packages the recorded class may be imported
+            from when `cls` is `None`. Defaults to pysmo's own types only.
 
     Returns:
         A new instance of `cls`, or of the recorded type.
 
     Raises:
-        TypeError: If `cls` is `None` and the recorded type can no longer be
-            imported, or the resolved type is not an attrs class.
+        TypeError: If the document is malformed or an unsupported version, if
+            `cls` is `None` and the recorded module is not trusted or can no
+            longer be imported, if the resolved type is not an attrs class, or
+            if the payload does not fit the resolved type.
 
     Examples:
         >>> import pandas as pd
@@ -277,24 +356,57 @@ def seismogram_from_json(
         [1.0, 2.0, 3.0]
         >>>
     """
-    envelope = json.loads(blob)
+    try:
+        envelope = json.loads(blob)
+    except (ValueError, TypeError) as exc:
+        raise TypeError(f"not a valid seismogram JSON document ({exc}).") from exc
+    if not isinstance(envelope, dict) or not {"cls", "v", "payload"} <= envelope.keys():
+        raise TypeError(
+            "seismogram JSON document is missing its cls/v/payload envelope."
+        )
+    version = envelope["v"]
+    if version not in _SUPPORTED_JSON_VERSIONS:
+        raise TypeError(
+            f"seismogram JSON document is version {version!r}; this pysmo reads "
+            + f"{sorted(_SUPPORTED_JSON_VERSIONS)}."
+        )
+
     resolved: type[Seismogram]
     if cls is None:
-        name: str = envelope["cls"]
-        module_name, _, qualname = name.partition(":")
-        try:
-            obj: Any = importlib.import_module(module_name)
-            for part in qualname.split("."):
-                obj = getattr(obj, part)
-        except (ImportError, AttributeError) as exc:
-            raise TypeError(
-                f"Encoded class {name!r} can no longer be imported ({exc}); the "
-                + "type moved or was removed. Pass an explicit cls, or re-encode "
-                + "from scratch."
-            ) from exc
-        resolved = obj
+        resolved = _resolve_encoded_class(envelope["cls"], trusted_modules)
     else:
         resolved = cls
     if not attrs.has(resolved):
         raise TypeError(f"{resolved!r} is not an attrs class.")
-    return cast(Seismogram, _converter.structure(envelope["payload"], resolved))
+    try:
+        return cast(Seismogram, _converter.structure(envelope["payload"], resolved))
+    except MemoryError:
+        raise
+    except Exception as exc:
+        raise TypeError(
+            f"seismogram JSON payload does not fit {resolved!r} ({exc})."
+        ) from exc
+
+
+def _resolve_encoded_class(
+    name: object, trusted_modules: tuple[str, ...]
+) -> type[Seismogram]:
+    if not isinstance(name, str) or ":" not in name:
+        raise TypeError(f"encoded class {name!r} is not a 'module:qualname' string.")
+    module_name, _, qualname = name.partition(":")
+    if module_name.split(".", 1)[0] not in trusted_modules:
+        raise TypeError(
+            f"refusing to import encoded class {name!r}: {module_name!r} is not in "
+            + f"the trusted set {list(trusted_modules)}. Pass an explicit cls to "
+            + "rebuild a type from another package."
+        )
+    try:
+        obj: Any = importlib.import_module(module_name)
+        for part in qualname.split("."):
+            obj = getattr(obj, part)
+    except (ImportError, AttributeError) as exc:
+        raise TypeError(
+            f"encoded class {name!r} can no longer be imported ({exc}); the type "
+            + "moved or was removed. Pass an explicit cls, or re-encode from scratch."
+        ) from exc
+    return cast(type[Seismogram], obj)
