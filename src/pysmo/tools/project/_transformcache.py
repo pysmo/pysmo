@@ -18,7 +18,7 @@ from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.cache import BlobCache
 from pysmo.typing import PositiveInt
 
-from ._identity import callable_identity, entry_identity
+from ._identity import callable_identity
 from ._types import FetchContext, SeismogramTransform
 
 __all__ = ["TransformCache"]
@@ -111,11 +111,13 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
         ```
     """
 
-    path: Path = field(converter=Path)
+    path: Path = field(converter=Path, metadata={"identity": False})
     """Location of the SQLite database file.
 
     The file itself is created on first use; its *parent directory* must
-    already exist, checked at construction time.
+    already exist, checked at construction time. Not part of the wrapper's
+    [`callable_identity`][pysmo.tools.project.callable_identity]: moving the
+    cache file does not change what a call returns.
     """
 
     transform: SeismogramTransform[TStation, TEvent, TSeismogram]
@@ -126,13 +128,14 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     `seismogram_transform` itself.
     """
 
-    wal: bool = False
+    wal: bool = field(default=False, metadata={"identity": False})
     """Enable WAL mode (local disk only; see
     [`BlobCache`][pysmo.tools.cache.BlobCache])."""
 
     max_bytes: PositiveInt | None = field(
         default=None,
         validator=validators.optional(validators.gt(0)),
+        metadata={"identity": False},
     )
     """Maximum total size of compressed data stored, in bytes; `None` for
     unlimited. See [`BlobCache.max_bytes`][pysmo.tools.cache.BlobCache]."""
@@ -146,7 +149,9 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     unless the transform output is known to be a plain
     [`MiniSeismogram`][pysmo.MiniSeismogram]."""
 
-    trusted_modules: tuple[str, ...] = ("pysmo",)
+    trusted_modules: tuple[str, ...] = field(
+        default=("pysmo",), metadata={"identity": False}
+    )
     """Top-level packages a cached result's type may be imported from when it
     is rebuilt on a hit. The pysmo value objects
     ([`MiniSeismogram`][pysmo.MiniSeismogram] and friends) are covered by the
@@ -197,7 +202,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
         """
         key = json.dumps(
             [
-                entry_identity(context.entry),
+                context.entry.identity,
                 convert_to_utc_timestamp(context.starttime).isoformat(),
                 convert_to_utc_timestamp(context.endtime).isoformat(),
                 None

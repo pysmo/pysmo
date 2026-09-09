@@ -114,6 +114,30 @@ class TestEntryIdentity:
         assert entry1.identity_components == entry2.identity_components
         assert entry_identity(entry1) == entry1.identity
 
+    def test_identity_is_memoised_and_reset_on_field_change(self) -> None:
+        station = MiniStation(
+            name="ANMO",
+            network="IU",
+            location="00",
+            channel="BHZ",
+            latitude=34.9459,
+            longitude=-106.4571,
+        )
+        entry = ProjectEntry(
+            station=station,
+            starttime=pd.Timestamp("2020-01-01T00:00:00Z"),
+            endtime=pd.Timestamp("2020-01-01T00:10:00Z"),
+        )
+        first = entry.identity
+        assert entry.identity is first  # same object: memoised, not recomputed
+
+        entry.endtime = pd.Timestamp("2020-01-01T00:20:00Z")
+        assert entry.identity != first  # setter reset the cache
+
+        before_checksum = entry.identity
+        entry.checksum = "sha256:deadbeef"
+        assert entry.identity == before_checksum  # checksum is not identity-relevant
+
     def test_identity_format(self) -> None:
         station = MiniStation(
             name="ANMO",

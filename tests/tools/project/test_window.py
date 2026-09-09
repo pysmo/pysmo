@@ -56,6 +56,14 @@ class TestWindowResult:
         with pytest.raises(attrs.exceptions.FrozenInstanceError):
             result.starttime = t1  # type: ignore[misc]
 
+    def test_reversed_or_empty_window_rejected(self) -> None:
+        t0 = pd.Timestamp("2020-01-01T00:00:00Z")
+        t1 = pd.Timestamp("2020-01-01T00:10:00Z")
+        with pytest.raises(ValueError, match="starttime .* must be before endtime"):
+            WindowResult(starttime=t1, endtime=t0, reference=None)
+        with pytest.raises(ValueError, match="must be before"):
+            WindowResult(starttime=t0, endtime=t0, reference=None)
+
 
 class TestPhaseWindow:
     def test_window_derived_from_event(

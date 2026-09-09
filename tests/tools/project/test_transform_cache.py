@@ -301,7 +301,7 @@ class TestPysmoProjectIntegration:
         assert entry.checksum is not None
         assert len(TRANSFORM_CALLS) == 1  # transform only ran on the first miss
 
-    def test_resolution_context_digest_covers_the_wrapper_config(
+    def test_resolution_context_digest_covers_wrapped_transform_not_storage(
         self, tmp_path: Path
     ) -> None:
         plain = PysmoProject(entries=[], seismogram_transform=to_mini)
@@ -311,14 +311,29 @@ class TestPysmoProjectIntegration:
                 path=tmp_path / "t.sqlite3", transform=to_mini
             ),
         )
-        capped = PysmoProject(
+        # Storage config (path, max_bytes, wal) does not change what a call
+        # returns, so it is excluded from the wrapper's identity.
+        relocated_and_capped = PysmoProject(
             entries=[],
             seismogram_transform=TransformCache(
-                path=tmp_path / "t.sqlite3", transform=to_mini, max_bytes=1024
+                path=tmp_path / "elsewhere.sqlite3",
+                transform=to_mini,
+                max_bytes=1024,
+                wal=True,
+            ),
+        )
+        unverified = PysmoProject(
+            entries=[],
+            seismogram_transform=TransformCache(
+                path=tmp_path / "t.sqlite3", transform=to_mini, verify=False
             ),
         )
         assert plain.resolution_context_digest != wrapped.resolution_context_digest
-        assert wrapped.resolution_context_digest != capped.resolution_context_digest
+        assert (
+            wrapped.resolution_context_digest
+            == relocated_and_capped.resolution_context_digest
+        )
+        assert wrapped.resolution_context_digest != unverified.resolution_context_digest
 
 
 class TestPickling:

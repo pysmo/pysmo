@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from attrs import define
 
 from pysmo import MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.classes import SAC
@@ -377,6 +378,33 @@ class TestFetchCache:
         cache(station, starttime, endtime + pd.Timedelta(minutes=1))
 
         assert len(FETCH_CALLS) == 3
+
+    def test_fetch_key_strips_nslc_padding(
+        self, station: MiniStation, starttime: pd.Timestamp, endtime: pd.Timestamp
+    ) -> None:
+        # SAC-style space-padded codes (past MiniStation's length validators,
+        # hence a duck type) must key to the same row as the trimmed form.
+        @define
+        class PaddedStation:
+            name: str
+            network: str
+            location: str
+            channel: str
+            latitude: float
+            longitude: float
+            elevation: float | None = None
+
+        padded = PaddedStation(
+            name=" ANMO ",
+            network="IU ",
+            location=" 00",
+            channel="LHZ ",
+            latitude=station.latitude,
+            longitude=station.longitude,
+        )
+        assert _fetch_key(padded, starttime, endtime) == _fetch_key(
+            station, starttime, endtime
+        )
 
     def test_parse_runs_on_both_hit_and_miss(
         self,

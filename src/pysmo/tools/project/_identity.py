@@ -42,12 +42,21 @@ _LATLON_DP = 4  # ~11 m at the equator
 _DEPTH_QUANTUM_M = 100.0  # nearest 0.1 km
 
 
-class UnknownEntryIdentity(LookupError):
-    """Raised when an entry with the requested identity is not found in the project."""
+class UnknownEntryIdentity(KeyError):
+    """Raised when an entry with the requested identity is not found in the project.
+
+    Subclasses `KeyError`, which
+    [`PysmoProject.seismogram`][pysmo.tools.project.PysmoProject.seismogram]
+    also raises for an unknown station/event pair, so one `except KeyError`
+    (or `except LookupError`) catches both lookups.
+    """
 
     def __init__(self, identity: str) -> None:
-        super().__init__(identity)
+        super().__init__(f"No entry with identity {identity!r}.")
         self.identity = identity
+
+    def __str__(self) -> str:
+        return str(self.args[0])
 
 
 def _no_negative_zero(x: float) -> float:
@@ -167,7 +176,10 @@ def callable_identity(fn: Any) -> str:
 
     - Top-level functions in importable modules.
     - `functools.partial` wrapping a supported callable.
-    - `attrs` instances with picklable fields.
+    - `attrs` instances with picklable fields. A field carrying
+      `metadata={"identity": False}` is left out of the digest, for
+      configuration that does not change what the callable returns (a
+      wrapping cache's storage path, for instance).
 
     Raises `TypeError` for closures, lambdas, bound methods, classes, and other
     objects.
@@ -189,6 +201,10 @@ def callable_identity(fn: Any) -> str:
                 # was built from. `init=False` fields (a live connection, a
                 # lock, a lazily built helper) are internal state, never
                 # config, and some are not serialisable at all.
+                continue
+            if attribute.metadata.get("identity", True) is False:
+                # Explicitly opted out: a field that doesn't change what the
+                # callable returns (e.g. a wrapping cache's storage location).
                 continue
             value = getattr(fn, attribute.name)
             if attrs.has(type(value)) or (

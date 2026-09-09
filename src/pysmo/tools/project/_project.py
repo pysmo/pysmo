@@ -15,7 +15,7 @@ from pysmo.classes import MSeed
 from pysmo.functions import clone_to_mini, seismogram_checksum
 
 from ._entry import ProjectEntry
-from ._identity import UnknownEntryIdentity, entry_identity, resolution_context_digest
+from ._identity import UnknownEntryIdentity, resolution_context_digest
 from ._phasewindow import PhaseWindow
 from ._types import (
     FetchContext,
@@ -64,12 +64,16 @@ def _on_setattr_clear_cache[T](
 
 type _CacheKey = str
 """An [`entry.identity`][pysmo.tools.project.ProjectEntry.identity] string:
-the entry's content fingerprint (station codes, event hypocentre, explicit
-window). A `WindowResolver` is a pure function of the entry, so two entries
-with the same identity resolve to the same window; keying on identity is
-strategy-agnostic (it encodes nothing about what a resolver reads) yet keeps
-distinct events apart, which a resolved-window key does not for two explicit
-windows that happen to coincide."""
+the entry's content fingerprint (station codes, event hypocentre quantised to
+~11 m / 100 m, explicit window). Keying on identity is strategy-agnostic (it
+encodes nothing about what a resolver reads) yet keeps distinct events apart,
+which a resolved-window key does not for two explicit windows that happen to
+coincide. It assumes a `WindowResolver` is a pure function of the
+identity-relevant projection of the entry: two entries whose hypocentres fall
+in the same quantised bucket share a slot. True for the default
+[`PhaseWindow`][pysmo.tools.project.PhaseWindow] to well within a sample; a
+custom resolver reacting to finer geometry must not rely on the cache to tell
+its outputs apart."""
 
 
 @define(kw_only=True)
@@ -293,6 +297,10 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         [`entries`][pysmo.tools.project.PysmoProject.entries] (e.g. `append`,
         `remove`, or index assignment), which isn't observable by
         `on_setattr` and therefore doesn't clear the cache automatically.
+        The same applies to mutating a configuration field *inside* `window`,
+        `seismogram_transform`, or `fetch_seismogram` rather than reassigning
+        the whole callable; a `frozen=True` attrs callable (as
+        [`PhaseWindow`][pysmo.tools.project.PhaseWindow] is) rules that out.
         """
         with self._lock:
             self._cache.clear()
@@ -321,7 +329,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                 resolved window); or if the checksum no longer matches and
                 `on_checksum_mismatch="raise"`.
         """
-        key: _CacheKey = entry_identity(entry)
+        key: _CacheKey = entry.identity
         with self._lock:
             cached = self._cache.get(key)
             generation = self._cache_generation
@@ -375,7 +383,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             message = (
                 f"Fetched data for {entry.station.network}.{entry.station.name} "
                 + "no longer matches the checksum recorded when this entry was "
-                + "first fetched: the cache was revised, or fetch_seismogram "
+                + "first fetched: the source data changed, or fetch_seismogram "
                 + "now yields the same samples in a different dtype."
             )
             if self.on_checksum_mismatch == "raise":
@@ -531,7 +539,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
             >>> len(seis.data)
             2
         """
-        matches = [e for e in self.entries if entry_identity(e) == identity]
+        matches = [e for e in self.entries if e.identity == identity]
         if not matches:
             raise UnknownEntryIdentity(identity)
         if len(matches) > 1:

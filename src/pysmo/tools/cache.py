@@ -556,13 +556,14 @@ class FetchCache:
 def _fetch_key(station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp) -> str:
     # json.dumps escapes each field, so a value containing the delimiter
     # can't collide with another station/window. Timestamps are normalised to
-    # UTC so two spellings of the same instant produce the same key.
+    # UTC so two spellings of the same instant produce the same key; NSLC codes
+    # are stripped so SAC-style padding doesn't split one station into two rows.
     return json.dumps(
         [
-            station.network,
-            station.name,
-            station.location,
-            station.channel,
+            str(station.network).strip(),
+            str(station.name).strip(),
+            str(station.location).strip(),
+            str(station.channel).strip(),
             convert_to_utc_timestamp(starttime).isoformat(),
             convert_to_utc_timestamp(endtime).isoformat(),
         ]

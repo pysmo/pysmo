@@ -581,6 +581,10 @@ class TestGet:
             project.get(fake_id)
         assert exc_info.value.identity == fake_id
         assert isinstance(exc_info.value, LookupError)
+        # Subclasses KeyError so one `except KeyError` also covers
+        # PysmoProject.seismogram's unknown-station/event case.
+        assert isinstance(exc_info.value, KeyError)
+        assert fake_id in str(exc_info.value)
 
     def test_get_multiple_matches_raises_value_error(
         self, station_anmo: MiniStation, event_maule: MiniEvent
