@@ -19,6 +19,8 @@ from pymseed import DataEncoding, MS3TraceList
 
 from pysmo import Seismogram, StationCode
 
+from ._atomic import atomic_write
+
 __all__ = ["write_mseed"]
 
 _DTYPE_TO_SAMPLE_TYPE: dict[type, Literal["i", "f", "d"]] = {
@@ -76,7 +78,9 @@ def write_mseed(
             ignored); it supplies the network, station, location and
             channel codes. *seismogram* is any
             [`Seismogram`][pysmo.Seismogram].
-        path: Destination file path. Any existing content is overwritten.
+        path: Destination file path. Written via a temporary file in the
+            target's directory and an atomic replace, so a failed write
+            leaves any existing file intact; that directory must be writable.
         sample_type: miniSEED sample encoding: `"i"` (32-bit integer,
             STEIM2), `"f"` (32-bit float) or `"d"` (64-bit float). The
             default `None` picks it from each seismogram's `data.dtype`
@@ -153,4 +157,5 @@ def write_mseed(
             + "differing dtype to separate files."
         )
 
-    tracelist.to_file(path, overwrite=True, encoding=encodings.pop())
+    with atomic_write(path) as tmp:
+        tracelist.to_file(str(tmp), overwrite=True, encoding=encodings.pop())

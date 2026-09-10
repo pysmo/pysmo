@@ -1,5 +1,7 @@
 """The ProjectEntry class and the build_entries helper."""
 
+from __future__ import annotations
+
 from collections.abc import Callable, Iterable
 from typing import Any
 
@@ -7,9 +9,9 @@ import pandas as pd
 from attrs import converters, define, field, setters
 
 from pysmo import Event, Station
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 
-from ._identity import entry_identity, entry_identity_components
+from ._identity import entry_identity_components, identity_digest
 
 __all__ = ["ProjectEntry", "build_entries"]
 
@@ -48,7 +50,7 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
 
     starttime: pd.Timestamp | None = field(
         default=None,
-        converter=converters.optional(convert_to_utc_timestamp),
+        converter=converters.optional(to_utc_timestamp),
         on_setattr=setters.convert,
     )
     """Explicit start of the fetch window (UTC).
@@ -58,13 +60,20 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
 
     endtime: pd.Timestamp | None = field(
         default=None,
-        converter=converters.optional(convert_to_utc_timestamp),
+        converter=converters.optional(to_utc_timestamp),
         on_setattr=setters.convert,
     )
     """Explicit end of the fetch window (UTC).
 
     Overrides `event` when set together with `starttime`.
     """
+
+    _identity_cache: tuple[dict[str, Any], str] | None = field(
+        init=False, default=None, eq=False, repr=False
+    )
+    """Memoised (`identity_components`, `identity`) pair, reused only while the
+    components still compare equal — so mutating a nested `station`/`event`
+    field invalidates it too, not just reassigning the top-level field."""
 
     checksum: str | None = field(default=None)
     """Checksum of the fetched seismogram, set on first fetch; `None` until then.
@@ -151,7 +160,12 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
             >>> len(entry.identity)
             67
         """
-        return entry_identity(self)
+        components = entry_identity_components(self)
+        cached = self._identity_cache
+        if cached is None or cached[0] != components:
+            cached = (components, identity_digest(components))
+            object.__setattr__(self, "_identity_cache", cached)
+        return cached[1]
 
     def __attrs_post_init__(self) -> None:
         """Reject a half-specified, reversed, or (event-less) absent window."""

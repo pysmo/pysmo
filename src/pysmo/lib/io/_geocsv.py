@@ -30,7 +30,10 @@ import pandas as pd
 from pysmo import MiniSeismogram, Seismogram
 from pysmo._utils import as_sequence
 from pysmo.functions._seismogram import merge
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.typing import NonNegativeNumber
+
+from ._atomic import atomic_write
 
 __all__ = [
     "GeoCsvDataset",
@@ -179,8 +182,7 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
     """
     headers = dataset.headers
     try:
-        _ts = pd.Timestamp(headers["start_time"])
-        start_time = _ts if _ts.tzinfo is not None else _ts.tz_localize("UTC")
+        start_time = to_utc_timestamp(headers["start_time"])
         sample_rate_hz = float(headers["sample_rate_hz"])
         sample_count = int(headers["sample_count"])
     except KeyError as error:
@@ -292,7 +294,10 @@ def merge_geocsv_timeseries(
     mini_seismograms = tuple(
         MiniSeismogram(
             begin_time=segment.start_time,
-            delta=pd.Timedelta(seconds=1.0 / segment.sample_rate_hz),
+            # Integer nanoseconds, matching the rate<->delta conversions
+            # elsewhere in this module; `seconds=1.0 / rate` loses
+            # sub-microsecond precision.
+            delta=pd.Timedelta(round(1_000_000_000 / segment.sample_rate_hz)),
             data=segment.data,
         )
         for segment in segments
@@ -359,10 +364,16 @@ def _geocsv_block(seismogram: Seismogram) -> str:
         ]
     )
 
-    for n, sample in enumerate(data):
-        timestamp = (seismogram.begin_time + n * seismogram.delta).isoformat()
-        formatted_sample = str(int(sample)) if is_integral else repr(float(sample))
-        lines.append(f"{timestamp}, {formatted_sample}")
+    times = pd.date_range(
+        seismogram.begin_time, periods=sample_count, freq=seismogram.delta
+    )
+    if is_integral:
+        samples = (str(int(sample)) for sample in data)
+    else:
+        samples = (repr(float(sample)) for sample in data)
+    lines.extend(
+        f"{time.isoformat()}, {sample}" for time, sample in zip(times, samples)
+    )
 
     return "\n".join(lines)
 
@@ -382,8 +393,10 @@ def write_geocsv(
     Args:
         seismograms: A single [`Seismogram`][pysmo.Seismogram] or a
             non-empty sequence of them.
-        path: Destination file path. Written in UTF-8 text mode;
-            existing content is overwritten.
+        path: Destination file path. Written in UTF-8 via a temporary file
+            in the target's directory and an atomic replace, so a failed
+            write leaves any existing file intact; that directory must be
+            writable.
 
     Raises:
         ValueError: If *seismograms* is an empty sequence.
@@ -437,6 +450,5 @@ def write_geocsv(
 
     blocks = [_geocsv_block(seismogram) for seismogram in items]
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n\n".join(blocks))
-        f.write("\n")
+    with atomic_write(path) as tmp:
+        tmp.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")

@@ -561,7 +561,11 @@ def merge[T: Seismogram](
     within this tolerance, the overlapping samples must match (compared with
     [`allclose`][numpy.allclose] and its default tolerances, to accommodate
     floating-point noise from e.g. prior resampling); they are verified and
-    the duplicates are discarded rather than concatenated.
+    the duplicates are discarded rather than concatenated. A sub-tolerance
+    positive gap is closed by concatenating the later seismogram's samples
+    straight onto the preceding grid, shifting them earlier by up to
+    `gap_tolerance_factor` of a sampling interval; no samples are inserted to
+    span the gap.
 
     When `replace=False`, the first seismogram in `seismograms` (as given,
     not necessarily the chronologically first, and regardless of whether it
@@ -1106,15 +1110,24 @@ def window[T: Seismogram](
     window_begin_time -= ramp_duration
     window_end_time += ramp_duration
 
+    # replace=True is threaded through every step so the chain never mutates an
+    # object in place; a step run without it would fail on an immutable type.
     if replace:
         seismogram = crop(seismogram, window_begin_time, window_end_time, replace=True)
-    else:
-        crop(seismogram, window_begin_time, window_end_time)
+        seismogram = detrend(seismogram, replace=True)
+        seismogram = taper(
+            seismogram,
+            taper_width=ramp_duration * 2,
+            window_type=window_type,
+            replace=True,
+        )
+        if same_shape is True:
+            seismogram = pad(seismogram, begin_time, end_time, replace=True)
+        return seismogram
+
+    crop(seismogram, window_begin_time, window_end_time)
     detrend(seismogram)
     taper(seismogram, taper_width=ramp_duration * 2, window_type=window_type)
     if same_shape is True:
         pad(seismogram, begin_time, end_time)
-
-    if replace:
-        return seismogram
     return None

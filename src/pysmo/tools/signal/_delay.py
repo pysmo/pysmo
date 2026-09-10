@@ -1,7 +1,7 @@
 import math
 import warnings
 from collections.abc import Sequence
-from itertools import combinations
+from itertools import combinations, permutations
 
 import numpy as np
 import numpy.typing as npt
@@ -112,7 +112,8 @@ def delay(
             anti-correlation.
 
     Raises:
-        ValueError: If either seismogram has no data.
+        ValueError: If either seismogram has no data, or if `max_shift` is set
+            and is not shorter than the seismogram length.
 
     Examples:
         To illustrate the `delay()` function: this reads a seismogram from a
@@ -218,6 +219,8 @@ def delay(
 
     if max_shift is not None:
         max_lag_in_samples = math.ceil(max_shift / delta)
+        if max_lag_in_samples >= len(data1):
+            raise ValueError("`max_shift` must be shorter than the seismogram length.")
         # Pad only the correlation input; the overlap cc below needs real samples.
         corr = _correlate(np.pad(data1, max_lag_in_samples), data2, mode="valid")
     else:
@@ -454,8 +457,11 @@ def multi_multi_delay(
     [`delay`][pysmo.tools.signal.delay] for each pair individually.
 
     The result at `delays[i, j]` is the delay of seismogram `j` relative to
-    seismogram `i` (treating `i` as the reference). The delay matrix is
-    antisymmetric: `delays[i, j] == -delays[j, i]`, and the diagonal is zero.
+    seismogram `i` (treating `i` as the reference). The diagonal is zero and
+    the matrix is antisymmetric (`delays[i, j] == -delays[j, i]`), except where
+    the two directions' correlation peaks disagree by a sample, as can happen
+    for near-periodic or multi-peak waveforms. Each `cc_matrix` entry is the
+    correlation at its own cell's chosen lag.
 
     Note: Returns `numpy.timedelta64`, not `Timedelta`
         Unlike most pysmo functions, this returns `numpy.timedelta64` values
@@ -568,21 +574,20 @@ def multi_multi_delay(
     # Array multiplication converts pandas.Timedelta to numpy.timedelta64
     delays = signed_lags * seismograms[0].delta
 
-    # Recompute each cc exactly (overlap-restricted Pearson) at the chosen
-    # lag, rather than using the fixed-length-normalised search value, which
-    # underestimates correlation at large lags where the pair only
-    # partially overlaps. Only the upper triangle is computed: cc(i, j) at
-    # lag L equals cc(j, i) at lag -L (verified: Pearson correlation over
-    # the same overlap is order-invariant), and signed_lags is itself
-    # antisymmetric, so the lower triangle is a mirror, not new work.
+    # Recompute each cc exactly (overlap-restricted Pearson) at the lag chosen
+    # for that cell, rather than using the fixed-length-normalised search
+    # value, which underestimates correlation at large lags where the pair
+    # only partially overlaps. Every off-diagonal cell is computed on its own:
+    # signed_lags[i, j] and signed_lags[j, i] are not guaranteed to be exact
+    # negatives (even n_fft mid-point, or argmax landing on a different peak
+    # of a near-periodic pair), so mirroring would risk pairing a cc with the
+    # wrong lag.
     all_data = [s.data for s in seismograms]
     ccs = np.empty((n, n), dtype=float)
     for i in range(n):
         ccs[i, i] = _pearson_at_lag(all_data[i], all_data[i], 0)
-    for i, j in combinations(range(n), 2):
-        cc = _pearson_at_lag(all_data[i], all_data[j], int(signed_lags[i, j]))
-        ccs[i, j] = cc
-        ccs[j, i] = cc
+    for i, j in permutations(range(n), 2):
+        ccs[i, j] = _pearson_at_lag(all_data[i], all_data[j], int(signed_lags[i, j]))
 
     return delays, ccs
 

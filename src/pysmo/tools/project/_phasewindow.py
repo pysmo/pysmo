@@ -6,7 +6,7 @@ import pandas as pd
 from attrs import define, field, validators
 
 from pysmo import Event, Station
-from pysmo.lib.validators import convert_to_timedelta
+from pysmo.lib.converters import to_timedelta
 from pysmo.tools.azdist import haversine
 from pysmo.tools.traveltime import TravelTimeBackend, builtin_backend
 from pysmo.typing import NonPositiveTimedelta, PositiveTimedelta
@@ -40,7 +40,7 @@ class PhaseWindow:
 
     pre_pick: NonPositiveTimedelta = field(
         default=pd.Timedelta(minutes=-2),
-        converter=convert_to_timedelta,
+        converter=to_timedelta,
         validator=[
             validators.instance_of(pd.Timedelta),
             validators.le(pd.Timedelta(0)),
@@ -50,7 +50,7 @@ class PhaseWindow:
 
     post_pick: PositiveTimedelta = field(
         default=pd.Timedelta(minutes=8),
-        converter=convert_to_timedelta,
+        converter=to_timedelta,
         validator=[
             validators.instance_of(pd.Timedelta),
             validators.gt(pd.Timedelta(0)),

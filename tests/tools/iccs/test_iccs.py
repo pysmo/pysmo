@@ -141,6 +141,85 @@ class TestICCSAllDeselected:
             _ = self.iccs.context_stack
 
 
+class TestICCSAutoselectDeselectAll:
+    """autoselect must not abort __call__ with a low-level ValueError when a
+    poorly-aligned iteration would deselect every seismogram."""
+
+    def test_autoselect_keeps_best_when_it_would_clear_all(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        iccs.min_cc = 1.1  # unreachable — every seismogram fails the threshold
+
+        with pytest.warns(UserWarning, match="autoselect left no seismograms"):
+            result = iccs(autoselect=True, max_iter=1)
+
+        assert isinstance(result, IccsResult)
+        assert sum(s.select for s in iccs.seismograms) == 1
+        # The stack is still accessible (no ValueError from _create_stack).
+        _ = iccs.stack
+
+
+class TestICCSMcccRefused:
+    """A refused MCCC refinement must be surfaced, not silently returned as if
+    the pick had been updated."""
+
+    def test_refused_shift_recorded_on_result(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from pysmo.tools.iccs import _iccs as iccs_module
+
+        iccs = ICCS(iccs_seismograms)
+        n = len(iccs.selected_cc_seismograms)
+
+        def fake_mccc(
+            seismograms: object, **kwargs: object
+        ) -> tuple[
+            list[pd.Timedelta],
+            list[pd.Timedelta | None],
+            pd.Timedelta,
+            list[float],
+            list[float],
+        ]:
+            delays = [pd.Timedelta(0)] * n
+            delays[0] = pd.Timedelta(days=9999)  # far out of bounds
+            return (
+                delays,
+                [pd.Timedelta(seconds=0.1)] * n,
+                pd.Timedelta(seconds=0.1),
+                [0.9] * n,
+                [0.01] * n,
+            )
+
+        monkeypatch.setattr(iccs_module, "mccc", fake_mccc)
+
+        pick_before = (
+            iccs.selected_cc_seismograms[0].parent_seismogram.t1
+            or iccs.selected_cc_seismograms[0].parent_seismogram.t0
+        )
+        with pytest.warns(UserWarning) as record:
+            result = iccs.run_mccc()
+
+        assert any("move the window out of bounds" in str(w.message) for w in record)
+        assert result.refused == [0]
+        pick_after = (
+            iccs.selected_cc_seismograms[0].parent_seismogram.t1
+            or iccs.selected_cc_seismograms[0].parent_seismogram.t0
+        )
+        assert pick_after == pick_before
+
+    def test_result_constructs_without_refused(self) -> None:
+        # `refused` is a later addition; the five-field construction still works.
+        result = McccResult(
+            picks=[],
+            errors=[],
+            rmse=pd.Timedelta(seconds=0.1),
+            cc_means=[],
+            cc_stds=[],
+        )
+        assert result.refused == []
+
+
 class TestICCSUpdateWarning:
     """Test the warning emitted when t1 update would move out of limits."""
 
@@ -155,7 +234,7 @@ class TestICCSUpdateWarning:
         window = (pd.Timedelta(seconds=-15), pd.Timedelta(seconds=15))
 
         with pytest.warns(UserWarning) as record:
-            _update_seismogram(
+            applied = _update_seismogram(
                 delay=huge_delay,
                 cc=1.0,
                 seismogram=seismogram,
@@ -163,13 +242,61 @@ class TestICCSUpdateWarning:
                 autoselect=False,
                 min_cc_for_autoselect=0.0,
                 current_window=window,
+                ramp_width=0.1,
             )
 
+        assert applied is False
         assert len(record) == 1
         msg = str(record[0].message)
         # Must identify the seismogram by t0, not dump the full data array.
         assert "t0=" in msg
         assert "array(" not in msg
+
+    def test_ramp_included_in_pick_limit(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        """A shift that clears the bare window edge but lands inside the taper
+        ramp band must be refused; pysmo.functions.window would reject it and
+        break the instance otherwise."""
+        from pysmo.tools.iccs._iccs import _compute_ramp, _update_seismogram
+
+        window_pre = pd.Timedelta(seconds=-15)
+        window_post = pd.Timedelta(seconds=15)
+        ramp_width = 0.1
+        ramp = _compute_ramp(ramp_width, window_pre, window_post)
+        assert ramp > pd.Timedelta(0)
+
+        seismogram = iccs_seismograms[0]
+        pick = seismogram.t1 or seismogram.t0
+        # Bare pre-limit: begin_time - window_pre - pick. Land half a ramp short.
+        bare_delta = seismogram.begin_time - window_pre - pick
+        delta = bare_delta + ramp / 2
+
+        with pytest.warns(UserWarning, match="out of limits"):
+            applied = _update_seismogram(
+                delay=delta,
+                cc=None,
+                seismogram=seismogram,
+                autoflip=False,
+                autoselect=False,
+                min_cc_for_autoselect=0.0,
+                current_window=(window_pre, window_post),
+                ramp_width=ramp_width,
+            )
+        assert applied is False
+
+        # The same shift is accepted once there is no ramp.
+        applied_no_ramp = _update_seismogram(
+            delay=delta,
+            cc=None,
+            seismogram=seismogram,
+            autoflip=False,
+            autoselect=False,
+            min_cc_for_autoselect=0.0,
+            current_window=(window_pre, window_post),
+            ramp_width=pd.Timedelta(0),
+        )
+        assert applied_no_ramp is True
 
 
 class TestICCSParameters(TestICCSBase):
@@ -433,12 +560,20 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs.corners == 64
         self.iccs.corners = 2
 
-        # Test cache clearing
+        # min_cc does not touch the cache: nothing cached depends on it.
         self.iccs.cc_seismograms  # Populate cache
+        self.iccs.context_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
         self.iccs.min_cc = 0.4
-        assert self.iccs._cc_seismograms_cache is None
+        assert self.iccs._cc_seismograms_cache is not None
+        assert self.iccs._context_seismograms_cache is not None
 
+        # context_width clears only the context caches.
+        self.iccs.context_width = self.iccs.context_width + pd.Timedelta(seconds=1)
+        assert self.iccs._context_seismograms_cache is None
+        assert self.iccs._cc_seismograms_cache is not None
+
+        # Test cache clearing
         self.iccs.bandpass_apply = False
         self.iccs.cc_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
@@ -451,6 +586,40 @@ class TestICCSParameters(TestICCSBase):
         self.iccs.corners = 3
         assert self.iccs._cc_seismograms_causal_cache is None
         self.iccs.corners = 2
+
+    def test_min_cc_setter_is_a_cache_noop(self) -> None:
+        """Setting min_cc rebuilds nothing: no cache depends on it."""
+        populated = [
+            self.iccs.cc_seismograms,
+            self.iccs.context_seismograms,
+            self.iccs.ccs,
+            self.iccs.stack,
+            self.iccs.cc_seismograms_causal,
+        ]
+        self.iccs.min_cc = self.iccs.min_cc + 0.01
+        assert self.iccs.cc_seismograms is populated[0]
+        assert self.iccs.context_seismograms is populated[1]
+        assert self.iccs.ccs is populated[2]
+        assert self.iccs.stack is populated[3]
+        assert self.iccs.cc_seismograms_causal is populated[4]
+
+    def test_context_width_setter_clears_only_context_caches(self) -> None:
+        """context_width feeds only the context path, so cc caches survive it."""
+        cc = self.iccs.cc_seismograms
+        cc_causal = self.iccs.cc_seismograms_causal
+        self.iccs.context_seismograms
+        self.iccs.context_stack
+
+        self.iccs.context_width = self.iccs.context_width + pd.Timedelta(seconds=2)
+
+        assert self.iccs.cc_seismograms is cc
+        assert self.iccs.cc_seismograms_causal is cc_causal
+        assert self.iccs._context_seismograms_cache is None
+        assert self.iccs._context_stack_cache is None
+        # An unchanged value is not a rebuild trigger.
+        ctx = self.iccs.context_seismograms
+        self.iccs.context_width = self.iccs.context_width
+        assert self.iccs.context_seismograms is ctx
 
     def test_causal_seismograms_short_circuit_when_apply_false(self) -> None:
         """cc_seismograms_causal aliases cc_seismograms when bandpass_apply is False."""

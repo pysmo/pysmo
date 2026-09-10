@@ -326,6 +326,14 @@ def test_multi_delay_max_shift_with_abs_max() -> None:
     assert ccs_far[0] < 0
 
 
+def test_delay_max_shift_longer_than_signal_raises() -> None:
+    """`delay` rejects a `max_shift` that is not shorter than the seismogram."""
+    seismogram1 = MiniSeismogram(data=np.arange(10.0))
+    seismogram2 = MiniSeismogram(data=np.arange(10.0))
+    with pytest.raises(ValueError, match="shorter than the seismogram length"):
+        delay(seismogram1, seismogram2, max_shift=pd.Timedelta(seconds=10))
+
+
 def test_multi_delay_negative_max_shift_raises() -> None:
     """
     Test that `multi_delay` raises `ValueError` for a negative `max_shift`.

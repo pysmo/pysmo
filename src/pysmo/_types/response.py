@@ -1,8 +1,10 @@
 from typing import Protocol
 
-from attrs import define, field, setters, validators
+from attrs import converters, define, field, setters, validators
 
-from pysmo.lib.validators import convert_to_complex_list, validate_nonzero
+from pysmo.lib.converters import to_complex_list, to_float_list, to_strict_int
+from pysmo.lib.protocols import satisfies_protocol
+from pysmo.lib.validators import is_nonzero
 from pysmo.typing import NonZeroNumber, PositiveNumber
 
 __all__ = [
@@ -13,28 +15,6 @@ __all__ = [
     "ResponseStage",
     "StagedResponse",
 ]
-
-
-def _convert_float_list(value: list[float]) -> list[float]:
-    """Convert an iterable of numbers to a list of `float` values."""
-    return [float(item) for item in value]
-
-
-def _convert_optional_float(value: float | None) -> float | None:
-    """Convert `value` to `float`, passing `None` through unchanged."""
-    return None if value is None else float(value)
-
-
-def _convert_strict_int(value: int) -> int:
-    """Convert `value` to `int`, raising if it isn't a whole number.
-
-    Unlike a bare `int()` converter, this rejects a fractional value (e.g.
-    `2.5`) instead of silently discarding its fractional part.
-    """
-    as_float = float(value)
-    if not as_float.is_integer():
-        raise ValueError(f"{value!r} is not a whole number.")
-    return int(as_float)
 
 
 class Response(Protocol):
@@ -107,10 +87,16 @@ class ResponseStage(Protocol):
     """Sample rate (Hz) this stage's filter coefficients operate at."""
 
     decimation_factor: int
-    """Integer decimation factor applied by this stage."""
+    """Integer decimation factor applied by this stage.
+
+    [`MiniResponseStage`][pysmo.MiniResponseStage] requires it to be positive.
+    """
 
     numerator: list[float]
-    """Feedforward ("b") filter coefficients."""
+    """Feedforward ("b") filter coefficients.
+
+    [`MiniResponseStage`][pysmo.MiniResponseStage] requires at least one.
+    """
 
     denominator: list[float]
     """Feedback ("a") filter coefficients. `[1.0]` for a pure FIR stage."""
@@ -161,7 +147,7 @@ class MiniResponse:
     """
 
     poles: list[complex] = field(
-        converter=convert_to_complex_list,
+        converter=to_complex_list,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Response poles.
@@ -170,7 +156,7 @@ class MiniResponse:
     """
 
     zeros: list[complex] = field(
-        converter=convert_to_complex_list,
+        converter=to_complex_list,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Response zeros.
@@ -180,7 +166,7 @@ class MiniResponse:
 
     overall_sensitivity: NonZeroNumber = field(
         converter=float,
-        validator=validate_nonzero,
+        validator=is_nonzero,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Scale factor combined with `poles`/`zeros` to reconstruct `H(f)`.
@@ -191,8 +177,8 @@ class MiniResponse:
 
     reference_sensitivity: NonZeroNumber | None = field(
         default=None,
-        converter=_convert_optional_float,
-        validator=validators.optional(validate_nonzero),
+        converter=converters.optional(float),
+        validator=validators.optional(is_nonzero),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Total system sensitivity at the reference frequency, `A0` excluded.
@@ -244,7 +230,7 @@ class MiniResponseStage:
     """
 
     decimation_factor: int = field(
-        converter=_convert_strict_int,
+        converter=to_strict_int,
         validator=validators.gt(0),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -255,7 +241,7 @@ class MiniResponseStage:
     """
 
     numerator: list[float] = field(
-        converter=_convert_float_list,
+        converter=to_float_list,
         validator=validators.min_len(1),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -266,7 +252,7 @@ class MiniResponseStage:
 
     denominator: list[float] = field(
         factory=lambda: [1.0],
-        converter=_convert_float_list,
+        converter=to_float_list,
         validator=validators.min_len(1),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -309,7 +295,11 @@ class MiniStagedResponse(MiniResponse):
 
     stages: list[ResponseStage] = field(
         factory=list,
-        on_setattr=setters.pipe(setters.convert, setters.validate),
+        validator=validators.deep_iterable(
+            member_validator=satisfies_protocol(ResponseStage),
+            iterable_validator=validators.instance_of(list),
+        ),
+        on_setattr=setters.validate,
     )
     """Digital decimation stages, in signal order.
 

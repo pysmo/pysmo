@@ -1,9 +1,10 @@
 from typing import Protocol
 
 import pandas as pd
-from attrs import define, field, setters, validators
+from attrs import define, field, setters
 
-from pysmo.lib.validators import convert_to_longitude, convert_to_utc_timestamp
+from pysmo.lib.converters import to_longitude, to_utc_timestamp
+from pysmo.lib.validators import is_latitude, is_longitude
 from pysmo.typing import UtcTimestamp
 
 from .location_with_depth import LocationWithDepth
@@ -41,21 +42,21 @@ class MiniEvent:
     """
 
     time: UtcTimestamp = field(
-        converter=convert_to_utc_timestamp,
+        converter=to_utc_timestamp,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event origin time."""
 
     latitude: float = field(
         converter=float,
-        validator=[validators.ge(-90), validators.le(90)],
+        validator=is_latitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event latitude from -90 to 90 degrees."""
 
     longitude: float = field(
-        converter=convert_to_longitude,
-        validator=[validators.gt(-180), validators.le(180)],
+        converter=to_longitude,
+        validator=is_longitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event longitude from -180 to 180 degrees (-180 is stored as +180)."""

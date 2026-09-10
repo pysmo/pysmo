@@ -1,5 +1,6 @@
 """FDSN StationXML import class compatible with pysmo types."""
 
+import warnings
 from collections import defaultdict
 from collections.abc import Iterable
 from typing import Self
@@ -8,8 +9,9 @@ import pandas as pd
 from attrs import converters, define, field, validators
 
 from pysmo import MiniResponseStage, MiniStagedResponse, Station
+from pysmo.lib.converters import to_longitude, to_utc_timestamp
 from pysmo.lib.io._stationxml import _RawStationEpoch, parse_stationxml
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.validators import is_latitude, is_longitude
 from pysmo.tools.web import fetch_stationxml
 
 __all__ = ["StationXML", "resolve_epochs"]
@@ -33,7 +35,7 @@ def _matching_epochs(
     if channel is not None:
         epochs = [epoch for epoch in epochs if epoch.channel == channel]
     if time is not None:
-        time = convert_to_utc_timestamp(time)
+        time = to_utc_timestamp(time)
         return [
             epoch
             for epoch in epochs
@@ -119,20 +121,20 @@ class StationXML:
     channel: str = field(validator=validators.instance_of(str))
     """Channel code (empty for a `level=station` epoch)."""
 
-    latitude: float = field(converter=float)
-    """Latitude in degrees."""
+    latitude: float = field(converter=float, validator=is_latitude)
+    """Latitude in degrees, -90 to 90."""
 
-    longitude: float = field(converter=float)
-    """Longitude in degrees."""
+    longitude: float = field(converter=to_longitude, validator=is_longitude)
+    """Longitude in degrees, -180 to 180 (-180 is stored as +180)."""
 
     elevation: float | None = field(default=None, converter=converters.optional(float))
     """Elevation in metres, or `None` if the document omits it."""
 
-    start_date: pd.Timestamp = field(converter=convert_to_utc_timestamp)
+    start_date: pd.Timestamp = field(converter=to_utc_timestamp)
     """Start of this metadata epoch."""
 
     end_date: pd.Timestamp | None = field(
-        default=None, converter=converters.optional(convert_to_utc_timestamp)
+        default=None, converter=converters.optional(to_utc_timestamp)
     )
     """End of this metadata epoch, or `None` if still open."""
 
@@ -187,6 +189,7 @@ class StationXML:
         station: str | None = None,
         location: str | None = None,
         channel: str | None = None,
+        strict: bool = True,
     ) -> Self:
         """Create a new instance from a StationXML document, selecting one epoch.
 
@@ -205,6 +208,10 @@ class StationXML:
             station: Station code to narrow to, if `xml` covers more than one.
             location: Location code to narrow to, if `xml` covers more than one.
             channel: Channel code to narrow to, if `xml` covers more than one.
+            strict: If `True` (default), any unrepresentable epoch in `xml`
+                fails the call. If `False`, such epochs are skipped (with a
+                `UserWarning`) before narrowing, so a bad *other* epoch
+                doesn't block selecting the one asked for.
 
         Returns:
             A new StationXML instance for the epoch active at *time* (or
@@ -219,7 +226,7 @@ class StationXML:
             Parse every epoch in the document without narrowing to one.
         """
         matches = _matching_epochs(
-            parse_stationxml(xml),
+            parse_stationxml(xml, strict=strict),
             time,
             network=network,
             station=station,
@@ -239,7 +246,7 @@ class StationXML:
         return cls._from_raw(matches[0])
 
     @classmethod
-    def all_from_bytes(cls, xml: bytes) -> list[Self]:
+    def all_from_bytes(cls, xml: bytes, *, strict: bool = True) -> list[Self]:
         """Create one instance per `<Channel>` epoch in a StationXML document.
 
         Unlike [`from_bytes`][pysmo.classes.StationXML.from_bytes], this does
@@ -248,11 +255,49 @@ class StationXML:
 
         Args:
             xml: Raw StationXML document bytes.
+            strict: If `True` (default), a single unrepresentable epoch
+                fails the whole parse. If `False`, unrepresentable epochs
+                are skipped and a `UserWarning` reports how many — useful
+                for a bulk `level=response` inventory where one channel's
+                unsupported response encoding should not discard the rest.
 
         Returns:
-            One StationXML instance per epoch found, in document order.
+            One StationXML instance per representable epoch, in document order.
         """
-        return [cls._from_raw(raw) for raw in parse_stationxml(xml)]
+        return cls._instances_from_raw(
+            parse_stationxml(xml, strict=strict), strict=strict
+        )
+
+    @classmethod
+    def _instances_from_raw(
+        cls, raws: list[_RawStationEpoch], *, strict: bool
+    ) -> list[Self]:
+        """Build instances from parsed epochs, applying the strictness boundary.
+
+        `parse_stationxml` skips XML that will not parse; this skips an epoch
+        that parses but fails `StationXML` or nested-response validation (an
+        out-of-range coordinate, a zero sensitivity, an invalid digital stage).
+        """
+        instances: list[Self] = []
+        skipped: list[str] = []
+        for raw in raws:
+            try:
+                instances.append(cls._from_raw(raw))
+            except (ValueError, TypeError) as error:
+                if strict:
+                    raise
+                skipped.append(
+                    f"{raw.network}.{raw.station}.{raw.location}.{raw.channel} "
+                    + f"@ {raw.start_date} ({error})"
+                )
+        if skipped:
+            warnings.warn(
+                f"Skipped {len(skipped)} unrepresentable StationXML epoch(s); "
+                + f"first: {skipped[0]}",
+                UserWarning,
+                stacklevel=3,
+            )
+        return instances
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
@@ -369,7 +414,7 @@ def resolve_epochs(
         ValueError: If an NSLC has more than one epoch covering `time`
             (overlapping validity windows, i.e. an invalid inventory).
     """
-    time = convert_to_utc_timestamp(time)
+    time = to_utc_timestamp(time)
     grouped: dict[_Nslc, list[StationXML]] = defaultdict(list)
     for epoch in epochs:
         grouped[(epoch.network, epoch.name, epoch.location, epoch.channel)].append(

@@ -198,6 +198,19 @@ class TestExtractGeocsvTimeseries:
         with pytest.raises(ValueError, match="non-numeric value in the sample column"):
             extract_geocsv_timeseries(parse_geocsv(bad)[0])
 
+    def test_nat_start_time_rejected(self) -> None:
+        bad = SIMPLE.replace("# start_time: 2010-02-27T06:30:00Z", "# start_time: NaT")
+        with pytest.raises(ValueError, match="unparseable timeseries header"):
+            extract_geocsv_timeseries(parse_geocsv(bad)[0])
+
+    def test_non_utc_start_time_normalised_to_utc(self) -> None:
+        text = SIMPLE.replace(
+            "# start_time: 2010-02-27T06:30:00Z",
+            "# start_time: 2010-02-27T06:30:00+05:00",
+        )
+        segment = extract_geocsv_timeseries(parse_geocsv(text)[0])
+        assert segment.start_time == pd.Timestamp("2010-02-27T01:30:00Z")
+
     def test_missing_sourceid(self) -> None:
         text = (
             "# dataset: GeoCSV 2.0\n"
@@ -221,6 +234,17 @@ class TestMergeGeocsvTimeseries:
         assert merged.start_time == first.start_time
         assert merged.sample_count == 6
         npt.assert_allclose(merged.data, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+
+    def test_merge_non_dyadic_sample_rate_preserved(self) -> None:
+        # 1/3 s is not a whole number of nanoseconds; the merged rate must
+        # still come back within floating-point noise of 3 Hz.
+        first = make_segment(sample_rate_hz=3.0, data=[1.0, 2.0, 3.0])
+        second = make_segment(
+            start_time="2010-02-27T06:30:01Z", sample_rate_hz=3.0, data=[4.0, 5.0, 6.0]
+        )
+        merged = merge_geocsv_timeseries([first, second])
+        assert merged.sample_count == 6
+        assert merged.sample_rate_hz == pytest.approx(3.0)
 
     def test_zero_sample_segment_skipped(self) -> None:
         first = make_segment(data=[1.0, 2.0, 3.0])
@@ -399,6 +423,22 @@ class TestWriteGeocsv:
         assert "field_type: datetime, float" in text
         segment = extract_geocsv_timeseries(parse_geocsv(text)[0])
         npt.assert_allclose(segment.data, [1.0, 2.0, np.inf])
+
+    def test_time_column_values_for_fractional_delta(self, tmp_path: Path) -> None:
+        seismogram = GeoCsvSeismogram(
+            begin_time=pd.Timestamp("2010-02-27T06:30:00Z"),
+            delta=pd.Timedelta(seconds=0.1),
+            data=np.array([1.5, 2.5, 3.5]),
+            sourceid="IU_ANMO_00_LHZ",
+        )
+        path = tmp_path / "out.geocsv"
+        write_geocsv(seismogram, path)
+        rows = path.read_text().splitlines()[-3:]
+        assert rows == [
+            "2010-02-27T06:30:00+00:00, 1.5",
+            "2010-02-27T06:30:00.100000+00:00, 2.5",
+            "2010-02-27T06:30:00.200000+00:00, 3.5",
+        ]
 
     def test_multi_record(self, tmp_path: Path) -> None:
         seg1 = self.make_seismogram(sourceid="IU_ANMO_00_LHZ")

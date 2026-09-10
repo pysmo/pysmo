@@ -3,7 +3,7 @@
 Examples:
     Given the spectral amplitude in observed seismic noise on Earth is not flat
     (i.e. *not* consisting of white noise), it makes sense to calculate more
-    realistic noise for things like resolution tests with synthetic data.
+    realistic noise for synthetic-data experiments and Monte Carlo studies.
 
     In this example, random noise seismograms are generated from three different
     noise models. These are Peterson's NHNM (red), NLNM (blue), and an
@@ -253,6 +253,10 @@ def generate_noise(
     to ensure an efficient FFT; the central `npts` samples are then extracted
     from the result to avoid edge artefacts near the start and end of the
     generated buffer.
+
+    Each call is an independent random draw; the function takes no seed.
+    Reproducible output requires replacing `numpy.random.default_rng` in the
+    caller.
 
     Args:
         model: Noise model used to compute seismic noise.

@@ -1003,8 +1003,17 @@ def update_timewindow(
     span.extents = old_extents
 
     def on_save(_: Event) -> None:
-        iccs.window_pre = pd.Timedelta(seconds=pending_window[0])
-        iccs.window_post = pd.Timedelta(seconds=pending_window[1])
+        new_pre = pd.Timedelta(seconds=pending_window[0])
+        new_post = pd.Timedelta(seconds=pending_window[1])
+        # Apply the edge that narrows the window before the one that widens it:
+        # a per-field validator sees a larger interim ramp otherwise and can
+        # reject a pair validate_time_window already approved.
+        if new_pre >= iccs.window_pre:
+            iccs.window_pre = new_pre
+            iccs.window_post = new_post
+        else:
+            iccs.window_post = new_post
+            iccs.window_pre = new_pre
         if not return_fig:
             plt.close(fig)
 
@@ -1133,6 +1142,8 @@ def update_min_cc(
         for i, s in zip(iccs.ccs, iccs.seismograms)
         if s.select or all_seismograms
     )
+    if not current_ccs:
+        ax.set_title("No seismograms selected - nothing to pick.")
     start_index = int(np.searchsorted(current_ccs, iccs.min_cc))
     max_index = len(matrix) - 1
 
@@ -1143,6 +1154,8 @@ def update_min_cc(
         return max(0, round(min(ydata, max_index)))
 
     def calc_cc(line: Line2D) -> float:
+        if not current_ccs:
+            return iccs.min_cc
         index = round(np.asarray(line.get_ydata())[0], 0)
         if index == 0:
             return IccsDefaults.index_zero_multiplier * current_ccs[0]

@@ -3,7 +3,7 @@
 A random seismogram is generated from each of Peterson's New Low Noise Model
 (NLNM), New High Noise Model (NHNM), and an interpolated model half way
 between them. The power spectral density of every generated seismogram is
-plotted on top of the model it was drawn from, showing that ``generate_noise``
+plotted on top of the model it was drawn from, showing that `generate_noise`
 reproduces the target spectrum.
 """
 

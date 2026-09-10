@@ -14,14 +14,19 @@ from pysmo.functions import (
     seismogram_to_json,
 )
 from pysmo.functions._serialize import _SEISMOGRAM_JSON_VERSION
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.tools.cache import BlobCache
 from pysmo.typing import PositiveInt
 
-from ._identity import callable_identity, entry_identity
+from ._identity import callable_identity
 from ._types import FetchContext, SeismogramTransform
 
 __all__ = ["TransformCache"]
+
+_ENCODING_VERSION = 1000 + _SEISMOGRAM_JSON_VERSION
+"""`BlobCache` layout version for a transform-cache file. Offset from
+`cache._FETCH_ENCODING_VERSION`'s range so a raw-fetch cache and a
+JSON-document cache cannot be opened on each other's files."""
 
 
 @define(kw_only=True)
@@ -106,11 +111,13 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
         ```
     """
 
-    path: Path = field(converter=Path)
+    path: Path = field(converter=Path, metadata={"identity": False})
     """Location of the SQLite database file.
 
     The file itself is created on first use; its *parent directory* must
-    already exist, checked at construction time.
+    already exist, checked at construction time. Not part of the wrapper's
+    [`callable_identity`][pysmo.tools.project.callable_identity]: moving the
+    cache file does not change what a call returns.
     """
 
     transform: SeismogramTransform[TStation, TEvent, TSeismogram]
@@ -121,13 +128,14 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     `seismogram_transform` itself.
     """
 
-    wal: bool = False
+    wal: bool = field(default=False, metadata={"identity": False})
     """Enable WAL mode (local disk only; see
     [`BlobCache`][pysmo.tools.cache.BlobCache])."""
 
     max_bytes: PositiveInt | None = field(
         default=None,
         validator=validators.optional(validators.gt(0)),
+        metadata={"identity": False},
     )
     """Maximum total size of compressed data stored, in bytes; `None` for
     unlimited. See [`BlobCache.max_bytes`][pysmo.tools.cache.BlobCache]."""
@@ -141,6 +149,15 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     unless the transform output is known to be a plain
     [`MiniSeismogram`][pysmo.MiniSeismogram]."""
 
+    trusted_modules: tuple[str, ...] = field(
+        default=("pysmo",), metadata={"identity": False}
+    )
+    """Top-level packages a cached result's type may be imported from when it
+    is rebuilt on a hit. The pysmo value objects
+    ([`MiniSeismogram`][pysmo.MiniSeismogram] and friends) are covered by the
+    default; widen it only if the wrapped transform returns a value object
+    defined in your own package."""
+
     _cache: BlobCache = field(init=False, repr=False, eq=False)
 
     def __attrs_post_init__(self) -> None:
@@ -150,7 +167,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     def _build_cache(self) -> BlobCache:
         return BlobCache(
             path=self.path,
-            encoding_version=_SEISMOGRAM_JSON_VERSION,
+            encoding_version=_ENCODING_VERSION,
             wal=self.wal,
             max_bytes=self.max_bytes,
         )
@@ -185,12 +202,12 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
         """
         key = json.dumps(
             [
-                entry_identity(context.entry),
-                convert_to_utc_timestamp(context.starttime).isoformat(),
-                convert_to_utc_timestamp(context.endtime).isoformat(),
+                context.entry.identity,
+                to_utc_timestamp(context.starttime).isoformat(),
+                to_utc_timestamp(context.endtime).isoformat(),
                 None
                 if context.reference is None
-                else convert_to_utc_timestamp(context.reference).isoformat(),
+                else to_utc_timestamp(context.reference).isoformat(),
                 callable_identity(self.transform),
                 seismogram_checksum(seismogram),
             ]
@@ -203,4 +220,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
             return seismogram_to_json(result, verify=self.verify)
 
         blob = self._cache.get(key, produce)
-        return cast(TSeismogram, seismogram_from_json(blob))
+        return cast(
+            TSeismogram,
+            seismogram_from_json(blob, trusted_modules=self.trusted_modules),
+        )

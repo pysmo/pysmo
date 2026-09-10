@@ -14,9 +14,14 @@ import pysmo.lib.io._http as http_mod
 
 
 class FakeResponse:
-    def __init__(self, status: int, data: bytes = b"body") -> None:
+    def __init__(
+        self, status: int, data: bytes = b"body", headers: dict[str, str] | None = None
+    ) -> None:
         self.status = status
         self.data = data
+        self.headers = headers or {}
+
+    def release_conn(self) -> None: ...
 
 
 class CapturingPool:
@@ -63,7 +68,8 @@ class TestWrapperBehaviour:
         assert url == "http://example.com"
         assert kwargs["fields"] == {"key": "val"}
         assert kwargs["timeout"] == 5
-        assert kwargs["redirect"] is True
+        # http_get follows redirects itself, so the pool call disables urllib3's.
+        assert kwargs["redirect"] is False
 
     def test_non_retryable_status_raises(
         self, capturing_pool: Callable[[FakeResponse], CapturingPool]
@@ -235,3 +241,108 @@ class TestRetryIntegration:
                 request_retries=1,
                 retry_delay_seconds=0,
             )
+
+
+class TestRedirects:
+    def test_same_host_redirect_is_followed(self, http_server: ServerFactory) -> None:
+        url, received = http_server(
+            [
+                (302, {"Location": "/moved"}, b""),
+                (200, {}, b"arrived"),
+            ]
+        )
+        result = http_mod.http_get(
+            url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+        )
+        assert result == b"arrived"
+        assert received == ["/", "/moved"]
+
+    def test_cross_host_redirect_is_refused(self, http_server: ServerFactory) -> None:
+        url, received = http_server(
+            [(302, {"Location": "http://169.254.169.254/latest/meta-data"}, b"")]
+        )
+        with pytest.raises(
+            urllib3.exceptions.ResponseError, match="refusing to follow a redirect"
+        ):
+            http_mod.http_get(
+                url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+            )
+        assert received == ["/"]
+
+    def test_non_http_scheme_redirect_is_refused(
+        self, http_server: ServerFactory
+    ) -> None:
+        url, _ = http_server([(302, {"Location": "file:///etc/passwd"}, b"")])
+        with pytest.raises(
+            urllib3.exceptions.ResponseError, match="refusing to follow a redirect"
+        ):
+            http_mod.http_get(
+                url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+            )
+
+    def test_redirect_loop_is_capped(self, http_server: ServerFactory) -> None:
+        url, received = http_server([(302, {"Location": "/loop"}, b"")])
+        with pytest.raises(
+            urllib3.exceptions.ResponseError, match="redirect limit of 5"
+        ):
+            http_mod.http_get(
+                url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+            )
+        assert len(received) == http_mod._MAX_REDIRECTS + 1
+
+    def test_redirect_is_returned_when_following_is_disabled(
+        self, http_server: ServerFactory
+    ) -> None:
+        url, received = http_server([(302, {"Location": "/elsewhere"}, b"as-is")])
+        result = http_mod.http_get(
+            url,
+            {},
+            timeout_seconds=5,
+            request_retries=3,
+            retry_delay_seconds=0,
+            redirect=False,
+        )
+        assert result == b"as-is"
+        assert received == ["/"]
+
+    def test_same_host_different_port_redirect_is_refused(
+        self, http_server: ServerFactory
+    ) -> None:
+        url, received = http_server(
+            [(302, {"Location": "http://127.0.0.1:1/moved"}, b"")]
+        )
+        with pytest.raises(
+            urllib3.exceptions.ResponseError, match="refusing to follow a redirect"
+        ):
+            http_mod.http_get(
+                url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+            )
+        assert received == ["/"]
+
+
+class TestRedirectTarget:
+    """Unit coverage of the same-origin redirect check."""
+
+    def test_relative_same_origin_is_allowed(self) -> None:
+        assert (
+            http_mod._redirect_target("http://h.example/a", "/b")
+            == "http://h.example/b"
+        )
+
+    def test_http_to_https_upgrade_is_allowed(self) -> None:
+        assert (
+            http_mod._redirect_target("http://h.example/a", "https://h.example/a")
+            == "https://h.example/a"
+        )
+
+    def test_https_to_http_downgrade_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("https://h.example/a", "http://h.example/a")
+
+    def test_port_change_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("http://h.example/a", "http://h.example:8000/a")
+
+    def test_non_http_scheme_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("http://h.example/a", "file:///etc/passwd")

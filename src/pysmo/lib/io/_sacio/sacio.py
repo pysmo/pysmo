@@ -1,7 +1,4 @@
-import os
-import shutil
 import struct
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -15,6 +12,7 @@ from attrs import converters, define, field, validators
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
+from .._atomic import atomic_write
 from ._lib import SacIODefaults
 from ._sacio_rendered import (
     HEADER_TYPES,
@@ -30,12 +28,6 @@ from ._sacio_rendered import (
 # a zero-time reference. Excludes "unkn" (no reference) and "day" (midnight
 # of the reference GMT day, which is not a header of its own).
 _IZTYPE_TARGET_HEADERS = frozenset(IZTYPE.__members__) - {"unkn", "day"}
-
-
-def _current_umask() -> int:
-    mask = os.umask(0)
-    os.umask(mask)
-    return mask
 
 
 @define(kw_only=True)
@@ -371,27 +363,27 @@ class SacIO(SacIOBase):
     def write(self, filename: str | PathLike[str]) -> None:
         """Write data and headers to a SAC file.
 
-        The file is written via a temporary file and an atomic replace, so a
-        failure mid-write cannot destroy an existing valid file. When the target
-        already exists its mode and ownership are carried over to the new file;
-        a symlink target is resolved so the file it points to is replaced, not
-        the link itself.
+        Headers and data are always written little-endian, regardless of the
+        host byte order; `read` accepts either endianness.
+
+        The file is written via a temporary file in the target's directory and
+        an atomic replace, so a failure mid-write cannot destroy an existing
+        valid file. That directory must therefore be writable (and hold room
+        for the new file alongside the old), even when overwriting an existing
+        writable file. When the target already exists its mode and ownership
+        are carried over to the new file; a symlink target is resolved so the
+        file it points to is replaced, not the link itself.
 
         Args:
             filename: Name of the sacfile to write to.
         """
-        target = Path(os.path.realpath(filename))
-        try:
-            existing = target.stat()
-        except FileNotFoundError:
-            existing = None
-        fd, tmp_name = tempfile.mkstemp(dir=target.parent, suffix=".sac.tmp")
-        try:
-            with open(fd, "wb") as file_handle:
+        with atomic_write(filename, suffix=".sac.tmp") as tmp_name:
+            with open(tmp_name, "wb") as file_handle:
                 # loop over all valid header fields and write them to the file
                 for header, header_metadata in SAC_HEADERS.items():
                     header_type = header_metadata.type
-                    header_format = header_metadata.format
+                    # little-endian, matching the data blocks and footers below
+                    header_format = "<" + header_metadata.format
                     start = header_metadata.start
                     header_undefined = HEADER_TYPES[header_type].undefined
 
@@ -399,7 +391,7 @@ class SacIO(SacIOBase):
                     try:
                         if hasattr(self, header):
                             value = getattr(self, header)
-                    except TypeError:
+                    except (AttributeError, TypeError):
                         value = None
 
                     # convert enumerated header to integer if it is not None
@@ -440,7 +432,7 @@ class SacIO(SacIOBase):
                 file_handle.truncate(data_1_start)
                 if self.npts > 0:
                     file_handle.seek(data_1_start)
-                    file_handle.write(np.asarray(self.data, dtype=np.float32).tobytes())
+                    file_handle.write(np.asarray(self.data, dtype="<f4").tobytes())
 
                 data_end = data_1_end
                 if has_second_block:
@@ -452,9 +444,7 @@ class SacIO(SacIOBase):
                     data_2_end = data_1_end + self.npts * 4
                     if self.npts > 0:
                         file_handle.seek(data_1_end)
-                        file_handle.write(
-                            np.asarray(self.data2, dtype=np.float32).tobytes()
-                        )
+                        file_handle.write(np.asarray(self.data2, dtype="<f4").tobytes())
                     data_end = data_2_end
 
                 if self.nvhdr == 7:
@@ -465,7 +455,7 @@ class SacIO(SacIOBase):
                         try:
                             if hasattr(self, footer):
                                 value = getattr(self, footer)
-                        except AttributeError:
+                        except (AttributeError, TypeError):
                             value = None
 
                         # set None to -12345
@@ -474,21 +464,7 @@ class SacIO(SacIOBase):
 
                         # write to file
                         file_handle.seek(start)
-                        file_handle.write(struct.pack("d", value))
-            if existing is not None:
-                shutil.copymode(target, tmp_name)
-                if hasattr(os, "chown"):
-                    try:
-                        os.chown(tmp_name, existing.st_uid, existing.st_gid)
-                    except OSError:
-                        # Unprivileged and not the owner: keep our own uid/gid.
-                        pass
-            else:
-                os.chmod(tmp_name, 0o666 & ~_current_umask())
-            os.replace(tmp_name, target)
-        except BaseException:
-            Path(tmp_name).unlink(missing_ok=True)
-            raise
+                        file_handle.write(struct.pack("<d", value))
 
     @classmethod
     def from_file(cls, filename: str | PathLike[str]) -> Self:

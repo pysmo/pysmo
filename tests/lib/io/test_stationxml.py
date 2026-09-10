@@ -1,5 +1,6 @@
 """Tests for pysmo.lib.io._stationxml."""
 
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -275,6 +276,18 @@ class TestParseStationxml:
     def test_fir_stage_unsupported_symmetry_raises(self) -> None:
         with pytest.raises(ValueError, match="Unsupported FIR Symmetry"):
             parse_stationxml(self._fir_xml("BOGUS"))
+
+    def test_fir_stage_empty_coefficient_raises_not_renumbers(self) -> None:
+        # An entry present but with no value must raise, not be dropped
+        # (which would shift every later coefficient one position).
+        xml = self._fir_xml("NONE").replace(
+            b'<NumeratorCoefficient i="1">0.4</NumeratorCoefficient>',
+            b'<NumeratorCoefficient i="1"></NumeratorCoefficient>',
+        )
+        with pytest.raises(
+            ValueError, match=r"<NumeratorCoefficient> entry '1' has no value"
+        ):
+            parse_stationxml(xml)
 
     def test_correction_defaults_to_zero_when_absent(self) -> None:
         xml = b"""\
@@ -819,3 +832,22 @@ class TestParseStationxmlCoords:
         xml = _STATION_LEVEL_DOC.replace(b"<Latitude>34.9</Latitude>", b"")
         with pytest.raises(ValueError, match="latitude/longitude"):
             parse_stationxml(xml)
+
+    def test_strict_false_skips_unrepresentable_epoch_and_warns(self) -> None:
+        xml = _STATIONS_TWO_NETWORKS.replace(
+            b"<Latitude>48.3</Latitude><Longitude>8.3</Longitude>", b""
+        )
+        with pytest.raises(ValueError, match="latitude/longitude"):
+            parse_stationxml(xml)
+
+        with pytest.warns(
+            UserWarning, match=r"Skipped 1 unrepresentable station epoch.*II\.BFO"
+        ):
+            epochs = parse_stationxml(xml, strict=False)
+        assert [e.station for e in epochs] == ["ANMO", "ANMO"]
+
+    def test_strict_false_does_not_warn_when_every_epoch_is_representable(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            epochs = parse_stationxml(_STATIONS_TWO_NETWORKS, strict=False)
+        assert len(epochs) == 3

@@ -5,12 +5,13 @@ import numpy.typing as npt
 import pandas as pd
 from attrs import cmp_using, define, field, setters, validators
 
-from pysmo.lib.defaults import SeismogramDefaults
-from pysmo.lib.validators import (
-    convert_to_ndarray,
-    convert_to_timedelta,
-    convert_to_utc_timestamp,
+from pysmo.lib.converters import (
+    to_ndarray,
+    to_timedelta,
+    to_utc_timestamp,
 )
+from pysmo.lib.defaults import SeismogramDefaults
+from pysmo.lib.validators import is_positive_timedelta
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
 __all__ = ["MiniSeismogram", "Seismogram"]
@@ -108,25 +109,22 @@ class MiniSeismogram(SeismogramEndtimeMixin):
 
     begin_time: UtcTimestamp = field(
         default=SeismogramDefaults.begin_time,
-        converter=convert_to_utc_timestamp,
+        converter=to_utc_timestamp,
         on_setattr=setters.convert,
     )
     """Seismogram begin time."""
 
     delta: PositiveTimedelta = field(
         default=SeismogramDefaults.delta,
-        converter=convert_to_timedelta,
-        validator=[
-            validators.instance_of(pd.Timedelta),
-            validators.gt(pd.Timedelta(0)),
-        ],
+        converter=to_timedelta,
+        validator=is_positive_timedelta,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram sampling interval."""
 
     data: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
         eq=cmp_using(eq=np.array_equal),

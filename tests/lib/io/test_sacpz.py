@@ -1,5 +1,6 @@
 """Tests for pysmo.lib.io._sacpz."""
 
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -149,3 +150,76 @@ class TestParseSacpz:
         )
         with pytest.raises(ValueError, match=r"'POLES' entry at line \d+ must be"):
             parse_sacpz(text)
+
+    def test_non_numeric_pole_value_names_the_block_and_line(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in the 'POLES' block",
+        ):
+            parse_sacpz(text)
+
+    def test_non_numeric_constant_names_the_line(self) -> None:
+        text = MINIMAL_RECORD.replace("CONSTANT\t1.0e+09", "CONSTANT\tnope")
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in 'CONSTANT'",
+        ):
+            parse_sacpz(text)
+
+    def test_non_numeric_sensitivity_names_the_header(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "* INPUT UNIT        : M\n",
+            "* INPUT UNIT        : M\n* SENSITIVITY       : nope\n",
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in the '\* SENSITIVITY' header",
+        ):
+            parse_sacpz(text)
+
+    def test_duplicate_header_warns_and_last_value_wins(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "* STATION    (KSTNM): ANMO\n",
+            "* STATION    (KSTNM): ANMO\n* STATION    (KSTNM): XXXX\n",
+        )
+        with pytest.warns(UserWarning, match=r"Duplicate 'STATION' header line"):
+            records = parse_sacpz(text)
+        assert records[0].station == "XXXX"
+
+
+# A record with valid headers (so it still leads with `* NETWORK`) but a
+# non-numeric pole value: parsing fails mid-block.
+_BAD_RECORD = MINIMAL_RECORD.replace(
+    "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
+)
+
+
+class TestParseSacpzStrict:
+    def test_strict_true_is_the_default_and_fails_the_body(self) -> None:
+        text = MINIMAL_RECORD + "\n\n" + _BAD_RECORD + "\n\n" + MINIMAL_RECORD
+        with pytest.raises(ValueError):
+            parse_sacpz(text)
+
+    def test_strict_false_skips_the_bad_record_and_warns(self) -> None:
+        text = MINIMAL_RECORD + "\n\n" + _BAD_RECORD + "\n\n" + MINIMAL_RECORD
+        with pytest.warns(UserWarning, match=r"Skipped 1 malformed SAC PZ record"):
+            records = parse_sacpz(text, strict=False)
+        assert len(records) == 2
+        assert all(record.station == "ANMO" for record in records)
+
+    def test_strict_false_resyncs_from_a_leading_bad_record(self) -> None:
+        text = _BAD_RECORD + "\n\n" + MINIMAL_RECORD
+        with pytest.warns(UserWarning, match="Skipped 1 malformed"):
+            records = parse_sacpz(text, strict=False)
+        assert len(records) == 1
+
+    def test_strict_false_does_not_warn_when_every_record_is_valid(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            records = parse_sacpz(
+                MINIMAL_RECORD + "\n\n" + MINIMAL_RECORD, strict=False
+            )
+        assert len(records) == 2

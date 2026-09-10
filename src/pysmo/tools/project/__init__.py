@@ -14,19 +14,27 @@ result into the target type that tool expects (e.g.
 [`ICCS`][pysmo.tools.iccs.ICCS]). Results are cached in memory for the life
 of the object; nothing is ever written to disk by `PysmoProject` itself.
 
-The `PysmoProject` instance is the reproducible, shareable artefact: it is
-pickled, not serialised to a bespoke config format, so its three pluggable
-callables (`window`, `fetch_seismogram`, `seismogram_transform`) must be real
-top-level functions in an importable module rather than lambdas or closures
-(pickle serialises functions by reference, not by value). An optional `name`
-labels the project for identification when persisted. A callable that
-needs its own configuration (e.g. filter corner frequencies) should be a
-callable [`attrs`][] class with only picklable fields (see the example below):
-it pickles by value, and its declared fields are what let
+A `PysmoProject` is a small, reproducible definition rather than a data
+store, so it is kept as a pickle rather than serialised to a bespoke config
+format. Its three pluggable callables (`window`, `fetch_seismogram`,
+`seismogram_transform`) must therefore be real top-level functions in an
+importable module rather than lambdas or closures (pickle serialises
+functions by reference, not by value). An optional `name` labels the project
+for identification when persisted. A callable that needs its own
+configuration (e.g. filter corner frequencies) should be a callable
+[`attrs`][] class with only picklable fields (see the example below): it
+pickles by value, and its declared fields are what let
 `resolution_context_digest` fingerprint `window` and `seismogram_transform`.
 A plain callable class pickles too, but the digest cannot read one.
 [`PhaseWindow`][pysmo.tools.project.PhaseWindow], the default `window`, is
 one such class.
+
+Warning: A pickle is executable code
+    Unpickling runs arbitrary code, so only ever load a project file you
+    produced yourself or received from someone you trust. The version check
+    on load guards against format drift, not against a hostile file; it runs
+    after unpickling has already executed. To hand a project definition to
+    someone else, share the Python that builds it, not the `.pkl`.
 
 Build `entries` with
 [`build_entries`][pysmo.tools.project.build_entries] from already-narrowed

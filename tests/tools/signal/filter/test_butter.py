@@ -5,6 +5,7 @@ Each function is tested for both replace modes, parameter validation, and zeroph
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from scipy.signal import iirfilter, sosfreqz
 from syrupy.assertion import SnapshotAssertion
@@ -20,6 +21,14 @@ from pysmo.tools.signal._filter._butter import (
     zerophase_band,
 )
 from tests.test_helpers import assert_seismogram_modification
+
+
+def _empty_seismogram() -> MiniSeismogram:
+    return MiniSeismogram(
+        begin_time=pd.Timestamp("2010-01-01T00:00:00Z"),
+        delta=pd.Timedelta(seconds=1.0),
+        data=np.array([]),
+    )
 
 
 def test_bandpass_against_sac(
@@ -191,6 +200,11 @@ class TestBandpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandpass(seismogram, freqmin=0.5, freqmax=0.1)
 
+    def test_bandpass_empty_seismogram_raises(self) -> None:
+        """Test that bandpass raises ValueError for an empty seismogram."""
+        with pytest.raises(ValueError, match="empty"):
+            bandpass(_empty_seismogram())
+
     def test_bandpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:
@@ -269,6 +283,11 @@ class TestHighpass(BaseButterFilterTest):
         with pytest.raises(ValueError, match="freqmin.*is invalid for sampling rate"):
             highpass(seismogram, freqmin=invalid_freqmin)
 
+    def test_highpass_empty_seismogram_raises(self) -> None:
+        """Test that highpass raises ValueError for an empty seismogram."""
+        with pytest.raises(ValueError, match="empty"):
+            highpass(_empty_seismogram())
+
     def test_highpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
     ) -> None:
@@ -344,6 +363,11 @@ class TestLowpass(BaseButterFilterTest):
 
         with pytest.raises(ValueError, match="freqmax.*is invalid for sampling rate"):
             lowpass(seismogram, freqmax=invalid_freqmax)
+
+    def test_lowpass_empty_seismogram_raises(self) -> None:
+        """Test that lowpass raises ValueError for an empty seismogram."""
+        with pytest.raises(ValueError, match="empty"):
+            lowpass(_empty_seismogram())
 
     def test_lowpass_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion
@@ -441,6 +465,11 @@ class TestBandstop(BaseButterFilterTest):
         """Test that bandstop raises ValueError when freqmin >= freqmax."""
         with pytest.raises(ValueError, match="freqmin must be less than freqmax"):
             bandstop(seismogram, freqmin=0.5, freqmax=0.1)
+
+    def test_bandstop_empty_seismogram_raises(self) -> None:
+        """Test that bandstop raises ValueError for an empty seismogram."""
+        with pytest.raises(ValueError, match="empty"):
+            bandstop(_empty_seismogram())
 
     def test_bandstop_snapshot(
         self, seismogram: Seismogram, snapshot: SnapshotAssertion

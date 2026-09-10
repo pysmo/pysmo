@@ -1,10 +1,10 @@
 """Match objects and protocols to pysmo's Mini classes."""
 
-import inspect
 import types
-from typing import TypeAliasType, cast, get_args, get_protocol_members
+from typing import TypeAliasType, cast, get_args
 
 from pysmo import _BaseMini, _BaseProto
+from pysmo.lib.protocols import has_protocol_members
 from pysmo.tools import _ToolsMini, _ToolsProto
 
 __all__ = ["matching_pysmo_types", "proto2mini"]
@@ -34,21 +34,6 @@ def _get_flattened_types(tp: object) -> tuple[type, ...]:
             return (cast(type, tp),)
 
 
-def _structural_match(obj: object, proto: type) -> bool:
-    """Whether `obj` (an instance or a class) has every member `proto` requires.
-
-    Name-based structural check; signatures and types are a type-checker
-    concern, not checked here. Uses `inspect.getattr_static`, so a member
-    defined as a property whose getter would raise still counts as present.
-    """
-    for member in get_protocol_members(proto):
-        try:
-            inspect.getattr_static(obj, member)
-        except AttributeError:
-            return False
-    return True
-
-
 def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
     """Return the Mini classes that implement a given pysmo protocol.
 
@@ -62,7 +47,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 
     Returns:
         A tuple of concrete Mini classes (e.g., `MiniLocation`, `MiniEvent`)
-        that satisfy the interface defined by `proto`.
+        that satisfy the interface defined by `proto`, ordered by class name.
 
     Examples:
         Get all Mini classes that implement the `Location` protocol:
@@ -71,7 +56,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
         >>> from pysmo.lib.mini_utils import proto2mini
         >>> from pysmo import Location, Event
         >>> proto2mini(Location)
-        (<class 'pysmo.MiniStation'>, <class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>)
+        (<class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>, <class 'pysmo.MiniStation'>)
         >>>
         ```
 
@@ -81,7 +66,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
         ```python
         >>> type MyProto = Location | Event
         >>> proto2mini(MyProto)
-        (<class 'pysmo.MiniStation'>, <class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>)
+        (<class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>, <class 'pysmo.MiniStation'>)
         >>>
         ```
     """
@@ -89,24 +74,27 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
     target_protos = _get_flattened_types(proto)
     possible_minis = _get_flattened_types(_AnyMini)
 
-    seen: set[type[_AnyMini]] = set()
-    result: list[type[_AnyMini]] = []
-    for mini in possible_minis:
-        mini_types = matching_pysmo_types(mini)
-        if any(tp in mini_types for tp in target_protos) and mini not in seen:
-            seen.add(mini)
-            result.append(mini)
-    return tuple(result)
+    matches = {
+        mini
+        for mini in possible_minis
+        if any(tp in matching_pysmo_types(mini) for tp in target_protos)
+    }
+    return tuple(sorted(matches, key=lambda tp: tp.__name__))
 
 
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
-    """Return the pysmo types an object may be an instance of.
+    """Return the pysmo types an object structurally satisfies.
+
+    The check is name-based (see `has_protocol_members`): `obj` counts as
+    matching a protocol when it carries every member name that protocol
+    declares. Protocols have no runtime instance relationship, so this is not
+    an `isinstance` test.
 
     Args:
         obj: The object (or class) to check.
 
     Returns:
-        Pysmo types that `obj` is an instance of.
+        Pysmo types that `obj` structurally satisfies, ordered by type name.
 
     Examples:
         Pysmo types matching instances of
@@ -132,7 +120,7 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
     possible_protos = _get_flattened_types(_AnyProto)
 
     for proto in possible_protos:
-        if _structural_match(obj, proto):
+        if has_protocol_members(obj, proto):
             matches.append(cast(type[_AnyProto], proto))
 
-    return tuple(matches)
+    return tuple(sorted(matches, key=lambda tp: tp.__name__))

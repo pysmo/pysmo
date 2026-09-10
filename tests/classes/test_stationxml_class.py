@@ -295,6 +295,31 @@ class TestFromBytes:
             StationXML.from_bytes(MULTIPLE_NETWORKS, network="XX", station="YY")
 
 
+# One network, three stations; the middle one's response uses an unsupported
+# PzTransferFunctionType so parsing that epoch fails.
+_MIXED_QUALITY_DOC = _document(
+    _network_block(
+        "IU",
+        _station_block("ANMO", "1.0E9", "-1.0"),
+        _station_block("BAD", "9.0E9", "-9.0").replace(
+            "LAPLACE (RADIANS/SECOND)", "LAPLACE (HERTZ)"
+        ),
+        _station_block("COLA", "2.0E9", "-2.0"),
+    )
+)
+
+# The middle station parses fine but its zero instrument sensitivity is not a
+# representable response, so class conversion -- not parsing -- rejects it.
+_INVALID_RESPONSE_DOC = _document(
+    _network_block(
+        "IU",
+        _station_block("ANMO", "1.0E9", "-1.0"),
+        _station_block("BAD", "0.0", "-9.0"),
+        _station_block("COLA", "2.0E9", "-2.0"),
+    )
+)
+
+
 class TestAllFromBytes:
     def test_real_bulk_fixture(self) -> None:
         epochs = StationXML.all_from_bytes(BULK_FIXTURE.read_bytes())
@@ -309,6 +334,31 @@ class TestAllFromBytes:
     def test_single_epoch_still_returns_a_list(self) -> None:
         epochs = StationXML.all_from_bytes(SINGLE_EPOCH_FIXTURE.read_bytes())
         assert len(epochs) == 1
+
+    def test_strict_true_fails_on_one_unrepresentable_epoch(self) -> None:
+        with pytest.raises(ValueError, match="PzTransferFunctionType"):
+            StationXML.all_from_bytes(_MIXED_QUALITY_DOC)
+
+    def test_strict_false_skips_the_unrepresentable_epoch(self) -> None:
+        with pytest.warns(UserWarning, match=r"Skipped 1 unrepresentable.*IU\.BAD"):
+            epochs = StationXML.all_from_bytes(_MIXED_QUALITY_DOC, strict=False)
+        assert [epoch.name for epoch in epochs] == ["ANMO", "COLA"]
+
+    def test_strict_false_lets_from_bytes_narrow_past_a_bad_epoch(self) -> None:
+        with pytest.warns(UserWarning, match="Skipped 1 unrepresentable"):
+            epoch = StationXML.from_bytes(
+                _MIXED_QUALITY_DOC, station="COLA", strict=False
+            )
+        assert epoch.name == "COLA"
+
+    def test_strict_true_fails_on_a_class_unrepresentable_epoch(self) -> None:
+        with pytest.raises((ValueError, TypeError)):
+            StationXML.all_from_bytes(_INVALID_RESPONSE_DOC)
+
+    def test_strict_false_skips_a_class_unrepresentable_epoch(self) -> None:
+        with pytest.warns(UserWarning, match="Skipped 1 unrepresentable"):
+            epochs = StationXML.all_from_bytes(_INVALID_RESPONSE_DOC, strict=False)
+        assert [epoch.name for epoch in epochs] == ["ANMO", "COLA"]
 
 
 class TestFetch:

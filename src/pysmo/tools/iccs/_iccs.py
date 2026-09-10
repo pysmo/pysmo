@@ -23,7 +23,7 @@ from pysmo.functions import (
     resample,
     window,
 )
-from pysmo.lib.validators import convert_to_timedelta
+from pysmo.lib.converters import to_timedelta
 from pysmo.tools.signal import bandpass, causal_band, mccc, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
 from pysmo.typing import (
@@ -88,6 +88,18 @@ def _on_setattr_clear_cache[T](instance: ICCS, attribute: Attribute[T], value: T
             object.__setattr__(instance, "seismograms", current)
             raise
 
+    return value
+
+
+def _on_setattr_clear_context_cache[T](
+    instance: ICCS, attribute: Attribute[T], value: T
+) -> T:
+    """Setter for `context_width`: only the context caches depend on it."""
+    if (current := getattr(instance, attribute.name)) is value or (
+        current == value
+    ) is True:
+        return value
+    instance._clear_context_caches()
     return value
 
 
@@ -310,15 +322,16 @@ class ICCS:
 
     context_width: PositiveTimedelta = field(
         default=IccsDefaults.context_width,
-        converter=convert_to_timedelta,
+        converter=to_timedelta,
         validator=validators.gt(pd.Timedelta(0)),
         on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
+            setters.convert, setters.validate, _on_setattr_clear_context_cache
         ),
     )
     """Context padding to apply before and after the time window.
 
-    This padding is *not* used for the cross-correlation."""
+    This padding is *not* used for the cross-correlation, so changing it only
+    invalidates the context seismograms and their stacks."""
 
     bandpass_apply: bool = field(
         default=IccsDefaults.bandpass_apply,
@@ -456,9 +469,9 @@ class ICCS:
         default=IccsDefaults.min_cc,
         converter=float,
         validator=validators.instance_of(float),
-        on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
-        ),
+        # No cache invalidation: nothing cached depends on `min_cc`. It is read
+        # live by `autoselect` (in `__call__`) and by `update_min_cc`.
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Minimum normalised cross-correlation coefficient for seismograms.
 
@@ -525,17 +538,25 @@ class ICCS:
         derived results are regenerated from the updated input.
         """
         self._cc_seismograms_cache = None
-        self._context_seismograms_cache = None
         self._ccs_cache = None
         self._cc_stack_cache = None
-        self._context_stack_cache = None
         self._cc_seismograms_causal_cache = None
-        self._context_seismograms_causal_cache = None
         self._cc_stack_causal_cache = None
-        self._context_stack_causal_cache = None
         self._max_td_pre_cache = None
         self._min_td_post_cache = None
         self._valid_pick_range_cache = None
+        self._clear_context_caches()
+
+    def _clear_context_caches(self) -> None:
+        """Clear only the context seismograms and their stacks.
+
+        Their sole extra dependency over the cross-correlation caches is
+        [`context_width`][pysmo.tools.iccs.ICCS.context_width].
+        """
+        self._context_seismograms_cache = None
+        self._context_stack_cache = None
+        self._context_seismograms_causal_cache = None
+        self._context_stack_causal_cache = None
 
     @property
     def ramp_width_timedelta(self) -> pd.Timedelta:
@@ -876,6 +897,9 @@ class ICCS:
             autoselect: Automatically set the `select` attribute to `False`
                 for poor-quality seismograms.
             convergence_limit: Convergence limit at which the algorithm stops.
+                Its scale depends on `convergence_method` (`corrcoef` returns
+                `1 - r`, `change` a normalised stack-change norm), so retune it
+                when switching methods.
             convergence_method: Method to calculate convergence criterion.
             max_iter: Maximum number of iterations.
             max_shift: Maximum (absolute) shift to consider in each iteration,
@@ -911,6 +935,17 @@ class ICCS:
                     autoselect,
                     self.min_cc,
                     (self.window_pre, self.window_post),
+                    self.ramp_width,
+                )
+
+            if autoselect and not any(s.select for s in self.seismograms):
+                best = int(np.argmax(np.abs(ccs)))
+                self.cc_seismograms[best].parent_seismogram.select = True
+                warnings.warn(
+                    "autoselect left no seismograms selected; keeping the "
+                    + "best-correlating one so the run can continue. "
+                    + "Consider lowering min_cc.",
+                    stacklevel=2,
                 )
 
             self.clear_cache()
@@ -950,7 +985,10 @@ class ICCS:
 
         Returns:
             A [`McccResult`][pysmo.tools.iccs.McccResult] containing the
-            updated picks and MCCC diagnostic values.
+            updated picks and MCCC diagnostic values. Any pick whose refined
+            shift would move the window out of bounds is left unchanged and
+            its index recorded in
+            [`McccResult.refused`][pysmo.tools.iccs.McccResult].
         """
         seismograms = (
             self.cc_seismograms if all_seismograms else self.selected_cc_seismograms
@@ -961,10 +999,11 @@ class ICCS:
         )
 
         picks: list[pd.Timestamp] = []
+        refused: list[int] = []
 
-        for delay, cc_seis in zip(delays, seismograms):
+        for index, (delay, cc_seis) in enumerate(zip(delays, seismograms)):
             seis = cc_seis.parent_seismogram
-            _update_seismogram(
+            if not _update_seismogram(
                 delay,
                 cc=None,
                 seismogram=seis,
@@ -972,14 +1011,29 @@ class ICCS:
                 autoselect=False,
                 min_cc_for_autoselect=self.min_cc,
                 current_window=(self.window_pre, self.window_post),
-            )
+                ramp_width=self.ramp_width,
+            ):
+                refused.append(index)
             # After update (or attempted update), retrieve the pick.
             # Fallback to t0 if t1 is None (e.g. if update failed and was None).
             picks.append(seis.t0 if pd.isnull(seis.t1) else seis.t1)
 
+        if refused:
+            warnings.warn(
+                f"MCCC refined {len(refused)} pick(s) to a shift that would "
+                + "move the window out of bounds; those picks are unchanged. "
+                + "See McccResult.refused.",
+                stacklevel=2,
+            )
+
         self.clear_cache()
         return McccResult(
-            picks=picks, errors=errors, rmse=rmse, cc_means=cc_means, cc_stds=cc_stds
+            picks=picks,
+            errors=errors,
+            rmse=rmse,
+            cc_means=cc_means,
+            cc_stds=cc_stds,
+            refused=refused,
         )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
@@ -1011,14 +1065,15 @@ def _update_seismogram(
     autoselect: bool,
     min_cc_for_autoselect: np.floating | float,
     current_window: tuple[pd.Timedelta, pd.Timedelta],
-) -> None:
+    ramp_width: pd.Timedelta | float,
+) -> bool:
     """Update IccsSeismogram attributes based on cross-correlation results.
 
     Optionally toggles `flip` (if `autoflip` is True and the correlation
     coefficient is negative) and `select` (if `autoselect` is True and
     the absolute correlation coefficient is below the threshold). The pick
-    `t1` is updated unless the new value would fall outside the seismogram
-    limits.
+    `t1` is updated unless the new value would move the window (including its
+    taper ramp) outside the seismogram.
 
     Args:
         delay: Time shift from cross-correlation.
@@ -1029,6 +1084,12 @@ def _update_seismogram(
         autoselect: Automatically toggle the `select` attribute.
         min_cc_for_autoselect: Threshold for `autoselect`.
         current_window: Current `(window_pre, window_post)` tuple.
+        ramp_width: Current `ramp_width`, needed because
+            `_prepare_seismograms` tapers the window and
+            `pysmo.functions.window` rejects a pick with no room for the ramp.
+
+    Returns:
+        `True` if `t1` was updated, `False` if the shift was refused.
     """
     if cc is not None:
         if autoflip and cc < 0:
@@ -1039,8 +1100,9 @@ def _update_seismogram(
             seismogram.select = bool(cc >= min_cc_for_autoselect)
 
     updated_t1 = (seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1) + delay
-    limit_pre = seismogram.begin_time - current_window[0]
-    limit_post = seismogram.end_time - current_window[1]
+    ramp = _compute_ramp(ramp_width, current_window[0], current_window[1])
+    limit_pre = seismogram.begin_time - current_window[0] + ramp
+    limit_post = seismogram.end_time - current_window[1] - ramp
 
     if not limit_pre <= updated_t1 <= limit_post:
         # stacklevel is caller-dependent: __call__ is 4 frames up, run_mccc is 3.
@@ -1050,9 +1112,10 @@ def _update_seismogram(
             + "Would move out of limits - consider reducing window size.",
             stacklevel=2,
         )
-        return
+        return False
 
     seismogram.t1 = updated_t1
+    return True
 
 
 def _prepare_seismograms(

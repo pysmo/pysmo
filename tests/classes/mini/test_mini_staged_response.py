@@ -86,3 +86,30 @@ class TestMiniStagedResponse:
             input_units="M/S",
         )
         assert response.reference_sensitivity == 4.0
+
+    def test_rejects_non_list_stages(self) -> None:
+        with pytest.raises(TypeError):
+            MiniStagedResponse(
+                poles=[],
+                zeros=[],
+                overall_sensitivity=1.0,
+                input_units="M/S",
+                stages="abc",  # type: ignore[arg-type]
+            )
+
+    def test_rejects_stage_not_satisfying_response_stage(self) -> None:
+        with pytest.raises(TypeError):
+            MiniStagedResponse(
+                poles=[],
+                zeros=[],
+                overall_sensitivity=1.0,
+                input_units="M/S",
+                stages=["oops"],  # type: ignore[list-item]
+            )
+
+    def test_rejects_bad_stage_on_setattr(self) -> None:
+        response = MiniStagedResponse(
+            poles=[], zeros=[], overall_sensitivity=1.0, input_units="M/S"
+        )
+        with pytest.raises(TypeError):
+            response.stages = "abc"  # type: ignore[assignment]

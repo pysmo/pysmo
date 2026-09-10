@@ -127,14 +127,15 @@ def _gauss(
         W:  Frequency axis (Hz) for each FFT bin, including negative
             frequencies. The Gaussian window is applied to |W| so that Hn
             stays conjugate-symmetric (hn is real).
-        Hn: Gaussian-filtered spectrum (input spectrum multiplied by the
-            Gaussian window centred at fc.
+        Hn: Gaussian-filtered spectrum: input spectrum times the Gaussian
+            window centred at fc.
         hn: Filtered seismogram in the time domain (inverse FFT of Hn).
-        qn: Hilbert transform of hn, obtained as the imaginary part of the
-            analytic signal built from Hn (zero negative frequencies,
-            double positive ones, the standard FFT-domain Hilbert
+        an: Instantaneous amplitude (envelope): the magnitude of the
+            analytic signal built from Hn (negative frequencies zeroed,
+            positive ones doubled, the standard FFT-domain Hilbert
             transform).
-        an: Instantaneous amplitude (envelope), sqrt(hn² + qn²).
+
+    Returns `(an, hn)`.
     """
     if len(seismogram.data) == 0:
         raise ValueError("Cannot apply a Gaussian filter to an empty seismogram.")

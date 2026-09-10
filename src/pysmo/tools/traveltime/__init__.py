@@ -25,7 +25,7 @@ import pandas as pd
 from pysmo.tools.traveltime._solver import solve
 from pysmo.tools.traveltime._types import Model, Phase, TravelTimeBackend
 
-__all__ = ["Model", "Phase", "TravelTimeBackend", "travel_times"]
+__all__ = ["Model", "Phase", "TravelTimeBackend", "builtin_backend", "travel_times"]
 
 
 def travel_times(
@@ -118,3 +118,7 @@ def travel_times(
 # reference to `travel_times` (a public, stable symbol), so a saved
 # `PysmoProject` on the default backend unpickles as long as that exists.
 builtin_backend: TravelTimeBackend = partial(travel_times)
+"""[`travel_times`][pysmo.tools.traveltime.travel_times] as a plain
+[`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]. The default
+`travel_time_backend` for
+[`PhaseWindow`][pysmo.tools.project.PhaseWindow]."""

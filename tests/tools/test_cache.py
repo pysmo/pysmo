@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from attrs import define
 
 from pysmo import MiniSeismogram, MiniStation, Seismogram, Station
 from pysmo.classes import SAC
@@ -295,6 +296,71 @@ class TestEngine:
             == 2
         )
 
+    def test_peek_and_put_are_get_split_in_two(self, tmp_path: Path) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        assert engine.peek("k") is None
+        engine.put("k", b"payload")
+        assert engine.peek("k") == b"payload"
+        engine.put("k", b"ignored")  # first write wins
+        assert engine.peek("k") == b"payload"
+
+    def test_write_failure_warns_and_returns_the_value(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+
+        def boom(*_: object, **__: object) -> None:
+            raise sqlite3.OperationalError("disk I/O error")
+
+        monkeypatch.setattr(BlobCache, "_store", boom)
+        with pytest.warns(UserWarning, match="could not write to cache"):
+            result = engine.get("k", lambda: b"fetched")
+        assert result == b"fetched"
+        monkeypatch.undo()
+        assert engine.peek("k") is None  # nothing was stored
+
+    def test_rejects_a_decompression_bomb(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("pysmo.tools.cache._MAX_DECOMPRESSED_BYTES", 100)
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        bomb = zlib.compress(b"\x00" * 5000)
+        engine._connect().execute(
+            "INSERT INTO cache (key, data) VALUES ('bomb', ?)", (bomb,)
+        )
+
+        with pytest.raises(ValueError, match="decompresses to more than"):
+            engine.peek("bomb")
+
+    def test_rejects_a_truncated_blob(self, tmp_path: Path) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        full = zlib.compress(b"payload" * 100)
+        truncated = full[: len(full) // 2]
+        engine._connect().execute(
+            "INSERT INTO cache (key, data) VALUES ('cut', ?)", (truncated,)
+        )
+        with pytest.raises(ValueError, match="truncated zlib stream"):
+            engine.peek("cut")
+
+    def test_rejects_a_non_zlib_blob(self, tmp_path: Path) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        engine._connect().execute(
+            "INSERT INTO cache (key, data) VALUES ('junk', ?)", (b"not zlib at all",)
+        )
+        with pytest.raises(ValueError, match="not valid zlib data"):
+            engine.peek("junk")
+
+    def test_read_only_session_persists_the_seeded_schema(self, tmp_path: Path) -> None:
+        path = tmp_path / "e.sqlite3"
+        reader = BlobCache(path=path, encoding_version=1)
+        reader.peek("nothing-here")  # a hit-only session: never reaches _store
+        reader.close()
+
+        conn = sqlite3.connect(path)
+        names = {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}
+        conn.close()
+        assert "cache" in names and "cache_stats" in names
+
 
 class TestFetchCache:
     def test_miss_then_hit(
@@ -330,6 +396,33 @@ class TestFetchCache:
         cache(station, starttime, endtime + pd.Timedelta(minutes=1))
 
         assert len(FETCH_CALLS) == 3
+
+    def test_fetch_key_strips_nslc_padding(
+        self, station: MiniStation, starttime: pd.Timestamp, endtime: pd.Timestamp
+    ) -> None:
+        # SAC-style space-padded codes (past MiniStation's length validators,
+        # hence a duck type) must key to the same row as the trimmed form.
+        @define
+        class PaddedStation:
+            name: str
+            network: str
+            location: str
+            channel: str
+            latitude: float
+            longitude: float
+            elevation: float | None = None
+
+        padded = PaddedStation(
+            name=" ANMO ",
+            network="IU ",
+            location=" 00",
+            channel="LHZ ",
+            latitude=station.latitude,
+            longitude=station.longitude,
+        )
+        assert _fetch_key(padded, starttime, endtime) == _fetch_key(
+            station, starttime, endtime
+        )
 
     def test_parse_runs_on_both_hit_and_miss(
         self,
@@ -491,6 +584,50 @@ class TestFetchCache:
                 fetch_raw=fake_fetch_raw,
                 parse=fake_parse,
             )
+
+    def test_empty_response_is_not_cached(
+        self,
+        tmp_path: Path,
+        station: MiniStation,
+        starttime: pd.Timestamp,
+        endtime: pd.Timestamp,
+    ) -> None:
+        responses = [b"", b"", RAW_BYTES]
+        fetch_calls: list[int] = []
+
+        def flaky_fetch(*, station: Station, **_: object) -> bytes:
+            fetch_calls.append(1)
+            return responses.pop(0)
+
+        cache = FetchCache(
+            path=tmp_path / "c.sqlite3", fetch_raw=flaky_fetch, parse=fake_parse
+        )
+        for _ in range(2):
+            with pytest.raises(ValueError):  # fake_parse rejects b""
+                cache(station, starttime, endtime)
+        seismogram = cache(station, starttime, endtime)  # data now available
+        assert list(seismogram.data) == [1.0, 2.0, 3.0]
+        assert len(fetch_calls) == 3  # every call re-fetched; nothing stuck
+
+    def test_unparseable_response_is_not_cached(
+        self,
+        tmp_path: Path,
+        station: MiniStation,
+        starttime: pd.Timestamp,
+        endtime: pd.Timestamp,
+    ) -> None:
+        responses = [b"garbage", RAW_BYTES]
+
+        def flaky_fetch(*, station: Station, **_: object) -> bytes:
+            return responses.pop(0)
+
+        cache = FetchCache(
+            path=tmp_path / "c.sqlite3", fetch_raw=flaky_fetch, parse=fake_parse
+        )
+        with pytest.raises(ValueError):
+            cache(station, starttime, endtime)
+        seismogram = cache(station, starttime, endtime)
+        assert list(seismogram.data) == [1.0, 2.0, 3.0]
 
 
 def test_fetch_mseed_pairing(

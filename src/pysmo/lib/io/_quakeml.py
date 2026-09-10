@@ -22,7 +22,7 @@ from typing import TypeIs
 
 import pandas as pd
 
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 
 __all__ = ["parse_quakeml"]
 
@@ -187,7 +187,7 @@ def _parse_event(event: ET.Element, position: int) -> _RawEvent:
         )
 
     try:
-        time = convert_to_utc_timestamp(values["time"])
+        time = to_utc_timestamp(values["time"])
         latitude = float(values["latitude"])
         longitude = float(values["longitude"])
         depth = float(values["depth"])

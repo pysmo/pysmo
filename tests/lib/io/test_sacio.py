@@ -194,6 +194,23 @@ def test_write_to_file(empty_file: Path) -> None:
     npt.assert_allclose(sac.data, random_data)
 
 
+def test_write_is_always_little_endian(empty_file: Path) -> None:
+    """write() pins output to little-endian regardless of host byte order, so
+    files stay portable to readers that don't auto-detect endianness. read()
+    still accepts either. Offsets are fixed by the SAC format."""
+    data = np.linspace(-1.0, 1.0, 64)
+    SacIO(b=2.0, delta=0.025, data=data).write(empty_file)
+    buffer = empty_file.read_bytes()
+
+    unused12, nvhdr, npts = 276, 304, 316  # SAC word offsets 69, 76, 79
+    assert struct.unpack("<f", buffer[unused12 : unused12 + 4])[0] == -12345.0
+    assert struct.unpack("<i", buffer[nvhdr : nvhdr + 4])[0] in (6, 7)
+    assert struct.unpack("<i", buffer[npts : npts + 4])[0] == len(data)
+    npt.assert_allclose(
+        np.frombuffer(buffer[632 : 632 + 4 * len(data)], dtype="<f4"), data, atol=1e-6
+    )
+
+
 # ─────────────────────────── Read all headers ──────────────────────────────
 
 

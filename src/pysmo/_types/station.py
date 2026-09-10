@@ -2,7 +2,8 @@ from typing import Protocol
 
 from attrs import converters, define, field, setters, validators
 
-from pysmo.lib.validators import convert_to_longitude
+from pysmo.lib.converters import to_longitude
+from pysmo.lib.validators import is_latitude, is_longitude
 
 from .location import Location
 
@@ -68,6 +69,21 @@ def _pad_string(x: str) -> str:
     return f"{x:>2}"
 
 
+# NSLC code validators, shared by MiniStationCode and MiniStation.
+_name_code = validators.and_(
+    validators.instance_of(str), validators.min_len(1), validators.max_len(5)
+)
+_network_code = validators.and_(
+    validators.instance_of(str), validators.min_len(1), validators.max_len(2)
+)
+_location_code = validators.and_(
+    validators.instance_of(str), validators.min_len(2), validators.max_len(2)
+)
+_channel_code = validators.and_(
+    validators.instance_of(str), validators.min_len(3), validators.max_len(3)
+)
+
+
 @define(kw_only=True)
 class MiniStationCode:
     """Minimal implementation of the `StationCode` type.
@@ -85,7 +101,7 @@ class MiniStationCode:
     """
 
     name: str = field(
-        validator=[validators.min_len(1), validators.max_len(5)],
+        validator=_name_code,
         on_setattr=setters.validate,
     )
     """Station name.
@@ -94,7 +110,7 @@ class MiniStationCode:
     """
 
     network: str = field(
-        validator=[validators.min_len(1), validators.max_len(2)],
+        validator=_network_code,
         on_setattr=setters.validate,
     )
     """Network name.
@@ -104,7 +120,7 @@ class MiniStationCode:
 
     location: str = field(
         default="  ",
-        validator=[validators.min_len(2), validators.max_len(2)],
+        validator=_location_code,
         converter=_pad_string,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -114,7 +130,7 @@ class MiniStationCode:
     """
 
     channel: str = field(
-        validator=[validators.min_len(3), validators.max_len(3)],
+        validator=_channel_code,
         on_setattr=setters.validate,
     )
     """Channel code.
@@ -145,7 +161,7 @@ class MiniStation:
     """
 
     name: str = field(
-        validator=[validators.min_len(1), validators.max_len(5)],
+        validator=_name_code,
         on_setattr=setters.validate,
     )
     """Station name.
@@ -154,7 +170,7 @@ class MiniStation:
     """
 
     network: str = field(
-        validator=[validators.min_len(1), validators.max_len(2)],
+        validator=_network_code,
         on_setattr=setters.validate,
     )
     """Network name.
@@ -164,7 +180,7 @@ class MiniStation:
 
     location: str = field(
         default="  ",
-        validator=[validators.min_len(2), validators.max_len(2)],
+        validator=_location_code,
         converter=_pad_string,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -174,7 +190,7 @@ class MiniStation:
     """
 
     channel: str = field(
-        validator=[validators.min_len(3), validators.max_len(3)],
+        validator=_channel_code,
         on_setattr=setters.validate,
     )
     """Channel code.
@@ -184,14 +200,14 @@ class MiniStation:
 
     latitude: float = field(
         converter=float,
-        validator=[validators.ge(-90), validators.le(90)],
+        validator=is_latitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Station latitude from -90 to 90 degrees."""
 
     longitude: float = field(
-        converter=convert_to_longitude,
-        validator=[validators.gt(-180), validators.le(180)],
+        converter=to_longitude,
+        validator=is_longitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Station longitude from -180 to 180 degrees (-180 is stored as +180)."""

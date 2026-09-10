@@ -60,6 +60,7 @@ Examples:
 import json
 import sqlite3
 import threading
+import warnings
 import zlib
 from collections.abc import Callable
 from itertools import batched
@@ -71,7 +72,7 @@ from attrs import define, field, validators
 
 from pysmo import Seismogram, Station
 from pysmo._utils import attrs_getstate, attrs_setstate
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.typing import PositiveInt
 
 __all__ = ["BlobCache", "FetchCache", "RawFetcher", "RawParser"]
@@ -84,6 +85,11 @@ _LOW_WATER_FRACTION = 0.75
 """On eviction, entries are removed until the total is back down to this
 fraction of `max_bytes`. The slack keeps eviction from running on every
 subsequent miss."""
+
+_MAX_DECOMPRESSED_BYTES = 512 * 1024 * 1024
+"""Ceiling on the decompressed size of a single stored blob. A cache file is
+meant to be shareable (see the module docstring), so a crafted row must not
+be able to expand into an out-of-memory decompression bomb on read."""
 
 _CREATE_CACHE_TABLE = (
     "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, data BLOB NOT NULL)"
@@ -111,6 +117,25 @@ _CREATE_CACHE_DELETE_TRIGGER = (
     + "END"
 )
 # Schema DDL, defined once here and imported by the tests.
+
+
+def _decompress(blob: bytes) -> bytes:
+    """Inflate a stored blob, refusing one truncated or past the size ceiling."""
+    decompressor = zlib.decompressobj()
+    try:
+        out = decompressor.decompress(blob, _MAX_DECOMPRESSED_BYTES)
+        if decompressor.unconsumed_tail:
+            raise ValueError(
+                f"cached blob decompresses to more than {_MAX_DECOMPRESSED_BYTES} bytes"
+            )
+        out += decompressor.flush()
+    except zlib.error as error:
+        raise ValueError(f"cached blob is not valid zlib data: {error}") from error
+    # decompress()/flush() return what they have from a truncated stream without
+    # raising; eof is the only signal that the whole stream was consumed.
+    if not decompressor.eof:
+        raise ValueError("cached blob is a truncated zlib stream")
+    return out
 
 
 class RawFetcher(Protocol):
@@ -145,16 +170,23 @@ class BlobCache:
 
     [`get`][pysmo.tools.cache.BlobCache.get] takes a string key and a
     callback. On a hit it returns the stored blob; on a miss it calls the
-    callback, stores what it returns (compressed), and returns that. Keys and
-    values are arbitrary bytes; the cache interprets neither.
+    callback, stores what it returns (compressed), and returns that.
+    [`peek`][pysmo.tools.cache.BlobCache.peek] and
+    [`put`][pysmo.tools.cache.BlobCache.put] are the same two halves on their
+    own. Keys and values are arbitrary bytes; the cache interprets neither.
 
-    Pass `max_bytes` to cap the total stored size; once it is exceeded the
-    oldest entries are removed until the cache fits again.
+    Pass `max_bytes` to cap the total stored size; once it is exceeded entries
+    are removed in insertion order (not least-recently-used) until the cache
+    fits again.
 
     Warning: Local disk only
-        The SQLite file must be on local disk and used by one process at a
-        time. WAL mode and concurrent access over a network filesystem are
-        unsupported and can corrupt the file.
+        The SQLite file must be on local disk. Several processes on one
+        machine may share it — writers serialise on SQLite's own file lock —
+        but WAL mode and access over a network filesystem are unsupported and
+        can corrupt the file. Within a process, concurrent
+        [`get`][pysmo.tools.cache.BlobCache.get] calls for the same missing
+        key each run the callback and return their own result; the first
+        write is the one kept.
 
     Examples:
         ```python
@@ -211,11 +243,12 @@ class BlobCache:
     _conn: sqlite3.Connection | None = field(
         init=False, default=None, repr=False, eq=False
     )
-    _lock: threading.Lock = field(
-        init=False, factory=threading.Lock, repr=False, eq=False
+    _lock: threading.RLock = field(
+        init=False, factory=threading.RLock, repr=False, eq=False
     )
-    """Serialises connection setup and writes; the cache may be called from
-    more than one thread."""
+    """Serialises connection setup, reads and writes; the cache may be called
+    from more than one thread. Reentrant so a locked read or write can call
+    `_connect` without releasing first."""
 
     def __attrs_post_init__(self) -> None:
         """Fail fast if `path`'s parent directory doesn't exist."""
@@ -233,7 +266,7 @@ class BlobCache:
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore the fields and create a fresh lock."""
         attrs_setstate(self, state)
-        object.__setattr__(self, "_lock", threading.Lock())
+        object.__setattr__(self, "_lock", threading.RLock())
 
     def close(self) -> None:
         """Close the database connection.
@@ -280,11 +313,18 @@ class BlobCache:
                         "INSERT OR IGNORE INTO cache_stats (id, total_bytes) "
                         + "VALUES (1, (SELECT COALESCE(SUM(length(data)), 0) FROM cache))"
                     )
+                # Commit the schema and seeded counter now, so a session that
+                # only ever reads (never reaching `_store`'s commit) doesn't
+                # roll this setup back on close and redo it next run.
+                conn.commit()
                 self._conn = conn
             return self._conn
 
     def get(self, key: str, produce: Callable[[], bytes]) -> bytes:
         """Return the blob stored under `key`, producing and storing it on a miss.
+
+        `produce` runs outside the lock, so a slow callback does not block
+        other threads; two of them racing the same missing key both run it.
 
         Args:
             key: The cache key.
@@ -294,16 +334,43 @@ class BlobCache:
         Returns:
             The blob: read from the file on a hit, from `produce` on a miss.
         """
-        conn = self._connect()
-        # No lock on the read: `sqlite3` only asks the caller to serialise
-        # writes (done in `_store`), and a serialised SQLite build handles
-        # concurrent reads on a shared connection itself.
-        row = conn.execute("SELECT data FROM cache WHERE key = ?", (key,)).fetchone()
-        if row is not None:
-            return zlib.decompress(row[0])
+        hit = self.peek(key)
+        if hit is not None:
+            return hit
         produced = produce()
-        self._store(conn, key, zlib.compress(produced))
+        self.put(key, produced)
         return produced
+
+    def peek(self, key: str) -> bytes | None:
+        """Return the blob stored under `key`, or `None` if there is none.
+
+        Never runs a callback. Raises `ValueError` if the stored blob is
+        corrupt or decompresses past an internal size ceiling.
+        """
+        with self._lock:
+            conn = self._connect()
+            row = conn.execute(
+                "SELECT data FROM cache WHERE key = ?", (key,)
+            ).fetchone()
+        return _decompress(row[0]) if row is not None else None
+
+    def put(self, key: str, value: bytes) -> None:
+        """Store `value` under `key` (compressed), evicting if over `max_bytes`.
+
+        A first write for a key wins; a later `put` for the same key is
+        ignored. A failure to write to the file is warned about, not raised —
+        the caller keeps whatever it was about to cache.
+        """
+        compressed = zlib.compress(value)
+        with self._lock:
+            conn = self._connect()
+            try:
+                self._store(conn, key, compressed)
+            except sqlite3.Error as exc:
+                warnings.warn(
+                    f"could not write to cache {self.path}: {exc}",
+                    stacklevel=2,
+                )
 
     def _store(self, conn: sqlite3.Connection, key: str, compressed: bytes) -> None:
         with self._lock, conn:
@@ -401,12 +468,19 @@ class FetchCache:
     cached it is replayed byte-for-byte; an entry evicted under a finite
     `max_bytes` is fetched again on next access.
 
+    A response is stored only once `parse` has accepted it and it is
+    non-empty, so an empty body (an FDSN `204` for a gap) or a response that
+    does not parse is retried on the next call rather than cached as a
+    permanent failure. Two threads racing the same uncached window both
+    fetch.
+
     The call signature is
     [`SeismogramFetcher`][pysmo.tools.project.SeismogramFetcher], so an
     instance also serves as a
     [`PysmoProject`][pysmo.tools.project.PysmoProject]'s `fetch_seismogram`.
     A database written by pysmo's earlier `SqliteArchiveFetcher` is read
-    as-is, without migration.
+    as-is: the constructor is the same, and existing `.sqlite3` files need no
+    migration.
     """
 
     path: Path = field(converter=Path)
@@ -478,26 +552,28 @@ class FetchCache:
             and stored on a miss.
         """
         key = _fetch_key(station, starttime, endtime)
-        raw = self._cache.get(
-            key,
-            lambda: self.fetch_raw(
-                station=station, starttime=starttime, endtime=endtime
-            ),
-        )
-        return self.parse(raw)
+        cached = self._cache.peek(key)
+        if cached is not None:
+            return self.parse(cached)
+        raw = self.fetch_raw(station=station, starttime=starttime, endtime=endtime)
+        seismogram = self.parse(raw)  # an unparseable response is not cached
+        if raw:
+            self._cache.put(key, raw)
+        return seismogram
 
 
 def _fetch_key(station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp) -> str:
     # json.dumps escapes each field, so a value containing the delimiter
     # can't collide with another station/window. Timestamps are normalised to
-    # UTC so two spellings of the same instant produce the same key.
+    # UTC so two spellings of the same instant produce the same key; NSLC codes
+    # are stripped so SAC-style padding doesn't split one station into two rows.
     return json.dumps(
         [
-            station.network,
-            station.name,
-            station.location,
-            station.channel,
-            convert_to_utc_timestamp(starttime).isoformat(),
-            convert_to_utc_timestamp(endtime).isoformat(),
+            str(station.network).strip(),
+            str(station.name).strip(),
+            str(station.location).strip(),
+            str(station.channel).strip(),
+            to_utc_timestamp(starttime).isoformat(),
+            to_utc_timestamp(endtime).isoformat(),
         ]
     )

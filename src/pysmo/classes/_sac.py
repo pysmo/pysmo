@@ -13,10 +13,10 @@ from attrs import define, field, setters
 
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS, SAC_REQUIRED_TIME_HEADERS
-from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.tools.web import fetch_sac
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
@@ -73,7 +73,7 @@ class _SacNested:
 
         # ref_datetime is the utc reference time in the SAC file
         if self._parent.ref_datetime is not None:
-            return convert_to_utc_timestamp(self._parent.ref_datetime)
+            return to_utc_timestamp(self._parent.ref_datetime)
 
         warnings.warn(
             f"SAC object has no reference time (kzdate/kztime), assuming {SeismogramDefaults.begin_time.isoformat()}",
@@ -129,7 +129,7 @@ class _SacNested:
             setattr(self._parent, sac_time_header, None)
             return
 
-        aware_value = convert_to_utc_timestamp(value)
+        aware_value = to_utc_timestamp(value)
         seconds = (aware_value - self._ref_datetime).total_seconds()
         setattr(self._parent, sac_time_header, seconds)
 
@@ -877,8 +877,8 @@ class SAC:
             ```
             <!-- skip: end -->
         """
-        starttime = convert_to_utc_timestamp(starttime)
-        endtime = convert_to_utc_timestamp(endtime)
+        starttime = to_utc_timestamp(starttime)
+        endtime = to_utc_timestamp(endtime)
         archive = fetch_sac(station=station, starttime=starttime, endtime=endtime)
 
         # dataselect returns an empty (zero-length) body, not a

@@ -41,6 +41,8 @@ class WindowResult:
     """The absolute fetch window resolved for one entry.
 
     Returned by a [`WindowResolver`][pysmo.tools.project.WindowResolver].
+    `starttime` must be strictly before `endtime`, checked at construction so
+    a buggy resolver fails here rather than at the remote fetch.
     """
 
     starttime: pd.Timestamp
@@ -53,6 +55,14 @@ class WindowResult:
     """Timestamp the window was placed around (a predicted phase arrival for
     [`PhaseWindow`][pysmo.tools.project.PhaseWindow]), or `None` when the
     window came from an entry's explicit `starttime`/`endtime`."""
+
+    def __attrs_post_init__(self) -> None:
+        """Reject a reversed or zero-length window."""
+        if self.starttime >= self.endtime:
+            raise ValueError(
+                f"WindowResult starttime ({self.starttime}) must be before "
+                + f"endtime ({self.endtime})."
+            )
 
 
 @define(kw_only=True, frozen=True)
@@ -107,6 +117,13 @@ reimplement it. [`PhaseWindow`][pysmo.tools.project.PhaseWindow] is the
 default. Must be picklable by reference (a top-level function, or an attrs
 instance with only picklable fields, not a lambda or closure), the same
 constraint as the other two seams.
+
+`PysmoProject` caches on
+[`entry.identity`][pysmo.tools.project.ProjectEntry.identity], which
+quantises event coordinates (~11 m) and depth (100 m); a resolver that
+returns materially different windows for entries closer than that shares one
+cache slot between them. The default `PhaseWindow` is safe here — the
+sub-quantum change in a teleseismic arrival time is far below one sample.
 """
 
 type SeismogramFetcher = Callable[[Station, pd.Timestamp, pd.Timestamp], Seismogram]

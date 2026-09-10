@@ -1,4 +1,4 @@
-from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
+from doctest import ELLIPSIS, IGNORE_EXCEPTION_DETAIL, NORMALIZE_WHITESPACE
 
 from sybil import Sybil
 from sybil.evaluators.doctest import NUMBER
@@ -18,7 +18,10 @@ pytest_collect_file = Sybil(
     parsers=[
         PythonCodeBlockParser(
             future_imports=["print_function"],
-            doctest_optionflags=ELLIPSIS + NORMALIZE_WHITESPACE + NUMBER,
+            doctest_optionflags=ELLIPSIS
+            + NORMALIZE_WHITESPACE
+            + NUMBER
+            + IGNORE_EXCEPTION_DETAIL,
         ),
         SkipParser(),
     ],

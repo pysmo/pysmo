@@ -98,3 +98,24 @@ def test_matching_pysmo_types_ministationcode_is_stationcode_only() -> None:
 
     code = MiniStationCode(name="CACB", network="BL", channel="BHZ", location="00")
     assert set(matching_pysmo_types(code)) == {StationCode}
+
+
+def test_matching_pysmo_types_is_name_only_not_access() -> None:
+    """A member whose getter raises still counts as present (name-based check).
+
+    Mirrors `SacStation` on a SAC file with no station coordinates: it
+    structurally matches `Station`/`Location` even though reading `latitude`
+    raises.
+    """
+    from pysmo.lib.mini_utils import matching_pysmo_types
+
+    class BrokenLocation:
+        @property
+        def latitude(self) -> float:
+            raise TypeError("no coordinates")
+
+        @property
+        def longitude(self) -> float:
+            raise TypeError("no coordinates")
+
+    assert Location in matching_pysmo_types(BrokenLocation())

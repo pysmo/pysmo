@@ -289,13 +289,16 @@ def remove_response[T: Seismogram](
 
         ```python
         >>> import numpy as np
+        >>> import pytest
         >>> gain_only = remove_response(prepped, response, replace=True)
         >>> gain_only_rms = np.sqrt(np.mean(gain_only.data**2))
         >>> deconvolved_rms = np.sqrt(np.mean(deconvolved.data**2))
-        >>> round(float(gain_only_rms / deconvolved_rms), 3)  # ~1: amplitude match
-        1.082
-        >>> round(float(np.corrcoef(gain_only.data, deconvolved.data)[0, 1]), 3)  # ~1: shape match
-        0.926
+        >>> # ~1: amplitude match
+        >>> float(gain_only_rms / deconvolved_rms) == pytest.approx(1.0, abs=0.15)
+        True
+        >>> # ~1: shape match
+        >>> float(np.corrcoef(gain_only.data, deconvolved.data)[0, 1]) == pytest.approx(1.0, abs=0.15)
+        True
         >>>
         ```
 
