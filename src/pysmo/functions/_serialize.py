@@ -365,7 +365,7 @@ def seismogram_from_json(
             "seismogram JSON document is missing its cls/v/payload envelope."
         )
     version = envelope["v"]
-    if version not in _SUPPORTED_JSON_VERSIONS:
+    if not isinstance(version, int) or version not in _SUPPORTED_JSON_VERSIONS:
         raise TypeError(
             f"seismogram JSON document is version {version!r}; this pysmo reads "
             + f"{sorted(_SUPPORTED_JSON_VERSIONS)}."

@@ -1,5 +1,6 @@
 """Tests for pysmo.lib.io._stationxml."""
 
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -819,3 +820,22 @@ class TestParseStationxmlCoords:
         xml = _STATION_LEVEL_DOC.replace(b"<Latitude>34.9</Latitude>", b"")
         with pytest.raises(ValueError, match="latitude/longitude"):
             parse_stationxml(xml)
+
+    def test_strict_false_skips_unrepresentable_epoch_and_warns(self) -> None:
+        xml = _STATIONS_TWO_NETWORKS.replace(
+            b"<Latitude>48.3</Latitude><Longitude>8.3</Longitude>", b""
+        )
+        with pytest.raises(ValueError, match="latitude/longitude"):
+            parse_stationxml(xml)
+
+        with pytest.warns(
+            UserWarning, match=r"Skipped 1 unrepresentable station epoch.*II\.BFO"
+        ):
+            epochs = parse_stationxml(xml, strict=False)
+        assert [e.station for e in epochs] == ["ANMO", "ANMO"]
+
+    def test_strict_false_does_not_warn_when_every_epoch_is_representable(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            epochs = parse_stationxml(_STATIONS_TWO_NETWORKS, strict=False)
+        assert len(epochs) == 3

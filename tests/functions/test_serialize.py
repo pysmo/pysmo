@@ -190,6 +190,12 @@ class TestDecodeErrors:
         with pytest.raises(TypeError, match="version 99"):
             seismogram_from_json(json.dumps(tampered).encode())
 
+    def test_rejects_a_non_integer_version(self, seismogram: MiniSeismogram) -> None:
+        tampered = json.loads(seismogram_to_json(seismogram))
+        tampered["v"] = [1]
+        with pytest.raises(TypeError, match="version"):
+            seismogram_from_json(json.dumps(tampered).encode())
+
     @pytest.mark.parametrize("module", ["subprocess", "this_module_is_not_pysmo"])
     def test_refuses_to_import_an_untrusted_module(self, module: str) -> None:
         import sys

@@ -61,6 +61,19 @@ class TestFromText:
         with pytest.raises(ValueError, match="found 2"):
             SacPZ.from_text(text)
 
+    def test_strict_false_narrows_past_a_malformed_record(self) -> None:
+        bad = MINIMAL_RECORD.replace(
+            "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
+        )
+        with pytest.warns(UserWarning, match="Skipped 1 malformed"):
+            response = SacPZ.from_text(bad + "\n\n" + MINIMAL_RECORD, strict=False)
+        assert response.station == "ANMO"
+
+
+_BAD_RECORD = MINIMAL_RECORD.replace(
+    "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
+)
+
 
 class TestAllFromText:
     def test_real_bulk_fixture(self) -> None:
@@ -76,6 +89,16 @@ class TestAllFromText:
     def test_single_record_still_returns_a_list(self) -> None:
         responses = SacPZ.all_from_text(MINIMAL_RECORD)
         assert len(responses) == 1
+
+    def test_strict_true_fails_on_one_malformed_record(self) -> None:
+        with pytest.raises(ValueError):
+            SacPZ.all_from_text(MINIMAL_RECORD + "\n\n" + _BAD_RECORD)
+
+    def test_strict_false_skips_the_malformed_record(self) -> None:
+        text = MINIMAL_RECORD + "\n\n" + _BAD_RECORD + "\n\n" + MINIMAL_RECORD
+        with pytest.warns(UserWarning, match="Skipped 1 malformed"):
+            responses = SacPZ.all_from_text(text, strict=False)
+        assert len(responses) == 2
 
 
 class TestFetch:

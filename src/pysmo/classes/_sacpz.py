@@ -123,20 +123,25 @@ class SacPZ:
     """End of the epoch this response applies to, or `None` if still open."""
 
     @classmethod
-    def from_text(cls, text: str) -> Self:
+    def from_text(cls, text: str, *, strict: bool = True) -> Self:
         """Create a new instance from a single-record SAC PZ text body.
 
         Args:
             text: SAC PZ text containing exactly one record (the common
                 sidecar-file case, e.g. one `.pz`/`SACPZ.NET.STA.LOC.CHA`
                 file matched to one channel epoch by filename convention).
+            strict: If `True` (default), any malformed record in `text`
+                fails the call. If `False`, malformed records are skipped
+                (with a `UserWarning`), so a concatenated body with one bad
+                epoch still resolves as long as exactly one good record
+                remains.
 
         Returns:
             A new SacPZ instance.
 
         Raises:
-            ValueError: If the text contains zero or more than one SAC PZ
-                record.
+            ValueError: If the text contains zero or more than one
+                (representable) SAC PZ record.
 
         Tip: See Also
             [`SacPZ.all_from_text`][pysmo.classes.SacPZ.all_from_text]: Parse
@@ -157,7 +162,7 @@ class SacPZ:
             >>>
             ```
         """
-        records = parse_sacpz(text)
+        records = parse_sacpz(text, strict=strict)
         if len(records) != 1:
             raise ValueError(
                 f"Expected exactly one SAC PZ record in text, found {len(records)}."
@@ -220,7 +225,7 @@ class SacPZ:
         return cls.from_text(text)
 
     @classmethod
-    def all_from_text(cls, text: str) -> list[Self]:
+    def all_from_text(cls, text: str, *, strict: bool = True) -> list[Self]:
         """Create one instance per record in a bulk/concatenated SAC PZ text body.
 
         Unlike [`from_text`][pysmo.classes.SacPZ.from_text], this does not
@@ -232,11 +237,15 @@ class SacPZ:
 
         Args:
             text: SAC PZ text containing one or more records.
+            strict: If `True` (default), a single malformed record fails the
+                whole parse. If `False`, malformed records are skipped and a
+                `UserWarning` reports how many — useful for a bulk retrieval
+                where one bad epoch should not discard the rest.
 
         Returns:
-            One SacPZ instance per record found, in order of appearance.
+            One SacPZ instance per representable record, in order of appearance.
         """
-        return [cls._from_raw(record) for record in parse_sacpz(text)]
+        return [cls._from_raw(record) for record in parse_sacpz(text, strict=strict)]
 
     @classmethod
     def _from_raw(cls, record: _RawSacPzResponse) -> Self:

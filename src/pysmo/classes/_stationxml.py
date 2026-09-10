@@ -187,6 +187,7 @@ class StationXML:
         station: str | None = None,
         location: str | None = None,
         channel: str | None = None,
+        strict: bool = True,
     ) -> Self:
         """Create a new instance from a StationXML document, selecting one epoch.
 
@@ -205,6 +206,10 @@ class StationXML:
             station: Station code to narrow to, if `xml` covers more than one.
             location: Location code to narrow to, if `xml` covers more than one.
             channel: Channel code to narrow to, if `xml` covers more than one.
+            strict: If `True` (default), any unrepresentable epoch in `xml`
+                fails the call. If `False`, such epochs are skipped (with a
+                `UserWarning`) before narrowing, so a bad *other* epoch
+                doesn't block selecting the one asked for.
 
         Returns:
             A new StationXML instance for the epoch active at *time* (or
@@ -219,7 +224,7 @@ class StationXML:
             Parse every epoch in the document without narrowing to one.
         """
         matches = _matching_epochs(
-            parse_stationxml(xml),
+            parse_stationxml(xml, strict=strict),
             time,
             network=network,
             station=station,
@@ -239,7 +244,7 @@ class StationXML:
         return cls._from_raw(matches[0])
 
     @classmethod
-    def all_from_bytes(cls, xml: bytes) -> list[Self]:
+    def all_from_bytes(cls, xml: bytes, *, strict: bool = True) -> list[Self]:
         """Create one instance per `<Channel>` epoch in a StationXML document.
 
         Unlike [`from_bytes`][pysmo.classes.StationXML.from_bytes], this does
@@ -248,11 +253,16 @@ class StationXML:
 
         Args:
             xml: Raw StationXML document bytes.
+            strict: If `True` (default), a single unrepresentable epoch
+                fails the whole parse. If `False`, unrepresentable epochs
+                are skipped and a `UserWarning` reports how many — useful
+                for a bulk `level=response` inventory where one channel's
+                unsupported response encoding should not discard the rest.
 
         Returns:
-            One StationXML instance per epoch found, in document order.
+            One StationXML instance per representable epoch, in document order.
         """
-        return [cls._from_raw(raw) for raw in parse_stationxml(xml)]
+        return [cls._from_raw(raw) for raw in parse_stationxml(xml, strict=strict)]
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:

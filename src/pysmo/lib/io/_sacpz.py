@@ -23,6 +23,7 @@ type, mirroring the "parse, don't interpret" split used by
 """
 
 import re
+import warnings
 from dataclasses import dataclass
 
 import pandas as pd
@@ -60,6 +61,23 @@ class _RawSacPzResponse:
     overall_sensitivity: float
     reference_sensitivity: float | None
     input_units: str
+
+
+def _next_record_start(lines: list[str], index: int) -> int:
+    """Line index of the next record's `* NETWORK` header at or after `index`.
+
+    Returns `len(lines)` when there is none. Used to resync after a skipped
+    record under `strict=False`; assumes each record leads with its
+    `* NETWORK` header, as real fdsnws-station output does.
+    """
+    for position in range(index, len(lines)):
+        stripped = lines[position].strip()
+        if not stripped.startswith("*"):
+            continue
+        match = _HEADER_PATTERN.match(stripped)
+        if match and match.group(1).strip() == "NETWORK":
+            return position
+    return len(lines)
 
 
 def _parse_headers(lines: list[str], index: int) -> tuple[dict[str, str], int]:
@@ -120,7 +138,7 @@ def _parse_complex_block(
     return values, index
 
 
-def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
+def parse_sacpz(text: str, *, strict: bool = True) -> list[_RawSacPzResponse]:
     r"""Split SAC PZ text into a list of uninterpreted records.
 
     A text body may contain several concatenated records (EarthScope's
@@ -130,13 +148,19 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
 
     Args:
         text: SAC PZ text body, containing one or more records.
+        strict: If `True` (default), a single malformed record fails the
+            whole text body. If `False`, a malformed record is skipped
+            (parsing resumes at the next record's `* NETWORK` header) and a
+            `UserWarning` reports how many; useful for a bulk retrieval
+            where one bad epoch should not discard the rest.
 
     Returns:
         List of uninterpreted SAC PZ records in order of appearance.
 
     Raises:
-        ValueError: If a record is missing a required header field, or the
-            `ZEROS`/`POLES`/`CONSTANT` blocks are missing or malformed.
+        ValueError: When `strict` is `True`, if a record is missing a
+            required header field, or the `ZEROS`/`POLES`/`CONSTANT` blocks
+            are missing or malformed.
 
     Examples:
         ```python
@@ -168,6 +192,7 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
     """
     lines = text.splitlines()
     records: list[_RawSacPzResponse] = []
+    skipped: list[str] = []
     index = 0
     n = len(lines)
 
@@ -175,55 +200,74 @@ def parse_sacpz(text: str) -> list[_RawSacPzResponse]:
         if not lines[index].strip():
             index += 1
             continue
-        if not lines[index].strip().startswith("*"):
-            raise ValueError(
-                f"Expected a comment header line at line {index + 1}, found "
-                + f"{lines[index]!r}."
-            )
+        record_start = index
+        try:
+            if not lines[index].strip().startswith("*"):
+                raise ValueError(
+                    f"Expected a comment header line at line {index + 1}, found "
+                    + f"{lines[index]!r}."
+                )
 
-        headers, index = _parse_headers(lines, index)
-        missing = [key for key in _REQUIRED_HEADERS if key not in headers]
-        if missing:
-            raise ValueError(f"SAC PZ record is missing required header(s): {missing}.")
+            headers, index = _parse_headers(lines, index)
+            missing = [key for key in _REQUIRED_HEADERS if key not in headers]
+            if missing:
+                raise ValueError(
+                    f"SAC PZ record is missing required header(s): {missing}."
+                )
 
-        zeros, index = _parse_complex_block(lines, index, "ZEROS")
-        poles, index = _parse_complex_block(lines, index, "POLES")
+            zeros, index = _parse_complex_block(lines, index, "ZEROS")
+            poles, index = _parse_complex_block(lines, index, "POLES")
 
-        constant_line = lines[index].strip() if index < n else ""
-        if not constant_line.startswith("CONSTANT"):
-            raise ValueError(
-                f"Expected 'CONSTANT' at line {index + 1}, found {constant_line!r}."
-            )
-        constant_tokens = constant_line.split()
-        if len(constant_tokens) < 2:
-            raise ValueError(
-                f"'CONSTANT' at line {index + 1} is missing its value: "
-                + f"{constant_line!r}."
-            )
-        overall_sensitivity = _parse_float(constant_tokens[1])
-        index += 1
+            constant_line = lines[index].strip() if index < n else ""
+            if not constant_line.startswith("CONSTANT"):
+                raise ValueError(
+                    f"Expected 'CONSTANT' at line {index + 1}, found {constant_line!r}."
+                )
+            constant_tokens = constant_line.split()
+            if len(constant_tokens) < 2:
+                raise ValueError(
+                    f"'CONSTANT' at line {index + 1} is missing its value: "
+                    + f"{constant_line!r}."
+                )
+            overall_sensitivity = _parse_float(constant_tokens[1])
+            index += 1
 
-        end_date_text = headers.get("END", "")
-        sensitivity_text = headers.get("SENSITIVITY", "")
-        sensitivity_tokens = sensitivity_text.split()
-        records.append(
-            _RawSacPzResponse(
-                network=headers["NETWORK"],
-                station=headers["STATION"],
-                location=headers["LOCATION"],
-                channel=headers["CHANNEL"],
-                start_date=convert_to_utc_timestamp(headers["START"]),
-                end_date=(
-                    convert_to_utc_timestamp(end_date_text) if end_date_text else None
-                ),
-                poles=poles,
-                zeros=zeros,
-                overall_sensitivity=overall_sensitivity,
-                reference_sensitivity=(
-                    _parse_float(sensitivity_tokens[0]) if sensitivity_tokens else None
-                ),
-                input_units=headers["INPUT UNIT"],
+            end_date_text = headers.get("END", "")
+            sensitivity_text = headers.get("SENSITIVITY", "")
+            sensitivity_tokens = sensitivity_text.split()
+            records.append(
+                _RawSacPzResponse(
+                    network=headers["NETWORK"],
+                    station=headers["STATION"],
+                    location=headers["LOCATION"],
+                    channel=headers["CHANNEL"],
+                    start_date=convert_to_utc_timestamp(headers["START"]),
+                    end_date=(
+                        convert_to_utc_timestamp(end_date_text)
+                        if end_date_text
+                        else None
+                    ),
+                    poles=poles,
+                    zeros=zeros,
+                    overall_sensitivity=overall_sensitivity,
+                    reference_sensitivity=(
+                        _parse_float(sensitivity_tokens[0])
+                        if sensitivity_tokens
+                        else None
+                    ),
+                    input_units=headers["INPUT UNIT"],
+                )
             )
+        except ValueError as error:
+            if strict:
+                raise
+            skipped.append(f"record at line {record_start + 1} ({error})")
+            index = _next_record_start(lines, record_start + 1)
+
+    if skipped:
+        warnings.warn(
+            f"Skipped {len(skipped)} malformed SAC PZ record(s); first: {skipped[0]}",
+            UserWarning,
+            stacklevel=2,
         )
-
     return records

@@ -397,7 +397,7 @@ def _epoch_coords(
     )
 
 
-def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
+def parse_stationxml(xml: bytes, *, strict: bool = True) -> list[_RawStationEpoch]:
     """Parse station identity, coordinates and response from a StationXML document.
 
     Walks the document once and returns one entry per `<Channel>` epoch (or
@@ -411,14 +411,20 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
     Args:
         xml: Raw StationXML document bytes (any `level` that carries
             coordinates: `channel`, `station` or `response`).
+        strict: If `True` (default), a single unrepresentable epoch fails
+            the whole document. If `False`, unrepresentable epochs are
+            skipped and a `UserWarning` reports how many; useful for a bulk
+            `level=response` query over an array where one channel's
+            unsupported response encoding should not discard the rest.
 
     Returns:
-        One uninterpreted epoch per `<Channel>` (or `<Station>`) found, in
-        document order.
+        One uninterpreted epoch per representable `<Channel>` (or
+        `<Station>`) found, in document order.
 
     Raises:
-        ValueError: If `xml` is not well-formed XML, a `<Network>`,
-            `<Station>` or `<Channel>` element has no `code` attribute, a
+        ValueError: If `xml` is not well-formed XML, or a `<Network>` or
+            `<Station>` element has no `code` attribute. When `strict` is
+            `True`, also if a `<Channel>` element has no `code`, a
             `<Channel>` (or channel-less `<Station>`) has no `startDate`, an
             epoch has neither channel-level nor station-level
             latitude/longitude, or a `<Response>` that is present uses an
@@ -456,6 +462,7 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
         raise ValueError(f"Not well-formed XML: {exc}") from exc
 
     results: list[_RawStationEpoch] = []
+    skipped: list[str] = []
     for network_elem in root.findall("fdsn:Network", _NS):
         network_code = network_elem.get("code")
         if network_code is None:
@@ -484,42 +491,58 @@ def parse_stationxml(xml: bytes) -> list[_RawStationEpoch]:
             )
 
             for elem, channel_code, location_code in elements:
-                if channels and not channel_code:
-                    raise ValueError(
-                        "<Channel> element in station "
-                        + f"{network_code}.{station_code} has no code attribute."
+                try:
+                    if channels and not channel_code:
+                        raise ValueError(
+                            "<Channel> element in station "
+                            + f"{network_code}.{station_code} has no code attribute."
+                        )
+                    start_date = _parse_timestamp(elem.get("startDate"))
+                    if start_date is None:
+                        what = f"Channel {channel_code!r}" if channels else "Station"
+                        raise ValueError(
+                            f"{what} in station {network_code}.{station_code} has "
+                            + "no startDate attribute."
+                        )
+                    latitude, longitude, elevation = _epoch_coords(elem, station_coords)
+                    if latitude is None or longitude is None:
+                        raise ValueError(
+                            f"{network_code}.{station_code}."
+                            + f"{channel_code or '(station)'} has no "
+                            + "latitude/longitude."
+                        )
+                    response_elem = elem.find("fdsn:Response", _NS)
+                    results.append(
+                        _RawStationEpoch(
+                            network=network_code,
+                            station=station_code,
+                            location=location_code,
+                            channel=channel_code,
+                            start_date=start_date,
+                            end_date=_parse_timestamp(elem.get("endDate")),
+                            latitude=latitude,
+                            longitude=longitude,
+                            elevation=elevation,
+                            response=(
+                                None
+                                if response_elem is None
+                                else _parse_response(response_elem)
+                            ),
+                        )
                     )
-                start_date = _parse_timestamp(elem.get("startDate"))
-                if start_date is None:
-                    what = f"Channel {channel_code!r}" if channels else "Station"
-                    raise ValueError(
-                        f"{what} in station {network_code}.{station_code} has "
-                        + "no startDate attribute."
-                    )
-                latitude, longitude, elevation = _epoch_coords(elem, station_coords)
-                if latitude is None or longitude is None:
-                    raise ValueError(
+                except ValueError as error:
+                    if strict:
+                        raise
+                    skipped.append(
                         f"{network_code}.{station_code}."
-                        + f"{channel_code or '(station)'} has no latitude/longitude."
+                        + f"{channel_code or '(station)'} ({error})"
                     )
-                response_elem = elem.find("fdsn:Response", _NS)
-                results.append(
-                    _RawStationEpoch(
-                        network=network_code,
-                        station=station_code,
-                        location=location_code,
-                        channel=channel_code,
-                        start_date=start_date,
-                        end_date=_parse_timestamp(elem.get("endDate")),
-                        latitude=latitude,
-                        longitude=longitude,
-                        elevation=elevation,
-                        response=(
-                            None
-                            if response_elem is None
-                            else _parse_response(response_elem)
-                        ),
-                    )
-                )
 
+    if skipped:
+        warnings.warn(
+            f"Skipped {len(skipped)} unrepresentable station epoch(s); "
+            + f"first: {skipped[0]}",
+            UserWarning,
+            stacklevel=2,
+        )
     return results
