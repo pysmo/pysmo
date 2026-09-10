@@ -561,7 +561,11 @@ def merge[T: Seismogram](
     within this tolerance, the overlapping samples must match (compared with
     [`allclose`][numpy.allclose] and its default tolerances, to accommodate
     floating-point noise from e.g. prior resampling); they are verified and
-    the duplicates are discarded rather than concatenated.
+    the duplicates are discarded rather than concatenated. A sub-tolerance
+    positive gap is closed by concatenating the later seismogram's samples
+    straight onto the preceding grid, shifting them earlier by up to
+    `gap_tolerance_factor` of a sampling interval; no samples are inserted to
+    span the gap.
 
     When `replace=False`, the first seismogram in `seismograms` (as given,
     not necessarily the chronologically first, and regardless of whether it
