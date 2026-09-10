@@ -159,14 +159,18 @@ def entry_identity_components(entry: _IdentityEntry) -> dict[str, Any]:
     }
 
 
+def identity_digest(components: dict[str, Any]) -> str:
+    """Hash a pre-built identity-components dict to a `'v1:'`-prefixed digest."""
+    digest = hashlib.sha256(_canonical(components).encode("utf-8")).hexdigest()
+    return f"{_IDENTITY_SCHEMA}:{digest}"
+
+
 def entry_identity(entry: _IdentityEntry) -> str:
     """The entry's stable identity, computed from its natural key without I/O.
 
     The string is `'v1:'` followed by a sha256 hexdigest.
     """
-    payload = _canonical(entry_identity_components(entry))
-    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    return f"{_IDENTITY_SCHEMA}:{digest}"
+    return identity_digest(entry_identity_components(entry))
 
 
 def callable_identity(fn: Any) -> str:

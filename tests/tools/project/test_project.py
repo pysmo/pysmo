@@ -660,7 +660,7 @@ class TestPickling:
         state = project.__getstate__()
         state["_format_version"] = 999
         with pytest.raises(
-            ValueError, match=r"state format v999; this pysmo .* uses v2"
+            ValueError, match=r"state format v999; this pysmo .* uses v3"
         ):
             project.__setstate__(state)
 
@@ -675,7 +675,7 @@ class TestPickling:
         )
         state = project.__getstate__()
         del state["_format_version"]
-        with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v2"):
+        with pytest.raises(ValueError, match=r"state format v0; this pysmo .* uses v3"):
             project.__setstate__(state)
 
     @given(st.text() | st.none())

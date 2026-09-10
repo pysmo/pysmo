@@ -6,20 +6,14 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 import pandas as pd
-from attrs import Attribute, converters, define, field, setters
+from attrs import converters, define, field, setters
 
 from pysmo import Event, Station
 from pysmo.lib.converters import to_utc_timestamp
 
-from ._identity import entry_identity, entry_identity_components
+from ._identity import entry_identity_components, identity_digest
 
 __all__ = ["ProjectEntry", "build_entries"]
-
-
-def _clear_identity_cache[T](instance: Any, _attribute: Attribute[T], value: T) -> T:
-    """`on_setattr` for the identity-relevant fields: drop the cached identity."""
-    object.__setattr__(instance, "_identity_cache", None)
-    return value
 
 
 @define(kw_only=True)
@@ -48,16 +42,16 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     homogeneous list.
     """
 
-    station: TStation = field(on_setattr=_clear_identity_cache)
+    station: TStation
     """Station to fetch waveform data for."""
 
-    event: TEvent | None = field(default=None, on_setattr=_clear_identity_cache)
+    event: TEvent | None = None
     """Event for deriving a phase-arrival-relative window (if no explicit times)."""
 
     starttime: pd.Timestamp | None = field(
         default=None,
         converter=converters.optional(to_utc_timestamp),
-        on_setattr=setters.pipe(setters.convert, _clear_identity_cache),
+        on_setattr=setters.convert,
     )
     """Explicit start of the fetch window (UTC).
 
@@ -67,17 +61,19 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     endtime: pd.Timestamp | None = field(
         default=None,
         converter=converters.optional(to_utc_timestamp),
-        on_setattr=setters.pipe(setters.convert, _clear_identity_cache),
+        on_setattr=setters.convert,
     )
     """Explicit end of the fetch window (UTC).
 
     Overrides `event` when set together with `starttime`.
     """
 
-    _identity_cache: str | None = field(init=False, default=None, eq=False, repr=False)
-    """Memoised [`identity`][pysmo.tools.project.ProjectEntry.identity]; the
-    setters on the fields above reset it. Not `checksum`: it is not part of
-    the identity."""
+    _identity_cache: tuple[dict[str, Any], str] | None = field(
+        init=False, default=None, eq=False, repr=False
+    )
+    """Memoised (`identity_components`, `identity`) pair, reused only while the
+    components still compare equal — so mutating a nested `station`/`event`
+    field invalidates it too, not just reassigning the top-level field."""
 
     checksum: str | None = field(default=None)
     """Checksum of the fetched seismogram, set on first fetch; `None` until then.
@@ -164,11 +160,12 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
             >>> len(entry.identity)
             67
         """
+        components = entry_identity_components(self)
         cached = self._identity_cache
-        if cached is None:
-            cached = entry_identity(self)
+        if cached is None or cached[0] != components:
+            cached = (components, identity_digest(components))
             object.__setattr__(self, "_identity_cache", cached)
-        return cached
+        return cached[1]
 
     def __attrs_post_init__(self) -> None:
         """Reject a half-specified, reversed, or (event-less) absent window."""

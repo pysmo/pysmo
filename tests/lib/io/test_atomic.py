@@ -44,7 +44,7 @@ def test_atomic_write_creates_new_file(tmp_path: Path) -> None:
 def test_atomic_write_missing_directory_raises(tmp_path: Path) -> None:
     with pytest.raises(OSError):
         with atomic_write(tmp_path / "nope" / "out.txt"):
-            pass
+            ...
 
 
 @pytest.mark.skipif(

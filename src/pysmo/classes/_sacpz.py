@@ -1,5 +1,6 @@
 """SAC PZ (pole-zero) import class compatible with pysmo types."""
 
+import warnings
 from typing import Self
 
 import pandas as pd
@@ -152,12 +153,14 @@ class SacPZ:
             >>>
             ```
         """
-        records = parse_sacpz(text, strict=strict)
+        records = cls._instances_from_raw(
+            parse_sacpz(text, strict=strict), strict=strict
+        )
         if len(records) != 1:
             raise ValueError(
                 f"Expected exactly one SAC PZ record in text, found {len(records)}."
             )
-        return cls._from_raw(records[0])
+        return records[0]
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:
@@ -235,7 +238,37 @@ class SacPZ:
         Returns:
             One SacPZ instance per representable record, in order of appearance.
         """
-        return [cls._from_raw(record) for record in parse_sacpz(text, strict=strict)]
+        return cls._instances_from_raw(parse_sacpz(text, strict=strict), strict=strict)
+
+    @classmethod
+    def _instances_from_raw(
+        cls, records: list[_RawSacPzResponse], *, strict: bool
+    ) -> list[Self]:
+        """Build instances from parsed records, applying the strictness boundary.
+
+        `parse_sacpz` skips text that will not parse; this skips a record that
+        parses but cannot be represented as a `SacPZ` (e.g. a zero `CONSTANT`).
+        """
+        instances: list[Self] = []
+        skipped: list[str] = []
+        for record in records:
+            try:
+                instances.append(cls._from_raw(record))
+            except (ValueError, TypeError) as error:
+                if strict:
+                    raise
+                skipped.append(
+                    f"{record.network}.{record.station}.{record.location}"
+                    + f".{record.channel} ({error})"
+                )
+        if skipped:
+            warnings.warn(
+                f"Skipped {len(skipped)} unrepresentable SAC PZ record(s); "
+                + f"first: {skipped[0]}",
+                UserWarning,
+                stacklevel=3,
+            )
+        return instances
 
     @classmethod
     def _from_raw(cls, record: _RawSacPzResponse) -> Self:

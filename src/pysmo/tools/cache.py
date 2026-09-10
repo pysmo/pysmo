@@ -120,14 +120,22 @@ _CREATE_CACHE_DELETE_TRIGGER = (
 
 
 def _decompress(blob: bytes) -> bytes:
-    """Inflate a stored blob, refusing one that expands past the ceiling."""
+    """Inflate a stored blob, refusing one truncated or past the size ceiling."""
     decompressor = zlib.decompressobj()
-    out = decompressor.decompress(blob, _MAX_DECOMPRESSED_BYTES)
-    if decompressor.unconsumed_tail:
-        raise ValueError(
-            f"cached blob decompresses to more than {_MAX_DECOMPRESSED_BYTES} bytes"
-        )
-    return out + decompressor.flush()
+    try:
+        out = decompressor.decompress(blob, _MAX_DECOMPRESSED_BYTES)
+        if decompressor.unconsumed_tail:
+            raise ValueError(
+                f"cached blob decompresses to more than {_MAX_DECOMPRESSED_BYTES} bytes"
+            )
+        out += decompressor.flush()
+    except zlib.error as error:
+        raise ValueError(f"cached blob is not valid zlib data: {error}") from error
+    # decompress()/flush() return what they have from a truncated stream without
+    # raising; eof is the only signal that the whole stream was consumed.
+    if not decompressor.eof:
+        raise ValueError("cached blob is a truncated zlib stream")
+    return out
 
 
 class RawFetcher(Protocol):
@@ -177,7 +185,8 @@ class BlobCache:
         but WAL mode and access over a network filesystem are unsupported and
         can corrupt the file. Within a process, concurrent
         [`get`][pysmo.tools.cache.BlobCache.get] calls for the same missing
-        key each run the callback; the last write wins.
+        key each run the callback and return their own result; the first
+        write is the one kept.
 
     Examples:
         ```python

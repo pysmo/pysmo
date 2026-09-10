@@ -332,6 +332,24 @@ class TestEngine:
         with pytest.raises(ValueError, match="decompresses to more than"):
             engine.peek("bomb")
 
+    def test_rejects_a_truncated_blob(self, tmp_path: Path) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        full = zlib.compress(b"payload" * 100)
+        truncated = full[: len(full) // 2]
+        engine._connect().execute(
+            "INSERT INTO cache (key, data) VALUES ('cut', ?)", (truncated,)
+        )
+        with pytest.raises(ValueError, match="truncated zlib stream"):
+            engine.peek("cut")
+
+    def test_rejects_a_non_zlib_blob(self, tmp_path: Path) -> None:
+        engine = BlobCache(path=tmp_path / "e.sqlite3", encoding_version=1)
+        engine._connect().execute(
+            "INSERT INTO cache (key, data) VALUES ('junk', ?)", (b"not zlib at all",)
+        )
+        with pytest.raises(ValueError, match="not valid zlib data"):
+            engine.peek("junk")
+
     def test_read_only_session_persists_the_seeded_schema(self, tmp_path: Path) -> None:
         path = tmp_path / "e.sqlite3"
         reader = BlobCache(path=path, encoding_version=1)

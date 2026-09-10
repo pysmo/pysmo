@@ -308,6 +308,17 @@ _MIXED_QUALITY_DOC = _document(
     )
 )
 
+# The middle station parses fine but its zero instrument sensitivity is not a
+# representable response, so class conversion -- not parsing -- rejects it.
+_INVALID_RESPONSE_DOC = _document(
+    _network_block(
+        "IU",
+        _station_block("ANMO", "1.0E9", "-1.0"),
+        _station_block("BAD", "0.0", "-9.0"),
+        _station_block("COLA", "2.0E9", "-2.0"),
+    )
+)
+
 
 class TestAllFromBytes:
     def test_real_bulk_fixture(self) -> None:
@@ -339,6 +350,15 @@ class TestAllFromBytes:
                 _MIXED_QUALITY_DOC, station="COLA", strict=False
             )
         assert epoch.name == "COLA"
+
+    def test_strict_true_fails_on_a_class_unrepresentable_epoch(self) -> None:
+        with pytest.raises((ValueError, TypeError)):
+            StationXML.all_from_bytes(_INVALID_RESPONSE_DOC)
+
+    def test_strict_false_skips_a_class_unrepresentable_epoch(self) -> None:
+        with pytest.warns(UserWarning, match="Skipped 1 unrepresentable"):
+            epochs = StationXML.all_from_bytes(_INVALID_RESPONSE_DOC, strict=False)
+        assert [epoch.name for epoch in epochs] == ["ANMO", "COLA"]
 
 
 class TestFetch:

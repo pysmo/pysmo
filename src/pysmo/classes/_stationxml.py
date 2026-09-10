@@ -1,5 +1,6 @@
 """FDSN StationXML import class compatible with pysmo types."""
 
+import warnings
 from collections import defaultdict
 from collections.abc import Iterable
 from typing import Self
@@ -263,7 +264,40 @@ class StationXML:
         Returns:
             One StationXML instance per representable epoch, in document order.
         """
-        return [cls._from_raw(raw) for raw in parse_stationxml(xml, strict=strict)]
+        return cls._instances_from_raw(
+            parse_stationxml(xml, strict=strict), strict=strict
+        )
+
+    @classmethod
+    def _instances_from_raw(
+        cls, raws: list[_RawStationEpoch], *, strict: bool
+    ) -> list[Self]:
+        """Build instances from parsed epochs, applying the strictness boundary.
+
+        `parse_stationxml` skips XML that will not parse; this skips an epoch
+        that parses but fails `StationXML` or nested-response validation (an
+        out-of-range coordinate, a zero sensitivity, an invalid digital stage).
+        """
+        instances: list[Self] = []
+        skipped: list[str] = []
+        for raw in raws:
+            try:
+                instances.append(cls._from_raw(raw))
+            except (ValueError, TypeError) as error:
+                if strict:
+                    raise
+                skipped.append(
+                    f"{raw.network}.{raw.station}.{raw.location}.{raw.channel} "
+                    + f"@ {raw.start_date} ({error})"
+                )
+        if skipped:
+            warnings.warn(
+                f"Skipped {len(skipped)} unrepresentable StationXML epoch(s); "
+                + f"first: {skipped[0]}",
+                UserWarning,
+                stacklevel=3,
+            )
+        return instances
 
     @classmethod
     def fetch(cls, *, station: Station, time: pd.Timestamp | None = None) -> Self:

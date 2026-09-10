@@ -1,7 +1,7 @@
 """Shared HTTP helper for pysmo web-service requests."""
 
 from typing import Any
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import SplitResult, urljoin, urlsplit
 
 import urllib3
 from urllib3.util.retry import Retry
@@ -26,13 +26,27 @@ _RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 #: Upper bound on the exponential backoff delay, in seconds.
 _MAX_BACKOFF_SECONDS = 120
 
-#: Redirect statuses `http_get` follows, and only to the same host.
+#: Redirect statuses `http_get` follows, and only to the same origin.
 _REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
 #: Maximum number of redirects to follow before raising.
 _MAX_REDIRECTS = 5
 
+#: Ports assumed when a URL gives none.
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
 _pool = urllib3.PoolManager()
+
+
+def _effective_port(parts: SplitResult, *, upgraded_to: str | None = None) -> int:
+    """The port `parts` talks to; an explicit port wins, else the scheme default.
+
+    `upgraded_to` re-bases an implicit port onto another scheme's default, so a
+    plain `http` to `https` redirect on the standard ports stays same-origin.
+    """
+    if parts.port is not None:
+        return parts.port
+    return _DEFAULT_PORTS[upgraded_to or parts.scheme]
 
 
 def _redirect_target(source_url: str, location: str) -> str:
@@ -46,19 +60,27 @@ def _redirect_target(source_url: str, location: str) -> str:
         The absolute redirect target.
 
     Raises:
-        urllib3.exceptions.ResponseError: If the target uses a non-HTTP
-            scheme or points at a different host.
+        urllib3.exceptions.ResponseError: If the target is not the same
+            origin as `source_url` — a different host, a different port, or
+            a scheme change other than a plain HTTP-to-HTTPS upgrade (an
+            HTTPS-to-HTTP downgrade is refused) — or uses a non-HTTP scheme.
     """
-    target = urljoin(source_url, location)
-    parts = urlsplit(target)
-    if (
-        parts.scheme not in ("http", "https")
-        or parts.hostname != urlsplit(source_url).hostname
-    ):
+    source = urlsplit(source_url)
+    target_url = urljoin(source_url, location)
+    target = urlsplit(target_url)
+    upgrade = source.scheme == "http" and target.scheme == "https"
+    same_origin = (
+        target.scheme in ("http", "https")
+        and (target.scheme == source.scheme or upgrade)
+        and target.hostname == source.hostname
+        and _effective_port(target)
+        == _effective_port(source, upgraded_to=target.scheme)
+    )
+    if not same_origin:
         raise urllib3.exceptions.ResponseError(
             f"refusing to follow a redirect to {location!r}"
         )
-    return target
+    return target_url
 
 
 def http_get(
@@ -80,8 +102,9 @@ def http_get(
     header on a 429 or 503 response replaces that wait, clamped to 6 hours.
     Any other HTTP error status raises immediately.
 
-    Redirects are followed only to the same host and only over HTTP(S), at
-    most five per request; a redirect elsewhere raises rather than being
+    Redirects are followed only to the same origin (host, port, and scheme,
+    though a plain HTTP-to-HTTPS upgrade is allowed) and only over HTTP(S),
+    at most five per request; a redirect elsewhere raises rather than being
     followed.
 
     Args:
@@ -91,7 +114,7 @@ def http_get(
         request_retries: Maximum number of request attempts (must be at least 1).
         retry_delay_seconds: Base delay for the backoff schedule, and the
             width of the random jitter added to each wait.
-        redirect: Whether to follow same-host HTTP redirects.
+        redirect: Whether to follow same-origin HTTP redirects.
 
     Returns:
         The response body.
@@ -103,7 +126,7 @@ def http_get(
         urllib3.exceptions.ResponseError: If the server returns a
             non-retryable HTTP error status, or a transient one that
             persists after all retries; if a redirect leaves the original
-            host or uses a non-HTTP scheme; or if the redirect limit is
+            origin or uses a non-HTTP scheme; or if the redirect limit is
             exceeded.
     """
     if request_retries < 1:

@@ -208,6 +208,17 @@ class TestICCSMcccRefused:
         )
         assert pick_after == pick_before
 
+    def test_result_constructs_without_refused(self) -> None:
+        # `refused` is a later addition; the five-field construction still works.
+        result = McccResult(
+            picks=[],
+            errors=[],
+            rmse=pd.Timedelta(seconds=0.1),
+            cc_means=[],
+            cc_stds=[],
+        )
+        assert result.refused == []
+
 
 class TestICCSUpdateWarning:
     """Test the warning emitted when t1 update would move out of limits."""

@@ -73,6 +73,8 @@ class TestFromText:
 _BAD_RECORD = MINIMAL_RECORD.replace(
     "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
 )
+# Parses cleanly, but a zero CONSTANT is not a representable SacPZ.
+_UNREPRESENTABLE_RECORD = MINIMAL_RECORD.replace("CONSTANT\t1.0e+09", "CONSTANT\t0")
 
 
 class TestAllFromText:
@@ -99,6 +101,16 @@ class TestAllFromText:
         with pytest.warns(UserWarning, match="Skipped 1 malformed"):
             responses = SacPZ.all_from_text(text, strict=False)
         assert len(responses) == 2
+
+    def test_strict_true_fails_on_an_unrepresentable_record(self) -> None:
+        with pytest.raises(ValueError):
+            SacPZ.all_from_text(MINIMAL_RECORD + "\n\n" + _UNREPRESENTABLE_RECORD)
+
+    def test_strict_false_skips_an_unrepresentable_record(self) -> None:
+        text = MINIMAL_RECORD + "\n\n" + _UNREPRESENTABLE_RECORD
+        with pytest.warns(UserWarning, match="Skipped 1 unrepresentable"):
+            responses = SacPZ.all_from_text(text, strict=False)
+        assert len(responses) == 1
 
 
 class TestFetch:

@@ -136,7 +136,9 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         recomputes it with the current parameters).
     """
 
-    _FORMAT_VERSION: ClassVar[int] = 2
+    # v3: seismogram_checksum's algorithm changed, so v2 checksums no longer
+    # compare; there is no migration, so reject rather than mis-compare.
+    _FORMAT_VERSION: ClassVar[int] = 3
 
     name: str | None = field(
         default=None,

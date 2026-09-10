@@ -21,8 +21,7 @@ class FakeResponse:
         self.data = data
         self.headers = headers or {}
 
-    def release_conn(self) -> None:
-        pass
+    def release_conn(self) -> None: ...
 
 
 class CapturingPool:
@@ -305,3 +304,45 @@ class TestRedirects:
         )
         assert result == b"as-is"
         assert received == ["/"]
+
+    def test_same_host_different_port_redirect_is_refused(
+        self, http_server: ServerFactory
+    ) -> None:
+        url, received = http_server(
+            [(302, {"Location": "http://127.0.0.1:1/moved"}, b"")]
+        )
+        with pytest.raises(
+            urllib3.exceptions.ResponseError, match="refusing to follow a redirect"
+        ):
+            http_mod.http_get(
+                url, {}, timeout_seconds=5, request_retries=3, retry_delay_seconds=0
+            )
+        assert received == ["/"]
+
+
+class TestRedirectTarget:
+    """Unit coverage of the same-origin redirect check."""
+
+    def test_relative_same_origin_is_allowed(self) -> None:
+        assert (
+            http_mod._redirect_target("http://h.example/a", "/b")
+            == "http://h.example/b"
+        )
+
+    def test_http_to_https_upgrade_is_allowed(self) -> None:
+        assert (
+            http_mod._redirect_target("http://h.example/a", "https://h.example/a")
+            == "https://h.example/a"
+        )
+
+    def test_https_to_http_downgrade_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("https://h.example/a", "http://h.example/a")
+
+    def test_port_change_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("http://h.example/a", "http://h.example:8000/a")
+
+    def test_non_http_scheme_is_refused(self) -> None:
+        with pytest.raises(urllib3.exceptions.ResponseError):
+            http_mod._redirect_target("http://h.example/a", "file:///etc/passwd")

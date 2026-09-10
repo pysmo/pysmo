@@ -66,7 +66,7 @@ class McccResult:
     """Per-seismogram standard deviation of the cross-correlation
     coefficients (waveform consistency)."""
 
-    refused: list[int]
+    refused: list[int] = field(factory=list)
     """Positions in these lists whose pick was left unrefined because the MCCC
     shift would have moved the window (with its taper ramp) outside the data.
     Their `errors`/`cc_means`/`cc_stds` entries still refer to the unrefined
