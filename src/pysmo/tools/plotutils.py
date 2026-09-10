@@ -138,7 +138,10 @@ def plotseis(
     """Plot Seismogram objects.
 
     Returns the [`Figure`][matplotlib.figure.Figure] without displaying it;
-    call `fig.show()` or integrate it into your own application.
+    call `fig.show()` or integrate it into your own application. The figure
+    is created through pyplot and stays in its global registry until closed,
+    so a caller plotting many of them should `matplotlib.pyplot.close(fig)`
+    when done.
 
     Args:
         seismograms: One or more seismogram objects. A `label` attribute, if
@@ -167,7 +170,7 @@ def plotseis(
             "plotseis() no longer accepts 'showfig'; it always returns the "
             + "Figure without displaying it. Call fig.show() yourself."
         )
-    fig = plt.figure()
+    fig, ax = plt.subplots()
     any_labelled = False
     for seis in seismograms:
         time = time_array(seis)
@@ -175,17 +178,16 @@ def plotseis(
         if "label" not in plot_kwargs:
             plot_kwargs["label"] = getattr(seis, "label", None)
         any_labelled = any_labelled or bool(plot_kwargs["label"])
-        plt.plot(time, seis.data, scalex=True, scaley=True, **plot_kwargs)
-    plt.xlabel("Time")
-    plt.gcf().autofmt_xdate()
-    fmt = mdates.DateFormatter("%H:%M:%S")
-    plt.gca().xaxis.set_major_formatter(fmt)
+        ax.plot(time, seis.data, scalex=True, scaley=True, **plot_kwargs)
+    ax.set_xlabel("Time")
+    fig.autofmt_xdate()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
     if not title:
-        left, _ = plt.xlim()
+        left, _ = ax.get_xlim()
         title = mdates.num2date(left).strftime("%Y-%m-%d %H:%M:%S")
-    plt.title(title)
+    ax.set_title(title)
     if any_labelled:
-        plt.legend()
+        ax.legend()
     if outfile:
-        plt.savefig(outfile)
+        fig.savefig(outfile)
     return fig
