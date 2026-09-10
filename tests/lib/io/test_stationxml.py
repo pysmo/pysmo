@@ -277,6 +277,18 @@ class TestParseStationxml:
         with pytest.raises(ValueError, match="Unsupported FIR Symmetry"):
             parse_stationxml(self._fir_xml("BOGUS"))
 
+    def test_fir_stage_empty_coefficient_raises_not_renumbers(self) -> None:
+        # An entry present but with no value must raise, not be dropped
+        # (which would shift every later coefficient one position).
+        xml = self._fir_xml("NONE").replace(
+            b'<NumeratorCoefficient i="1">0.4</NumeratorCoefficient>',
+            b'<NumeratorCoefficient i="1"></NumeratorCoefficient>',
+        )
+        with pytest.raises(
+            ValueError, match=r"<NumeratorCoefficient> entry '1' has no value"
+        ):
+            parse_stationxml(xml)
+
     def test_correction_defaults_to_zero_when_absent(self) -> None:
         xml = b"""\
 <?xml version="1.0"?>

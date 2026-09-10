@@ -129,11 +129,19 @@ def _parse_coefficients(
             StationXML is inconsistent here: `<Numerator>`/`<Denominator>`
             (under `<Coefficients>`) use `"number"`, but `<NumeratorCoefficient>`
             (under `<FIR>`) uses `"i"` instead.
+
+    Raises:
+        ValueError: If any entry has no numeric value.
     """
     entries = sorted(
         elem.findall(f"fdsn:{tag}", _NS), key=lambda e: int(e.get(index_attr, 0))
     )
-    return [float(entry.text) for entry in entries if entry.text is not None]
+    coefficients: list[float] = []
+    for entry in entries:
+        if entry.text is None or not entry.text.strip():
+            raise ValueError(f"<{tag}> entry {entry.get(index_attr)!r} has no value.")
+        coefficients.append(float(entry.text))
+    return coefficients
 
 
 def _expand_fir_symmetry(coefficients: list[float], symmetry: str) -> list[float]:

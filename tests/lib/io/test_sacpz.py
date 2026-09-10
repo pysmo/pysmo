@@ -151,6 +151,44 @@ class TestParseSacpz:
         with pytest.raises(ValueError, match=r"'POLES' entry at line \d+ must be"):
             parse_sacpz(text)
 
+    def test_non_numeric_pole_value_names_the_block_and_line(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "\t-1.000000e-02\t+0.000000e+00", "\tnope\t+0.000000e+00"
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in the 'POLES' block",
+        ):
+            parse_sacpz(text)
+
+    def test_non_numeric_constant_names_the_line(self) -> None:
+        text = MINIMAL_RECORD.replace("CONSTANT\t1.0e+09", "CONSTANT\tnope")
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in 'CONSTANT'",
+        ):
+            parse_sacpz(text)
+
+    def test_non_numeric_sensitivity_names_the_header(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "* INPUT UNIT        : M\n",
+            "* INPUT UNIT        : M\n* SENSITIVITY       : nope\n",
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"'nope' is not a valid number in the '\* SENSITIVITY' header",
+        ):
+            parse_sacpz(text)
+
+    def test_duplicate_header_warns_and_last_value_wins(self) -> None:
+        text = MINIMAL_RECORD.replace(
+            "* STATION    (KSTNM): ANMO\n",
+            "* STATION    (KSTNM): ANMO\n* STATION    (KSTNM): XXXX\n",
+        )
+        with pytest.warns(UserWarning, match=r"Duplicate 'STATION' header line"):
+            records = parse_sacpz(text)
+        assert records[0].station == "XXXX"
+
 
 # A record with valid headers (so it still leads with `* NETWORK`) but a
 # non-numeric pole value: parsing fails mid-block.

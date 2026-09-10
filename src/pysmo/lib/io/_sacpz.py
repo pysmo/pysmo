@@ -41,9 +41,13 @@ _HEADER_PATTERN = re.compile(
 _REQUIRED_HEADERS = ("NETWORK", "STATION", "LOCATION", "CHANNEL", "START", "INPUT UNIT")
 
 
-def _parse_float(value: str) -> float:
+def _parse_float(value: str, *, context: str = "") -> float:
     """Convert `value` to `float`, tolerating Fortran `D`/`d` exponents."""
-    return float(value.replace("D", "E").replace("d", "e"))
+    try:
+        return float(value.replace("D", "E").replace("d", "e"))
+    except ValueError as error:
+        where = f" {context}" if context else ""
+        raise ValueError(f"{value!r} is not a valid number{where}.") from error
 
 
 @dataclass
@@ -85,7 +89,15 @@ def _parse_headers(lines: list[str], index: int) -> tuple[dict[str, str], int]:
     headers: dict[str, str] = {}
     while index < len(lines) and (stripped := lines[index].strip()).startswith("*"):
         if match := _HEADER_PATTERN.match(stripped):
-            headers[match.group(1).strip()] = match.group(2).strip()
+            key, value = match.group(1).strip(), match.group(2).strip()
+            if key in headers:
+                warnings.warn(
+                    f"Duplicate {key!r} header line in SAC PZ record; "
+                    + f"{headers[key]!r} is replaced by {value!r}.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            headers[key] = value
         index += 1
     return headers, index
 
@@ -132,7 +144,8 @@ def _parse_complex_block(
                 f"'{keyword}' entry at line {index + 1} must be a 'real imag' "
                 + f"pair, got {lines[index].strip()!r}."
             )
-        real, imag = (_parse_float(part) for part in parts)
+        context = f"in the '{keyword}' block at line {index + 1}"
+        real, imag = (_parse_float(part, context=context) for part in parts)
         values.append(complex(real, imag))
         index += 1
     return values, index
@@ -161,6 +174,11 @@ def parse_sacpz(text: str, *, strict: bool = True) -> list[_RawSacPzResponse]:
         ValueError: When `strict` is `True`, if a record is missing a
             required header field, or the `ZEROS`/`POLES`/`CONSTANT` blocks
             are missing or malformed.
+
+    Warns:
+        UserWarning: If a header line repeats a key already seen in the same
+            record (the later value wins), or, when `strict` is `False`, if
+            any record was skipped.
 
     Examples:
         ```python
@@ -229,7 +247,9 @@ def parse_sacpz(text: str, *, strict: bool = True) -> list[_RawSacPzResponse]:
                     f"'CONSTANT' at line {index + 1} is missing its value: "
                     + f"{constant_line!r}."
                 )
-            overall_sensitivity = _parse_float(constant_tokens[1])
+            overall_sensitivity = _parse_float(
+                constant_tokens[1], context=f"in 'CONSTANT' at line {index + 1}"
+            )
             index += 1
 
             end_date_text = headers.get("END", "")
@@ -251,7 +271,10 @@ def parse_sacpz(text: str, *, strict: bool = True) -> list[_RawSacPzResponse]:
                     zeros=zeros,
                     overall_sensitivity=overall_sensitivity,
                     reference_sensitivity=(
-                        _parse_float(sensitivity_tokens[0])
+                        _parse_float(
+                            sensitivity_tokens[0],
+                            context="in the '* SENSITIVITY' header",
+                        )
                         if sensitivity_tokens
                         else None
                     ),
