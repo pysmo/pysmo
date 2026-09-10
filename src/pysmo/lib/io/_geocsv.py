@@ -32,6 +32,8 @@ from pysmo._utils import as_sequence
 from pysmo.functions._seismogram import merge
 from pysmo.typing import NonNegativeNumber
 
+from ._atomic import atomic_write
+
 __all__ = [
     "GeoCsvDataset",
     "extract_geocsv_timeseries",
@@ -382,8 +384,10 @@ def write_geocsv(
     Args:
         seismograms: A single [`Seismogram`][pysmo.Seismogram] or a
             non-empty sequence of them.
-        path: Destination file path. Written in UTF-8 text mode;
-            existing content is overwritten.
+        path: Destination file path. Written in UTF-8 via a temporary file
+            in the target's directory and an atomic replace, so a failed
+            write leaves any existing file intact; that directory must be
+            writable.
 
     Raises:
         ValueError: If *seismograms* is an empty sequence.
@@ -437,6 +441,5 @@ def write_geocsv(
 
     blocks = [_geocsv_block(seismogram) for seismogram in items]
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n\n".join(blocks))
-        f.write("\n")
+    with atomic_write(path) as tmp:
+        tmp.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")

@@ -1,7 +1,4 @@
-import os
-import shutil
 import struct
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -15,6 +12,7 @@ from attrs import converters, define, field, validators
 from pysmo import MiniLocation
 from pysmo.tools.azdist import azimuth, backazimuth, distance
 
+from .._atomic import atomic_write
 from ._lib import SacIODefaults
 from ._sacio_rendered import (
     HEADER_TYPES,
@@ -30,12 +28,6 @@ from ._sacio_rendered import (
 # a zero-time reference. Excludes "unkn" (no reference) and "day" (midnight
 # of the reference GMT day, which is not a header of its own).
 _IZTYPE_TARGET_HEADERS = frozenset(IZTYPE.__members__) - {"unkn", "day"}
-
-
-def _current_umask() -> int:
-    mask = os.umask(0)
-    os.umask(mask)
-    return mask
 
 
 @define(kw_only=True)
@@ -382,14 +374,8 @@ class SacIO(SacIOBase):
         Args:
             filename: Name of the sacfile to write to.
         """
-        target = Path(os.path.realpath(filename))
-        try:
-            existing = target.stat()
-        except FileNotFoundError:
-            existing = None
-        fd, tmp_name = tempfile.mkstemp(dir=target.parent, suffix=".sac.tmp")
-        try:
-            with open(fd, "wb") as file_handle:
+        with atomic_write(filename, suffix=".sac.tmp") as tmp_name:
+            with open(tmp_name, "wb") as file_handle:
                 # loop over all valid header fields and write them to the file
                 for header, header_metadata in SAC_HEADERS.items():
                     header_type = header_metadata.type
@@ -477,20 +463,6 @@ class SacIO(SacIOBase):
                         # write to file
                         file_handle.seek(start)
                         file_handle.write(struct.pack("d", value))
-            if existing is not None:
-                shutil.copymode(target, tmp_name)
-                if hasattr(os, "chown"):
-                    try:
-                        os.chown(tmp_name, existing.st_uid, existing.st_gid)
-                    except OSError:
-                        # Unprivileged and not the owner: keep our own uid/gid.
-                        pass
-            else:
-                os.chmod(tmp_name, 0o666 & ~_current_umask())
-            os.replace(tmp_name, target)
-        except BaseException:
-            Path(tmp_name).unlink(missing_ok=True)
-            raise
 
     @classmethod
     def from_file(cls, filename: str | PathLike[str]) -> Self:
