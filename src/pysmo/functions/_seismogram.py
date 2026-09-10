@@ -1106,15 +1106,24 @@ def window[T: Seismogram](
     window_begin_time -= ramp_duration
     window_end_time += ramp_duration
 
+    # replace=True is threaded through every step so the chain never mutates an
+    # object in place; a step run without it would fail on an immutable type.
     if replace:
         seismogram = crop(seismogram, window_begin_time, window_end_time, replace=True)
-    else:
-        crop(seismogram, window_begin_time, window_end_time)
+        seismogram = detrend(seismogram, replace=True)
+        seismogram = taper(
+            seismogram,
+            taper_width=ramp_duration * 2,
+            window_type=window_type,
+            replace=True,
+        )
+        if same_shape is True:
+            seismogram = pad(seismogram, begin_time, end_time, replace=True)
+        return seismogram
+
+    crop(seismogram, window_begin_time, window_end_time)
     detrend(seismogram)
     taper(seismogram, taper_width=ramp_duration * 2, window_type=window_type)
     if same_shape is True:
         pad(seismogram, begin_time, end_time)
-
-    if replace:
-        return seismogram
     return None
