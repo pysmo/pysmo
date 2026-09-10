@@ -363,6 +363,9 @@ class SacIO(SacIOBase):
     def write(self, filename: str | PathLike[str]) -> None:
         """Write data and headers to a SAC file.
 
+        Headers and data are always written little-endian, regardless of the
+        host byte order; `read` accepts either endianness.
+
         The file is written via a temporary file in the target's directory and
         an atomic replace, so a failure mid-write cannot destroy an existing
         valid file. That directory must therefore be writable (and hold room
@@ -379,7 +382,8 @@ class SacIO(SacIOBase):
                 # loop over all valid header fields and write them to the file
                 for header, header_metadata in SAC_HEADERS.items():
                     header_type = header_metadata.type
-                    header_format = header_metadata.format
+                    # little-endian, matching the data blocks and footers below
+                    header_format = "<" + header_metadata.format
                     start = header_metadata.start
                     header_undefined = HEADER_TYPES[header_type].undefined
 
@@ -387,7 +391,7 @@ class SacIO(SacIOBase):
                     try:
                         if hasattr(self, header):
                             value = getattr(self, header)
-                    except TypeError:
+                    except (AttributeError, TypeError):
                         value = None
 
                     # convert enumerated header to integer if it is not None
@@ -428,7 +432,7 @@ class SacIO(SacIOBase):
                 file_handle.truncate(data_1_start)
                 if self.npts > 0:
                     file_handle.seek(data_1_start)
-                    file_handle.write(np.asarray(self.data, dtype=np.float32).tobytes())
+                    file_handle.write(np.asarray(self.data, dtype="<f4").tobytes())
 
                 data_end = data_1_end
                 if has_second_block:
@@ -440,9 +444,7 @@ class SacIO(SacIOBase):
                     data_2_end = data_1_end + self.npts * 4
                     if self.npts > 0:
                         file_handle.seek(data_1_end)
-                        file_handle.write(
-                            np.asarray(self.data2, dtype=np.float32).tobytes()
-                        )
+                        file_handle.write(np.asarray(self.data2, dtype="<f4").tobytes())
                     data_end = data_2_end
 
                 if self.nvhdr == 7:
@@ -453,7 +455,7 @@ class SacIO(SacIOBase):
                         try:
                             if hasattr(self, footer):
                                 value = getattr(self, footer)
-                        except AttributeError:
+                        except (AttributeError, TypeError):
                             value = None
 
                         # set None to -12345
@@ -462,7 +464,7 @@ class SacIO(SacIOBase):
 
                         # write to file
                         file_handle.seek(start)
-                        file_handle.write(struct.pack("d", value))
+                        file_handle.write(struct.pack("<d", value))
 
     @classmethod
     def from_file(cls, filename: str | PathLike[str]) -> Self:
