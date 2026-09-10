@@ -371,11 +371,13 @@ class SacIO(SacIOBase):
     def write(self, filename: str | PathLike[str]) -> None:
         """Write data and headers to a SAC file.
 
-        The file is written via a temporary file and an atomic replace, so a
-        failure mid-write cannot destroy an existing valid file. When the target
-        already exists its mode and ownership are carried over to the new file;
-        a symlink target is resolved so the file it points to is replaced, not
-        the link itself.
+        The file is written via a temporary file in the target's directory and
+        an atomic replace, so a failure mid-write cannot destroy an existing
+        valid file. That directory must therefore be writable (and hold room
+        for the new file alongside the old), even when overwriting an existing
+        writable file. When the target already exists its mode and ownership
+        are carried over to the new file; a symlink target is resolved so the
+        file it points to is replaced, not the link itself.
 
         Args:
             filename: Name of the sacfile to write to.

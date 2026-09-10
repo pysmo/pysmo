@@ -107,10 +107,16 @@ class ResponseStage(Protocol):
     """Sample rate (Hz) this stage's filter coefficients operate at."""
 
     decimation_factor: int
-    """Integer decimation factor applied by this stage."""
+    """Integer decimation factor applied by this stage.
+
+    [`MiniResponseStage`][pysmo.MiniResponseStage] requires it to be positive.
+    """
 
     numerator: list[float]
-    """Feedforward ("b") filter coefficients."""
+    """Feedforward ("b") filter coefficients.
+
+    [`MiniResponseStage`][pysmo.MiniResponseStage] requires at least one.
+    """
 
     denominator: list[float]
     """Feedback ("a") filter coefficients. `[1.0]` for a pure FIR stage."""

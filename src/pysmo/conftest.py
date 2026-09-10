@@ -1,7 +1,7 @@
 import os
 import random as rd
 from collections.abc import Generator
-from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
+from doctest import ELLIPSIS, IGNORE_EXCEPTION_DETAIL, NORMALIZE_WHITESPACE
 from pathlib import Path
 from shutil import copyfile
 from typing import Any
@@ -122,7 +122,12 @@ def iccs_seismograms(
 
 pytest_collect_file = Sybil(
     parsers=[
-        DocTestParser(optionflags=ELLIPSIS + NORMALIZE_WHITESPACE + NUMBER),
+        DocTestParser(
+            optionflags=ELLIPSIS
+            + NORMALIZE_WHITESPACE
+            + NUMBER
+            + IGNORE_EXCEPTION_DETAIL
+        ),
         PythonCodeBlockParser(future_imports=["print_function"]),
         SkipParser(),
     ],

@@ -102,7 +102,9 @@ def integrate[T: Seismogram](seismogram: T, *, replace: bool = False) -> T | Non
     Divides the FFT of `seismogram.data` by $i\omega$ at each
     [`rfftfreq`][numpy.fft.rfftfreq] bin ($\omega > 0$), then inverse
     transforms back to the time domain. The DC bin is set to `0.0` rather
-    than divided by. Working in the frequency domain avoids the unbounded
+    than divided by. For an even-length signal the Nyquist bin is dropped:
+    `irfft` requires it to be real, and dividing by $i\omega$ makes it
+    imaginary. Working in the frequency domain avoids the unbounded
     low-frequency drift a cumulative time-domain integrator introduces.
 
     Args:

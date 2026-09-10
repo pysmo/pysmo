@@ -36,10 +36,10 @@ Warning: Attributes outside the `Seismogram` protocol
     A concrete class often carries more than `begin_time`, `delta` and
     `data`: identity, provenance or acquisition metadata. `replace=True`
     keeps those values as they were, even where the operation has made them
-    a poor description of the new data, and copies them shallowly. If such
-    an attribute is itself mutable, the input and the returned seismogram
-    share the same object, so mutating it through one is visible through
-    the other.
+    a poor description of the new data, carrying each straight over by
+    reference. If such an attribute is itself mutable, the input and the
+    returned seismogram share the same object, so mutating it through one
+    is visible through the other.
 
 Not every concrete type supports `replace=True`: rebuilding the object this
 way needs the substituted attributes to be constructor parameters.
