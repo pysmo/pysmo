@@ -91,6 +91,18 @@ def _on_setattr_clear_cache[T](instance: ICCS, attribute: Attribute[T], value: T
     return value
 
 
+def _on_setattr_clear_context_cache[T](
+    instance: ICCS, attribute: Attribute[T], value: T
+) -> T:
+    """Setter for `context_width`: only the context caches depend on it."""
+    if (current := getattr(instance, attribute.name)) is value or (
+        current == value
+    ) is True:
+        return value
+    instance._clear_context_caches()
+    return value
+
+
 def _validate_window_pre(
     instance: ICCS, attribute: Attribute[pd.Timedelta], value: pd.Timedelta
 ) -> None:
@@ -313,12 +325,13 @@ class ICCS:
         converter=convert_to_timedelta,
         validator=validators.gt(pd.Timedelta(0)),
         on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
+            setters.convert, setters.validate, _on_setattr_clear_context_cache
         ),
     )
     """Context padding to apply before and after the time window.
 
-    This padding is *not* used for the cross-correlation."""
+    This padding is *not* used for the cross-correlation, so changing it only
+    invalidates the context seismograms and their stacks."""
 
     bandpass_apply: bool = field(
         default=IccsDefaults.bandpass_apply,
@@ -456,9 +469,9 @@ class ICCS:
         default=IccsDefaults.min_cc,
         converter=float,
         validator=validators.instance_of(float),
-        on_setattr=setters.pipe(
-            setters.convert, setters.validate, _on_setattr_clear_cache
-        ),
+        # No cache invalidation: nothing cached depends on `min_cc`. It is read
+        # live by `autoselect` (in `__call__`) and by `update_min_cc`.
+        on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Minimum normalised cross-correlation coefficient for seismograms.
 
@@ -525,17 +538,25 @@ class ICCS:
         derived results are regenerated from the updated input.
         """
         self._cc_seismograms_cache = None
-        self._context_seismograms_cache = None
         self._ccs_cache = None
         self._cc_stack_cache = None
-        self._context_stack_cache = None
         self._cc_seismograms_causal_cache = None
-        self._context_seismograms_causal_cache = None
         self._cc_stack_causal_cache = None
-        self._context_stack_causal_cache = None
         self._max_td_pre_cache = None
         self._min_td_post_cache = None
         self._valid_pick_range_cache = None
+        self._clear_context_caches()
+
+    def _clear_context_caches(self) -> None:
+        """Clear only the context seismograms and their stacks.
+
+        Their sole extra dependency over the cross-correlation caches is
+        [`context_width`][pysmo.tools.iccs.ICCS.context_width].
+        """
+        self._context_seismograms_cache = None
+        self._context_stack_cache = None
+        self._context_seismograms_causal_cache = None
+        self._context_stack_causal_cache = None
 
     @property
     def ramp_width_timedelta(self) -> pd.Timedelta:

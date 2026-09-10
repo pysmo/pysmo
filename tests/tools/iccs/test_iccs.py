@@ -549,12 +549,20 @@ class TestICCSParameters(TestICCSBase):
         assert self.iccs.corners == 64
         self.iccs.corners = 2
 
-        # Test cache clearing
+        # min_cc does not touch the cache: nothing cached depends on it.
         self.iccs.cc_seismograms  # Populate cache
+        self.iccs.context_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
         self.iccs.min_cc = 0.4
-        assert self.iccs._cc_seismograms_cache is None
+        assert self.iccs._cc_seismograms_cache is not None
+        assert self.iccs._context_seismograms_cache is not None
 
+        # context_width clears only the context caches.
+        self.iccs.context_width = self.iccs.context_width + pd.Timedelta(seconds=1)
+        assert self.iccs._context_seismograms_cache is None
+        assert self.iccs._cc_seismograms_cache is not None
+
+        # Test cache clearing
         self.iccs.bandpass_apply = False
         self.iccs.cc_seismograms  # Populate cache
         assert self.iccs._cc_seismograms_cache is not None
@@ -567,6 +575,40 @@ class TestICCSParameters(TestICCSBase):
         self.iccs.corners = 3
         assert self.iccs._cc_seismograms_causal_cache is None
         self.iccs.corners = 2
+
+    def test_min_cc_setter_is_a_cache_noop(self) -> None:
+        """Setting min_cc rebuilds nothing: no cache depends on it."""
+        populated = [
+            self.iccs.cc_seismograms,
+            self.iccs.context_seismograms,
+            self.iccs.ccs,
+            self.iccs.stack,
+            self.iccs.cc_seismograms_causal,
+        ]
+        self.iccs.min_cc = self.iccs.min_cc + 0.01
+        assert self.iccs.cc_seismograms is populated[0]
+        assert self.iccs.context_seismograms is populated[1]
+        assert self.iccs.ccs is populated[2]
+        assert self.iccs.stack is populated[3]
+        assert self.iccs.cc_seismograms_causal is populated[4]
+
+    def test_context_width_setter_clears_only_context_caches(self) -> None:
+        """context_width feeds only the context path, so cc caches survive it."""
+        cc = self.iccs.cc_seismograms
+        cc_causal = self.iccs.cc_seismograms_causal
+        self.iccs.context_seismograms
+        self.iccs.context_stack
+
+        self.iccs.context_width = self.iccs.context_width + pd.Timedelta(seconds=2)
+
+        assert self.iccs.cc_seismograms is cc
+        assert self.iccs.cc_seismograms_causal is cc_causal
+        assert self.iccs._context_seismograms_cache is None
+        assert self.iccs._context_stack_cache is None
+        # An unchanged value is not a rebuild trigger.
+        ctx = self.iccs.context_seismograms
+        self.iccs.context_width = self.iccs.context_width
+        assert self.iccs.context_seismograms is ctx
 
     def test_causal_seismograms_short_circuit_when_apply_false(self) -> None:
         """cc_seismograms_causal aliases cc_seismograms when bandpass_apply is False."""
