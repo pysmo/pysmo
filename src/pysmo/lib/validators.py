@@ -72,6 +72,10 @@ def convert_to_ndarray(
     input keeps its own precision. `np.asarray`, not `np.asanyarray`, so an
     [`ndarray`][numpy.ndarray] subclass (masked array, `np.matrix`) does not
     leak through.
+
+    A floating-point `ndarray` is returned as-is, not copied, so mutating the
+    argument afterwards also mutates the stored array. Pass a copy if the
+    caller keeps a reference.
     """
     array = np.asarray(value)
     if np.issubdtype(array.dtype, np.floating):

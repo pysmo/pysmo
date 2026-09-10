@@ -30,6 +30,7 @@ import pandas as pd
 from pysmo import MiniSeismogram, Seismogram
 from pysmo._utils import as_sequence
 from pysmo.functions._seismogram import merge
+from pysmo.lib.validators import convert_to_utc_timestamp
 from pysmo.typing import NonNegativeNumber
 
 from ._atomic import atomic_write
@@ -181,8 +182,7 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
     """
     headers = dataset.headers
     try:
-        _ts = pd.Timestamp(headers["start_time"])
-        start_time = _ts if _ts.tzinfo is not None else _ts.tz_localize("UTC")
+        start_time = convert_to_utc_timestamp(headers["start_time"])
         sample_rate_hz = float(headers["sample_rate_hz"])
         sample_count = int(headers["sample_count"])
     except KeyError as error:
@@ -294,7 +294,10 @@ def merge_geocsv_timeseries(
     mini_seismograms = tuple(
         MiniSeismogram(
             begin_time=segment.start_time,
-            delta=pd.Timedelta(seconds=1.0 / segment.sample_rate_hz),
+            # Integer nanoseconds, matching the rate<->delta conversions
+            # elsewhere in this module; `seconds=1.0 / rate` loses
+            # sub-microsecond precision.
+            delta=pd.Timedelta(round(1_000_000_000 / segment.sample_rate_hz)),
             data=segment.data,
         )
         for segment in segments
@@ -361,10 +364,16 @@ def _geocsv_block(seismogram: Seismogram) -> str:
         ]
     )
 
-    for n, sample in enumerate(data):
-        timestamp = (seismogram.begin_time + n * seismogram.delta).isoformat()
-        formatted_sample = str(int(sample)) if is_integral else repr(float(sample))
-        lines.append(f"{timestamp}, {formatted_sample}")
+    times = pd.date_range(
+        seismogram.begin_time, periods=sample_count, freq=seismogram.delta
+    )
+    if is_integral:
+        samples = (str(int(sample)) for sample in data)
+    else:
+        samples = (repr(float(sample)) for sample in data)
+    lines.extend(
+        f"{time.isoformat()}, {sample}" for time, sample in zip(times, samples)
+    )
 
     return "\n".join(lines)
 
