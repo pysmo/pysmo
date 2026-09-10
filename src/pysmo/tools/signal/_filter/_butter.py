@@ -59,7 +59,15 @@ def bandpass[T: Seismogram](
     Returns:
         A new Seismogram containing the filtered data when called with
         `replace=True`.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, if `freqmin` or `freqmax`
+            is invalid for the seismogram's sampling rate, or if `freqmin` is
+            not less than `freqmax`.
     """
+    if len(seismogram.data) == 0:
+        raise ValueError("Cannot apply a bandpass filter to an empty seismogram.")
+
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
     high = freqmax / fe
@@ -404,7 +412,14 @@ def highpass[T: Seismogram](
     Returns:
         A new Seismogram containing the filtered data when called with
         `replace=True`.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, or if `freqmin` is invalid
+            for the seismogram's sampling rate.
     """
+    if len(seismogram.data) == 0:
+        raise ValueError("Cannot apply a highpass filter to an empty seismogram.")
+
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
 
@@ -473,7 +488,14 @@ def lowpass[T: Seismogram](
     Returns:
         A new Seismogram containing the filtered data when called with
         `replace=True`.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, or if `freqmax` is invalid
+            for the seismogram's sampling rate.
     """
+    if len(seismogram.data) == 0:
+        raise ValueError("Cannot apply a lowpass filter to an empty seismogram.")
+
     fe = 0.5 / seismogram.delta.total_seconds()
     high = freqmax / fe
 
@@ -546,7 +568,15 @@ def bandstop[T: Seismogram](
     Returns:
         A new Seismogram containing the filtered data when called with
         `replace=True`.
+
+    Raises:
+        ValueError: If `seismogram.data` is empty, if `freqmin` or `freqmax`
+            is invalid for the seismogram's sampling rate, or if `freqmin` is
+            not less than `freqmax`.
     """
+    if len(seismogram.data) == 0:
+        raise ValueError("Cannot apply a bandstop filter to an empty seismogram.")
+
     fe = 0.5 / seismogram.delta.total_seconds()
     low = freqmin / fe
     high = freqmax / fe
