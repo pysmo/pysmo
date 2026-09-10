@@ -31,7 +31,12 @@ from pysmo.functions import detrend
 from pysmo.tools.azdist import haversine
 from pysmo.tools.plotutils import plotseis
 from pysmo.tools.traveltime import travel_times
-from pysmo.tools.web import fetch_mseed, fetch_sac, fetch_station_inventory
+from pysmo.tools.web import (
+    fetch_mseed,
+    fetch_sac,
+    fetch_sacpz,
+    fetch_station_inventory,
+)
 
 matplotlib.use("Agg")
 
@@ -97,6 +102,20 @@ def test_fetch_sacpz_live(station: MiniStation) -> None:
     assert response.channel == "LHZ"
     assert len(response.poles) > 0
     assert response.overall_sensitivity != 0
+
+
+def test_fetch_sacpz_sub_second_time_live(station: MiniStation) -> None:
+    # The natural source of a `time` value is a travel-time computation, so
+    # it is always sub-second. Confirm the fdsnws-station SAC-PZ endpoint
+    # accepts a fractional-second `.isoformat()` (the retired irisws-sacpz
+    # service returned HTTP 500 on one) and still narrows to a single epoch.
+    text = fetch_sacpz(
+        station=station, time=pd.Timestamp("2010-02-27T06:37:51.093600Z")
+    )
+
+    responses = SacPZ.all_from_text(text)
+    assert len(responses) == 1
+    assert responses[0].station == "ANMO"
 
 
 def test_fetch_sac_live(station: MiniStation, event: MiniEvent) -> None:

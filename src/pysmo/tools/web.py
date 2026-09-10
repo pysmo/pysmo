@@ -66,6 +66,33 @@ class _ServiceDefaults:
     retry_delay_seconds: int = DEFAULT_RETRY_DELAY_SECONDS
 
 
+def _isoformat_or_none(value: pd.Timestamp | None) -> str | None:
+    """Convert a timestamp to a UTC ISO 8601 string, passing `None` through."""
+    return None if value is None else convert_to_utc_timestamp(value).isoformat()
+
+
+def _check_radial_search(
+    *,
+    latitude: float | None,
+    longitude: float | None,
+    minradius: float | None,
+    maxradius: float | None,
+) -> None:
+    """Reject a radial search that gives a radius but no centre.
+
+    Both FDSN services require `latitude` and `longitude` whenever
+    `minradius`/`maxradius` is set; raising here gives a clearer message
+    than the service's generic HTTP 400.
+    """
+    if (minradius is not None or maxradius is not None) and (
+        latitude is None or longitude is None
+    ):
+        raise ValueError(
+            "A radial search (minradius/maxradius) needs both latitude and "
+            + "longitude to set the centre."
+        )
+
+
 def fetch_stationxml(*, station: Station) -> bytes:
     """Fetch raw StationXML response metadata bytes for a station/channel.
 
@@ -87,7 +114,7 @@ def fetch_stationxml(*, station: Station) -> bytes:
 
     Raises:
         urllib3.exceptions.ResponseError: If the station web service returns
-            an HTTP error.
+            an HTTP error, including a 404 when the channel is not found.
 
     Examples:
         <!-- skip: start if(not run_real_web_requests) -->
@@ -113,6 +140,7 @@ def fetch_stationxml(*, station: Station) -> bytes:
             "loc": station.location,
             "cha": station.channel,
             "level": "response",
+            "nodata": "404",
         },
         timeout_seconds=_ServiceDefaults.timeout_seconds,
         request_retries=_ServiceDefaults.request_retries,
@@ -146,7 +174,7 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
 
     Raises:
         urllib3.exceptions.ResponseError: If the web service returns an HTTP
-            error.
+            error, including a 404 when the channel is not found.
 
     Examples:
         <!-- skip: start if(not run_real_web_requests) -->
@@ -171,9 +199,10 @@ def fetch_sacpz(*, station: Station, time: pd.Timestamp | None = None) -> str:
         "cha": station.channel,
         "level": "response",
         "format": "sacpz",
+        "nodata": "404",
     }
     if time is not None:
-        params["time"] = convert_to_utc_timestamp(time).isoformat()
+        params["time"] = _isoformat_or_none(time)
     return http_get(
         _ServiceDefaults.station_url,
         params,
@@ -380,11 +409,6 @@ def fetch_mseed(
     )
 
 
-def _isoformat_or_none(value: pd.Timestamp | None) -> str | None:
-    """Convert a timestamp to a UTC ISO 8601 string, passing `None` through."""
-    return None if value is None else convert_to_utc_timestamp(value).isoformat()
-
-
 def fetch_quakeml(
     *,
     starttime: pd.Timestamp | None = None,
@@ -451,6 +475,8 @@ def fetch_quakeml(
         Raw QuakeML 1.2 document bytes.
 
     Raises:
+        ValueError: If `minradius`/`maxradius` is given without both
+            `latitude` and `longitude`.
         urllib3.exceptions.ResponseError: If the event web service returns
             an HTTP error, including a 404 when no event matches.
 
@@ -470,6 +496,12 @@ def fetch_quakeml(
         ```
         <!-- skip: end -->
     """
+    _check_radial_search(
+        latitude=latitude,
+        longitude=longitude,
+        minradius=minradius,
+        maxradius=maxradius,
+    )
     params: dict[str, Any] = {"format": "xml", "nodata": "404"}
     params["starttime"] = _isoformat_or_none(starttime)
     params["endtime"] = _isoformat_or_none(endtime)
@@ -568,6 +600,8 @@ def fetch_station_inventory(
         Raw StationXML document bytes.
 
     Raises:
+        ValueError: If `minradius`/`maxradius` is given without both
+            `latitude` and `longitude`.
         urllib3.exceptions.ResponseError: If the station web service returns
             an HTTP error, including a 404 when nothing matches.
 
@@ -582,6 +616,12 @@ def fetch_station_inventory(
         ```
         <!-- skip: end -->
     """
+    _check_radial_search(
+        latitude=latitude,
+        longitude=longitude,
+        minradius=minradius,
+        maxradius=maxradius,
+    )
     params: dict[str, Any] = {
         "format": "xml",
         "nodata": "404",

@@ -81,6 +81,7 @@ class TestFetchStationxml:
         assert fields["loc"] == "00"
         assert fields["cha"] == "LHZ"
         assert fields["level"] == "response"
+        assert fields["nodata"] == "404"
 
     def test_round_trip_with_stationxml_from_bytes(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
@@ -114,6 +115,7 @@ class TestFetchSacpz:
         assert fields["cha"] == "LHZ"
         assert fields["level"] == "response"
         assert fields["format"] == "sacpz"
+        assert fields["nodata"] == "404"
 
     def test_round_trip_with_sacpz_from_text(
         self, monkeypatch: pytest.MonkeyPatch, station: MiniStation
@@ -212,6 +214,28 @@ class TestFetchQuakeml:
         assert "endtime" not in fields
         assert "maxmagnitude" not in fields
 
+    def test_radius_without_centre_rejected(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake = FakeHttpGet({"event": QUAKEML_BYTES})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        with pytest.raises(ValueError, match="radial search"):
+            fetch_quakeml(maxradius=10.0, latitude=0.0)
+
+        assert fake.calls == []
+
+    def test_radius_with_centre_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        fake = FakeHttpGet({"event": QUAKEML_BYTES})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        fetch_quakeml(latitude=12.0, longitude=34.0, maxradius=10.0)
+
+        (_, fields) = fake.calls[0]
+        assert fields["latitude"] == 12.0
+        assert fields["longitude"] == 34.0
+        assert fields["maxradius"] == 10.0
+
     def test_round_trip_with_quakeml_all_from_bytes(
         self, monkeypatch: pytest.MonkeyPatch, reference_event_assets: dict[str, Path]
     ) -> None:
@@ -264,3 +288,16 @@ class TestFetchStations:
         assert fields["includerestricted"] == "false"
         assert fields["matchtimeseries"] == "true"
         assert "endtime" not in fields
+
+    def test_radius_without_centre_rejected(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake = FakeHttpGet({"station": STATIONS_XML_BYTES})
+        monkeypatch.setattr("pysmo.tools.web.http_get", fake)
+
+        with pytest.raises(ValueError, match="radial search"):
+            fetch_station_inventory(
+                network="IU", channel="BHZ", minradius=1.0, longitude=34.0
+            )
+
+        assert fake.calls == []
