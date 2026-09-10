@@ -12,7 +12,7 @@ import pytest
 from pysmo import MiniSeismogram, MiniStation, MiniStationCode, Station, StationCode
 from pysmo.classes import MSeed
 from pysmo.lib.io import write_mseed
-from pysmo.lib.mini_utils import _structural_match
+from pysmo.lib.protocols import has_protocol_members
 
 GAP_FIXTURE = Path(__file__).parent / "assets" / "mseed_gap.mseed"
 
@@ -46,8 +46,8 @@ def make_mseed_bytes(
 class TestRead:
     def test_from_bytes(self) -> None:
         seismogram = MSeed.from_bytes(make_mseed_bytes())
-        assert _structural_match(seismogram, StationCode)
-        assert not _structural_match(seismogram, Station)
+        assert has_protocol_members(seismogram, StationCode)
+        assert not has_protocol_members(seismogram, Station)
         assert seismogram.begin_time == pd.Timestamp("2010-02-27T06:30:00Z")
         assert seismogram.delta == pd.Timedelta(seconds=0.05)
         assert seismogram.sample_count == 100

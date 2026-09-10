@@ -14,7 +14,7 @@ from pysmo.functions import (
     seismogram_to_json,
 )
 from pysmo.functions._serialize import _SEISMOGRAM_JSON_VERSION
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.tools.cache import BlobCache
 from pysmo.typing import PositiveInt
 
@@ -203,11 +203,11 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
         key = json.dumps(
             [
                 context.entry.identity,
-                convert_to_utc_timestamp(context.starttime).isoformat(),
-                convert_to_utc_timestamp(context.endtime).isoformat(),
+                to_utc_timestamp(context.starttime).isoformat(),
+                to_utc_timestamp(context.endtime).isoformat(),
                 None
                 if context.reference is None
-                else convert_to_utc_timestamp(context.reference).isoformat(),
+                else to_utc_timestamp(context.reference).isoformat(),
                 callable_identity(self.transform),
                 seismogram_checksum(seismogram),
             ]

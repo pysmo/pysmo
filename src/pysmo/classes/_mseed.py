@@ -12,8 +12,9 @@ from pymseed.mstracelist import MS3TraceList, MS3TraceSeg
 
 from pysmo import MiniStationCode, Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.lib.converters import to_timedelta, to_utc_timestamp
 from pysmo.lib.io import write_mseed
-from pysmo.lib.validators import convert_to_timedelta, convert_to_utc_timestamp
+from pysmo.lib.validators import is_positive_timedelta
 from pysmo.tools.web import fetch_mseed
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
@@ -81,17 +82,14 @@ class MSeed(SeismogramEndtimeMixin):
     """
 
     begin_time: UtcTimestamp = field(
-        converter=convert_to_utc_timestamp,
+        converter=to_utc_timestamp,
         on_setattr=setters.convert,
     )
     """Seismogram begin time."""
 
     delta: PositiveTimedelta = field(
-        converter=convert_to_timedelta,
-        validator=[
-            validators.instance_of(pd.Timedelta),
-            validators.gt(pd.Timedelta(0)),
-        ],
+        converter=to_timedelta,
+        validator=is_positive_timedelta,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram sampling interval."""
@@ -309,8 +307,8 @@ class MSeed(SeismogramEndtimeMixin):
             ```
             <!-- skip: end -->
         """
-        starttime = convert_to_utc_timestamp(starttime)
-        endtime = convert_to_utc_timestamp(endtime)
+        starttime = to_utc_timestamp(starttime)
+        endtime = to_utc_timestamp(endtime)
         waveform_bytes = fetch_mseed(
             station=station, starttime=starttime, endtime=endtime
         )

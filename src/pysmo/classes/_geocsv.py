@@ -10,17 +10,18 @@ from attrs import cmp_using, define, field, setters, validators
 
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.lib.converters import (
+    to_ndarray,
+    to_timedelta,
+    to_utc_timestamp,
+)
 from pysmo.lib.io import (
     extract_geocsv_timeseries,
     merge_geocsv_timeseries,
     parse_geocsv,
     write_geocsv,
 )
-from pysmo.lib.validators import (
-    convert_to_ndarray,
-    convert_to_timedelta,
-    convert_to_utc_timestamp,
-)
+from pysmo.lib.validators import is_positive_timedelta
 from pysmo.tools.web import fetch_geocsvseismogram
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
@@ -76,23 +77,20 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
     """
 
     begin_time: UtcTimestamp = field(
-        converter=convert_to_utc_timestamp,
+        converter=to_utc_timestamp,
         on_setattr=setters.convert,
     )
     """Seismogram begin time."""
 
     delta: PositiveTimedelta = field(
-        converter=convert_to_timedelta,
-        validator=[
-            validators.instance_of(pd.Timedelta),
-            validators.gt(pd.Timedelta(0)),
-        ],
+        converter=to_timedelta,
+        validator=is_positive_timedelta,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram sampling interval."""
 
     data: npt.NDArray[np.floating] = field(
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
         eq=cmp_using(eq=np.array_equal),
@@ -200,8 +198,8 @@ class GeoCsvSeismogram(SeismogramEndtimeMixin):
             ```
             <!-- skip: end -->
         """
-        starttime = convert_to_utc_timestamp(starttime)
-        endtime = convert_to_utc_timestamp(endtime)
+        starttime = to_utc_timestamp(starttime)
+        endtime = to_utc_timestamp(endtime)
         waveform_bytes = fetch_geocsvseismogram(
             station=station, starttime=starttime, endtime=endtime
         )

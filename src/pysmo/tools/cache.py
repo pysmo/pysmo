@@ -72,7 +72,7 @@ from attrs import define, field, validators
 
 from pysmo import Seismogram, Station
 from pysmo._utils import attrs_getstate, attrs_setstate
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.typing import PositiveInt
 
 __all__ = ["BlobCache", "FetchCache", "RawFetcher", "RawParser"]
@@ -564,7 +564,7 @@ def _fetch_key(station: Station, starttime: pd.Timestamp, endtime: pd.Timestamp)
             str(station.name).strip(),
             str(station.location).strip(),
             str(station.channel).strip(),
-            convert_to_utc_timestamp(starttime).isoformat(),
-            convert_to_utc_timestamp(endtime).isoformat(),
+            to_utc_timestamp(starttime).isoformat(),
+            to_utc_timestamp(endtime).isoformat(),
         ]
     )

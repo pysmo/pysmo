@@ -21,13 +21,13 @@ from typing import Any, Literal, Self
 import pandas as pd
 
 from pysmo import Station
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.lib.io import (
     DEFAULT_REQUEST_RETRIES,
     DEFAULT_RETRY_DELAY_SECONDS,
     DEFAULT_TIMEOUT_SECONDS,
     http_get,
 )
-from pysmo.lib.validators import convert_to_utc_timestamp
 
 __all__ = [
     "QuakeMLOrderBy",
@@ -68,7 +68,7 @@ class _ServiceDefaults:
 
 def _isoformat_or_none(value: pd.Timestamp | None) -> str | None:
     """Convert a timestamp to a UTC ISO 8601 string, passing `None` through."""
-    return None if value is None else convert_to_utc_timestamp(value).isoformat()
+    return None if value is None else to_utc_timestamp(value).isoformat()
 
 
 def _check_radial_search(
@@ -224,8 +224,8 @@ def _fetch_dataselect(
     Shared request plumbing for `fetch_geocsvseismogram`, `fetch_sac` and
     `fetch_mseed`; they differ only in the `format` value.
     """
-    starttime = convert_to_utc_timestamp(starttime)
-    endtime = convert_to_utc_timestamp(endtime)
+    starttime = to_utc_timestamp(starttime)
+    endtime = to_utc_timestamp(endtime)
     return http_get(
         _ServiceDefaults.dataselect_url,
         {

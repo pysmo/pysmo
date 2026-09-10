@@ -17,7 +17,7 @@ from typing import Literal
 
 import pandas as pd
 
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 
 __all__ = ["parse_stationxml"]
 
@@ -78,7 +78,7 @@ def _parse_timestamp(value: str | None) -> pd.Timestamp | None:
     """Parse an XML attribute string to a UTC timestamp, or `None` if absent."""
     if value is None:
         return None
-    return convert_to_utc_timestamp(value)
+    return to_utc_timestamp(value)
 
 
 def _child_text(elem: ET.Element, tag: str) -> str:

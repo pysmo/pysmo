@@ -1,10 +1,10 @@
 """Match objects and protocols to pysmo's Mini classes."""
 
-import inspect
 import types
-from typing import TypeAliasType, cast, get_args, get_protocol_members
+from typing import TypeAliasType, cast, get_args
 
 from pysmo import _BaseMini, _BaseProto
+from pysmo.lib.protocols import has_protocol_members
 from pysmo.tools import _ToolsMini, _ToolsProto
 
 __all__ = ["matching_pysmo_types", "proto2mini"]
@@ -32,21 +32,6 @@ def _get_flattened_types(tp: object) -> tuple[type, ...]:
             )
         case _:
             return (cast(type, tp),)
-
-
-def _structural_match(obj: object, proto: type) -> bool:
-    """Whether `obj` (an instance or a class) has every member `proto` requires.
-
-    Name-based structural check; signatures and types are a type-checker
-    concern, not checked here. Uses `inspect.getattr_static`, so a member
-    defined as a property whose getter would raise still counts as present.
-    """
-    for member in get_protocol_members(proto):
-        try:
-            inspect.getattr_static(obj, member)
-        except AttributeError:
-            return False
-    return True
 
 
 def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
@@ -100,13 +85,18 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 
 
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
-    """Return the pysmo types an object may be an instance of.
+    """Return the pysmo types an object structurally satisfies.
+
+    The check is name-based (see `has_protocol_members`): `obj` counts as
+    matching a protocol when it carries every member name that protocol
+    declares. Protocols have no runtime instance relationship, so this is not
+    an `isinstance` test.
 
     Args:
         obj: The object (or class) to check.
 
     Returns:
-        Pysmo types that `obj` is an instance of.
+        Pysmo types that `obj` structurally satisfies.
 
     Examples:
         Pysmo types matching instances of
@@ -132,7 +122,7 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
     possible_protos = _get_flattened_types(_AnyProto)
 
     for proto in possible_protos:
-        if _structural_match(obj, proto):
+        if has_protocol_members(obj, proto):
             matches.append(cast(type[_AnyProto], proto))
 
     return tuple(matches)

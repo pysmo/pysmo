@@ -30,7 +30,7 @@ import pandas as pd
 from pysmo import MiniSeismogram, Seismogram
 from pysmo._utils import as_sequence
 from pysmo.functions._seismogram import merge
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 from pysmo.typing import NonNegativeNumber
 
 from ._atomic import atomic_write
@@ -182,7 +182,7 @@ def extract_geocsv_timeseries(dataset: GeoCsvDataset) -> _TimeseriesSegment:
     """
     headers = dataset.headers
     try:
-        start_time = convert_to_utc_timestamp(headers["start_time"])
+        start_time = to_utc_timestamp(headers["start_time"])
         sample_rate_hz = float(headers["sample_rate_hz"])
         sample_count = int(headers["sample_count"])
     except KeyError as error:

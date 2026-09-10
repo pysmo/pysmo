@@ -1,8 +1,9 @@
 from typing import Protocol
 
-from attrs import define, field, setters, validators
+from attrs import define, field, setters
 
-from pysmo.lib.validators import convert_to_longitude
+from pysmo.lib.converters import to_longitude
+from pysmo.lib.validators import is_latitude, is_longitude
 
 from .location import Location
 
@@ -36,14 +37,14 @@ class MiniLocationWithDepth:
 
     latitude: float = field(
         converter=float,
-        validator=[validators.ge(-90), validators.le(90)],
+        validator=is_latitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Location latitude from -90 to 90 degrees."""
 
     longitude: float = field(
-        converter=convert_to_longitude,
-        validator=[validators.gt(-180), validators.le(180)],
+        converter=to_longitude,
+        validator=is_longitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Location longitude from -180 to 180 degrees (-180 is stored as +180)."""

@@ -9,7 +9,7 @@ from attrs import define, field, validators, converters, Attribute, setters
 from enum import IntEnum, StrEnum, auto
 import numpy as np
 import numpy.typing as npt
-from pysmo.lib.validators import convert_to_ndarray
+from pysmo.lib.converters import to_ndarray
 
 
 class IFTYPE(IntEnum):
@@ -1822,14 +1822,14 @@ class SacIOBase:
 
     data: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Seismogram data."""
     data2: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
@@ -1838,13 +1838,13 @@ class SacIOBase:
     which have only one data section."""
     x: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     y: npt.NDArray[np.floating] = field(
         factory=lambda: np.array([]),
-        converter=convert_to_ndarray,
+        converter=to_ndarray,
         validator=validators.instance_of(np.ndarray),
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )

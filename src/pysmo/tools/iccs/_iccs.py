@@ -23,7 +23,7 @@ from pysmo.functions import (
     resample,
     window,
 )
-from pysmo.lib.validators import convert_to_timedelta
+from pysmo.lib.converters import to_timedelta
 from pysmo.tools.signal import bandpass, causal_band, mccc, multi_delay
 from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
 from pysmo.typing import (
@@ -322,7 +322,7 @@ class ICCS:
 
     context_width: PositiveTimedelta = field(
         default=IccsDefaults.context_width,
-        converter=convert_to_timedelta,
+        converter=to_timedelta,
         validator=validators.gt(pd.Timedelta(0)),
         on_setattr=setters.pipe(
             setters.convert, setters.validate, _on_setattr_clear_context_cache

@@ -15,7 +15,7 @@ import pandas as pd
 from cattrs import Converter
 
 from pysmo import Seismogram
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 
 __all__ = [
     "seismogram_checksum",
@@ -81,7 +81,7 @@ def _make_converter() -> Converter:
     converter = Converter()
     converter.register_unstructure_hook(pd.Timestamp, lambda ts: ts.value)
     converter.register_structure_hook(
-        pd.Timestamp, lambda v, _: convert_to_utc_timestamp(pd.Timestamp(v))
+        pd.Timestamp, lambda v, _: to_utc_timestamp(pd.Timestamp(v))
     )
     converter.register_unstructure_hook(pd.Timedelta, lambda td: td.value)
     converter.register_structure_hook(pd.Timedelta, lambda v, _: pd.Timedelta(v))

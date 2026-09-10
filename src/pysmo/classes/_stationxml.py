@@ -8,8 +8,9 @@ import pandas as pd
 from attrs import converters, define, field, validators
 
 from pysmo import MiniResponseStage, MiniStagedResponse, Station
+from pysmo.lib.converters import to_longitude, to_utc_timestamp
 from pysmo.lib.io._stationxml import _RawStationEpoch, parse_stationxml
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.validators import is_latitude, is_longitude
 from pysmo.tools.web import fetch_stationxml
 
 __all__ = ["StationXML", "resolve_epochs"]
@@ -33,7 +34,7 @@ def _matching_epochs(
     if channel is not None:
         epochs = [epoch for epoch in epochs if epoch.channel == channel]
     if time is not None:
-        time = convert_to_utc_timestamp(time)
+        time = to_utc_timestamp(time)
         return [
             epoch
             for epoch in epochs
@@ -119,20 +120,20 @@ class StationXML:
     channel: str = field(validator=validators.instance_of(str))
     """Channel code (empty for a `level=station` epoch)."""
 
-    latitude: float = field(converter=float)
-    """Latitude in degrees."""
+    latitude: float = field(converter=float, validator=is_latitude)
+    """Latitude in degrees, -90 to 90."""
 
-    longitude: float = field(converter=float)
-    """Longitude in degrees."""
+    longitude: float = field(converter=to_longitude, validator=is_longitude)
+    """Longitude in degrees, -180 to 180 (-180 is stored as +180)."""
 
     elevation: float | None = field(default=None, converter=converters.optional(float))
     """Elevation in metres, or `None` if the document omits it."""
 
-    start_date: pd.Timestamp = field(converter=convert_to_utc_timestamp)
+    start_date: pd.Timestamp = field(converter=to_utc_timestamp)
     """Start of this metadata epoch."""
 
     end_date: pd.Timestamp | None = field(
-        default=None, converter=converters.optional(convert_to_utc_timestamp)
+        default=None, converter=converters.optional(to_utc_timestamp)
     )
     """End of this metadata epoch, or `None` if still open."""
 
@@ -379,7 +380,7 @@ def resolve_epochs(
         ValueError: If an NSLC has more than one epoch covering `time`
             (overlapping validity windows, i.e. an invalid inventory).
     """
-    time = convert_to_utc_timestamp(time)
+    time = to_utc_timestamp(time)
     grouped: dict[_Nslc, list[StationXML]] = defaultdict(list)
     for epoch in epochs:
         grouped[(epoch.network, epoch.name, epoch.location, epoch.channel)].append(

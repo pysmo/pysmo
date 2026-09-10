@@ -6,8 +6,9 @@ from typing import Self
 import pandas as pd
 from attrs import converters, define, field, setters, validators
 
+from pysmo.lib.converters import to_longitude, to_utc_timestamp
 from pysmo.lib.io._quakeml import _RawEvent, parse_quakeml
-from pysmo.lib.validators import convert_to_longitude, convert_to_utc_timestamp
+from pysmo.lib.validators import is_latitude, is_longitude
 from pysmo.tools.web import QuakeMLOrderBy, fetch_quakeml
 from pysmo.typing import UtcTimestamp
 
@@ -85,21 +86,21 @@ class QuakeML:
     """
 
     time: UtcTimestamp = field(
-        converter=convert_to_utc_timestamp,
+        converter=to_utc_timestamp,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event origin time."""
 
     latitude: float = field(
         converter=float,
-        validator=[validators.ge(-90), validators.le(90)],
+        validator=is_latitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event latitude from -90 to 90 degrees."""
 
     longitude: float = field(
-        converter=convert_to_longitude,
-        validator=[validators.gt(-180), validators.le(180)],
+        converter=to_longitude,
+        validator=is_longitude,
         on_setattr=setters.pipe(setters.convert, setters.validate),
     )
     """Event longitude from -180 to 180 degrees (-180 is stored as +180)."""

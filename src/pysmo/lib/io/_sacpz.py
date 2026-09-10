@@ -28,7 +28,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from pysmo.lib.validators import convert_to_utc_timestamp
+from pysmo.lib.converters import to_utc_timestamp
 
 __all__ = ["parse_sacpz"]
 
@@ -261,11 +261,9 @@ def parse_sacpz(text: str, *, strict: bool = True) -> list[_RawSacPzResponse]:
                     station=headers["STATION"],
                     location=headers["LOCATION"],
                     channel=headers["CHANNEL"],
-                    start_date=convert_to_utc_timestamp(headers["START"]),
+                    start_date=to_utc_timestamp(headers["START"]),
                     end_date=(
-                        convert_to_utc_timestamp(end_date_text)
-                        if end_date_text
-                        else None
+                        to_utc_timestamp(end_date_text) if end_date_text else None
                     ),
                     poles=poles,
                     zeros=zeros,
