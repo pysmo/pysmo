@@ -47,7 +47,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
 
     Returns:
         A tuple of concrete Mini classes (e.g., `MiniLocation`, `MiniEvent`)
-        that satisfy the interface defined by `proto`.
+        that satisfy the interface defined by `proto`, ordered by class name.
 
     Examples:
         Get all Mini classes that implement the `Location` protocol:
@@ -56,7 +56,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
         >>> from pysmo.lib.mini_utils import proto2mini
         >>> from pysmo import Location, Event
         >>> proto2mini(Location)
-        (<class 'pysmo.MiniStation'>, <class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>)
+        (<class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>, <class 'pysmo.MiniStation'>)
         >>>
         ```
 
@@ -66,7 +66,7 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
         ```python
         >>> type MyProto = Location | Event
         >>> proto2mini(MyProto)
-        (<class 'pysmo.MiniStation'>, <class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>)
+        (<class 'pysmo.MiniEvent'>, <class 'pysmo.MiniLocation'>, <class 'pysmo.MiniLocationWithDepth'>, <class 'pysmo.MiniStation'>)
         >>>
         ```
     """
@@ -74,14 +74,12 @@ def proto2mini(proto: type[_AnyProto]) -> tuple[type[_AnyMini], ...]:
     target_protos = _get_flattened_types(proto)
     possible_minis = _get_flattened_types(_AnyMini)
 
-    seen: set[type[_AnyMini]] = set()
-    result: list[type[_AnyMini]] = []
-    for mini in possible_minis:
-        mini_types = matching_pysmo_types(mini)
-        if any(tp in mini_types for tp in target_protos) and mini not in seen:
-            seen.add(mini)
-            result.append(mini)
-    return tuple(result)
+    matches = {
+        mini
+        for mini in possible_minis
+        if any(tp in matching_pysmo_types(mini) for tp in target_protos)
+    }
+    return tuple(sorted(matches, key=lambda tp: tp.__name__))
 
 
 def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
@@ -96,7 +94,7 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
         obj: The object (or class) to check.
 
     Returns:
-        Pysmo types that `obj` structurally satisfies.
+        Pysmo types that `obj` structurally satisfies, ordered by type name.
 
     Examples:
         Pysmo types matching instances of
@@ -125,4 +123,4 @@ def matching_pysmo_types(obj: object) -> tuple[type[_AnyProto], ...]:
         if has_protocol_members(obj, proto):
             matches.append(cast(type[_AnyProto], proto))
 
-    return tuple(matches)
+    return tuple(sorted(matches, key=lambda tp: tp.__name__))
