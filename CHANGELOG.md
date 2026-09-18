@@ -68,6 +68,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Drop unenforceable datum claim from depth docstrings
 - Overhaul documentation
 - Resolve docstring-only review findings
+- Add serialisation usage chapter
 
 ### 📦 Miscellaneous
 
