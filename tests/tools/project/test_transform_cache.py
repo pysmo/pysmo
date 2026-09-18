@@ -240,7 +240,7 @@ class TestGate:
             cache(sac_seismogram, context)
 
 
-class TestCodec:
+class TestRoundTrip:
     def test_unserialisable_field_raises_typeerror(
         self, tmp_path: Path, raw: MiniSeismogram, context: Ctx
     ) -> None:

@@ -58,7 +58,8 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     [`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram],
     [`GeoCsvSeismogram`][pysmo.classes.GeoCsvSeismogram], and any user type
     whose fields are primitives, collections, nested `attrs`, or the three
-    leaf types the codec handles. A transform returning anything else (a
+    leaf types `seismogram_to_json` handles. A transform returning anything
+    else (a
     `SacSeismogram` live view, a type with an unhookable field) raises
     `TypeError` at store time, naming
     [`clone_to_mini`][pysmo.functions.clone_to_mini].
@@ -144,7 +145,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     """Re-decode each freshly stored result and compare it to the transform's
     output, raising `TypeError` on any mismatch.
 
-    Catches a codec that silently loses information on a rich `TSeismogram`
+    Catches a round trip that silently loses information on a rich `TSeismogram`
     (e.g. a non-primitive value in `MiniIccsSeismogram.extra`). Leave on
     unless the transform output is known to be a plain
     [`MiniSeismogram`][pysmo.MiniSeismogram]."""

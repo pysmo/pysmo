@@ -78,8 +78,10 @@ shows the problem:
     `replace` argument, which returns a new seismogram with only the changed
     attributes substituted. It works for value-object types such as
     [`MiniSeismogram`][pysmo.MiniSeismogram] but raises `TypeError` for a
-    [`SacSeismogram`][pysmo.classes.SacSeismogram], whose `data` is a live
-    view into an open SAC file rather than a stored field. The manual
+    [`SacSeismogram`][pysmo.classes.SacSeismogram], whose `data` is a
+    property reading and writing through to the underlying
+    [`SacIO`][pysmo.lib.io.SacIO] instance rather than a stored field of its
+    own. The manual
     `deepcopy` shown here is a teaching device, not a recommendation. To
     work on independent SAC data, copy the [`SAC`][pysmo.classes.SAC] object
     itself.

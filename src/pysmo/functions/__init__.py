@@ -45,8 +45,9 @@ Not every concrete type supports `replace=True`: rebuilding the object this
 way needs the substituted attributes to be constructor parameters.
 [`MiniSeismogram`][pysmo.MiniSeismogram], [`MSeed`][pysmo.classes.MSeed] and
 other value objects qualify; [`SacSeismogram`][pysmo.classes.SacSeismogram]
-does not, because its `data` is a live view into an open SAC file rather
-than a stored field.
+does not, because its `data` is a property reading and writing through to
+the underlying [`SacIO`][pysmo.lib.io.SacIO] instance rather than a stored
+field of its own.
 
 ```python
 >>> from pysmo.functions import clone_to_mini, detrend

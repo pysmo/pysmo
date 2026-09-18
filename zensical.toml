@@ -25,6 +25,8 @@ nav = [
     "usage/types.md",
     "usage/mini-classes.md",
     "usage/external-classes.md",
+    "usage/bespoke-classes.md",
+    "usage/serialisation.md",
   ] },
   { "API reference" = [
     "api/pysmo.md",
