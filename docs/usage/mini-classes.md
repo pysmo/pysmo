@@ -27,12 +27,12 @@ those data make sense for seismological processing.
 For example, when setting a sampling interval
 ([`delta`][pysmo.MiniSeismogram.delta]), the input can be a `float` (seconds), a
 `str` (e.g. "10ms"), or a standard Python `timedelta` object. The Mini class
-converts these into a canonical [`pandas.Timedelta`][pandas.Timedelta]. It does,
+converts these into a canonical [`pandas.Timedelta`][]. It does,
 however, reject a negative value, since a negative sampling interval is
 physically impossible.
 
 Similarly, the [`data`][pysmo.MiniSeismogram.data] attribute accepts lists or
-tuples and converts them to a [`numpy.ndarray`][numpy.ndarray] automatically.
+tuples and converts them to a [`numpy.ndarray`][] automatically.
 
 This "forgiving on input, strict on value" approach also applies when modifying
 attributes after the object has been created.
@@ -55,7 +55,7 @@ shows some differences:
     The two look and work similarly, but attrs allows the validation and
     conversion mentioned above.
 - The [`begin_time`][pysmo.MiniSeismogram.begin_time] is automatically converted
-    to a [`pandas.Timestamp`][pandas.Timestamp]. Timezone-aware values are
+    to a [`pandas.Timestamp`][]. Timezone-aware values are
     converted to UTC; timezone-naive values are assumed to be UTC.
 - Some attributes have default values, usually replaced in real use but
     convenient for quick tests.

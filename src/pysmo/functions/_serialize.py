@@ -39,9 +39,9 @@ document cannot name an arbitrary importable module."""
 _SEISMOGRAM_LEAVES = ("begin_time", "delta", "data")
 
 _NUMERIC_DTYPE_KINDS = frozenset("biufc")
-"""ndarray dtype kinds the codec will reconstruct: bool, signed/unsigned int,
-float, complex. Excludes object, void and string, which reinterpret arbitrary
-bytes."""
+"""ndarray dtype kinds seismogram_from_json will reconstruct: bool,
+signed/unsigned int, float, complex. Excludes object, void and string, which
+reinterpret arbitrary bytes."""
 
 
 def _unstructure_ndarray(array: npt.NDArray[Any]) -> dict[str, Any]:
@@ -178,7 +178,7 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
     The document is a `{"cls", "v", "payload"}` envelope: `cls` records the
     seismogram's `module:qualname` so
     [`seismogram_from_json`][pysmo.functions.seismogram_from_json] can rebuild
-    the same type, `v` is the codec version, and `payload` holds the
+    the same type, `v` is the format version, and `payload` holds the
     seismogram's fields with `pd.Timestamp` and `pd.Timedelta` as integer
     nanoseconds and `np.ndarray` as a base64 `dtype`/`shape`/`b64` triple.
 
@@ -190,14 +190,14 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
         [`GeoCsvSeismogram`][pysmo.classes.GeoCsvSeismogram], and user types
         built the same way. A live view such as
         [`SacSeismogram`][pysmo.classes.SacSeismogram], or a type carrying a
-        field the codec has no hook for, raises `TypeError`; convert it with
+        field the converter has no hook for, raises `TypeError`; convert it with
         [`clone_to_mini`][pysmo.functions.clone_to_mini] first.
 
     Args:
         seismogram: The seismogram to encode.
         verify: Decode the fresh document and compare it back to `seismogram`,
-            raising `TypeError` on any mismatch. Catches a codec that silently
-            drops information on a rich field (a non-primitive value in
+            raising `TypeError` on any mismatch. Catches a round trip that
+            silently drops information on a rich field (a non-primitive value in
             [`MiniIccsSeismogram.extra`][pysmo.tools.iccs.MiniIccsSeismogram],
             say). `data` is compared with `equal_nan`, so a genuine `NaN`
             sample (a data gap, a masked window) is not reported as a lossy
@@ -249,8 +249,8 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
         raise
     except Exception as exc:
         raise TypeError(
-            f"{type(seismogram).__name__} has a field the seismogram codec "
-            + f"cannot serialise ({exc}); register a hook on a custom converter, "
+            f"{type(seismogram).__name__} has a field that cannot be serialised "
+            + f"({exc}); register a hook on a custom converter, "
             + "or convert it with clone_to_mini first."
         ) from exc
     if verify:
@@ -261,13 +261,13 @@ def seismogram_to_json(seismogram: Seismogram, *, verify: bool = False) -> bytes
         except Exception as exc:
             raise TypeError(
                 f"{type(seismogram).__name__} does not survive a JSON round trip "
-                + f"({exc}); a codec hook is lossy for one of its fields."
+                + f"({exc}); a conversion hook is lossy for one of its fields."
             ) from exc
         if not _round_trip_faithful(restored, seismogram):
             raise TypeError(
                 f"{type(seismogram).__name__} does not survive a JSON round trip "
-                + "(decoded value differs); a codec hook is lossy for one of its "
-                + "fields."
+                + "(decoded value differs); a conversion hook is lossy for one of "
+                + "its fields."
             )
     return blob
 

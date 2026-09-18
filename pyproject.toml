@@ -53,7 +53,7 @@ test = [
   "testkit",
 ]
 docs = [
-  "zensical>=0.0.60",
+  "zensical>=0.0.62",
   "mkdocstrings-python>=2.0.8",
   "git-cliff>=2.13.1",
   "markdown-exec>=1.12.3",
