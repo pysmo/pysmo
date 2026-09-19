@@ -18,6 +18,7 @@ foo.py
 bar.py
 junit.xml
 site/
-.envrc
+.envrc.local
+!.envrc
 /baseline/
 scratch/
