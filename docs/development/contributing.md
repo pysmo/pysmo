@@ -38,7 +38,7 @@ git checkout -b my-feature
 Before opening the pull request:
 
 - Run `make format`, then `make lint` and `make tests`. All three must pass.
-- [Rebase](https://git-scm.com/docs/git-rebase) onto the current `master` and
+- [Rebase](https://git-scm.com/docs/git-rebase) onto the current `main` and
     squash the branch into one well-described commit, so the history carries no
     "fix typo" steps. Commit messages follow
     [conventional commits](https://www.conventionalcommits.org); the changelog
