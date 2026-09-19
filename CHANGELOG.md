@@ -57,6 +57,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(functions)** Thread replace=True through window's processing chain
 - **(signal)** Correct multi_multi_delay cc lags, bound max_shift, de-magic a doctest
 - Address Copilot PR review findings
+- Update CI workflow branch triggers and docs from master to main
 
 ### 📚 Documentation
 
@@ -76,6 +77,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Update packages and small fixes for edge-cases ([#272](https://github.com/pysmo/pysmo/issues/272))
 - Add .editorconfig
 - Move CI workflows to reusable versions in pysmo/.github
+- Track shared .envrc, keep machine-specific overrides local
 
 ### 🔍 Other Changes
 
