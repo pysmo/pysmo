@@ -78,6 +78,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Add .editorconfig
 - Move CI workflows to reusable versions in pysmo/.github
 - Track shared .envrc, keep machine-specific overrides local
+- Migrate from uv/direnv to devenv
 
 ### 🔍 Other Changes
 
