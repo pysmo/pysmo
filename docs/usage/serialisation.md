@@ -139,7 +139,7 @@ back as a list:
 ...     begin_time=seismogram.begin_time,
 ...     delta=seismogram.delta,
 ...     data=seismogram.data,
-...     t0=seismogram.begin_time,
+...     initial_pick=seismogram.begin_time,
 ...     extra={"note": (1, 2, 3)},
 ... )
 >>> seismogram_to_json(lossy, verify=True)

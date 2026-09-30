@@ -336,7 +336,7 @@ rather than a plain function so `pre_filt` is configurable per instance:
 ...             station=context.entry.station, time=context.starttime
 ...         ).response
 ...         corrected = clone_to_mini(
-...             MiniIccsSeismogram, seismogram, update={"t0": context.reference}
+...             MiniIccsSeismogram, seismogram, update={"initial_pick": context.reference}
 ...         )
 ...         remove_response(corrected, response, pre_filt=self.pre_filt)
 ...         return corrected
