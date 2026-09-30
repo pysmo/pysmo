@@ -42,22 +42,22 @@ class ([`MiniIccsSeismogram`][pysmo.tools.iccs.MiniIccsSeismogram]). In
 addition to the common attributes of a [`Seismogram`][pysmo.Seismogram] in
 pysmo, the following parameters are required:
 
-| Attribute                                          | Description |
-| -------------------------------------------------- | ----------- |
-| [`t0`][pysmo.tools.iccs.IccsSeismogram.t0]         | Initial pick (typically \
-    computed). Serves as input only when `t1` is not set. |
-| [`t1`][pysmo.tools.iccs.IccsSeismogram.t1]         | Improved pick. \
+| Attribute                                                      | Description |
+| -------------------------------------------------------------- | ----------- |
+| [`initial_pick`][pysmo.tools.iccs.IccsSeismogram.initial_pick] | Initial pick (typically \
+    computed). Serves as input only when `refined_pick` is not set. |
+| [`refined_pick`][pysmo.tools.iccs.IccsSeismogram.refined_pick] | Improved pick. \
     Serves as both input (if not [`None`][]) and output (always) when \
     [running][pysmo.tools.iccs.ICCS.__call__] the ICCS algorithm. It should \
     be set to [`None`][] initially. |
-| [`select`][pysmo.tools.iccs.IccsSeismogram.select] | Determines if a  \
+| [`select`][pysmo.tools.iccs.IccsSeismogram.select]             | Determines if a  \
     seismogram is used for the stack, and should therefore be [`True`][] \
     initially. It is set to [`False`][] for poor quality seismograms \
     automatically during a run if `autoselect` is [`True`][]. Note that \
     this flag does _not_ exclude a seismogram from being cross-correlated with \
     the stack. Recovery is therefore possible and previously de-selected \
     seismograms may be selected again for the next iteration. |
-| [`flip`][pysmo.tools.iccs.IccsSeismogram.flip]     | Determines if the \
+| [`flip`][pysmo.tools.iccs.IccsSeismogram.flip]                 | Determines if the \
     seismogram data should be flipped (i.e. data are multiplied with -1) when \
     using it in the stack and cross-correlation. Can be automatically toggled \
     when `autoflip` is [`True`][] during a \
@@ -120,7 +120,7 @@ criteria met?`"}
 I{"`Maximum
 iterations
 reached?`"}
-End(["`IccsSeismograms with updated **t1**, **flip**, and **select** parameters.`"])
+End(["`IccsSeismograms with updated **refined_pick**, **flip**, and **select** parameters.`"])
 Start --> Stack0 --> C --> FlipQ -->|No| QualQ -->|No| Stack1 --> H -->|No| I -->|No| C
 FlipQ -->|Yes| Flip --> QualQ
 QualQ -->|Yes| Qual1 -->  Stack1
@@ -197,7 +197,7 @@ walkthrough fully self-contained and its outcome exactly reproducible:
 >>> pick_index = 1200
 >>> delta = pd.Timedelta(seconds=0.05)
 >>> begin_time = pd.Timestamp("2024-01-01", tz="UTC")
->>> t0 = begin_time + pick_index * delta
+>>> initial_pick = begin_time + pick_index * delta
 >>>
 >>> rng = np.random.default_rng(42)
 >>> seismograms = []
@@ -205,7 +205,7 @@ walkthrough fully self-contained and its outcome exactly reproducible:
 ...     data = rng.normal(scale=0.03, size=npts)
 ...     data[pick_index - 100 : pick_index + 100] += pulse
 ...     seismograms.append(
-...         MiniIccsSeismogram(begin_time=begin_time, delta=delta, data=data, t0=t0)
+...         MiniIccsSeismogram(begin_time=begin_time, delta=delta, data=data, initial_pick=initial_pick)
 ...     )
 ...
 >>>
@@ -227,7 +227,7 @@ noise (no pulse at all) is appended:
 >>> # shift the remaining picks by varying amounts, in both directions
 >>> shifts = [-4, 4, -6, 6, -3]
 >>> for seismogram, shift in zip(seismograms[1:], shifts):
-...     seismogram.t0 += pd.Timedelta(seconds=shift)
+...     seismogram.initial_pick += pd.Timedelta(seconds=shift)
 ...
 >>>
 >>> # create a seismogram with completely random data
