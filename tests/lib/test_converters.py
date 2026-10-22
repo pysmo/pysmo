@@ -52,7 +52,7 @@ def test_to_utc_timestamp_aware() -> None:
 
 
 def test_to_utc_timestamp_other_timezone() -> None:
-    ts = pd.Timestamp("2020-01-01 12:00:00", tz="US/Eastern")
+    ts = pd.Timestamp("2020-01-01 12:00:00", tz="America/New_York")
     result = to_utc_timestamp(ts)
     assert result == pd.Timestamp("2020-01-01 17:00:00", tz="UTC")
 
@@ -127,7 +127,7 @@ def test_to_strict_int() -> None:
         timezones=st.sampled_from(
             [
                 UTC,
-                zoneinfo.ZoneInfo("US/Eastern"),
+                zoneinfo.ZoneInfo("America/New_York"),
                 zoneinfo.ZoneInfo("Europe/Berlin"),
                 zoneinfo.ZoneInfo("Asia/Tokyo"),
             ]

@@ -52,35 +52,21 @@ class QuakeML:
     fabricate one.
 
     Examples:
+        ??? quote "example_catalogue.xml"
+            ```xml
+            --8<-- "docs/snippets/xml/example_catalogue.xml"
+            ```
+
         ```python
+        >>> from pathlib import Path
         >>> from pysmo.classes import QuakeML
-        >>> xml = b'''<?xml version="1.0"?>
-        ... <q:quakeml xmlns="http://quakeml.org/xmlns/bed/1.2"
-        ...            xmlns:q="http://quakeml.org/xmlns/quakeml/1.2">
-        ...   <eventParameters publicID="smi:example/catalogue">
-        ...     <event publicID="smi:example/event/1">
-        ...       <description><text>Example</text></description>
-        ...       <origin publicID="smi:example/origin/1">
-        ...         <time><value>2010-02-27T06:34:11.53Z</value></time>
-        ...         <latitude><value>-36.122</value></latitude>
-        ...         <longitude><value>-72.898</value></longitude>
-        ...         <depth><value>22900</value></depth>
-        ...       </origin>
-        ...       <magnitude publicID="smi:example/magnitude/1">
-        ...         <mag><value>8.8</value></mag>
-        ...         <type>Mw</type>
-        ...       </magnitude>
-        ...       <type>earthquake</type>
-        ...     </event>
-        ...   </eventParameters>
-        ... </q:quakeml>'''
-        >>> event = QuakeML.from_bytes(xml)
+        >>> event = QuakeML.from_bytes(Path("example_catalogue.xml").read_bytes())
         >>> event.latitude, event.longitude, event.depth
         (-36.122, -72.898, 22900.0)
         >>> event.magnitude, event.magnitude_type
         (8.8, 'Mw')
         >>> event.public_id
-        'smi:example/event/1'
+        'smi:example/maule'
         >>>
         ```
     """

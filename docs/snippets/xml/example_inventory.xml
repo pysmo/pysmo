@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
+  <Network code="IU">
+    <Station code="ANMO" startDate="1989-01-01T00:00:00">
+      <Latitude>34.945981</Latitude>
+      <Longitude>-106.457133</Longitude>
+      <Channel code="BHZ" locationCode="00" startDate="2008-06-30T20:00:00"
+               endDate="2011-02-18T19:11:00">
+        <Latitude>34.945981</Latitude>
+        <Longitude>-106.457133</Longitude>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

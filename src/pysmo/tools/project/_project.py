@@ -113,8 +113,9 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
         optional `name` is preserved across pickles; unpickling a project
         serialised without a `name` defaults it to `None`.
 
-        Unpickling executes code, so load only a project file you produced or
-        trust (see the [module documentation][pysmo.tools.project]). The
+        Unpickling executes code, so a project file is safe to load only
+        when its origin is known and trusted (see the
+        [module documentation][pysmo.tools.project]). The
         format-version check on load reports an incompatible pickle; it is
         not a security boundary and runs after unpickling. There is no
         cross-version migration: a pickle from an earlier state format must
@@ -194,21 +195,16 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
 
     Any [`SeismogramFetcher`][pysmo.tools.project.SeismogramFetcher] (see
     there for the call contract). Defaults to a private helper wrapping
-    [`MSeed.fetch`][pysmo.classes.MSeed.fetch], the explicit "always fresh,
-    never cached" choice.
+    [`MSeed.fetch`][pysmo.classes.MSeed.fetch], which goes to the network on
+    every call.
 
-    For any project where reproducibility matters, substitute a
-    [`FetchCache`][pysmo.tools.cache.FetchCache] instance instead. That is
-    the *recommended* value for real analysis work, not a power-user option
-    on equal footing with the default; see its own docstring for why, and
-    how it differs from `ProjectEntry.checksum`'s live-fetch drift
-    detection. Leave its `max_bytes` at the default
-    (unlimited) for this to hold: a finite `max_bytes` evicts old entries and
-    re-fetches them on next access, reintroducing the drift a cache is meant
-    to rule out. It only pins the waveform, though: see the
-    [module documentation][pysmo.tools.project]'s second example for the
-    gotcha it does not cover, `seismogram_transform` making its own
-    additional fetches.
+    Data in a live archive can change between fetches. A
+    [`FetchCache`][pysmo.tools.cache.FetchCache] stores each fetched waveform
+    on disk, so later sessions work with the same data, as long as its
+    `max_bytes` stays at the default (unlimited). A finite `max_bytes` evicts
+    old waveforms, which are then fetched again. Fetches made by
+    `seismogram_transform` itself are not covered; see
+    [`TransformCache`][pysmo.tools.project.TransformCache] for those.
     """
 
     window: WindowResolver[TStation, TEvent] = field(

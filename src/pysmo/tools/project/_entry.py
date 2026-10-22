@@ -21,9 +21,9 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     """One station/event selection within a `PysmoProject`.
 
     Pairs a station with either an event (for a phase-arrival-relative
-    window, resolved at fetch time) or an explicit absolute time window
-    (for event-less or continuous data), or both; an explicit window
-    always takes precedence over one derived from `event`. See
+    window, resolved at fetch time) or an explicit absolute time window, or
+    both; an explicit window always takes precedence over one derived from
+    `event`. See
     [`PysmoProject`][pysmo.tools.project.PysmoProject] for how the window is
     actually resolved.
 
@@ -131,9 +131,9 @@ class ProjectEntry[TStation: Station, TEvent: Event = Event]:
     def identity(self) -> str:
         """Stable identity string for this entry, computed without fetching.
 
-        Derived from the natural key: `'v1:'` and a sha256 hexdigest. Persist it
-        and pass it to
-        [`PysmoProject.get`][pysmo.tools.project.PysmoProject.get] to retrieve
+        Derived from the natural key: `'v1:'` and a sha256 hexdigest. Persisting
+        it and passing it to
+        [`PysmoProject.get`][pysmo.tools.project.PysmoProject.get] retrieves
         the entry's seismogram later.
 
         Examples:

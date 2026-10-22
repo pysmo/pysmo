@@ -78,6 +78,10 @@ def run_real_web_requests() -> bool:
     return _run_real_web_requests
 
 
+_XML_SNIPPETS = Path(__file__).parents[2] / "docs" / "snippets" / "xml"
+"""XML files shown in, and read by, docstring examples."""
+
+
 @pytest.fixture()
 def copy_testfiles(
     tmp_path: Path, reference_event_assets: dict[str, Path]
@@ -91,6 +95,8 @@ def copy_testfiles(
     copyfile(reference_event_assets["mseed_bhz"], test_mseed)
     copyfile(reference_event_assets["stationxml_bhz"], test_stationxml)
     copyfile(reference_event_assets["sacpz_bhz"], test_sacpz)
+    for xml_file in _XML_SNIPPETS.glob("*.xml"):
+        copyfile(xml_file, Path(tmp_path) / xml_file.name)
     try:
         os.chdir(tmp_path)
         yield

@@ -1,7 +1,7 @@
-"""Result and callable-seam types shared across the project tool.
+"""Result and callable types shared across the project tool.
 
 [`PysmoProject`][pysmo.tools.project.PysmoProject] has three pluggable
-seams, each a plain callable:
+stages, each a plain callable:
 
 - [`WindowResolver`][pysmo.tools.project.WindowResolver] turns an entry into
   an absolute fetch window.
@@ -106,23 +106,26 @@ type WindowResolver[TStation: Station, TEvent: Event] = Callable[
 """Resolve an entry's absolute fetch window.
 
 Called with a single [`ProjectEntry`][pysmo.tools.project.ProjectEntry] and
-returns a [`WindowResult`][pysmo.tools.project.WindowResult]. Raises
-`ValueError` when no window can be resolved (no predicted arrival for the
-station/event geometry, or a required event missing).
+returns a [`WindowResult`][pysmo.tools.project.WindowResult]. Its
+`reference` is the timestamp the window is placed around, if there is one,
+and is passed to `seismogram_transform` via
+[`FetchContext`][pysmo.tools.project.FetchContext]. Raises `ValueError` when
+no window can be resolved (no predicted arrival for the station/event
+geometry, or a required event missing).
 
 Only ever called for entries *without* an explicit `starttime`/`endtime`
 pair: [`PysmoProject`][pysmo.tools.project.PysmoProject] resolves that case
 itself before consulting the resolver, so a custom resolver never has to
 reimplement it. [`PhaseWindow`][pysmo.tools.project.PhaseWindow] is the
-default. Must be picklable by reference (a top-level function, or an attrs
-instance with only picklable fields, not a lambda or closure), the same
-constraint as the other two seams.
+default. Must be picklable: a top-level function, or an attrs instance with
+only picklable fields; not a lambda or closure. The same applies to
+`fetch_seismogram` and `seismogram_transform`.
 
 `PysmoProject` caches on
 [`entry.identity`][pysmo.tools.project.ProjectEntry.identity], which
 quantises event coordinates (~11 m) and depth (100 m); a resolver that
 returns materially different windows for entries closer than that shares one
-cache slot between them. The default `PhaseWindow` is safe here — the
+cache slot between them. The default `PhaseWindow` is unaffected: the
 sub-quantum change in a teleseismic arrival time is far below one sample.
 """
 
@@ -133,9 +136,10 @@ Called with a [`Station`][pysmo.Station] and the resolved
 `starttime`/`endtime`, and returns a [`Seismogram`][pysmo.Seismogram].
 "Always fresh" by contract: [`PysmoProject`][pysmo.tools.project.PysmoProject]
 keeps its own in-memory cache, so a fetcher normally hits the network every
-time rather than consulting a cache of its own. Swap in a
-[`FetchCache`][pysmo.tools.cache.FetchCache] for a reproducible on-disk
-cache instead. Must be picklable by reference.
+time rather than consulting a cache of its own. A
+[`FetchCache`][pysmo.tools.cache.FetchCache] can take its place for a
+reproducible on-disk cache instead. Must be picklable: a top-level function,
+or an attrs instance with only picklable fields; not a lambda or closure.
 """
 
 type SeismogramTransform[TStation: Station, TEvent: Event, TSeismogram] = Callable[
@@ -148,8 +152,9 @@ Called with the downloaded [`Seismogram`][pysmo.Seismogram] and a
 entry and this fetch's resolved window. The one place ordinary data
 preparation (response removal, detrending, resampling) belongs, and free to
 issue its own additional fetches (e.g. instrument response metadata via
-[`StationXML.fetch`][pysmo.classes.StationXML.fetch]). Must be picklable by
-reference. Wrap it in a
-[`TransformCache`][pysmo.tools.project.TransformCache] to cache its output
+[`StationXML.fetch`][pysmo.classes.StationXML.fetch]). Must be picklable: a
+top-level function, or an attrs instance with only picklable fields; not a
+lambda or closure. Wrapping it in a
+[`TransformCache`][pysmo.tools.project.TransformCache] caches its output
 (and those additional fetches) on disk.
 """

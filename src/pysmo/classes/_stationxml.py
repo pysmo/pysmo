@@ -69,38 +69,15 @@ class StationXML:
     [`fetch`][pysmo.classes.StationXML.fetch] always populates it.
 
     Examples:
+        ??? quote "example_stationxml.xml"
+            ```xml
+            --8<-- "docs/snippets/xml/example_stationxml.xml"
+            ```
+
         ```python
+        >>> from pathlib import Path
         >>> from pysmo.classes import StationXML
-        >>> xml = b'''\
-        ... <?xml version="1.0"?>
-        ... <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1">
-        ...   <Network code="IU">
-        ...     <Station code="ANMO">
-        ...       <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>
-        ...       <Channel code="BHZ" locationCode="00"
-        ...                startDate="2018-07-09T20:45:00.0000">
-        ...         <Latitude>34.945981</Latitude><Longitude>-106.457133</Longitude>
-        ...         <Elevation>1632.7</Elevation>
-        ...         <Response>
-        ...           <InstrumentSensitivity>
-        ...             <Value>1.98475E9</Value>
-        ...             <InputUnits><Name>m/s</Name></InputUnits>
-        ...           </InstrumentSensitivity>
-        ...           <Stage number="1">
-        ...             <PolesZeros>
-        ...               <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
-        ...               <NormalizationFactor>5.03773E14</NormalizationFactor>
-        ...               <Zero number="0"><Real>0.0</Real><Imaginary>0.0</Imaginary></Zero>
-        ...               <Pole number="0"><Real>-0.037</Real><Imaginary>0.037</Imaginary></Pole>
-        ...             </PolesZeros>
-        ...             <Decimation><InputSampleRate>40.0</InputSampleRate><Factor>1</Factor></Decimation>
-        ...           </Stage>
-        ...         </Response>
-        ...       </Channel>
-        ...     </Station>
-        ...   </Network>
-        ... </FDSNStationXML>'''
-        >>> station = StationXML.from_bytes(xml)
+        >>> station = StationXML.from_bytes(Path("example_stationxml.xml").read_bytes())
         >>> station.network, station.name, station.channel
         ('IU', 'ANMO', 'BHZ')
         >>> station.response.input_units

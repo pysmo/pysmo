@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<q:quakeml xmlns="http://quakeml.org/xmlns/bed/1.2"
+           xmlns:q="http://quakeml.org/xmlns/quakeml/1.2">
+  <eventParameters publicID="smi:example/catalogue">
+    <event publicID="smi:example/maule">
+      <description><text>Maule, Chile</text></description>
+      <origin publicID="smi:example/maule/origin">
+        <time><value>2010-02-27T06:34:11.53Z</value></time>
+        <latitude><value>-36.122</value></latitude>
+        <longitude><value>-72.898</value></longitude>
+        <depth><value>22900</value></depth>
+      </origin>
+      <magnitude publicID="smi:example/maule/magnitude">
+        <mag><value>8.8</value></mag>
+        <type>Mw</type>
+      </magnitude>
+      <type>earthquake</type>
+    </event>
+  </eventParameters>
+</q:quakeml>
