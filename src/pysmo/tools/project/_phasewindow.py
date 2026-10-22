@@ -62,13 +62,13 @@ class PhaseWindow:
     """Predicts the phase arrival the window is built around.
 
     Defaults to pysmo's built-in solver,
-    [`travel_times`][pysmo.tools.traveltime.travel_times]. Replace it with
-    any callable of the same shape
-    ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]) for
-    another velocity model, a phase the built-in solver does not cover, or
-    arrival times from an external source. Must be picklable: a top-level
-    function, a [`functools.partial`][] of one, or an attrs instance with
-    only picklable fields; not a lambda or closure.
+    [`travel_times`][pysmo.tools.traveltime.travel_times]. Any callable of
+    the same shape
+    ([`TravelTimeBackend`][pysmo.tools.traveltime.TravelTimeBackend]) can
+    take its place, for another velocity model, a phase the built-in solver
+    does not cover, or arrival times from an external source. Must be
+    picklable: a top-level function, a [`functools.partial`][] of one, or an
+    attrs instance with only picklable fields; not a lambda or closure.
     """
 
     def __call__[TS: Station, TE: Event](

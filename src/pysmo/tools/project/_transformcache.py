@@ -124,9 +124,9 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     transform: SeismogramTransform[TStation, TEvent, TSeismogram]
     """The wrapped transform, run only on a cache miss.
 
-    Must be picklable by reference (a top-level function or a callable
-    `attrs` instance), the same constraint `PysmoProject` places on
-    `seismogram_transform` itself.
+    Must be picklable: a top-level function, or an attrs instance with only
+    picklable fields; not a lambda or closure. `PysmoProject` places the same
+    constraint on `seismogram_transform` itself.
     """
 
     wal: bool = field(default=False, metadata={"identity": False})
@@ -146,7 +146,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     output, raising `TypeError` on any mismatch.
 
     Catches a round trip that silently loses information on a rich `TSeismogram`
-    (e.g. a non-primitive value in `MiniIccsSeismogram.extra`). Leave on
+    (e.g. a non-primitive value in `MiniIccsSeismogram.extra`). Best left on
     unless the transform output is known to be a plain
     [`MiniSeismogram`][pysmo.MiniSeismogram]."""
 
@@ -157,7 +157,7 @@ class TransformCache[TStation: Station, TEvent: Event, TSeismogram]:
     is rebuilt on a hit. The pysmo value objects
     ([`MiniSeismogram`][pysmo.MiniSeismogram] and friends) are covered by the
     default; widen it only if the wrapped transform returns a value object
-    defined in your own package."""
+    defined outside pysmo, in the caller's own package."""
 
     _cache: BlobCache = field(init=False, repr=False, eq=False)
 
