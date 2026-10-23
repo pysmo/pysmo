@@ -433,9 +433,12 @@ header_fields:
     header_type: n
 
   nvhdr:
-    description: Header version number.
+    description: >-
+      Header version number (6 or 7). Read-only; the version written can be
+      chosen with `SacIO.write`.
     start: 304
     header_type: n
+    required: true
 
   norid:
     description: Origin ID (CSS 3.0).

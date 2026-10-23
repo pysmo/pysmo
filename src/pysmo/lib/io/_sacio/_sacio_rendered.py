@@ -276,7 +276,7 @@ SAC_HEADERS = dict(
     nzmin=Header(start=292, length=4, format="i", type="n", required=False),
     nzsec=Header(start=296, length=4, format="i", type="n", required=False),
     nzmsec=Header(start=300, length=4, format="i", type="n", required=False),
-    nvhdr=Header(start=304, length=4, format="i", type="n", required=False),
+    nvhdr=Header(start=304, length=4, format="i", type="n", required=True),
     norid=Header(start=308, length=4, format="i", type="n", required=False),
     nevid=Header(start=312, length=4, format="i", type="n", required=False),
     npts=Header(start=316, length=4, format="i", type="n", required=True),
@@ -388,7 +388,6 @@ def _validate_with_iztype[T: int | float | None](
         and attribute.name == instance.iztype
         and old_value is not None
         and value != old_value
-        and value != 0
     ):
         raise RuntimeError(
             f"Unable to change '{attribute.name}' because it is zero-time (iztype={instance.iztype})."
@@ -1381,9 +1380,13 @@ class SacIOBase:
     nvhdr: int = field(
         default=SacIODefaults.nvhdr,
         converter=_convert_nvhdr,
-        validator=validators.instance_of(int),
+        validator=validators.and_(
+            validators.instance_of(int),
+            validators.in_((6, 7)),
+        ),
+        on_setattr=setters.frozen,
     )
-    """Header version number."""
+    """Header version number (6 or 7). Read-only; the version written can be chosen with `SacIO.write`."""
 
     norid: int | None = field(
         default=None,
