@@ -70,6 +70,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Overhaul documentation
 - Resolve docstring-only review findings
 - Add serialisation usage chapter
+- **(project)** Restructure module docs around the three pipeline stages
 
 ### 📦 Miscellaneous
 
