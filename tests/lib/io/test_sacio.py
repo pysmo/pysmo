@@ -4,7 +4,7 @@ import copy
 import pickle
 import struct
 import sys
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -114,6 +114,12 @@ _ENUM_HEADERS: list[tuple[str, str]] = [
     ("imagtyp", "mb"),
     ("imagsrc", "neic"),
     ("ibody", "earth"),
+]
+
+# nvhdr is read-only after construction (see test_nvhdr_is_read_only), so it
+# is excluded from the generic setter tests.
+_INT_HEADERS_SETTABLE: list[tuple[str, int]] = [
+    (h, v) for h, v in _INT_HEADERS if h != "nvhdr"
 ]
 
 # iztype is read-only after construction (see test_iztype_is_read_only and
@@ -312,6 +318,88 @@ def test_v6_v7(sacfile_v6: Path, sacfile_v7: Path) -> None:
     sac7 = SacIO.from_file(sacfile_v7)
 
 
+def test_nvhdr_is_read_only(sacfile_v6: Path) -> None:
+    sac = SacIO.from_file(sacfile_v6)
+    with pytest.raises(AttributeError):
+        sac.nvhdr = 7
+
+
+def test_nvhdr_invalid_value() -> None:
+    with pytest.raises(ValueError):
+        SacIO(nvhdr=5)
+
+
+def _patch_nvhdr(src: Path, dst: Path, value: int) -> None:
+    buffer = bytearray(src.read_bytes())
+    unused12, nvhdr = 276, 304  # SAC word offsets 69, 76
+    order = (
+        "<"
+        if struct.unpack("<f", buffer[unused12 : unused12 + 4])[0] == -12345.0
+        else ">"
+    )
+    buffer[nvhdr : nvhdr + 4] = struct.pack(order + "i", value)
+    dst.write_bytes(bytes(buffer))
+
+
+def test_read_nvhdr_undefined(sacfile_v6: Path, tmp_path: Path) -> None:
+    patched = tmp_path / "patched.sac"
+    _patch_nvhdr(sacfile_v6, patched, -12345)
+    with pytest.raises(RuntimeError):
+        SacIO.from_file(patched)
+
+
+def test_read_nvhdr_unsupported(sacfile_v6: Path, tmp_path: Path) -> None:
+    patched = tmp_path / "patched.sac"
+    _patch_nvhdr(sacfile_v6, patched, 5)
+    with pytest.raises(ValueError):
+        SacIO.from_file(patched)
+
+
+def test_write_nvhdr_upgrade(sacfile_v6: Path, tmp_path: Path) -> None:
+    """Writing v6 as v7 adds the footer and keeps headers and data."""
+    sac6 = SacIO.from_file(sacfile_v6)
+    out = tmp_path / "v7.sac"
+
+    sac6.write(out, nvhdr=7)
+
+    assert sac6.nvhdr == 6
+    sac7 = SacIO.from_file(out)
+    assert sac7.nvhdr == 7
+    assert out.stat().st_size == 632 + 4 * sac6.npts + 8 * 22
+    assert sac7.b == sac6.b
+    assert sac7.delta == sac6.delta
+    npt.assert_array_equal(sac7.data, sac6.data)
+
+
+def test_write_nvhdr_downgrade(sacfile_v7: Path, tmp_path: Path) -> None:
+    """Writing v7 as v6 drops the footer, so time headers become float32."""
+    sac7 = SacIO.from_file(sacfile_v7)
+    sac7.t0 = 1.1
+    out = tmp_path / "v6.sac"
+
+    sac7.write(out, nvhdr=6)
+
+    sac6 = SacIO.from_file(out)
+    assert sac6.nvhdr == 6
+    assert out.stat().st_size == 632 + 4 * sac7.npts
+    assert sac6.t0 == float(np.float32(1.1))
+
+
+def test_write_nvhdr_default_keeps_version(
+    sacfile_v6: Path, sacfile_v7: Path, tmp_path: Path
+) -> None:
+    for src in (sacfile_v6, sacfile_v7):
+        sac = SacIO.from_file(src)
+        out = tmp_path / src.name
+        sac.write(out)
+        assert SacIO.from_file(out).nvhdr == sac.nvhdr
+
+
+def test_write_nvhdr_invalid(tmp_path: Path) -> None:
+    with pytest.raises(ValueError):
+        SacIO().write(tmp_path / "x.sac", nvhdr=5)  # type: ignore[arg-type]
+
+
 def test_sacfile_IB(sacfile_IB: Path) -> None:
     sac = SacIO.from_file(sacfile_IB)
     assert sac.iztype == "b"
@@ -490,7 +578,9 @@ def test_clear_optional_float_header(header: str) -> None:
     assert getattr(sac, header) is None
 
 
-@pytest.mark.parametrize("header,value", _INT_HEADERS, ids=[h for h, _ in _INT_HEADERS])
+@pytest.mark.parametrize(
+    "header,value", _INT_HEADERS_SETTABLE, ids=[h for h, _ in _INT_HEADERS_SETTABLE]
+)
 def test_set_int_header(header: str, value: int) -> None:
     sac = SacIO()
     setattr(sac, header, value)
@@ -550,7 +640,9 @@ def test_float_header_type_error(header: str, _: float) -> None:
         setattr(sac, header, [1.0])
 
 
-@pytest.mark.parametrize("header,_", _INT_HEADERS, ids=[h for h, _ in _INT_HEADERS])
+@pytest.mark.parametrize(
+    "header,_", _INT_HEADERS_SETTABLE, ids=[h for h, _ in _INT_HEADERS_SETTABLE]
+)
 def test_int_header_type_error(header: str, _: int) -> None:
     """Int headers reject floats (no implicit truncation)."""
     sac = SacIO()
@@ -649,6 +741,16 @@ def test_iztype_prevents_zero_time_change() -> None:
         sac.o = 123.0
 
 
+def test_iztype_zero_time_header_not_settable_to_zero() -> None:
+    """A non-zero zero-time header can't be set to 0: that would move it
+    (and, for b, the samples) in absolute time."""
+    sac = SacIO(iztype="b", b=0.0005)
+    with pytest.raises(RuntimeError):
+        sac.b = 0.0
+    sac.b = 0.0005
+    assert sac.b == 0.0005
+
+
 def test_iztype_is_read_only(sacfile: Path) -> None:
     """iztype can only be changed via change_ref_time."""
     sac = SacIO.from_file(sacfile)
@@ -656,30 +758,138 @@ def test_iztype_is_read_only(sacfile: Path) -> None:
         sac.iztype = "o"
 
 
+_REF = datetime(2020, 1, 1, tzinfo=UTC)
+
+
+def _sac_with_ref(nvhdr: int = 7, **headers: float) -> SacIO:
+    sac = SacIO(nvhdr=nvhdr)
+    for header, value in headers.items():
+        setattr(sac, header, value)
+    sac.ref_datetime = _REF
+    return sac
+
+
 def test_change_ref_time(sacfile: Path) -> None:
+    """o in testfile.sac (v6) is a whole ms plus float32 noise, so it snaps
+    to 0 and becomes the zero-time header."""
     sac = SacIO.from_file(sacfile)
+    assert sac.nvhdr == 6
     old_ref = sac.ref_datetime
     old_b = sac.b
     old_o = sac.o
     assert old_ref is not None
     assert old_o is not None
 
-    sac.change_ref_time("o")
+    r = sac.change_ref_time("o")
 
+    assert r == 0.0
+    assert sac.o == 0.0
     assert sac.iztype == "o"
     new_ref = sac.ref_datetime
-    new_o = sac.o
-    new_b = sac.b
     assert new_ref is not None
-    assert new_o is not None
 
-    # 'o' lands within half a millisecond of 0 (ref_datetime only has
-    # millisecond precision), not exactly on it.
-    assert new_o == pytest.approx(0.0, abs=5e-4)
+    # o moves by less than half its float32 spacing; everything else is
+    # preserved exactly.
+    o_shift = abs((new_ref - old_ref).total_seconds() - old_o)
+    assert o_shift <= np.spacing(np.float32(abs(old_o))) / 2
+    assert new_ref + timedelta(seconds=sac.b) == old_ref + timedelta(seconds=old_b)
 
-    # every header's absolute time is preserved exactly.
-    assert new_ref + timedelta(seconds=new_o) == old_ref + timedelta(seconds=old_o)
-    assert new_ref + timedelta(seconds=new_b) == old_ref + timedelta(seconds=old_b)
+
+def test_change_ref_time_keeps_remainder() -> None:
+    """A header between whole ms keeps the remainder; iztype becomes unkn."""
+    sac = _sac_with_ref(t0=10.0004, a=5.0)
+
+    r = sac.change_ref_time("t0")
+
+    assert r == pytest.approx(0.0004, abs=1e-12)
+    assert sac.t0 == r
+    assert sac.iztype == "unkn"
+    assert sac.ref_datetime == _REF + timedelta(seconds=10)
+    assert sac.a == pytest.approx(-5.0, abs=1e-12)
+    assert sac.b == pytest.approx(-10.0, abs=1e-12)
+
+
+def test_change_ref_time_negative_remainder() -> None:
+    """Rounding the reference up past the header gives a negative remainder."""
+    sac = _sac_with_ref(t0=10.0006)
+
+    r = sac.change_ref_time("t0")
+
+    assert r == pytest.approx(-0.0004, abs=1e-12)
+    assert sac.t0 == r
+    assert sac.ref_datetime == _REF + timedelta(seconds=10.001)
+
+
+def test_change_ref_time_whole_ms() -> None:
+    sac = _sac_with_ref(t0=10.123)
+
+    r = sac.change_ref_time("t0")
+
+    assert r == 0.0
+    assert sac.t0 == 0.0
+    assert sac.iztype == "t0"
+    assert sac.ref_datetime == _REF + timedelta(seconds=10.123)
+
+
+@pytest.mark.parametrize(
+    "nvhdr,t0,snaps",
+    [
+        (7, float(np.nextafter(10.123, 11)), True),
+        (7, float(np.nextafter(10.123, 10)), True),
+        (7, 10.123 + 1e-6, False),
+        (7, float(np.float32(10.123)), False),
+        (6, float(np.float32(10.123)), True),
+        (6, 10.123 + 1e-5, False),
+    ],
+    ids=["v7-ulp-up", "v7-ulp-down", "v7-1us", "v7-f32", "v6-f32", "v6-10us"],
+)
+def test_change_ref_time_tolerance(nvhdr: int, t0: float, snaps: bool) -> None:
+    """Remainders within the storage precision of the time headers count as 0."""
+    sac = _sac_with_ref(nvhdr=nvhdr, t0=t0)
+
+    r = sac.change_ref_time("t0")
+
+    if snaps:
+        assert r == 0.0
+        assert sac.t0 == 0.0
+        assert sac.iztype == "t0"
+    else:
+        assert r != 0.0
+        assert sac.t0 == r
+        assert sac.iztype == "unkn"
+
+
+def test_change_ref_time_shift_samples() -> None:
+    """shift_samples=True zeroes the header and moves all times by -r."""
+    sac = _sac_with_ref(t0=10.0004, a=5.0)
+
+    r = sac.change_ref_time("t0", shift_samples=True)
+
+    assert r == pytest.approx(0.0004, abs=1e-12)
+    assert sac.t0 == 0.0
+    assert sac.iztype == "t0"
+    new_ref = sac.ref_datetime
+    assert new_ref == _REF + timedelta(seconds=10)
+    # relative positions unchanged; absolute times moved by -r
+    assert sac.a == 5.0 - 10.0004
+    assert sac.b == 0.0 - 10.0004
+    a_abs = (new_ref - _REF).total_seconds() + sac.a
+    assert a_abs == pytest.approx(5.0 - r, abs=1e-12)
+
+
+def test_change_ref_time_shift_samples_no_snap() -> None:
+    """With shift_samples=True, r is returned even when it is within the
+    v6 storage precision, because the samples really move by -r."""
+    t0 = 32768.12109375  # exact float32; spacing ~3.9 ms
+    snapped = _sac_with_ref(nvhdr=6, t0=t0)
+    assert snapped.change_ref_time("t0") == 0.0
+
+    sac = _sac_with_ref(nvhdr=6, t0=t0)
+    r = sac.change_ref_time("t0", shift_samples=True)
+
+    assert r == pytest.approx(93.75e-6, abs=1e-9)
+    assert sac.t0 == 0.0
+    assert sac.iztype == "t0"
 
 
 def test_change_ref_time_invalid_header(sacfile: Path) -> None:
