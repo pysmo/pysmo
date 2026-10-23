@@ -31,7 +31,7 @@ Documentation = "https://docs.pysmo.org"
 
 [dependency-groups]
 dev = [
-  "black>=26.1.0",
+  "black>=26.10.1",
   "jinja2>=3.1.6",
   "pyyaml>=6.0.3",
   "types-pyyaml>=6.0.12.20250915",
