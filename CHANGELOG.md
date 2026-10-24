@@ -142,6 +142,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(project)** Add optional name label to PysmoProject
 - **(tools)** Replace SqliteArchiveFetcher with a byte-oriented cache
 - **(io)** Add strict=False to parse_stationxml and parse_sacpz
+- **(sacio)** [**breaking**] Honest iztype in change_ref_time; make nvhdr required
 
 ### 🧪 Testing
 
