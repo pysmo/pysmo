@@ -1,4 +1,4 @@
-"""The ICCS class and functions used within the class."""
+"""The ICCS class."""
 
 from __future__ import annotations
 
@@ -8,24 +8,15 @@ from collections.abc import Sequence
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from attrs import Attribute, cmp_using, define, field, setters, validate, validators
-from numpy.linalg import norm
-from scipy.stats.mstats import pearsonr
+from attrs import define, field, setters, validators
 
-from pysmo import MiniSeismogram, Seismogram
-from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo import MiniSeismogram
 from pysmo.functions import (
     clone_to_mini,
-    crop,
-    detrend,
-    normalize,
-    pad,
-    resample,
-    window,
 )
 from pysmo.lib.converters import to_timedelta
-from pysmo.tools.signal import bandpass, causal_band, mccc, multi_delay
-from pysmo.tools.utils import average_datetimes, pearson_matrix_vector
+from pysmo.tools.signal import mccc, multi_delay
+from pysmo.tools.utils import pearson_matrix_vector
 from pysmo.typing import (
     NegativeTimedelta,
     NonNegativeNumber,
@@ -35,203 +26,28 @@ from pysmo.typing import (
 )
 
 from ._defaults import IccsDefaults
+from ._prepare import (
+    _compute_ramp,
+    _create_stack,
+    _current_pick,
+    _EphemeralSeismogram,
+    _prepare_seismograms,
+)
 from ._types import ConvergenceMethod, IccsResult, IccsSeismogram, McccResult
+from ._update import _calc_convergence, _calc_valid_pick_range, _update_seismogram
+from ._validators import (
+    _on_setattr_clear_cache,
+    _on_setattr_clear_context_cache,
+    _validate_bandpass_apply,
+    _validate_bandpass_fmax,
+    _validate_bandpass_fmin,
+    _validate_corners_causal_band,
+    _validate_ramp_width,
+    _validate_window_post,
+    _validate_window_pre,
+)
 
 __all__ = ["ICCS"]
-
-
-def _compute_ramp(
-    ramp_width: float | pd.Timedelta,
-    window_pre: pd.Timedelta,
-    window_post: pd.Timedelta,
-) -> pd.Timedelta:
-    """Compute the taper ramp duration, matching `pysmo.functions.window` semantics.
-
-    Args:
-        ramp_width: Ramp width, either as an absolute `pandas.Timedelta`
-            or as a non-negative float fraction of the window duration.
-        window_pre: Start of the window relative to the pick (negative).
-        window_post: End of the window relative to the pick (positive).
-
-    Returns:
-        Absolute ramp duration as a `pandas.Timedelta`.
-    """
-    if isinstance(ramp_width, pd.Timedelta):
-        return ramp_width
-    return ramp_width * (window_post - window_pre)
-
-
-def _on_setattr_clear_cache[T](instance: ICCS, attribute: Attribute[T], value: T) -> T:
-    """Setter that causes cached attributes to be cleared when their value changes."""
-
-    current = getattr(instance, attribute.name)
-
-    if current is value:
-        return value
-
-    if isinstance(current, np.ndarray) and isinstance(value, np.ndarray):
-        if np.array_equal(current, value):
-            return value
-
-    elif (current == value) is True:
-        return value
-
-    instance.clear_cache()
-
-    if attribute.name == "seismograms":
-        object.__setattr__(instance, "seismograms", value)
-        try:
-            validate(instance)
-        except Exception:
-            # Roll back so a failed reassignment doesn't leave the instance
-            # holding the (invalid) new value despite the raised exception.
-            object.__setattr__(instance, "seismograms", current)
-            raise
-
-    return value
-
-
-def _on_setattr_clear_context_cache[T](
-    instance: ICCS, attribute: Attribute[T], value: T
-) -> T:
-    """Setter for `context_width`: only the context caches depend on it."""
-    if (current := getattr(instance, attribute.name)) is value or (
-        current == value
-    ) is True:
-        return value
-    instance._clear_context_caches()
-    return value
-
-
-def _validate_window_pre(
-    instance: ICCS, attribute: Attribute[pd.Timedelta], value: pd.Timedelta
-) -> None:
-    """Ensure window_pre fits within all seismograms, accounting for the taper ramp."""
-    ramp = _compute_ramp(instance.ramp_width, value, instance.window_post)
-    if not (value >= instance.max_td_pre + ramp):
-        raise ValueError("window_pre is too low for one or more seismograms.")
-
-
-def _validate_window_post(
-    instance: ICCS, attribute: Attribute[pd.Timedelta], value: pd.Timedelta
-) -> None:
-    """Ensure window_post fits within all seismograms, accounting for the taper ramp."""
-    ramp = _compute_ramp(instance.ramp_width, instance.window_pre, value)
-    if not (value <= instance.min_td_post - ramp):
-        raise ValueError("window_post is too high for one or more seismograms.")
-
-
-def _validate_bandpass_fmin(
-    instance: ICCS, attribute: Attribute[float], value: float
-) -> None:
-    """Ensure bandpass_fmin is positive and below bandpass_fmax."""
-    if value <= 0:
-        raise ValueError("bandpass_fmin must be positive.")
-    if value >= instance.bandpass_fmax:
-        raise ValueError("bandpass_fmin must be less than bandpass_fmax.")
-    try:
-        causal_band(value, instance.bandpass_fmax, instance.corners)
-    except ValueError:
-        raise ValueError(
-            "bandpass_fmin is too close to bandpass_fmax for the causal "
-            + "variant's corrected passband at the current corners."
-        ) from None
-
-
-def _validate_bandpass_fmax(
-    instance: ICCS, attribute: Attribute[float], value: float
-) -> None:
-    """Ensure bandpass_fmax is above bandpass_fmin and below the Nyquist frequency."""
-    if value <= instance.bandpass_fmin:
-        raise ValueError("bandpass_fmax must be greater than bandpass_fmin.")
-    if instance.bandpass_apply and instance.seismograms:
-        nyquist = 0.5 / instance.max_delta.total_seconds()
-        if value >= nyquist:
-            raise ValueError(
-                f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
-            )
-    try:
-        causal_band(instance.bandpass_fmin, value, instance.corners)
-    except ValueError:
-        raise ValueError(
-            "bandpass_fmax is too close to bandpass_fmin for the causal "
-            + "variant's corrected passband at the current corners."
-        ) from None
-
-
-def _validate_corners_causal_band(
-    instance: ICCS, attribute: Attribute[int], value: int
-) -> None:
-    """Ensure corners doesn't invert the causal variant's corrected passband."""
-    try:
-        causal_band(instance.bandpass_fmin, instance.bandpass_fmax, value)
-    except ValueError:
-        raise ValueError(
-            "corners is too low for the causal variant's corrected "
-            + "passband at the current bandpass_fmin/bandpass_fmax."
-        ) from None
-
-
-def _validate_bandpass_apply(
-    instance: ICCS, attribute: Attribute[bool], value: bool
-) -> None:
-    """Ensure Nyquist constraint is met when enabling the bandpass filter."""
-    if value and instance.seismograms:
-        nyquist = 0.5 / instance.max_delta.total_seconds()
-        if instance.bandpass_fmax >= nyquist:
-            raise ValueError(
-                f"bandpass_fmax must be below the Nyquist frequency ({nyquist} Hz)."
-            )
-
-
-def _validate_ramp_width(
-    instance: ICCS,
-    attribute: Attribute[NonNegativeTimedelta | NonNegativeNumber],
-    value: NonNegativeTimedelta | NonNegativeNumber,
-) -> None:
-    ramp = _compute_ramp(value, instance.window_pre, instance.window_post)
-    if ramp < pd.Timedelta(0):
-        raise ValueError("ramp_width must be non-negative.")
-    if not (
-        ramp <= instance.window_pre - instance.max_td_pre
-        and ramp <= instance.min_td_post - instance.window_post
-    ):
-        raise ValueError("ramp_width is too high for one or more seismograms.")
-
-
-@define
-class _EphemeralSeismogram(SeismogramEndtimeMixin):
-    """A Seismogram class used internally in ICCS to store the prepared seismograms.
-
-    This class is not intended for use outside of the ICCS class, and is not
-    exposed in the public API. It is used to store the prepared seismograms
-    (i.e. the seismograms that are cropped, tapered, and normalised based on
-    the current pick and time window) for use in the cross-correlation and
-    stacking. The data in these seismograms are modified on the fly when the
-    picks and time windows are updated, but they are not intended to be modified
-    directly by users.
-
-    When `bandpass_apply` is `False`, the `*_causal` properties return the
-    exact same objects as their zero-phase counterparts, not copies; an
-    in-place mutation through one name would be visible through the other.
-    """
-
-    parent_seismogram: IccsSeismogram
-    """The parent `IccsSeismogram` this ephemeral seismogram is derived from."""
-
-    begin_time: pd.Timestamp = field(init=False)
-    """Seismogram begin time."""
-
-    delta: pd.Timedelta = field(init=False)
-    """Seismogram sampling interval."""
-
-    data: npt.NDArray[np.floating] = field(init=False, eq=cmp_using(eq=np.array_equal))
-    """Seismogram data."""
-
-    def __attrs_post_init__(self) -> None:
-        self.begin_time = self.parent_seismogram.begin_time
-        self.delta = self.parent_seismogram.delta
-        self.data = self.parent_seismogram.data.copy()
 
 
 @define
@@ -271,7 +87,7 @@ class ICCS:
         index assignment) bypasses the setter and does **not** clear the
         cache, and neither does mutating an *individual* seismogram already in the
         list, such as setting its
-        [`t1`][pysmo.tools.iccs.IccsSeismogram.t1],
+        [`refined_pick`][pysmo.tools.iccs.IccsSeismogram.refined_pick],
         [`flip`][pysmo.tools.iccs.IccsSeismogram.flip], or
         [`select`][pysmo.tools.iccs.IccsSeismogram.select] attribute
         directly. Call [`clear_cache`][pysmo.tools.iccs.ICCS.clear_cache]
@@ -598,8 +414,7 @@ class ICCS:
 
         if self._max_td_pre_cache is None:
             self._max_td_pre_cache = max(
-                s.begin_time - (s.t0 if pd.isnull(s.t1) else s.t1)
-                for s in self.seismograms
+                s.begin_time - _current_pick(s) for s in self.seismograms
             )
         return self._max_td_pre_cache
 
@@ -619,8 +434,7 @@ class ICCS:
 
         if self._min_td_post_cache is None:
             self._min_td_post_cache = min(
-                s.end_time - (s.t0 if pd.isnull(s.t1) else s.t1)
-                for s in self.seismograms
+                s.end_time - _current_pick(s) for s in self.seismograms
             )
         return self._min_td_post_cache
 
@@ -873,7 +687,7 @@ class ICCS:
 
         ramp = _compute_ramp(self.ramp_width, window_pre, window_post)
         for s in self.seismograms:
-            pick = s.t0 if pd.isnull(s.t1) else s.t1
+            pick = _current_pick(s)
             if window_pre < s.begin_time - pick + ramp:
                 return False
             if window_post > s.end_time - pick - ramp:
@@ -1014,9 +828,7 @@ class ICCS:
                 ramp_width=self.ramp_width,
             ):
                 refused.append(index)
-            # After update (or attempted update), retrieve the pick.
-            # Fallback to t0 if t1 is None (e.g. if update failed and was None).
-            picks.append(seis.t0 if pd.isnull(seis.t1) else seis.t1)
+            picks.append(_current_pick(seis))
 
         if refused:
             warnings.warn(
@@ -1037,254 +849,21 @@ class ICCS:
         )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
-        """Update `t1` in all seismograms by the same amount.
+        """Update `refined_pick` in all seismograms by the same amount.
 
         Args:
             pickdelta: Delta applied to all picks.
 
         Raises:
-            ValueError: If the new t1 is outside the valid range.
+            ValueError: If the new pick is outside the valid range.
         """
 
         if not self.validate_pick(pickdelta):
             raise ValueError(
-                "New t1 is outside the valid range. Consider reducing the time window."
+                "New pick is outside the valid range. Consider reducing the time window."
             )
 
         for seismogram in self.seismograms:
-            current_pick = seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1
-            seismogram.t1 = current_pick + pickdelta
+            current_pick = _current_pick(seismogram)
+            seismogram.refined_pick = current_pick + pickdelta
         self.clear_cache()  # seismograms and stack need to be refreshed
-
-
-def _update_seismogram(
-    delay: pd.Timedelta,
-    cc: float | None,
-    seismogram: IccsSeismogram,
-    autoflip: bool,
-    autoselect: bool,
-    min_cc_for_autoselect: np.floating | float,
-    current_window: tuple[pd.Timedelta, pd.Timedelta],
-    ramp_width: pd.Timedelta | float,
-) -> bool:
-    """Update IccsSeismogram attributes based on cross-correlation results.
-
-    Optionally toggles `flip` (if `autoflip` is True and the correlation
-    coefficient is negative) and `select` (if `autoselect` is True and
-    the absolute correlation coefficient is below the threshold). The pick
-    `t1` is updated unless the new value would move the window (including its
-    taper ramp) outside the seismogram.
-
-    Args:
-        delay: Time shift from cross-correlation.
-        cc: Normalised cross-correlation coefficient. If it is `None`,
-            no changes to `flip` and `select` will be made.
-        seismogram: Seismogram to update.
-        autoflip: Automatically toggle the `flip` attribute.
-        autoselect: Automatically toggle the `select` attribute.
-        min_cc_for_autoselect: Threshold for `autoselect`.
-        current_window: Current `(window_pre, window_post)` tuple.
-        ramp_width: Current `ramp_width`, needed because
-            `_prepare_seismograms` tapers the window and
-            `pysmo.functions.window` rejects a pick with no room for the ramp.
-
-    Returns:
-        `True` if `t1` was updated, `False` if the shift was refused.
-    """
-    if cc is not None:
-        if autoflip and cc < 0:
-            seismogram.flip = not seismogram.flip
-            cc = abs(cc)
-
-        if autoselect:
-            seismogram.select = bool(cc >= min_cc_for_autoselect)
-
-    updated_t1 = (seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1) + delay
-    ramp = _compute_ramp(ramp_width, current_window[0], current_window[1])
-    limit_pre = seismogram.begin_time - current_window[0] + ramp
-    limit_post = seismogram.end_time - current_window[1] - ramp
-
-    if not limit_pre <= updated_t1 <= limit_post:
-        # stacklevel is caller-dependent: __call__ is 4 frames up, run_mccc is 3.
-        # Use stacklevel=2 to point at the direct caller of _update_seismogram.
-        warnings.warn(
-            f"Refusing to update t1 for seismogram with t0={seismogram.t0}. "
-            + "Would move out of limits - consider reducing window size.",
-            stacklevel=2,
-        )
-        return False
-
-    seismogram.t1 = updated_t1
-    return True
-
-
-def _prepare_seismograms(
-    instance: ICCS, add_context: bool = False, causal: bool = False
-) -> list[_EphemeralSeismogram]:
-    """Prepare cc_seismograms or context_seismograms."""
-
-    if not instance.seismograms:
-        return []
-
-    ephemeral_seismograms: list[_EphemeralSeismogram] = []
-
-    min_delta = instance.min_delta
-
-    for seismogram in instance.seismograms:
-        pick = seismogram.t0 if pd.isnull(seismogram.t1) else seismogram.t1
-        window_start = pick + instance.window_pre
-        window_end = pick + instance.window_post
-
-        ephemeral_seismogram = _EphemeralSeismogram(parent_seismogram=seismogram)
-
-        if instance.bandpass_apply:
-            if causal:
-                freqmin, freqmax = causal_band(
-                    instance.bandpass_fmin, instance.bandpass_fmax, instance.corners
-                )
-            else:
-                freqmin, freqmax = instance.bandpass_fmin, instance.bandpass_fmax
-            bandpass(
-                ephemeral_seismogram,
-                freqmin,
-                freqmax,
-                corners=instance.corners * 2 if causal else instance.corners,
-                zerophase=not causal,
-            )
-
-        if not np.isclose(
-            ephemeral_seismogram.delta.total_seconds(), min_delta.total_seconds()
-        ):
-            resample(ephemeral_seismogram, min_delta)
-
-        if add_context:
-            context_window_start = window_start - instance.context_width
-            context_window_end = window_end + instance.context_width
-
-            if (
-                context_window_start < seismogram.begin_time
-                or context_window_end > seismogram.end_time
-            ):
-                pad(
-                    ephemeral_seismogram,
-                    context_window_start,
-                    context_window_end,
-                    mode="linear_ramp",
-                    end_values=(0, 0),
-                )
-
-            crop(ephemeral_seismogram, context_window_start, context_window_end)
-            detrend(ephemeral_seismogram)
-            normalize(ephemeral_seismogram, window_start, window_end)
-        else:
-            window(ephemeral_seismogram, window_start, window_end, instance.ramp_width)
-            normalize(ephemeral_seismogram)
-
-        if seismogram.flip:
-            ephemeral_seismogram.data *= -1
-
-        ephemeral_seismograms.append(ephemeral_seismogram)
-
-    # If all seismograms have the same length, return them now.
-    if len(lengths := {len(s.data) for s in ephemeral_seismograms}) == 1:
-        return ephemeral_seismograms
-
-    # Shorten seismograms if necessary and return (floating-point precision
-    # can cause small differences in length after resampling). We cut off
-    # at the end so the `begin_time` will not change.
-    for s in ephemeral_seismograms:
-        s.data = s.data[: min(lengths)]
-    return ephemeral_seismograms
-
-
-def _create_stack(seismograms: Sequence[_EphemeralSeismogram]) -> MiniSeismogram:
-    """Create a stack by averaging all selected seismograms.
-
-    Args:
-        seismograms: Prepared seismograms to stack.
-
-    Returns:
-        A new seismogram whose data are the sample-wise mean of the selected
-        input seismograms.
-
-    Raises:
-        ValueError: If no seismograms are selected.
-    """
-    if not seismograms:
-        raise ValueError("Cannot create stack: no seismograms are loaded.")
-    selected = [p for p in seismograms if p.parent_seismogram.select]
-    if not selected:
-        raise ValueError(
-            "Cannot create stack: no seismograms are selected. "
-            + "Ensure at least one seismogram has select=True before accessing the stack."
-        )
-    begin_time = average_datetimes([p.begin_time for p in selected])
-    delta = selected[0].delta
-    data = np.mean(
-        np.array([p.data for p in selected]),
-        axis=0,
-    )
-    return MiniSeismogram(begin_time=begin_time, delta=delta, data=data)
-
-
-def _calc_convergence(
-    current_stack: Seismogram,
-    prev_stack: Seismogram,
-    method: ConvergenceMethod,
-) -> float:
-    """Calculate criterion of convergence.
-
-    This function calculates a criterion of convergence based on the current and
-    previous stack using one of the following methods:
-
-    - Convergence by correlation coefficient.
-    - Convergence by change of stack.
-
-    Args:
-        current_stack: Current stack.
-        prev_stack: Stack from last iteration.
-        method: Method of convergence criterion calculation.
-    """
-    if method == ConvergenceMethod.corrcoef:
-        if np.array_equal(current_stack.data, prev_stack.data):
-            return 0.0  # unchanged stack has converged; pearsonr would be NaN
-        covr = float(pearsonr(current_stack.data, prev_stack.data)[0])
-        # NaN (a constant stack) -> unconverged, not past the <= check.
-        return 1 - covr if not np.isnan(covr) else float("inf")
-    elif method == ConvergenceMethod.change:
-        change = norm(current_stack.data - prev_stack.data, 1)
-        denominator = norm(current_stack.data, 2)
-        if denominator == 0:
-            # A degenerate (all-zero) stack has no meaningful relative
-            # change: 0.0 if it didn't actually change, otherwise treat it
-            # as unconverged rather than raising/returning NaN.
-            return 0.0 if change == 0 else float("inf")
-        return float(change / denominator / len(current_stack.data))
-    raise ValueError(f"Unknown convergence method: {method}.")
-
-
-def _calc_valid_pick_range(instance: ICCS) -> tuple[pd.Timedelta, pd.Timedelta]:
-    """Calculate the valid shift range for updating the pick.
-
-    The pick delta must ensure there is enough space on either end of every
-    seismogram (selected or not) to accommodate the time window and ramp,
-    because `_prepare_seismograms` processes all seismograms.
-
-    Args:
-        instance: The `ICCS` instance to compute the valid range for.
-
-    Returns:
-        A `(min_pick_delta, max_pick_delta)` tuple of valid shift bounds.
-    """
-    if not instance.seismograms:
-        return pd.Timedelta(days=-365 * 100), pd.Timedelta(days=365 * 100)
-
-    td_pre_values = []
-    td_post_values = []
-    for s in instance.seismograms:
-        pick = s.t0 if pd.isnull(s.t1) else s.t1
-        td_pre_values.append(s.begin_time - pick - instance.window_pre)
-        td_post_values.append(s.end_time - pick - instance.window_post)
-
-    ramp = instance.ramp_width_timedelta
-    return max(td_pre_values) + ramp, min(td_post_values) - ramp

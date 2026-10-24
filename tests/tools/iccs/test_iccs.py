@@ -194,8 +194,8 @@ class TestICCSMcccRefused:
         monkeypatch.setattr(iccs_module, "mccc", fake_mccc)
 
         pick_before = (
-            iccs.selected_cc_seismograms[0].parent_seismogram.t1
-            or iccs.selected_cc_seismograms[0].parent_seismogram.t0
+            iccs.selected_cc_seismograms[0].parent_seismogram.refined_pick
+            or iccs.selected_cc_seismograms[0].parent_seismogram.initial_pick
         )
         with pytest.warns(UserWarning) as record:
             result = iccs.run_mccc()
@@ -203,8 +203,8 @@ class TestICCSMcccRefused:
         assert any("move the window out of bounds" in str(w.message) for w in record)
         assert result.refused == [0]
         pick_after = (
-            iccs.selected_cc_seismograms[0].parent_seismogram.t1
-            or iccs.selected_cc_seismograms[0].parent_seismogram.t0
+            iccs.selected_cc_seismograms[0].parent_seismogram.refined_pick
+            or iccs.selected_cc_seismograms[0].parent_seismogram.initial_pick
         )
         assert pick_after == pick_before
 
@@ -221,15 +221,15 @@ class TestICCSMcccRefused:
 
 
 class TestICCSUpdateWarning:
-    """Test the warning emitted when t1 update would move out of limits."""
+    """Test the warning emitted when refined_pick update would move out of limits."""
 
     def test_out_of_limits_warning_message(
         self, iccs_seismograms: list[IccsSeismogram]
     ) -> None:
-        from pysmo.tools.iccs._iccs import _update_seismogram
+        from pysmo.tools.iccs._update import _update_seismogram
 
         seismogram = iccs_seismograms[0]
-        # A delay larger than the seismogram duration guarantees t1 moves out of limits.
+        # A delay larger than the seismogram duration guarantees refined_pick moves out of limits.
         huge_delay = pd.Timedelta(days=9999)
         window = (pd.Timedelta(seconds=-15), pd.Timedelta(seconds=15))
 
@@ -248,8 +248,8 @@ class TestICCSUpdateWarning:
         assert applied is False
         assert len(record) == 1
         msg = str(record[0].message)
-        # Must identify the seismogram by t0, not dump the full data array.
-        assert "t0=" in msg
+        # Must identify the seismogram by initial_pick, not dump the full data array.
+        assert "initial_pick=" in msg
         assert "array(" not in msg
 
     def test_ramp_included_in_pick_limit(
@@ -258,7 +258,8 @@ class TestICCSUpdateWarning:
         """A shift that clears the bare window edge but lands inside the taper
         ramp band must be refused; pysmo.functions.window would reject it and
         break the instance otherwise."""
-        from pysmo.tools.iccs._iccs import _compute_ramp, _update_seismogram
+        from pysmo.tools.iccs._prepare import _compute_ramp
+        from pysmo.tools.iccs._update import _update_seismogram
 
         window_pre = pd.Timedelta(seconds=-15)
         window_post = pd.Timedelta(seconds=15)
@@ -267,7 +268,7 @@ class TestICCSUpdateWarning:
         assert ramp > pd.Timedelta(0)
 
         seismogram = iccs_seismograms[0]
-        pick = seismogram.t1 or seismogram.t0
+        pick = seismogram.refined_pick or seismogram.initial_pick
         # Bare pre-limit: begin_time - window_pre - pick. Land half a ramp short.
         bare_delta = seismogram.begin_time - window_pre - pick
         delta = bare_delta + ramp / 2
@@ -333,20 +334,22 @@ class TestICCSParameters(TestICCSBase):
 
     def test_invalid_window_pre(self) -> None:
         max_window_pre = max(
-            s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms
+            s.begin_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
         )
         with pytest.raises(ValueError):
             self.iccs.window_pre -= pd.Timedelta(seconds=1) + max_window_pre
 
     def test_invalid_window_post(self) -> None:
         min_window_post = min(
-            (s.t1 or s.t0) - s.end_time for s in self.iccs.seismograms
+            (s.refined_pick or s.initial_pick) - s.end_time
+            for s in self.iccs.seismograms
         )
         with pytest.raises(ValueError):
             self.iccs.window_post += pd.Timedelta(seconds=1) + min_window_post
 
     def test_validate_pick(self) -> None:
-        from pysmo.tools.iccs._iccs import _calc_valid_pick_range
+        from pysmo.tools.iccs._update import _calc_valid_pick_range
 
         min_pick, max_pick = _calc_valid_pick_range(self.iccs)
 
@@ -357,8 +360,14 @@ class TestICCSParameters(TestICCSBase):
 
     def test_validate_time_window(self) -> None:
         # With ramp=0 (TAPER=0.0), the valid window extends to exactly the seismogram edges.
-        max_td_pre = max(s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
-        min_td_post = min(s.end_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
+        max_td_pre = max(
+            s.begin_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
+        min_td_post = min(
+            s.end_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
 
         assert self.iccs.validate_time_window(max_td_pre, min_td_post) is True
         # Reversed window is invalid.
@@ -392,7 +401,8 @@ class TestICCSParameters(TestICCSBase):
         # With ramp=0, the minimum valid window_pre equals the most constrained
         # seismogram's begin_time to pick gap.
         min_window_pre = max(
-            s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms
+            s.begin_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
         )
         # Boundary is inclusive — must not raise.
         self.iccs.window_pre = min_window_pre
@@ -401,7 +411,8 @@ class TestICCSParameters(TestICCSBase):
     def test_window_post_at_exact_boundary(self) -> None:
         """Test that window_post can be set to exactly the maximum valid value."""
         max_window_post = min(
-            s.end_time - (s.t1 or s.t0) for s in self.iccs.seismograms
+            s.end_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
         )
         # Boundary is inclusive — must not raise.
         self.iccs.window_post = max_window_post
@@ -409,8 +420,14 @@ class TestICCSParameters(TestICCSBase):
 
     def test_validate_time_window_consistent_with_attrs(self) -> None:
         """validate_time_window and the attrs validators must agree on boundaries."""
-        max_td_pre = max(s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
-        min_td_post = min(s.end_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
+        max_td_pre = max(
+            s.begin_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
+        min_td_post = min(
+            s.end_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
 
         # validate_time_window returns True for the boundary window…
         assert self.iccs.validate_time_window(max_td_pre, min_td_post) is True
@@ -442,12 +459,16 @@ class TestICCSParameters(TestICCSBase):
         """
         # Find the seismogram with the smallest gap from begin_time to pick.
         most_constrained = max(
-            self.iccs.seismograms, key=lambda s: s.begin_time - (s.t1 or s.t0)
+            self.iccs.seismograms,
+            key=lambda s: s.begin_time - (s.refined_pick or s.initial_pick),
         )
-        constrained_pick = most_constrained.t1 or most_constrained.t0
+        constrained_pick = (
+            most_constrained.refined_pick or most_constrained.initial_pick
+        )
         tight_window_pre = most_constrained.begin_time - constrained_pick
         valid_window_post = min(
-            s.end_time - (s.t1 or s.t0) for s in self.iccs.seismograms
+            s.end_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
         )
 
         most_constrained.select = False
@@ -475,8 +496,14 @@ class TestICCSParameters(TestICCSBase):
         (leaving no room for the ramp) is correctly rejected.
         """
         # The tightest boundary across all seismograms (ramp=0).
-        min_pre = max(s.begin_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
-        max_post = min(s.end_time - (s.t1 or s.t0) for s in self.iccs.seismograms)
+        min_pre = max(
+            s.begin_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
+        max_post = min(
+            s.end_time - (s.refined_pick or s.initial_pick)
+            for s in self.iccs.seismograms
+        )
 
         # Window touching seismogram edges is valid with ramp_width=0.
         assert self.iccs.validate_time_window(min_pre, max_post) is True
@@ -492,12 +519,13 @@ class TestICCSParameters(TestICCSBase):
 
     def test_deselected_seismogram_constrains_valid_pick_range(self) -> None:
         """A deselected seismogram must still limit the valid pick delta range."""
-        from pysmo.tools.iccs._iccs import _calc_valid_pick_range
+        from pysmo.tools.iccs._update import _calc_valid_pick_range
 
         range_all_selected = _calc_valid_pick_range(self.iccs)
 
         most_constrained = max(
-            self.iccs.seismograms, key=lambda s: s.begin_time - (s.t1 or s.t0)
+            self.iccs.seismograms,
+            key=lambda s: s.begin_time - (s.refined_pick or s.initial_pick),
         )
         most_constrained.select = False
 
@@ -696,7 +724,7 @@ class TestICCSParameters(TestICCSBase):
         self.iccs.bandpass_fmax = 2.0
         self.iccs.corners = 2
         with unittest.mock.patch(
-            "pysmo.tools.iccs._iccs.causal_band", wraps=causal_band
+            "pysmo.tools.iccs._prepare.causal_band", wraps=causal_band
         ) as spy:
             self.iccs.cc_seismograms_causal
         assert spy.call_count == len(self.iccs.seismograms)
@@ -798,7 +826,7 @@ class TestICCSNyquistGating:
             begin_time=pd.Timestamp("2000-01-01", tz="UTC"),
             delta=pd.Timedelta(seconds=1),
             data=np.zeros(100),
-            t0=pd.Timestamp("2000-01-01T00:00:30", tz="UTC"),
+            initial_pick=pd.Timestamp("2000-01-01T00:00:30", tz="UTC"),
         )
         return seis
 
@@ -838,3 +866,43 @@ class TestICCSNyquistGating:
             ValueError, match="bandpass_fmax must be below the Nyquist frequency"
         ):
             iccs.bandpass_fmax = nyquist
+
+
+def test_update_pick(iccs_instance: ICCS) -> None:
+    """Test updating a pick."""
+    iccs = iccs_instance
+    _ = iccs()
+    org_picks = [s.refined_pick for s in iccs.seismograms if s.refined_pick is not None]
+    pickdelta = pd.Timedelta(seconds=1.23)
+    iccs.update_all_picks(pickdelta)
+    new_picks = [s.refined_pick for s in iccs.seismograms if s.refined_pick is not None]
+    for org, new in zip(org_picks, new_picks):
+        assert new - org == pickdelta
+
+
+def test_update_pick_that_is_invalid(iccs_instance: ICCS) -> None:
+    """Test if error is raised with a bad pick."""
+
+    from pysmo.tools.iccs._update import _calc_valid_pick_range
+
+    iccs = iccs_instance
+    min_t1, max_t1 = _calc_valid_pick_range(iccs)
+    with pytest.raises(ValueError):
+        iccs.update_all_picks(max_t1 + pd.Timedelta(seconds=1))
+    with pytest.raises(ValueError):
+        iccs.update_all_picks(min_t1 - pd.Timedelta(seconds=1))
+
+
+def test_ramp_width_timedelta_with_timedelta(iccs_instance: ICCS) -> None:
+    """pd.Timedelta ramp_width is returned as absolute seconds."""
+    iccs_instance.ramp_width = pd.Timedelta(seconds=3)
+    assert iccs_instance.ramp_width_timedelta.total_seconds() == pytest.approx(3.0)
+
+
+def test_ramp_width_timedelta_with_float(iccs_instance: ICCS) -> None:
+    """Float ramp_width is treated as a fraction of the total window duration."""
+    fraction = 0.1
+    iccs_instance.ramp_width = fraction
+    window_duration = iccs_instance.window_post - iccs_instance.window_pre
+    expected = fraction * window_duration
+    assert iccs_instance.ramp_width_timedelta == expected

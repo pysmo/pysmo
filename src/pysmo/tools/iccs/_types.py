@@ -85,10 +85,10 @@ class IccsSeismogram(Seismogram, Protocol):
     with the addition of parameters that are required for ICCS.
     """
 
-    t0: pd.Timestamp
+    initial_pick: pd.Timestamp
     """Initial pick."""
 
-    t1: pd.Timestamp | None
+    refined_pick: pd.Timestamp | None
     """Updated pick.
 
     Setting this directly on a seismogram already in an
@@ -127,7 +127,7 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
         >>> sac = SAC.from_file("example.sac")
         >>> sac_seis = sac.seismogram
         >>> # Use existing pick or set a new one 10 seconds after begin time
-        >>> update = {"t0": sac_seis.begin_time + pd.Timedelta(seconds=10) if pd.isnull(sac.timestamps.t0) else sac.timestamps.t0}
+        >>> update = {"initial_pick": sac_seis.begin_time + pd.Timedelta(seconds=10) if pd.isnull(sac.timestamps.t0) else sac.timestamps.t0}
         >>> mini_iccs_seis = clone_to_mini(MiniIccsSeismogram, sac_seis, update=update)
         >>>
         ```
@@ -157,10 +157,12 @@ class MiniIccsSeismogram(SeismogramEndtimeMixin):
     )
     """Seismogram data."""
 
-    t0: UtcTimestamp = field(converter=to_utc_timestamp, on_setattr=setters.convert)
+    initial_pick: UtcTimestamp = field(
+        converter=to_utc_timestamp, on_setattr=setters.convert
+    )
     """Initial pick."""
 
-    t1: UtcTimestamp | None = field(
+    refined_pick: UtcTimestamp | None = field(
         default=None,
         converter=converters.optional(to_utc_timestamp),
         on_setattr=setters.convert,

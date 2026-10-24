@@ -35,7 +35,7 @@ def to_mini(seismogram: Seismogram, context: Ctx) -> MiniSeismogram:
 def to_iccs(seismogram: Seismogram, context: Ctx) -> MiniIccsSeismogram:
     TRANSFORM_CALLS.append(1)
     return clone_to_mini(
-        MiniIccsSeismogram, seismogram, update={"t0": context.reference}
+        MiniIccsSeismogram, seismogram, update={"initial_pick": context.reference}
     )
 
 
@@ -64,7 +64,7 @@ def to_iccs_unserialisable_extra(
 ) -> MiniIccsSeismogram:
     TRANSFORM_CALLS.append(1)
     result = clone_to_mini(
-        MiniIccsSeismogram, seismogram, update={"t0": context.reference}
+        MiniIccsSeismogram, seismogram, update={"initial_pick": context.reference}
     )
     result.extra["thing"] = np.array([1.0, 2.0])
     return result
@@ -73,7 +73,7 @@ def to_iccs_unserialisable_extra(
 def to_iccs_lossy_extra(seismogram: Seismogram, context: Ctx) -> MiniIccsSeismogram:
     TRANSFORM_CALLS.append(1)
     result = clone_to_mini(
-        MiniIccsSeismogram, seismogram, update={"t0": context.reference}
+        MiniIccsSeismogram, seismogram, update={"initial_pick": context.reference}
     )
     # A tuple survives JSON only as a list, so verify sees a changed value.
     result.extra["thing"] = (1, 2, 3)

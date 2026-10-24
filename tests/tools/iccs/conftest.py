@@ -20,13 +20,13 @@ def iccs_seismograms(
 
     for sacfile in iccs_files:
         sac = SAC.from_file(sacfile)
-        update = {"t0": sac.timestamps.t0}
+        update = {"initial_pick": sac.timestamps.t0}
         seismogram = clone_to_mini(MiniIccsSeismogram, sac.seismogram, update=update)
         seismograms.append(seismogram)
 
     seismograms[0].data *= -1
-    seismograms[1].t0 += pd.Timedelta(seconds=-2)
-    seismograms[2].t0 += pd.Timedelta(seconds=2)
+    seismograms[1].initial_pick += pd.Timedelta(seconds=-2)
+    seismograms[2].initial_pick += pd.Timedelta(seconds=2)
     resample(seismograms[3], seismograms[3].delta * 2)
     yield seismograms
 

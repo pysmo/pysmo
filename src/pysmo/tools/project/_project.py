@@ -349,7 +349,7 @@ class PysmoProject[TStation: Station, TEvent: Event, TSeismogram = MiniSeismogra
                 entry.station, window.starttime, window.endtime
             )
             # Checksum the raw trace pre-transform: the transform's output can
-            # be mutated by downstream consumers (`ICCS` edits `t0`/`t1`/`flip`
+            # be mutated by downstream consumers (`ICCS` edits `initial_pick`/`refined_pick`/`flip`
             # during a run), which would otherwise read back as false drift.
             checksum = seismogram_checksum(seismogram)
             context = FetchContext(
