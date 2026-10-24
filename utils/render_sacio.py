@@ -147,6 +147,14 @@ for _bounded_header in ("stla", "stlo", "evla", "evlo"):
 # it is frozen here and can only be changed via SacIO.change_ref_time().
 headers["iztype"]["on_setattr"] = "setters.frozen"
 
+# nvhdr describes the file format, not the data, so it is frozen too. Only
+# versions 6 and 7 exist.
+headers["nvhdr"]["on_setattr"] = "setters.frozen"
+headers["nvhdr"]["validators"] = [
+    "validators.instance_of(int)",
+    "validators.in_((6, 7))",
+]
+
 # remove 'a' since it doesn't make sense here
 header_types.pop("a")
 

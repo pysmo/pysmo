@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from io import BytesIO
 from os import PathLike
-from typing import Self, overload
+from typing import Literal, Self, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -388,9 +388,9 @@ class SacEvent(_SacNested):
         Important: Fixed when iztype is "o"
             This property uses the [`SacIO.o`][pysmo.lib.io.SacIO.o] time
             header. If [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is `"o"`,
-            `SacIO.o` is the reference-time equivalence and is fixed at 0,
-            so [`time`][pysmo.classes.SacEvent.time] cannot be changed
-            directly in that case.
+            `SacIO.o` is the reference-time equivalence and cannot be
+            changed, so [`time`][pysmo.classes.SacEvent.time] cannot be
+            changed directly in that case.
         """
 
         event_time = self._get_timestamp_from_sac(SAC_OPTIONAL_TIME_HEADERS.o)
@@ -769,13 +769,18 @@ class SAC:
         _check_seismogram_compatible(SacIO.from_buffer(data))
         self.native.read_buffer(data)
 
-    def write(self, filename: str | PathLike[str]) -> None:
+    def write(
+        self, filename: str | PathLike[str], *, nvhdr: Literal[6, 7] | None = None
+    ) -> None:
         """Write data and header values to a SAC file.
 
         Args:
             filename: Name of the SAC file to write to.
+            nvhdr: SAC header version to write. Defaults to the version of
+                the file that was read. See
+                [`SacIO.write`][pysmo.lib.io.SacIO.write] for details.
         """
-        self.native.write(filename)
+        self.native.write(filename, nvhdr=nvhdr)
 
     @classmethod
     def from_zip(cls, archive: bytes) -> Self:

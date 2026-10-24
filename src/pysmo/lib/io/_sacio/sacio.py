@@ -122,7 +122,7 @@ class SacIO(SacIOBase):
 
         For example, [`iztype`][pysmo.lib.io.SacIO.iztype] names one time
         header (`b`, `o`, `a`, `t0`, etc.) as the zero-time reference, and
-        that header is normally pinned at `0`.
+        that header cannot normally be changed.
         [`change_ref_time`][pysmo.lib.io.SacIO.change_ref_time] and
         [`read_buffer`][pysmo.lib.io.SacIO.read_buffer] use this context
         manager internally to move or replace the zero-time header before
@@ -360,11 +360,25 @@ class SacIO(SacIOBase):
 
         self.read_buffer(filename.read_bytes())
 
-    def write(self, filename: str | PathLike[str]) -> None:
+    def write(
+        self, filename: str | PathLike[str], *, nvhdr: Literal[6, 7] | None = None
+    ) -> None:
         """Write data and headers to a SAC file.
 
         Headers and data are always written little-endian, regardless of the
         host byte order; `read` accepts either endianness.
+
+        The file is written in the header version given by `nvhdr`, or in
+        the version of this instance ([`SacIO.nvhdr`][pysmo.lib.io.SacIO.nvhdr])
+        if `nvhdr` is `None`. Version 7 adds a footer with 64-bit copies of
+        `delta`, the time headers, and the event and station coordinates, so
+        converting from version 6 to 7 loses nothing.
+
+        Warning: Version 6 stores these headers as 32-bit floats
+            Writing version 6 drops the footer, so these headers keep only
+            32-bit precision. This applies both when converting a version 7
+            instance and when writing headers changed in memory, which are
+            held at 64-bit precision.
 
         The file is written via a temporary file in the target's directory and
         an atomic replace, so a failure mid-write cannot destroy an existing
@@ -376,7 +390,16 @@ class SacIO(SacIOBase):
 
         Args:
             filename: Name of the sacfile to write to.
+            nvhdr: Header version to write. Defaults to the version of this
+                instance.
+
+        Raises:
+            ValueError: If `nvhdr` is not `6`, `7` or `None`.
         """
+        version = self.nvhdr if nvhdr is None else nvhdr
+        if version not in (6, 7):
+            raise ValueError(f"{nvhdr=} must be 6 or 7.")
+
         with atomic_write(filename, suffix=".sac.tmp") as tmp_name:
             with open(tmp_name, "wb") as file_handle:
                 # loop over all valid header fields and write them to the file
@@ -393,6 +416,9 @@ class SacIO(SacIOBase):
                             value = getattr(self, header)
                     except (AttributeError, TypeError):
                         value = None
+
+                    if header == "nvhdr":
+                        value = version
 
                     # convert enumerated header to integer if it is not None
                     if header_type == "i" and value is not None:
@@ -447,7 +473,7 @@ class SacIO(SacIOBase):
                         file_handle.write(np.asarray(self.data2, dtype="<f4").tobytes())
                     data_end = data_2_end
 
-                if self.nvhdr == 7:
+                if version == 7:
                     for footer, footer_metadata in SAC_FOOTERS.items():
                         undefined = -12345.0
                         start = footer_metadata.start + data_end
@@ -613,6 +639,16 @@ class SacIO(SacIOBase):
                     object.__setattr__(self, header, value)
                     continue
 
+                # nvhdr is frozen too; object.__setattr__ skips its validator.
+                if header == "nvhdr":
+                    if value not in (6, 7):
+                        raise ValueError(
+                            f"Unsupported SAC header version {value=} "
+                            + "(must be 6 or 7) - invalid SAC file!"
+                        )
+                    object.__setattr__(self, header, value)
+                    continue
+
                 # SAC file has headers fields which are read only attributes
                 # in this class (computed rather than stored). Skip them.
                 if header not in _READ_ONLY_HEADERS:
@@ -673,30 +709,88 @@ class SacIO(SacIOBase):
                     if footer not in _READ_ONLY_HEADERS:
                         setattr(self, footer, value)
 
-    def change_ref_time(self, header: str) -> None:
-        """Re-point the reference time to a different time header.
+    def change_ref_time(self, header: str, *, shift_samples: bool = False) -> float:
+        """Move the reference time to the time of a time header.
 
-        `header`'s absolute time becomes the new reference time and
-        [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is updated to match.
-        [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] and every
-        other time header are shifted by the exact same amount, so the
-        absolute (UTC) time each of them represents is unchanged.
+        The reference time ([`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime])
+        only has millisecond precision. It is therefore set to the whole
+        millisecond nearest to the absolute time of `header`. The distance
+        between the two is the remainder `r`, which is returned:
 
-        Note: Rounded to millisecond precision
-            [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] only has
-            millisecond precision, so the shift actually applied is rounded
-            to the nearest millisecond. `header` therefore ends up within
-            half a millisecond of `0`, rather than exactly `0`, whenever its
-            old value was not already millisecond-aligned.
+        ```
+        r = (absolute time of header) - (new reference time)
+        ```
+
+        with `|r| <= 0.0005` seconds. The `shift_samples` argument decides
+        how `r` is handled:
+
+        - `shift_samples=False` (default): all time headers are shifted by the
+          same amount as the reference time. Every absolute time, including
+          those of the samples, is unchanged, and `header` ends up at `r`
+          instead of `0`.
+        - `shift_samples=True`: `header` is set to exactly `0`, matching SAC's
+          `chnhdr allt`. All other time headers are shifted by the same
+          amount, so every absolute time, including those of the samples,
+          moves by `-r`.
+
+        In both cases the time headers keep their positions relative to each
+        other and to the samples.
+
+        Note: Setting `iztype`
+            [`SacIO.iztype`][pysmo.lib.io.SacIO.iztype] is set to `header`
+            only if `header` ends up at `0`. This is always the case with
+            `shift_samples=True`. With `shift_samples=False`, it is the case
+            only when `r` is within the storage precision of the time headers
+            (float32 if [`SacIO.nvhdr`][pysmo.lib.io.SacIO.nvhdr] is `6`,
+            float64 if it is `7`). `header` is then set to exactly `0` and
+            `0.0` is returned. Otherwise `iztype` is set to `"unkn"`.
 
         Args:
-            header: Name of the time header to make the new zero-time
-                reference (e.g. `"b"`, `"o"`, `"a"`, `"t0"`, ..., `"t9"`).
+            header: Name of the time header to use as the new reference
+                (e.g. `"b"`, `"o"`, `"a"`, `"t0"`, ..., `"t9"`).
+            shift_samples: Set `header` to exactly `0` by moving all
+                absolute times, including those of the samples, by `-r`.
+
+        Returns:
+            The remainder `r` in seconds. With `shift_samples=False` this is
+                the new value of `header`; with `shift_samples=True` all
+                absolute times moved by `-r`.
 
         Raises:
-            ValueError: If `header` cannot be used as a zero-time
-                reference, if [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime]
-                is not set, or if `header`'s current value is `None`.
+            ValueError: If `header` cannot be used as a reference, if
+                [`SacIO.ref_datetime`][pysmo.lib.io.SacIO.ref_datetime] is not
+                set, or if the value of `header` is `None`.
+
+        Examples:
+            The begin time of `example.sac` is not on a whole millisecond.
+            By default the remainder stays in `b`, and `iztype` becomes
+            `"unkn"`:
+
+            ```python
+            >>> from pysmo.lib.io import SacIO
+            >>> sac = SacIO.from_file("example.sac")
+            >>> r = sac.change_ref_time("b")
+            >>> round(r, 6)
+            -0.000462
+            >>> sac.b == r
+            True
+            >>> sac.iztype
+            'unkn'
+            >>>
+            ```
+
+            With `shift_samples=True`, `b` becomes `0` and all absolute
+            times move by `-r` (here 0.462 ms later):
+
+            ```python
+            >>> sac = SacIO.from_file("example.sac")
+            >>> r = sac.change_ref_time("b", shift_samples=True)
+            >>> round(r, 6)
+            -0.000462
+            >>> sac.b, sac.iztype
+            (0.0, 'b')
+            >>>
+            ```
         """
         if header not in _IZTYPE_TARGET_HEADERS:
             raise ValueError(
@@ -712,15 +806,24 @@ class SacIO(SacIOBase):
         if dtime is None:
             raise ValueError(f"Unable to use '{header}' as a reference: it is not set.")
 
-        # ref_datetime only has millisecond precision, so read back the
-        # rounded shift it actually applied and use that for the headers.
-        # This keeps every header's absolute time exactly consistent with
-        # the new reference, at the cost of 'header' landing within half a
-        # millisecond of 0 rather than exactly on it.
-        self.ref_datetime = old_ref + timedelta(seconds=dtime)
+        # Round to whole ms here: timedelta(seconds=dtime) would first round
+        # to µs, and the ref_datetime setter then rounds again to ms.
+        self.ref_datetime = old_ref + timedelta(milliseconds=round(dtime * 1000))
         new_ref = self.ref_datetime
         assert new_ref is not None
         actual_dtime = (new_ref - old_ref).total_seconds()
+        remainder = dtime - actual_dtime
+
+        # A remainder within the storage precision of the time headers is
+        # treated as zero. Not when shifting samples: they really move by r.
+        if self.nvhdr == 6:
+            tolerance = float(np.spacing(np.float32(abs(dtime)))) / 2
+        else:
+            tolerance = 4 * float(np.spacing(abs(dtime)))
+        if not shift_samples and abs(remainder) <= tolerance:
+            remainder = 0.0
+
+        shift = dtime if shift_samples else actual_dtime
 
         with self.raw():
             for time_header in SAC_TIME_HEADERS:
@@ -729,9 +832,13 @@ class SacIO(SacIOBase):
                 current = getattr(self, time_header)
                 if current is None:
                     continue
-                setattr(self, time_header, current - actual_dtime)
+                setattr(self, time_header, current - shift)
+            if remainder == 0.0:
+                setattr(self, header, 0.0)
 
-        object.__setattr__(self, "iztype", header)
+        is_zero = shift_samples or remainder == 0.0
+        object.__setattr__(self, "iztype", header if is_zero else "unkn")
+        return remainder
 
 
 def _is_settable(name: str) -> bool:
