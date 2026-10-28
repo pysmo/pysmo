@@ -22,7 +22,9 @@ _T0 = pd.Timestamp("2010-02-27T06:44:00Z")
 
 
 def _to_iccs(source: MiniSeismogram, **extra: object) -> MiniIccsSeismogram:
-    return clone_to_mini(MiniIccsSeismogram, source, update={"t0": _T0, **extra})
+    return clone_to_mini(
+        MiniIccsSeismogram, source, update={"initial_pick": _T0, **extra}
+    )
 
 
 @pytest.fixture()
