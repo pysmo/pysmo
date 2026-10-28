@@ -113,6 +113,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(io)** Share one atomic-write helper across the format writers
 - **(plotutils)** Draw plotseis through an explicit Axes, not stateful pyplot
 - **(lib)** Reorganise the shared attrs helper layer
+- **(iccs)** [**breaking**] Rename t0/t1 to initial_pick/refined_pick and split modules
 
 ### 🚀 New Features
 
