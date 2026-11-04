@@ -3,7 +3,7 @@ name = "pysmo"
 dynamic = ["version"]
 description = "Python module for seismologists."
 authors = [{ name = "Simon M. Lloyd", email = "simon@slloyd.net" }]
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.13,<3.16"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 classifiers = [

@@ -72,7 +72,7 @@ All time values use **pandas** types:
 
 - All code must pass **Ruff** formatting and linting
   - Configuration in `pyproject.toml`
-  - Target Python versions: 3.13, 3.14
+  - Target Python versions: 3.13, 3.14, 3.15
   - Line length: 88 characters
   - Run `ruff check .` and `ruff format --check .` before committing
   - Fix issues with `ruff check --fix .` and `ruff format .`
@@ -168,7 +168,7 @@ All time values use **pandas** types:
 
 ### Dependencies
 
-- Minimum Python version: 3.13, maximum 3.14
+- Minimum Python version: 3.13, maximum 3.15
 - Core dependencies: numpy, matplotlib, scipy, attrs, pandas
 - Dependency management: `uv` with locked `uv.lock`; run `make sync` after pulling
 
