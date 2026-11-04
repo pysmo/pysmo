@@ -8,6 +8,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 
 - Auto-update CHANGELOG.md unreleased section on push to master
 - Move type stubs to dev dependency group
+- Add Python 3.15 support
 
 ### 🎨 Styling
 
