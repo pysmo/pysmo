@@ -23,7 +23,7 @@ dependencies = [
   "scipy>=1.16.2",
   "pandas>=3.0.1",
   "annotated-types>=0.7.0",
-  "pymseed[numpy]>=0.9.5",
+  "pymseed[numpy]>=1.0.1",
 ]
 
 [project.urls]
@@ -48,7 +48,7 @@ test = [
   "pytest-xdist>=3.8.0",
   "sybil[pytest]>=9.2.0",
   "syrupy>=4.9.1",
-  "ruff>=0.11.13",
+  "ruff>=0.17.4",
   "hypothesis>=6.140.3",
   "testkit",
 ]
