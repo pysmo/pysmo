@@ -10,6 +10,10 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Move type stubs to dev dependency group
 - Add Python 3.15 support
 
+### ⚡ Performance Improvements
+
+- Keep scipy.signal and matplotlib out of pysmo's I/O imports
+
 ### 🎨 Styling
 
 - **(ruff)** Enable google docstring convention and docstring-code-format
