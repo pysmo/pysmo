@@ -5,9 +5,12 @@ from typing import TypeAliasType, cast, get_args
 
 from pysmo import _BaseMini, _BaseProto
 from pysmo.lib.protocols import has_protocol_members
-from pysmo.tools import _ToolsMini, _ToolsProto
+from pysmo.tools.iccs import IccsSeismogram, MiniIccsSeismogram
 
 __all__ = ["matching_pysmo_types", "proto2mini"]
+
+type _ToolsProto = IccsSeismogram
+type _ToolsMini = MiniIccsSeismogram
 
 type _AnyProto = _BaseProto | _ToolsProto
 "Type alias for any pysmo Protocol class."

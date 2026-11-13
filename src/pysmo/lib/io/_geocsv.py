@@ -29,7 +29,6 @@ import pandas as pd
 
 from pysmo import MiniSeismogram, Seismogram
 from pysmo._utils import as_sequence
-from pysmo.functions._seismogram import merge
 from pysmo.lib.converters import to_utc_timestamp
 from pysmo.typing import NonNegativeNumber
 
@@ -302,6 +301,9 @@ def merge_geocsv_timeseries(
         )
         for segment in segments
     )
+    # Local import: pysmo.functions loads scipy.signal, which plain reads don't need.
+    from pysmo.functions import merge
+
     # merge's `delta`/`auto_delta` overloads require a literal
     # `auto_delta`, which a plain `bool` variable can't satisfy; branching
     # here lets each call site narrow to the right overload.
