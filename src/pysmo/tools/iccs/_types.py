@@ -18,34 +18,81 @@ from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.validators import is_positive_timedelta
 from pysmo.typing import PositiveTimedelta, UtcTimestamp
 
-__all__ = ["IccsResult", "IccsSeismogram", "McccResult", "MiniIccsSeismogram"]
+__all__ = [
+    "IccsResult",
+    "IccsSeismogram",
+    "IccsStatus",
+    "McccResult",
+    "MiniIccsSeismogram",
+]
+
+
+class IccsStatus(StrEnum):
+    """How an ICCS run ended."""
+
+    converged = auto()
+    """The convergence limit was reached."""
+
+    max_iter = auto()
+    """`max_iter` iterations ran without reaching the convergence limit."""
+
+    nothing_applied = auto()
+    """No shift was applied in any iteration, so no pick moved. `flip` and
+    `select` may still have changed. Takes precedence over `converged`."""
 
 
 @define(frozen=True)
 class IccsResult:
     """Result of running the ICCS algorithm.
 
-    Returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__].
+    Returned by [`ICCS.__call__()`][pysmo.tools.iccs.ICCS.__call__]. Every
+    index refers to a position in
+    [`ICCS.seismograms`][pysmo.tools.iccs.ICCS.seismograms]. `refused` and
+    `fallback` describe the final iteration only, the state the run leaves
+    behind. `flipped`, `deselected` and `reselected` are the net change over
+    the whole run.
     """
 
     convergence: npt.NDArray[np.floating]
     """Convergence criterion value after each iteration."""
 
-    converged: bool
-    """Whether the convergence limit was reached within `max_iter` iterations."""
+    status: IccsStatus
+    """How the run ended."""
+
+    refused: frozenset[int]
+    """Seismograms whose shift was refused in the final iteration because it
+    would have moved the window (with its taper ramp) outside the data."""
+
+    flipped: frozenset[int]
+    """Seismograms whose `flip` attribute was toggled."""
+
+    deselected: frozenset[int]
+    """Seismograms whose `select` attribute changed from `True` to `False`."""
+
+    reselected: frozenset[int]
+    """Seismograms whose `select` attribute changed from `False` to `True`."""
+
+    fallback: int | None
+    """Seismogram kept selected in the final iteration because autoselect
+    would otherwise have deselected every seismogram, or `None`. It is not
+    necessarily in `reselected`: a seismogram selected before the run has no
+    net `select` change."""
 
 
 @define(frozen=True)
 class McccResult:
     """Result of the MCCC arrival-time refinement step.
 
-    Returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc]. Every
-    list is positional, in the order MCCC processed the seismograms:
-    all of `ICCS.seismograms` when `run_mccc(all_seismograms=True)`, otherwise
-    only the selected ones in `ICCS.selected_cc_seismograms` order. There is
-    no seismogram identity in the result; the caller must line the lists up
-    against the same seismogram sequence itself.
+    Returned by [`ICCS.run_mccc()`][pysmo.tools.iccs.ICCS.run_mccc]. The
+    per-seismogram lists are positional, in the order MCCC processed the
+    seismograms, and `indices` maps each position to
+    [`ICCS.seismograms`][pysmo.tools.iccs.ICCS.seismograms]. `picks[i]`
+    therefore belongs to `ICCS.seismograms[indices[i]]`, not
+    `ICCS.seismograms[i]`. `refused` already holds `ICCS.seismograms` indices.
     """
+
+    indices: list[int]
+    """Position in `ICCS.seismograms` of each entry in the other lists."""
 
     picks: list[pd.Timestamp]
     """Final absolute arrival times for each seismogram."""
@@ -66,11 +113,12 @@ class McccResult:
     """Per-seismogram standard deviation of the cross-correlation
     coefficients (waveform consistency)."""
 
-    refused: list[int] = field(factory=list)
-    """Positions in these lists whose pick was left unrefined because the MCCC
-    shift would have moved the window (with its taper ramp) outside the data.
-    Their `errors`/`cc_means`/`cc_stds` entries still refer to the unrefined
-    pick."""
+    refused: frozenset[int]
+    """Seismograms (positions in `ICCS.seismograms`) whose pick was left
+    unrefined because the MCCC shift would have moved the window (with its
+    taper ramp) outside the data. Their `errors` entries describe the refused
+    MCCC pick, not the retained one. `cc_means` and `cc_stds` describe the
+    input waveforms for every seismogram, refused or not."""
 
 
 class ConvergenceMethod(StrEnum):

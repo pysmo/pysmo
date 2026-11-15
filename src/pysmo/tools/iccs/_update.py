@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -67,13 +66,6 @@ def _update_seismogram(
     limit_post = seismogram.end_time - current_window[1] - ramp
 
     if not limit_pre <= updated_pick <= limit_post:
-        # stacklevel is caller-dependent: __call__ is 4 frames up, run_mccc is 3.
-        # Use stacklevel=2 to point at the direct caller of _update_seismogram.
-        warnings.warn(
-            f"Refusing to update refined_pick for seismogram with initial_pick={seismogram.initial_pick}. "
-            + "Would move out of limits - consider reducing window size.",
-            stacklevel=2,
-        )
         return False
 
     seismogram.refined_pick = updated_pick

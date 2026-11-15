@@ -33,7 +33,13 @@ from ._prepare import (
     _EphemeralSeismogram,
     _prepare_seismograms,
 )
-from ._types import ConvergenceMethod, IccsResult, IccsSeismogram, McccResult
+from ._types import (
+    ConvergenceMethod,
+    IccsResult,
+    IccsSeismogram,
+    IccsStatus,
+    McccResult,
+)
 from ._update import _calc_convergence, _calc_valid_pick_range, _update_seismogram
 from ._validators import (
     _on_setattr_clear_cache,
@@ -723,9 +729,26 @@ class ICCS:
 
         Returns:
             An [`IccsResult`][pysmo.tools.iccs.IccsResult] containing the
-            convergence history and whether the convergence limit was reached.
+            convergence history, how the run ended, and which seismograms had
+            a shift refused or their `flip` or `select` attribute changed.
+
+        Raises:
+            ValueError: If `max_iter` is less than 1.
+
+        Warns:
+            UserWarning: Once per call if any shift was refused in the final
+                iteration, and once if autoselect would have deselected every
+                seismogram in the final iteration.
         """
+        if max_iter < 1:
+            raise ValueError(f"max_iter must be at least 1, got {max_iter}.")
+
         convergence_list = []
+        flip_before = [s.flip for s in self.seismograms]
+        select_before = [s.select for s in self.seismograms]
+        refused: set[int] = set()
+        applied_any = False
+        fallback: int | None = None
 
         for _ in range(max_iter):
             # Save the previous stack to calculate convergence criterion after updating the seismograms.
@@ -740,8 +763,11 @@ class ICCS:
             )
 
             # Update seismograms based on results and settings.
-            for delay, cc, cc_seismogram in zip(delays, ccs, self.cc_seismograms):
-                _update_seismogram(
+            refused = set()
+            for index, (delay, cc, cc_seismogram) in enumerate(
+                zip(delays, ccs, self.cc_seismograms)
+            ):
+                if _update_seismogram(
                     delay,
                     cc,
                     cc_seismogram.parent_seismogram,
@@ -750,17 +776,15 @@ class ICCS:
                     self.min_cc,
                     (self.window_pre, self.window_post),
                     self.ramp_width,
-                )
+                ):
+                    applied_any = True
+                else:
+                    refused.add(index)
 
+            fallback = None
             if autoselect and not any(s.select for s in self.seismograms):
-                best = int(np.argmax(np.abs(ccs)))
-                self.cc_seismograms[best].parent_seismogram.select = True
-                warnings.warn(
-                    "autoselect left no seismograms selected; keeping the "
-                    + "best-correlating one so the run can continue. "
-                    + "Consider lowering min_cc.",
-                    stacklevel=2,
-                )
+                fallback = int(np.argmax(np.abs(ccs)))
+                self.seismograms[fallback].select = True
 
             self.clear_cache()
 
@@ -769,8 +793,50 @@ class ICCS:
             if convergence <= convergence_limit:
                 break
 
-        converged = bool(convergence_list and convergence_list[-1] <= convergence_limit)
-        return IccsResult(convergence=np.array(convergence_list), converged=converged)
+        if not applied_any:
+            status = IccsStatus.nothing_applied
+        elif convergence_list[-1] <= convergence_limit:
+            status = IccsStatus.converged
+        else:
+            status = IccsStatus.max_iter
+
+        if refused:
+            warnings.warn(
+                f"ICCS refused the final-iteration shift of {len(refused)} of "
+                + f"{len(self.seismograms)} seismogram(s) because it would move "
+                + "the window out of bounds; those picks are unchanged. Consider "
+                + "reducing the window size. See IccsResult.refused.",
+                stacklevel=2,
+            )
+        if fallback is not None:
+            warnings.warn(
+                "autoselect left no seismograms selected; keeping the "
+                + "best-correlating one so the run can continue. "
+                + "Consider lowering min_cc. See IccsResult.fallback.",
+                stacklevel=2,
+            )
+
+        flip_after = [s.flip for s in self.seismograms]
+        select_after = [s.select for s in self.seismograms]
+        return IccsResult(
+            convergence=np.array(convergence_list),
+            status=status,
+            refused=frozenset(refused),
+            flipped=frozenset(
+                i for i, (b, a) in enumerate(zip(flip_before, flip_after)) if b != a
+            ),
+            deselected=frozenset(
+                i
+                for i, (b, a) in enumerate(zip(select_before, select_after))
+                if b and not a
+            ),
+            reselected=frozenset(
+                i
+                for i, (b, a) in enumerate(zip(select_before, select_after))
+                if a and not b
+            ),
+            fallback=fallback,
+        )
 
     def run_mccc(
         self,
@@ -803,19 +869,25 @@ class ICCS:
             shift would move the window out of bounds is left unchanged and
             its index recorded in
             [`McccResult.refused`][pysmo.tools.iccs.McccResult].
+
+        Warns:
+            UserWarning: Once per call if any pick was left unchanged.
         """
-        seismograms = (
-            self.cc_seismograms if all_seismograms else self.selected_cc_seismograms
-        )
+        indices = [
+            i
+            for i, s in enumerate(self.cc_seismograms)
+            if all_seismograms or s.parent_seismogram.select
+        ]
+        seismograms = [self.cc_seismograms[i] for i in indices]
 
         delays, errors, rmse, cc_means, cc_stds = mccc(
             seismograms, min_cc=min_cc, damping=damping, abs_max=abs_max
         )
 
         picks: list[pd.Timestamp] = []
-        refused: list[int] = []
+        refused: set[int] = set()
 
-        for index, (delay, cc_seis) in enumerate(zip(delays, seismograms)):
+        for index, delay, cc_seis in zip(indices, delays, seismograms):
             seis = cc_seis.parent_seismogram
             if not _update_seismogram(
                 delay,
@@ -827,25 +899,26 @@ class ICCS:
                 current_window=(self.window_pre, self.window_post),
                 ramp_width=self.ramp_width,
             ):
-                refused.append(index)
+                refused.add(index)
             picks.append(_current_pick(seis))
 
+        self.clear_cache()
         if refused:
             warnings.warn(
-                f"MCCC refined {len(refused)} pick(s) to a shift that would "
-                + "move the window out of bounds; those picks are unchanged. "
-                + "See McccResult.refused.",
+                f"MCCC refused the shift of {len(refused)} of {len(indices)} "
+                + "pick(s) because it would move the window out of bounds; "
+                + "those picks are unchanged. See McccResult.refused.",
                 stacklevel=2,
             )
 
-        self.clear_cache()
         return McccResult(
+            indices=indices,
             picks=picks,
             errors=errors,
             rmse=rmse,
             cc_means=cc_means,
             cc_stds=cc_stds,
-            refused=refused,
+            refused=frozenset(refused),
         )
 
     def update_all_picks(self, pickdelta: pd.Timedelta) -> None:
