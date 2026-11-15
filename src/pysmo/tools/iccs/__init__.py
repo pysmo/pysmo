@@ -269,12 +269,16 @@ No phase emergence is visible in the stack yet. To run the ICCS
 algorithm, simply call (execute) the ICCS instance:
 
 ```python
->>> convergence_list = iccs()  # this runs the ICCS algorithm and returns
->>>                            # a list of the convergence value after each
->>>                            # iteration.
+>>> result = iccs()
+>>> result.status
+<IccsStatus.converged: 'converged'>
 >>> fig, ax = plot_stack(iccs, context=False)
 >>>
 ```
+
+The returned [`IccsResult`][pysmo.tools.iccs.IccsResult] holds the
+convergence history and how the run ended. It also lists the seismograms
+whose shift was refused or whose `flip` or `select` attribute changed.
 
 <!-- invisible-code-block: python
 ```
@@ -395,7 +399,13 @@ for how to refine these before, say, proceeding to MCCC.
 
 from ..._utils import export_module_names
 from ._iccs import ICCS
-from ._types import IccsResult, IccsSeismogram, McccResult, MiniIccsSeismogram
+from ._types import (
+    IccsResult,
+    IccsSeismogram,
+    IccsStatus,
+    McccResult,
+    MiniIccsSeismogram,
+)
 from .plot import (
     plot_matrix_image,
     plot_stack,
@@ -409,6 +419,7 @@ __all__ = [
     "ICCS",
     "IccsResult",
     "IccsSeismogram",
+    "IccsStatus",
     "McccResult",
     "MiniIccsSeismogram",
     "plot_matrix_image",

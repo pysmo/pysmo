@@ -1,6 +1,7 @@
 import copy
 import re
 import unittest.mock
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from pysmo.tools.iccs import (
     ICCS,
     IccsResult,
     IccsSeismogram,
+    IccsStatus,
     McccResult,
     MiniIccsSeismogram,
     plot_stack,
@@ -46,7 +48,7 @@ class TestICCSBase:
         )
         assert isinstance(result, IccsResult)
         assert isinstance(result.convergence, np.ndarray)
-        assert isinstance(result.converged, bool)
+        assert isinstance(result.status, IccsStatus)
         fig, _ = plot_stack(self.iccs, context=False, return_fig=True)
         return fig
 
@@ -156,24 +158,166 @@ class TestICCSAutoselectDeselectAll:
 
         assert isinstance(result, IccsResult)
         assert sum(s.select for s in iccs.seismograms) == 1
+        assert result.fallback is not None
+        assert iccs.seismograms[result.fallback].select
+        expected = frozenset(range(len(iccs.seismograms))) - {result.fallback}
+        assert result.deselected == expected
+        assert result.reselected == frozenset()
         # The stack is still accessible (no ValueError from _create_stack).
         _ = iccs.stack
+
+
+_FAR_OUT = pd.Timedelta(days=9999)
+
+
+def _pick(seismogram: IccsSeismogram) -> pd.Timestamp:
+    return seismogram.refined_pick or seismogram.initial_pick
+
+
+class TestICCSRunOutcomes:
+    """`ICCS.__call__` must report refused shifts, flips and selection changes
+    as data, indexed by position in `ICCS.seismograms`."""
+
+    @staticmethod
+    def _patch_delays(
+        monkeypatch: pytest.MonkeyPatch, refuse: set[int] | None = None
+    ) -> None:
+        """Replace `multi_delay` with zero delays, except a far out-of-bounds
+        delay for the indices in `refuse` (all of them if `None`)."""
+        from pysmo.tools.iccs import _iccs as iccs_module
+
+        def fake_multi_delay(
+            template: object, seismograms: list[object], **kwargs: object
+        ) -> tuple[list[pd.Timedelta], list[float]]:
+            n = len(seismograms)
+            delays = [
+                _FAR_OUT if refuse is None or i in refuse else pd.Timedelta(0)
+                for i in range(n)
+            ]
+            return delays, [0.9] * n
+
+        monkeypatch.setattr(iccs_module, "multi_delay", fake_multi_delay)
+
+    def test_all_refused_is_nothing_applied(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        picks_before = [_pick(s) for s in iccs.seismograms]
+        self._patch_delays(monkeypatch)
+
+        with pytest.warns(UserWarning) as record:
+            result = iccs()
+
+        assert len(record) == 1
+        assert "IccsResult.refused" in str(record[0].message)
+        assert result.status is IccsStatus.nothing_applied
+        assert result.refused == frozenset(range(len(iccs.seismograms)))
+        assert [_pick(s) for s in iccs.seismograms] == picks_before
+
+    def test_partial_refusal_still_converges(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        pick_before = _pick(iccs.seismograms[1])
+        self._patch_delays(monkeypatch, refuse={1})
+
+        with pytest.warns(UserWarning, match="1 of"):
+            result = iccs(max_iter=3)
+
+        assert result.status is IccsStatus.converged
+        assert result.refused == frozenset({1})
+        assert _pick(iccs.seismograms[1]) == pick_before
+
+    def test_refused_after_earlier_shift_is_not_nothing_applied(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Picks moved in iteration 1, then every shift is refused: the run
+        did change picks, so the status must not be `nothing_applied`."""
+        from pysmo.tools.iccs import _iccs as iccs_module
+
+        iccs = ICCS(iccs_seismograms)
+        picks_before = [_pick(s) for s in iccs.seismograms]
+        shift = pd.Timedelta(seconds=0.5)
+        calls = 0
+
+        def fake_multi_delay(
+            template: object, seismograms: list[object], **kwargs: object
+        ) -> tuple[list[pd.Timedelta], list[float]]:
+            nonlocal calls
+            calls += 1
+            n = len(seismograms)
+            return [shift if calls == 1 else _FAR_OUT] * n, [0.9] * n
+
+        monkeypatch.setattr(iccs_module, "multi_delay", fake_multi_delay)
+
+        with pytest.warns(UserWarning, match="IccsResult.refused"):
+            result = iccs(max_iter=2, convergence_limit=-1.0)
+
+        assert calls == 2
+        assert result.status is IccsStatus.max_iter
+        assert result.refused == frozenset(range(len(iccs.seismograms)))
+        assert [_pick(s) for s in iccs.seismograms] == [p + shift for p in picks_before]
+
+    def test_max_iter_below_one_raises(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        with pytest.raises(ValueError, match="max_iter"):
+            ICCS(iccs_seismograms)(max_iter=0)
+
+    def test_clean_run(self, iccs_seismograms: list[IccsSeismogram]) -> None:
+        iccs = ICCS(iccs_seismograms)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = iccs()
+
+        assert result.status is IccsStatus.converged
+        assert result.refused == frozenset()
+        assert result.flipped == frozenset()
+        assert result.deselected == frozenset()
+        assert result.reselected == frozenset()
+        assert result.fallback is None
+
+    def test_max_iter_status(self, iccs_seismograms: list[IccsSeismogram]) -> None:
+        iccs = ICCS(iccs_seismograms)
+        result = iccs(max_iter=1, convergence_limit=0.0)
+        assert result.status is IccsStatus.max_iter
+
+    def test_autoflip_reports_flipped(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        # The fixture inverts the polarity of seismogram 0.
+        iccs = ICCS(iccs_seismograms)
+        result = iccs(autoflip=True)
+
+        assert 0 in result.flipped
+        assert result.flipped == frozenset(
+            i for i, s in enumerate(iccs.seismograms) if s.flip
+        )
+
+    def test_autoselect_reports_select_changes(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        iccs.min_cc = 0.0  # every seismogram passes, so 2 is reselected
+        iccs.seismograms[2].select = False
+
+        result = iccs(autoselect=True, autoflip=True)
+
+        assert result.reselected == frozenset({2})
+        assert result.deselected == frozenset()
+        assert result.fallback is None
 
 
 class TestICCSMcccRefused:
     """A refused MCCC refinement must be surfaced, not silently returned as if
     the pick had been updated."""
 
-    def test_refused_shift_recorded_on_result(
-        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    @staticmethod
+    def _patch_mccc(monkeypatch: pytest.MonkeyPatch, refuse_position: int) -> None:
         from pysmo.tools.iccs import _iccs as iccs_module
 
-        iccs = ICCS(iccs_seismograms)
-        n = len(iccs.selected_cc_seismograms)
-
         def fake_mccc(
-            seismograms: object, **kwargs: object
+            seismograms: list[object], **kwargs: object
         ) -> tuple[
             list[pd.Timedelta],
             list[pd.Timedelta | None],
@@ -181,8 +325,9 @@ class TestICCSMcccRefused:
             list[float],
             list[float],
         ]:
+            n = len(seismograms)
             delays = [pd.Timedelta(0)] * n
-            delays[0] = pd.Timedelta(days=9999)  # far out of bounds
+            delays[refuse_position] = _FAR_OUT
             return (
                 delays,
                 [pd.Timedelta(seconds=0.1)] * n,
@@ -193,49 +338,80 @@ class TestICCSMcccRefused:
 
         monkeypatch.setattr(iccs_module, "mccc", fake_mccc)
 
-        pick_before = (
-            iccs.selected_cc_seismograms[0].parent_seismogram.refined_pick
-            or iccs.selected_cc_seismograms[0].parent_seismogram.initial_pick
-        )
+    def test_refused_shift_recorded_on_result(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        self._patch_mccc(monkeypatch, refuse_position=0)
+        pick_before = _pick(iccs.seismograms[0])
+
         with pytest.warns(UserWarning) as record:
             result = iccs.run_mccc()
 
-        assert any("move the window out of bounds" in str(w.message) for w in record)
-        assert result.refused == [0]
-        pick_after = (
-            iccs.selected_cc_seismograms[0].parent_seismogram.refined_pick
-            or iccs.selected_cc_seismograms[0].parent_seismogram.initial_pick
-        )
-        assert pick_after == pick_before
+        assert len(record) == 1
+        assert "move the window out of bounds" in str(record[0].message)
+        assert result.refused == frozenset({0})
+        assert _pick(iccs.seismograms[0]) == pick_before
 
-    def test_result_constructs_without_refused(self) -> None:
-        # `refused` is a later addition; the five-field construction still works.
-        result = McccResult(
-            picks=[],
-            errors=[],
-            rmse=pd.Timedelta(seconds=0.1),
-            cc_means=[],
-            cc_stds=[],
-        )
-        assert result.refused == []
+    def test_cache_cleared_when_warning_raises(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """With warnings promoted to errors, the picks MCCC did apply must
+        not be left paired with stale cached traces."""
+        iccs = ICCS(iccs_seismograms)
+        _ = iccs.cc_seismograms
+        self._patch_mccc(monkeypatch, refuse_position=0)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with pytest.raises(UserWarning):
+                iccs.run_mccc()
+
+        assert iccs._cc_seismograms_cache is None
+
+    def test_indices_refer_to_all_seismograms(
+        self, iccs_seismograms: list[IccsSeismogram], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """With a deselected seismogram in the middle, `indices` and `refused`
+        must point into `ICCS.seismograms`, not the selected subset."""
+        iccs = ICCS(iccs_seismograms)
+        iccs.seismograms[1].select = False
+        # Position 1 of the selected subset is seismogram 2.
+        self._patch_mccc(monkeypatch, refuse_position=1)
+
+        with pytest.warns(UserWarning):
+            result = iccs.run_mccc()
+
+        expected = [i for i in range(len(iccs.seismograms)) if i != 1]
+        assert result.indices == expected
+        assert result.refused == frozenset({2})
+        assert len(result.picks) == len(expected)
+
+    def test_all_seismograms_indices(
+        self, iccs_seismograms: list[IccsSeismogram]
+    ) -> None:
+        iccs = ICCS(iccs_seismograms)
+        iccs.seismograms[1].select = False
+        result = iccs.run_mccc(all_seismograms=True)
+        assert result.indices == list(range(len(iccs.seismograms)))
 
 
-class TestICCSUpdateWarning:
-    """Test the warning emitted when refined_pick update would move out of limits."""
+class TestICCSUpdateRefusal:
+    """Test refusal of a refined_pick update that would move out of limits."""
 
-    def test_out_of_limits_warning_message(
+    def test_out_of_limits_refused_silently(
         self, iccs_seismograms: list[IccsSeismogram]
     ) -> None:
         from pysmo.tools.iccs._update import _update_seismogram
 
         seismogram = iccs_seismograms[0]
-        # A delay larger than the seismogram duration guarantees refined_pick moves out of limits.
-        huge_delay = pd.Timedelta(days=9999)
+        pick_before = _pick(seismogram)
         window = (pd.Timedelta(seconds=-15), pd.Timedelta(seconds=15))
 
-        with pytest.warns(UserWarning) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             applied = _update_seismogram(
-                delay=huge_delay,
+                delay=_FAR_OUT,
                 cc=1.0,
                 seismogram=seismogram,
                 autoflip=False,
@@ -246,11 +422,7 @@ class TestICCSUpdateWarning:
             )
 
         assert applied is False
-        assert len(record) == 1
-        msg = str(record[0].message)
-        # Must identify the seismogram by initial_pick, not dump the full data array.
-        assert "initial_pick=" in msg
-        assert "array(" not in msg
+        assert _pick(seismogram) == pick_before
 
     def test_ramp_included_in_pick_limit(
         self, iccs_seismograms: list[IccsSeismogram]
@@ -273,17 +445,16 @@ class TestICCSUpdateWarning:
         bare_delta = seismogram.begin_time - window_pre - pick
         delta = bare_delta + ramp / 2
 
-        with pytest.warns(UserWarning, match="out of limits"):
-            applied = _update_seismogram(
-                delay=delta,
-                cc=None,
-                seismogram=seismogram,
-                autoflip=False,
-                autoselect=False,
-                min_cc_for_autoselect=0.0,
-                current_window=(window_pre, window_post),
-                ramp_width=ramp_width,
-            )
+        applied = _update_seismogram(
+            delay=delta,
+            cc=None,
+            seismogram=seismogram,
+            autoflip=False,
+            autoselect=False,
+            min_cc_for_autoselect=0.0,
+            current_window=(window_pre, window_post),
+            ramp_width=ramp_width,
+        )
         assert applied is False
 
         # The same shift is accepted once there is no ramp.
