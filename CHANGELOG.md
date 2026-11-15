@@ -149,6 +149,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(tools)** Replace SqliteArchiveFetcher with a byte-oriented cache
 - **(io)** Add strict=False to parse_stationxml and parse_sacpz
 - **(sacio)** [**breaking**] Honest iztype in change_ref_time; make nvhdr required
+- **(iccs)** [**breaking**] Report run outcomes as data on result types
 
 ### 🧪 Testing
 
