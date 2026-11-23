@@ -76,6 +76,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - Resolve docstring-only review findings
 - Add serialisation usage chapter
 - **(project)** Restructure module docs around the three pipeline stages
+- Remove unused refs.bib
 
 ### 📦 Miscellaneous
 
@@ -150,6 +151,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(io)** Add strict=False to parse_stationxml and parse_sacpz
 - **(sacio)** [**breaking**] Honest iztype in change_ref_time; make nvhdr required
 - **(iccs)** [**breaking**] Report run outcomes as data on result types
+- **(traveltime)** Check phase names against the IASPEI standard list
 
 ### 🧪 Testing
 
