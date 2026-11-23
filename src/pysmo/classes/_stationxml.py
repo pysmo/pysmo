@@ -173,9 +173,9 @@ class StationXML:
         A document is not guaranteed to cover a single channel: a bulk or
         wildcard query can cover several networks and stations, each with
         every location/channel combination and its own epoch history.
-        `network`/`station`/`location`/`channel` narrow to one before *time*
+        `network`/`station`/`location`/`channel` narrow to one before `time`
         is applied; without them, a document covering more than one raises
-        the same "more than one epoch" error as an ambiguous *time*.
+        the same "more than one epoch" error as an ambiguous `time`.
 
         Args:
             xml: Raw StationXML document bytes.
@@ -191,12 +191,12 @@ class StationXML:
                 doesn't block selecting the one asked for.
 
         Returns:
-            A new StationXML instance for the epoch active at *time* (or
-            currently open, if *time* is `None`).
+            A new StationXML instance for the epoch active at `time` (or
+            currently open, if `time` is `None`).
 
         Raises:
             ValueError: If, after narrowing, zero or more than one epoch
-                matches *time* (or "currently open", if *time* is `None`).
+                matches `time` (or "currently open", if `time` is `None`).
 
         Tip: See Also
             [`StationXML.all_from_bytes`][pysmo.classes.StationXML.all_from_bytes]:
@@ -282,7 +282,7 @@ class StationXML:
 
         Fetches the full response history for the channel in one
         `level=response` request and narrows client-side to the epoch active
-        at *time* (or the currently-open one). To fetch once and interpret
+        at `time` (or the currently-open one). To fetch once and interpret
         later, use [`pysmo.tools.web.fetch_stationxml`][] with
         [`from_bytes`][pysmo.classes.StationXML.from_bytes] /
         [`all_from_bytes`][pysmo.classes.StationXML.all_from_bytes].
@@ -298,7 +298,7 @@ class StationXML:
             A new StationXML instance with `response` populated.
 
         Raises:
-            ValueError: If zero or more than one epoch matches *time*, or if
+            ValueError: If zero or more than one epoch matches `time`, or if
                 the fetched document carries no `<Response>`.
             urllib3.exceptions.ResponseError: If the station web service
                 returns an HTTP error.

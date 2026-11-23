@@ -17,9 +17,9 @@ def _current_umask() -> int:
 
 @contextmanager
 def atomic_write(path: str | PathLike[str], *, suffix: str = ".tmp") -> Iterator[Path]:
-    """Yield a temporary path beside *path* and atomically replace *path* on clean exit.
+    """Yield a temporary path beside `path` and atomically replace `path` on clean exit.
 
-    On any exception the temporary file is removed and *path* is left
+    On any exception the temporary file is removed and `path` is left
     untouched, so a failure mid-write cannot destroy an existing valid file.
     The target's directory must be writable and hold room for the new file
     alongside the old. When the target already exists its mode and ownership

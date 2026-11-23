@@ -12,7 +12,11 @@ type Wave = Literal["P", "S"]
 """The body-wave type a slowness profile is built for."""
 
 type Phase = Literal["P", "S", "PcP", "ScS", "PcS", "ScP"]
-"""A phase name the built-in solver computes."""
+"""A phase name the built-in solver computes.
+
+A small subset of the standard names
+[`is_standard_phase`][pysmo.tools.traveltime.is_standard_phase] recognises.
+"""
 
 
 class TravelTimeBackend(Protocol):
@@ -20,8 +24,8 @@ class TravelTimeBackend(Protocol):
 
     Any callable of the form
     `(*, depth, distance, phases) -> Mapping[str, pd.Timedelta]` qualifies.
-    *depth* is in metres (positive down), *distance* in epicentral
-    degrees, *phases* a sequence of phase names, not restricted to the
+    `depth` is in metres (positive down), `distance` in epicentral
+    degrees, `phases` a sequence of phase names, not restricted to the
     built-in set. The result maps each phase that has an arrival at the
     given geometry to its travel time, omitting the rest.
     """
