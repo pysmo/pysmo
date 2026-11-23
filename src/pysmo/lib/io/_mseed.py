@@ -71,12 +71,12 @@ def write_mseed(
 
     Args:
         segments: A non-empty sequence of `(identity, seismogram)` pairs.
-            *identity* is any [`StationCode`][pysmo.StationCode] (e.g. a
+            `identity` is any [`StationCode`][pysmo.StationCode] (e.g. a
             [`MiniStationCode`][pysmo.MiniStationCode], an
             [`MSeed`][pysmo.classes.MSeed], or a full
             [`Station`][pysmo.Station]; extra coordinate fields are
             ignored); it supplies the network, station, location and
-            channel codes. *seismogram* is any
+            channel codes. `seismogram` is any
             [`Seismogram`][pysmo.Seismogram].
         path: Destination file path. Written via a temporary file in the
             target's directory and an atomic replace, so a failed write
@@ -91,9 +91,9 @@ def write_mseed(
             silently truncates or downcasts in that case.
 
     Raises:
-        TypeError: If *sample_type* is `None` and a seismogram's data array
+        TypeError: If `sample_type` is `None` and a seismogram's data array
             has a dtype other than `int32`, `float32` or `float64`.
-        ValueError: If *segments* is empty.
+        ValueError: If `segments` is empty.
         pymseed.MiniSEEDError: If the data cannot be encoded or written.
 
     Examples:

@@ -1,0 +1,109 @@
+# IASPEI Standard Seismic Phase List, adopted by IASPEI on 9 July 2003.
+# Storchak, D.A., J. Schweitzer, P. Bormann (2003). The IASPEI Standard
+# Seismic Phase List. Seismol. Res. Lett. 74(6), 761-772.
+# https://doi.org/10.1785/gssrl.74.6.761
+# Transcribed from https://isc.ac.uk/standards/phases/ (2026-11-23).
+#
+# Each section of the list is a table. `names` holds its standard names.
+# The `alternatives` table maps each acceptable alternative to its
+# standard name. The amplitude measurement codes (IAML, AMs, END, ...)
+# are not phase names and are left out. The minus in names such as
+# P<z>-P is stored as ASCII "-".
+#
+# [old] holds the names the list calls old ("no longer acceptable").
+# `replaced` maps each to the standard name that replaced it.
+# `unreplaced` lists those without a single replacement. Old names are
+# never standard, even where a template matches them. For example, PKP2
+# also reads as PKP<N>, the alternative for P'2.
+#
+# Placeholders:
+#   <N>  a positive integer.
+#   <z>  a depth in km, as a positive integer. Every depth on the list is
+#        a whole number.
+#   <y>  any crustal, mantle, or core phase that starts with the leg
+#        before it. pP<y> covers pP, pPKP, pPcP, ...
+
+[crustal]
+names = [
+  "Pg", "Pb", "Pn", "PnPn", "PgPg", "PmP", "PmP<N>", "PmS",
+  "Sg", "Sb", "Sn", "SnSn", "SgSg", "SmS", "SmS<N>", "SmP",
+  "Lg", "Rg",
+]
+
+[crustal.alternatives]
+"P*" = "Pb"
+"S*" = "Sb"
+
+[mantle]
+names = [
+  "P", "PP", "PS", "PPP", "PPS", "PSS", "PcP", "PcS", "PcP<N>",
+  "P<z>+P", "P<z>-P", "P<z>+S", "P<z>-S", "PScS", "Pdif",
+  "S", "SS", "SP", "SSS", "SSP", "SPP", "ScS", "ScP", "ScS<N>",
+  "S<z>+S", "S<z>-S", "S<z>+P", "S<z>-P", "ScSP", "Sdif",
+]
+
+[mantle.alternatives]
+"P<z>P" = "P<z>+P"
+"P<z>S" = "P<z>+S"
+"S<z>S" = "S<z>+S"
+"S<z>P" = "S<z>+P"
+
+[core]
+names = [
+  "PKP", "PKPab", "PKPbc", "PKPdf", "PKPpre", "PKPdif",
+  "PKS", "PKSab", "PKSbc", "PKSdf",
+  "P'P'", "P'<N>", "P<z>-P'", "P'S'", "PS'",
+  "PKKP", "PKKPab", "PKKPbc", "PKKPdf", "P<N>KP", "PKKPpre",
+  "PKiKP", "PK<N>IKP", "PKJKP",
+  "PKKS", "PKKSab", "PKKSbc", "PKKSdf", "PcPP'",
+  "SKS", "SKSac", "SKSdf", "SPdifKS",
+  "SKP", "SKPab", "SKPbc", "SKPdf",
+  "S'S'", "S'<N>", "S'<z>-S'", "S'P'", "S'P",
+  "SKKS", "SKKSac", "SKKSdf", "S<N>KS", "SKiKS", "SKJKS",
+  "SKKP", "SKKPab", "SKKPbc", "SKKPdf", "ScSS'",
+]
+
+[core.alternatives]
+"P'" = "PKP"
+PKIKP = "PKPdf"
+PKPPKP = "P'P'"
+"PKP<N>" = "P'<N>"
+PKPSKS = "P'S'"
+PSKS = "PS'"
+PcPPKP = "PcPP'"
+"S'" = "SKS"
+SKIKS = "SKSdf"
+SKPdifS = "SPdifKS"
+SKSSKS = "S'S'"
+SKSPKP = "S'P'"
+SKSP = "S'P"
+ScSSKS = "ScSS'"
+
+[depth]
+names = ["pP<y>", "sP<y>", "pS<y>", "sS<y>", "pwP<y>", "pmP<y>"]
+
+[surface]
+names = ["L", "LQ", "LR", "G", "G<N>", "R", "R<N>", "PL", "SPL"]
+
+[acoustic]
+names = [
+  "H", "HPg", "HSg", "HRg", "I", "IPg", "ISg", "IRg",
+  "T", "TPg", "TSg", "TRg",
+]
+
+[unidentified]
+names = ["x", "rx", "tx", "Px", "Sx"]
+
+[old]
+unreplaced = ["i", "e", "NULL"]
+
+[old.replaced]
+Pdiff = "Pdif"
+Sdiff = "Sdif"
+PKP2 = "PKPab"
+PKP1 = "PKPbc"
+PKhKP = "PKPpre"
+"(P)" = "Px"
+"P?" = "Px"
+"(S)" = "Sx"
+"S?" = "Sx"

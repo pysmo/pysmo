@@ -176,7 +176,7 @@ def update_bandpass(
     _BANDPASS_CACHE_SIZE = 8
 
     def _quantise_freq(f: float, sig_figs: int = 4) -> float:
-        """Round *f* to *sig_figs* significant figures for use as a cache key."""
+        """Round `f` to `sig_figs` significant figures for use as a cache key."""
         if f <= 0:
             return f
         magnitude = 10 ** (sig_figs - 1 - int(np.floor(np.log10(f))))

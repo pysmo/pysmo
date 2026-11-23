@@ -316,7 +316,7 @@ class SlownessProfile:
             z: Flattened depth, in kilometres.
 
         Returns:
-            The slowness in seconds per kilometre at depth *z*.
+            The slowness in seconds per kilometre at depth `z`.
         """
         band = self._real & (self._z1 <= z) & (z <= self._z2)
         if not band.any():
@@ -326,18 +326,18 @@ class SlownessProfile:
         return float(self._u1[i] + fraction * (self._u2[i] - self._u1[i]))
 
     def turn_depth(self, p: float) -> float | None:
-        """Flattened depth where a ray of ray parameter *p* turns, or `None`.
+        """Flattened depth where a ray of ray parameter `p` turns, or `None`.
 
-        A ray turns in the layer whose slowness drops through *p*, or
+        A ray turns in the layer whose slowness drops through `p`, or
         exactly at a velocity discontinuity when the top of the jump
-        exceeds *p* but its bottom does not.
+        exceeds `p` but its bottom does not.
 
         Args:
             p: Ray parameter, in seconds per kilometre.
 
         Returns:
             Flattened turning depth in kilometres, or `None` when no layer
-            drops through *p* (e.g. *p* below the slowness at the base of
+            drops through `p` (e.g. `p` below the slowness at the base of
             the profile).
         """
         crossing = (self._u1 > p) & (self._u2 <= p)
@@ -352,10 +352,10 @@ class SlownessProfile:
         return float(self._z1[i])
 
     def integrate(self, z_end: float, p: float) -> tuple[float, float]:
-        """Accumulate `(tau, delta)` from the surface down to flattened depth *z_end*.
+        """Accumulate `(tau, delta)` from the surface down to flattened depth `z_end`.
 
         The ray is assumed to descend from the surface, so layers between
-        the surface and *z_end* contribute to both integrals.
+        the surface and `z_end` contribute to both integrals.
 
         Args:
             z_end: Flattened depth of the integration end point, in
@@ -395,9 +395,9 @@ class SlownessProfile:
         return tau, delta
 
     def direct_time(self, z_s: float, p: float) -> tuple[float, float] | None:
-        """`(travel_time, flat_delta)` of a down-going ray turning below depth *z_s*.
+        """`(travel_time, flat_delta)` of a down-going ray turning below depth `z_s`.
 
-        Returns `None` when the ray of parameter *p* has no turning point,
+        Returns `None` when the ray of parameter `p` has no turning point,
         or turns above the source.
 
         Args:
@@ -407,7 +407,7 @@ class SlownessProfile:
         Returns:
             A `(travel_time, flat_delta)` pair, with flat_delta in
             kilometres (divide by the Earth radius for radians), or `None`
-            when the ray does not turn below *z_s*.
+            when the ray does not turn below `z_s`.
         """
         z_t = self.turn_depth(p)
         if z_t is None or z_t < z_s:

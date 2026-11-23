@@ -260,7 +260,7 @@ class MSeed(SeismogramEndtimeMixin):
         For a window relative to a predicted phase arrival instead, compute
         the window yourself (e.g. with
         [`pysmo.tools.traveltime.travel_times`][], which shows exactly this
-        in its own Examples) and pass the resulting *starttime*/*endtime*
+        in its own Examples) and pass the resulting `starttime`/`endtime`
         here.
 
         To fetch once and interpret later (e.g. offline, or without

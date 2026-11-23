@@ -15,6 +15,11 @@ describes that shape.
 
 Depth is in metres, epicentral distance in degrees, travel times are
 [`pandas.Timedelta`][].
+
+[`is_standard_phase`][pysmo.tools.traveltime.is_standard_phase] and
+[`standard_phases`][pysmo.tools.traveltime.standard_phases] check phase
+names against the IASPEI Standard Seismic Phase List. A standard name is
+not necessarily one that can be computed.
 """
 
 from collections.abc import Sequence
@@ -22,10 +27,19 @@ from functools import partial
 
 import pandas as pd
 
+from pysmo.tools.traveltime._phases import is_standard_phase, standard_phases
 from pysmo.tools.traveltime._solver import solve
 from pysmo.tools.traveltime._types import Model, Phase, TravelTimeBackend
 
-__all__ = ["Model", "Phase", "TravelTimeBackend", "builtin_backend", "travel_times"]
+__all__ = [
+    "Model",
+    "Phase",
+    "TravelTimeBackend",
+    "builtin_backend",
+    "is_standard_phase",
+    "standard_phases",
+    "travel_times",
+]
 
 
 def travel_times(
@@ -50,9 +64,9 @@ def travel_times(
         the given geometry are omitted.
 
     Raises:
-        ValueError: If *model* is not a supported model, *phases* contains
-            an unsupported phase name, *depth* is outside the surface to
-            core–mantle boundary range, or *distance* is outside 0 to 180
+        ValueError: If `model` is not a supported model, `phases` contains
+            an unsupported phase name, `depth` is outside the surface to
+            core–mantle boundary range, or `distance` is outside 0 to 180
             degrees.
 
     Note:

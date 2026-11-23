@@ -94,9 +94,9 @@ def _bisect_ray_parameter(
     lo: float,
     hi: float,
 ) -> float | None:
-    """Ray parameter in `[lo, hi]` whose ray reaches epicentral distance *target*.
+    """Ray parameter in `[lo, hi]` whose ray reaches epicentral distance `target`.
 
-    *delta_of_p* maps a ray parameter to the epicentral distance its ray
+    `delta_of_p` maps a ray parameter to the epicentral distance its ray
     covers, and must be monotonic across the bracket, with the root of
     `delta_of_p(p) == target` lying inside `[lo, hi]` (the caller checks
     this). If it returns `None` at any step the ray has been lost and the
@@ -111,7 +111,7 @@ def _bisect_ray_parameter(
 
     Returns:
         The solved ray parameter in seconds per kilometre, or `None` if
-        *delta_of_p* returned `None` during the search.
+        `delta_of_p` returned `None` during the search.
     """
     reference = delta_of_p(lo)
     if reference is None:
@@ -134,7 +134,7 @@ def _bisect_ray_parameter(
 def _travel_time(
     profile: SlownessProfile, z_s: float, z_cmb: float, dist: float
 ) -> float | None:
-    """Travel time of a turning-ray phase at source depth *z_s* and distance *dist*.
+    """Travel time of a turning-ray phase at source depth `z_s` and distance `dist`.
 
     Returns `None` when no down-going ray turns at the requested distance,
     either because the distance falls in the core shadow or because it is
@@ -142,7 +142,7 @@ def _travel_time(
 
     The ray-parameter range is split at the profile's branch knots so that
     epicentral distance is monotonic on each sub-range. Where an
-    upper-mantle triplication makes several rays reach *dist*, each is
+    upper-mantle triplication makes several rays reach `dist`, each is
     solved and the earliest arrival returned.
 
     Args:
@@ -153,7 +153,7 @@ def _travel_time(
 
     Returns:
         Travel time in seconds, or `None` when no down-going ray reaches
-        *dist*.
+        `dist`.
     """
     p_min = profile.u_at(z_cmb) * (1 + _GRAZING_MARGIN)
     p_max = profile.u_at(z_s) * (1 - _GRAZING_MARGIN)
@@ -193,8 +193,8 @@ def _reflect_time(
 ) -> float | None:
     """Travel time of a core–mantle boundary reflection, or `None`.
 
-    The ray descends in *profile_down* from the source to the CMB and
-    rises in *profile_up* to the surface, allowing conversion between P
+    The ray descends in `profile_down` from the source to the CMB and
+    rises in `profile_up` to the surface, allowing conversion between P
     and S at the reflector (PcP, ScS, PcS, ScP). The ray parameter is
     bounded above by the lower of the two waves' boundary slownesses,
     below which the reflected ray's distance rises from zero, so the
@@ -260,9 +260,9 @@ def solve(
         distances, or the core shadow) are omitted.
 
     Raises:
-        ValueError: If *model* is not a supported model, *phases* contains
-            an unsupported phase name, *depth_km* is outside the surface
-            to core–mantle boundary range, or *dist_deg* is outside 0 to
+        ValueError: If `model` is not a supported model, `phases` contains
+            an unsupported phase name, `depth_km` is outside the surface
+            to core–mantle boundary range, or `dist_deg` is outside 0 to
             180 degrees.
 
     Note:

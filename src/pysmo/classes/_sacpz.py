@@ -173,7 +173,7 @@ class SacPZ:
         Unlike [`StationXML.fetch`][pysmo.classes.StationXML.fetch], epoch
         selection happens server-side: the web service's `time` parameter
         is passed through, so exactly one record is returned (the epoch
-        active at *time* if given, otherwise the one currently open)
+        active at `time` if given, otherwise the one currently open)
         without needing to fetch the full response history first.
 
         Args:
@@ -184,7 +184,7 @@ class SacPZ:
                 the currently-open epoch is selected.
 
         Returns:
-            A new SacPZ instance for the response epoch active at *time*
+            A new SacPZ instance for the response epoch active at `time`
             (or currently open, if `time` is `None`).
 
         Raises:

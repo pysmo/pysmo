@@ -401,7 +401,7 @@ def write_geocsv(
             writable.
 
     Raises:
-        ValueError: If *seismograms* is an empty sequence.
+        ValueError: If `seismograms` is an empty sequence.
         OSError: If the file cannot be written.
 
     Note: Formatting and precision conventions
