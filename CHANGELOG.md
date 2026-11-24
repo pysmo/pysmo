@@ -152,6 +152,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(sacio)** [**breaking**] Honest iztype in change_ref_time; make nvhdr required
 - **(iccs)** [**breaking**] Report run outcomes as data on result types
 - **(traveltime)** Check phase names against the IASPEI standard list
+- Add MissingValueError for unset protocol attributes
 
 ### 🧪 Testing
 
