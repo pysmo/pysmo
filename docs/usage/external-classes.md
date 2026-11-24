@@ -114,6 +114,9 @@ properties:
 <!-- skip: next -->
 
 ```python
+from pysmo.exceptions import MissingValueError
+
+
 class StationLocation:
     def __init__(self, parent: ExternalClass) -> None:
         self._parent = parent
@@ -121,7 +124,7 @@ class StationLocation:
     @property
     def latitude(self) -> float:
         if self._parent.stla is None:
-            raise ValueError("Station latitude is not set")
+            raise MissingValueError("Station latitude is not set")
         return self._parent.stla
 
     @latitude.setter
@@ -141,7 +144,7 @@ class EventLocation:
     @property
     def latitude(self) -> float:
         if self._parent.evla is None:
-            raise ValueError("Event latitude is not set")
+            raise MissingValueError("Event latitude is not set")
         return self._parent.evla
 
     @latitude.setter
@@ -154,7 +157,10 @@ class EventLocation:
 Both `StationLocation` and `EventLocation` match the `Location` type, and there
 is no name clash because each helper class has its own namespace. Because they
 reference the parent object, a change made through a helper class is reflected
-in the parent, and vice versa.
+in the parent, and vice versa. A getter whose value is not set raises
+[`MissingValueError`][pysmo.exceptions.MissingValueError], as the pysmo classes
+do. Code written against the type can then catch one error, whatever class it
+was given.
 
 The helper classes can then be added as attributes on a new class that inherits
 from the external one:

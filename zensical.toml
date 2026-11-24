@@ -31,6 +31,7 @@ nav = [
   { "API reference" = [
     "api/pysmo.md",
     "api/pysmo/classes.md",
+    "api/pysmo/exceptions.md",
     "api/pysmo/functions.md",
     "api/pysmo/lib.md",
     { "pysmo.tools" = [

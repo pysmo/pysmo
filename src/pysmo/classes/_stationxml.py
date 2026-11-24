@@ -9,6 +9,7 @@ import pandas as pd
 from attrs import converters, define, field, validators
 
 from pysmo import MiniResponseStage, MiniStagedResponse, Station
+from pysmo.exceptions import MissingValueError
 from pysmo.lib.converters import to_longitude, to_utc_timestamp
 from pysmo.lib.io._stationxml import _RawStationEpoch, parse_stationxml
 from pysmo.lib.validators import is_latitude, is_longitude
@@ -142,14 +143,14 @@ class StationXML:
         document with no digital decimation stages).
 
         Raises:
-            ValueError: If this epoch was parsed from a document with no
-                `<Response>`; check
+            MissingValueError: If this epoch was parsed from a document with
+                no `<Response>`. Check
                 [`has_response`][pysmo.classes.StationXML.has_response]
                 first, or fetch at `level=response`
                 ([`StationXML.fetch`][pysmo.classes.StationXML.fetch]).
         """
         if self._response is None:
-            raise ValueError(
+            raise MissingValueError(
                 f"{self.network}.{self.name}.{self.location}.{self.channel} was "
                 + "parsed from a document with no <Response>; fetch it at "
                 + "level=response."

@@ -7,6 +7,7 @@ import pytest
 
 from pysmo import MiniStation
 from pysmo.classes import StationXML, resolve_epochs
+from pysmo.exceptions import MissingValueError
 
 SINGLE_EPOCH_FIXTURE = (
     Path(__file__).parent.parent
@@ -193,6 +194,18 @@ MULTIPLE_STATIONS = _document(
     )
 )
 
+# A channel-level document: the channel has no <Response>.
+NO_RESPONSE = _document(
+    _network_block(
+        "IU",
+        '    <Station code="ANMO">\n'
+        "      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>\n"
+        '      <Channel code="BHZ" locationCode="00" '
+        'startDate="2000-01-01T00:00:00.0000"/>\n'
+        "    </Station>\n",
+    )
+)
+
 
 class TestFromBytes:
     def test_single_epoch_fixture(self) -> None:
@@ -209,6 +222,12 @@ class TestFromBytes:
         response = epoch.response
         assert response.input_units == "m/s"
         assert len(response.stages) == 2
+
+    def test_missing_response_raises(self) -> None:
+        epoch = StationXML.from_bytes(NO_RESPONSE)
+        assert not epoch.has_response
+        with pytest.raises(MissingValueError, match="no <Response>"):
+            epoch.response
 
     def test_reference_sensitivity_excludes_a0(self) -> None:
         """reference_sensitivity must be the plain InstrumentSensitivity

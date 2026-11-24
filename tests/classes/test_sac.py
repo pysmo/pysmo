@@ -10,6 +10,7 @@ import pytest
 
 from pysmo import MiniStation
 from pysmo.classes import SAC
+from pysmo.exceptions import MissingValueError
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
@@ -39,9 +40,9 @@ class TestSAC:
         assert isinstance(sac, SAC)
 
         # coordinates for event and station are None.
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sac.station.latitude
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sac.event.latitude
 
     def test_defaults(self) -> None:
@@ -56,11 +57,11 @@ class TestSAC:
         assert sac.seismogram.delta == SeismogramDefaults.delta
         npt.assert_allclose(sac.seismogram.data, np.array([]))
 
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sac.event.latitude
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sac.event.longitude
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sac.event.time
 
     def test_create_instance_from_file(self, sacfile: Path) -> None:
@@ -222,23 +223,23 @@ class TestSAC:
         # This is also true for getting None back from attributes.
         # They may be None in sacio, but not in sac.station
         sac.native.kstnm = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacstation.name
         sac.native.stla = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacstation.latitude
         sac.native.stlo = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacstation.longitude
         sac.native.knetwk = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacstation.network
         # Unlike the other station identifiers, a missing location code is
         # common and not treated as an error - it defaults to "".
         sac.native.khole = None
         assert sacstation.location == ""
         sac.native.kcmpnm = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacstation.channel
 
     def test_sac_as_event(self, sacfile: Path) -> None:
@@ -276,7 +277,7 @@ class TestSAC:
         #
         #
         sac.native.evdp = None
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingValueError):
             sacevent.depth
 
     def test_sac_timestamps(self, sacfile: Path) -> None:
