@@ -7,10 +7,13 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from pysmo import MiniStation
 from pysmo.classes import SAC
 from pysmo.exceptions import MissingValueError
+from pysmo.lib.converters import to_azimuth
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS
@@ -280,6 +283,27 @@ class TestSAC:
         with pytest.raises(MissingValueError):
             sacevent.depth
 
+    def test_sac_as_orientation(self, sacfile: Path) -> None:
+        sac = SAC.from_file(sacfile)
+        orientation = sac.orientation
+        assert orientation.azimuth == 0
+        assert orientation.dip == -90  # BHZ: cmpinc 0 is vertical up
+
+        orientation.azimuth, orientation.dip = 90, 0
+        assert sac.native.cmpaz == 90
+        assert sac.native.cmpinc == 90
+
+        sac.native.cmpaz = -90
+        assert orientation.azimuth == 270
+        assert sac.native.cmpaz == -90
+
+        sac.native.cmpaz = None
+        with pytest.raises(MissingValueError, match="cmpaz"):
+            orientation.azimuth
+        sac.native.cmpinc = None
+        with pytest.raises(MissingValueError, match="cmpinc"):
+            orientation.dip
+
     def test_sac_timestamps(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sacio = SacIO.from_file(sacfile)
@@ -316,12 +340,47 @@ class TestSAC:
         with pytest.raises(AttributeError):
             sac.event.foo = 60  # type: ignore[attr-defined]
         with pytest.raises(AttributeError):
+            sac.orientation.foo = 60  # type: ignore[attr-defined]
+        with pytest.raises(AttributeError):
             sac.timestamps.t10 = 60  # type: ignore[attr-defined]
 
     def test_set_sac_from_timestamp_optional_none(self, sacfile: Path) -> None:
         sac = SAC.from_file(sacfile)
         sac.event._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, None)
         assert getattr(sac.event._parent, SAC_OPTIONAL_TIME_HEADERS.o) is None
+
+
+class TestSacOrientationProperties:
+    # -12345 is SAC's "undefined" value; SacIO stores it as None.
+    @given(
+        st.floats(allow_nan=False, allow_infinity=False).filter(
+            lambda value: value != -12345
+        )
+    )
+    def test_any_cmpaz_reads_wrapped(self, cmpaz: float) -> None:
+        sac = SAC()
+        sac.native.cmpaz = cmpaz
+        assert sac.orientation.azimuth == to_azimuth(cmpaz)
+        assert sac.native.cmpaz == cmpaz
+
+    @given(st.floats(min_value=-90, max_value=90))
+    def test_dip_round_trips_through_cmpinc(self, dip: float) -> None:
+        sac = SAC()
+        sac.orientation.dip = dip
+        assert sac.native.cmpinc == dip + 90
+        assert sac.orientation.dip == pytest.approx(dip, abs=1e-12)
+
+    @given(
+        st.floats(min_value=90, exclude_min=True)
+        | st.floats(max_value=-90, exclude_max=True)
+        | st.just(float("nan"))
+    )
+    def test_dip_setter_rejects_out_of_range(self, dip: float) -> None:
+        sac = SAC()
+        sac.native.cmpinc = 0
+        with pytest.raises(ValueError):
+            sac.orientation.dip = dip
+        assert sac.native.cmpinc == 0
 
 
 class TestFetch:

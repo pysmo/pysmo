@@ -41,6 +41,13 @@ def to_longitude(value: float | str) -> float:
     return 180.0 if longitude == -180.0 else longitude
 
 
+def to_azimuth(value: float | str) -> float:
+    """Convert a value to a `float` azimuth in degrees, wrapped into [0, 360)."""
+    # A tiny negative value wraps to exactly 360.0 in floating point.
+    azimuth = float(value) % 360.0
+    return 0.0 if azimuth == 360.0 else azimuth
+
+
 def to_timedelta(
     value: pd.Timedelta | timedelta | float | int | str,
 ) -> pd.Timedelta:

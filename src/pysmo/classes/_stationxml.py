@@ -10,9 +10,9 @@ from attrs import converters, define, field, validators
 
 from pysmo import MiniResponseStage, MiniStagedResponse, Station
 from pysmo.exceptions import MissingValueError
-from pysmo.lib.converters import to_longitude, to_utc_timestamp
+from pysmo.lib.converters import to_azimuth, to_longitude, to_utc_timestamp
 from pysmo.lib.io._stationxml import _RawStationEpoch, parse_stationxml
-from pysmo.lib.validators import is_latitude, is_longitude
+from pysmo.lib.validators import is_azimuth, is_dip, is_latitude, is_longitude
 from pysmo.tools.web import fetch_stationxml
 
 __all__ = ["StationXML", "resolve_epochs"]
@@ -52,9 +52,10 @@ class StationXML:
 
     Reads one `<Channel>` epoch from a
     [FDSN StationXML](http://www.fdsn.org/xml/station/) document and exposes
-    it as a [`Station`][pysmo.Station]-compatible object: NSLC identity,
-    coordinates, the epoch's validity window, and (when the document was
-    fetched at `level=response`) the instrument
+    it as a [`Station`][pysmo.Station]- and
+    [`Orientation`][pysmo.Orientation]-compatible object: NSLC identity,
+    coordinates, channel orientation, the epoch's validity window, and (when
+    the document was fetched at `level=response`) the instrument
     [`response`][pysmo.classes.StationXML.response].
 
     A document commonly covers a channel's full history, i.e. several
@@ -116,6 +117,24 @@ class StationXML:
     )
     """End of this metadata epoch, or `None` if still open."""
 
+    _azimuth: float | None = field(
+        default=None,
+        alias="azimuth",
+        converter=converters.optional(to_azimuth),
+        validator=validators.optional(is_azimuth),
+    )
+    """Backing store for [`azimuth`][pysmo.classes.StationXML.azimuth];
+    `None` when the source document carried no `<Azimuth>`."""
+
+    _dip: float | None = field(
+        default=None,
+        alias="dip",
+        converter=converters.optional(float),
+        validator=validators.optional(is_dip),
+    )
+    """Backing store for [`dip`][pysmo.classes.StationXML.dip]; `None` when
+    the source document carried no `<Dip>`."""
+
     _response: MiniStagedResponse | None = field(
         default=None,
         alias="response",
@@ -123,6 +142,42 @@ class StationXML:
     )
     """Backing store for [`response`][pysmo.classes.StationXML.response];
     `None` when the source document carried no `<Response>`."""
+
+    @property
+    def azimuth(self) -> float:
+        """Channel azimuth in degrees clockwise from north, in [0, 360).
+
+        Raises:
+            MissingValueError: If the channel has no `<Azimuth>`, as for an
+                epoch parsed from a `level=station` document.
+        """
+        if self._azimuth is None:
+            raise MissingValueError(f"{self._nslc} has no <Azimuth>.")
+        return self._azimuth
+
+    @azimuth.setter
+    def azimuth(self, value: float) -> None:
+        self._azimuth = value
+
+    @property
+    def dip(self) -> float:
+        """Channel dip in degrees down from horizontal, from -90 to 90.
+
+        Raises:
+            MissingValueError: If the channel has no `<Dip>`, as for an epoch
+                parsed from a `level=station` document.
+        """
+        if self._dip is None:
+            raise MissingValueError(f"{self._nslc} has no <Dip>.")
+        return self._dip
+
+    @dip.setter
+    def dip(self, value: float) -> None:
+        self._dip = value
+
+    @property
+    def _nslc(self) -> str:
+        return f"{self.network}.{self.name}.{self.location}.{self.channel}"
 
     @property
     def has_response(self) -> bool:
@@ -151,7 +206,7 @@ class StationXML:
         """
         if self._response is None:
             raise MissingValueError(
-                f"{self.network}.{self.name}.{self.location}.{self.channel} was "
+                f"{self._nslc} was "
                 + "parsed from a document with no <Response>; fetch it at "
                 + "level=response."
             )
@@ -359,6 +414,8 @@ class StationXML:
             latitude=raw.latitude,
             longitude=raw.longitude,
             elevation=raw.elevation,
+            azimuth=raw.azimuth,
+            dip=raw.dip,
             start_date=raw.start_date,
             end_date=raw.end_date,
             response=response,

@@ -27,12 +27,14 @@ from ._types import (
     MiniEvent,
     MiniLocation,
     MiniLocationWithDepth,
+    MiniOrientation,
     MiniResponse,
     MiniResponseStage,
     MiniSeismogram,
     MiniStagedResponse,
     MiniStation,
     MiniStationCode,
+    Orientation,
     Response,
     ResponseStage,
     Seismogram,
@@ -51,6 +53,7 @@ type _BaseProto = (
     | Event
     | Location
     | LocationWithDepth
+    | Orientation
     | Response
     | StagedResponse
     | ResponseStage
@@ -62,6 +65,7 @@ type _BaseMini = (
     | MiniEvent
     | MiniLocation
     | MiniLocationWithDepth
+    | MiniOrientation
     | MiniResponse
     | MiniStagedResponse
     | MiniResponseStage
@@ -75,12 +79,14 @@ __all__ = [
     "MiniEvent",
     "MiniLocation",
     "MiniLocationWithDepth",
+    "MiniOrientation",
     "MiniResponse",
     "MiniResponseStage",
     "MiniSeismogram",
     "MiniStagedResponse",
     "MiniStation",
     "MiniStationCode",
+    "Orientation",
     "Response",
     "ResponseStage",
     "Seismogram",

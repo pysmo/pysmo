@@ -5,9 +5,11 @@ from pysmo import (
     MiniEvent,
     MiniLocation,
     MiniLocationWithDepth,
+    MiniOrientation,
     MiniSeismogram,
     MiniStation,
     MiniStationCode,
+    Orientation,
     Seismogram,
     Station,
     StationCode,
@@ -70,6 +72,13 @@ def test_matching_pysmo_types() -> None:
     from pysmo.lib.mini_utils import matching_pysmo_types
 
     assert set(matching_pysmo_types(MiniEvent)) == {Location, LocationWithDepth, Event}
+
+
+def test_proto2mini_orientation() -> None:
+    from pysmo.lib.mini_utils import matching_pysmo_types, proto2mini
+
+    assert proto2mini(Orientation) == (MiniOrientation,)
+    assert matching_pysmo_types(MiniOrientation) == (Orientation,)
 
 
 def test_proto2mini_stationcode_is_one_to_many() -> None:

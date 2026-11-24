@@ -8,6 +8,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from pysmo.lib.converters import (
+    to_azimuth,
     to_complex_list,
     to_float_list,
     to_longitude,
@@ -37,6 +38,26 @@ def test_to_longitude() -> None:
     # out of range: passed through unchanged for a downstream validator
     assert to_longitude(-180.5) == -180.5
     assert to_longitude(200) == 200.0
+
+
+@given(st.floats(allow_nan=False, allow_infinity=False))
+def test_to_azimuth_in_range(value: float) -> None:
+    assert 0 <= to_azimuth(value) < 360
+
+
+@given(st.floats(min_value=-1e9, max_value=1e9))
+def test_to_azimuth_keeps_direction(value: float) -> None:
+    wrapped = np.radians(to_azimuth(value))
+    original = np.radians(value)
+    assert np.cos(wrapped) == pytest.approx(np.cos(original), abs=1e-6)
+    assert np.sin(wrapped) == pytest.approx(np.sin(original), abs=1e-6)
+
+
+def test_to_azimuth() -> None:
+    assert to_azimuth(-90) == 270.0
+    assert to_azimuth(360) == 0.0
+    assert to_azimuth(-1e-20) == 0.0  # would otherwise wrap to exactly 360.0
+    assert to_azimuth("45") == 45.0
 
 
 def test_to_utc_timestamp_naive() -> None:
