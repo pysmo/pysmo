@@ -13,6 +13,7 @@ from attrs import define, field, setters
 
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
+from pysmo.exceptions import MissingValueError
 from pysmo.lib.converters import to_utc_timestamp
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
@@ -100,7 +101,7 @@ class _SacNested:
 
         if seconds is None:
             if isinstance(sac_time_header, SAC_REQUIRED_TIME_HEADERS):
-                raise ValueError(
+                raise MissingValueError(
                     f"Required SAC header {sac_time_header!r} is missing or "
                     + f"None on {type(self).__name__}."
                 )
@@ -232,10 +233,14 @@ class SacStation(_SacNested):
 
     @property
     def name(self) -> str:
-        """Station name or code."""
+        """Station name or code.
+
+        Raises:
+            MissingValueError: If `kstnm` is not set.
+        """
 
         if self._parent.kstnm is None:
-            raise TypeError("SAC object station name 'kstnm' is None.")
+            raise MissingValueError("SAC object station name 'kstnm' is None.")
         return self._parent.kstnm
 
     @name.setter
@@ -244,10 +249,14 @@ class SacStation(_SacNested):
 
     @property
     def network(self) -> str:
-        """Network name or code."""
+        """Network name or code.
+
+        Raises:
+            MissingValueError: If `knetwk` is not set.
+        """
 
         if self._parent.knetwk is None:
-            raise TypeError("SAC object network name 'knetwk' is None.")
+            raise MissingValueError("SAC object network name 'knetwk' is None.")
 
         return self._parent.knetwk
 
@@ -272,10 +281,14 @@ class SacStation(_SacNested):
 
     @property
     def channel(self) -> str:
-        """Channel code."""
+        """Channel code.
+
+        Raises:
+            MissingValueError: If `kcmpnm` is not set.
+        """
 
         if self._parent.kcmpnm is None:
-            raise TypeError("SAC object channel code 'kcmpnm' is None.")
+            raise MissingValueError("SAC object channel code 'kcmpnm' is None.")
         return self._parent.kcmpnm
 
     @channel.setter
@@ -284,10 +297,14 @@ class SacStation(_SacNested):
 
     @property
     def latitude(self) -> int | float:
-        """Station latitude."""
+        """Station latitude.
+
+        Raises:
+            MissingValueError: If `stla` is not set.
+        """
 
         if self._parent.stla is None:
-            raise TypeError("SAC object station latitude 'stla' is None.")
+            raise MissingValueError("SAC object station latitude 'stla' is None.")
         return self._parent.stla
 
     @latitude.setter
@@ -296,10 +313,14 @@ class SacStation(_SacNested):
 
     @property
     def longitude(self) -> int | float:
-        """Station longitude."""
+        """Station longitude.
+
+        Raises:
+            MissingValueError: If `stlo` is not set.
+        """
 
         if self._parent.stlo is None:
-            raise TypeError("SAC object station longitude 'stlo' is None.")
+            raise MissingValueError("SAC object station longitude 'stlo' is None.")
         return self._parent.stlo
 
     @longitude.setter
@@ -347,10 +368,14 @@ class SacEvent(_SacNested):
 
     @property
     def latitude(self) -> int | float:
-        """Event latitude."""
+        """Event latitude.
+
+        Raises:
+            MissingValueError: If `evla` is not set.
+        """
 
         if self._parent.evla is None:
-            raise TypeError("SAC object event latitude 'evla' is None.")
+            raise MissingValueError("SAC object event latitude 'evla' is None.")
         return self._parent.evla
 
     @latitude.setter
@@ -359,10 +384,14 @@ class SacEvent(_SacNested):
 
     @property
     def longitude(self) -> int | float:
-        """Event longitude."""
+        """Event longitude.
+
+        Raises:
+            MissingValueError: If `evlo` is not set.
+        """
 
         if self._parent.evlo is None:
-            raise TypeError("SAC object event longitude 'evlo' is None.")
+            raise MissingValueError("SAC object event longitude 'evlo' is None.")
         return self._parent.evlo
 
     @longitude.setter
@@ -371,10 +400,14 @@ class SacEvent(_SacNested):
 
     @property
     def depth(self) -> int | float:
-        """Event depth in metres (positive downward from the surface)."""
+        """Event depth in metres (positive downward from the surface).
+
+        Raises:
+            MissingValueError: If `evdp` is not set.
+        """
 
         if self._parent.evdp is None:
-            raise TypeError("Sac object event depth 'evdp' is None.")
+            raise MissingValueError("SAC object event depth 'evdp' is None.")
         return self._parent.evdp * 1000
 
     @depth.setter
@@ -391,11 +424,14 @@ class SacEvent(_SacNested):
             `SacIO.o` is the reference-time equivalence and cannot be
             changed, so [`time`][pysmo.classes.SacEvent.time] cannot be
             changed directly in that case.
+
+        Raises:
+            MissingValueError: If `o` is not set.
         """
 
         event_time = self._get_timestamp_from_sac(SAC_OPTIONAL_TIME_HEADERS.o)
         if event_time is None:
-            raise TypeError("SAC object event time 'o' is None.")
+            raise MissingValueError("SAC object event time 'o' is None.")
         return event_time
 
     @time.setter

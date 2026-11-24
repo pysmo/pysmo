@@ -78,6 +78,13 @@ classes: because each type represents exactly one concept, code that receives a
 `Location` can use its attributes directly, without first checking that they
 have a value.
 
+A file format may still leave out a value that a type requires. A SAC file
+without the `stla` header has no station latitude, for example. Reading such an
+attribute raises [`MissingValueError`][pysmo.exceptions.MissingValueError]
+rather than returning `None`. Every pysmo class does this, and classes written
+to match pysmo types should do the same. Code written against a type can then
+handle a missing value the same way, whatever class it was given.
+
 ## Prefer functions over methods
 
 Functions are preferred over methods. Methods on a type create coupling between
