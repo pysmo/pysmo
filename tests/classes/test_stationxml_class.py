@@ -418,6 +418,15 @@ class TestAllFromBytes:
             assert previous.end_date == current.start_date
         assert epochs[-1].end_date is None
 
+    def test_real_multi_channel_orientation(
+        self,
+        three_component_events_assets: dict[str, dict[str, dict[str, dict[str, Path]]]],
+    ) -> None:
+        site = three_component_events_assets["special"]["multiplexed"]["AK.PAX.--"]
+        epochs = StationXML.all_from_bytes(site["xml"].read_bytes())
+        orientations = {epoch.channel: (epoch.azimuth, epoch.dip) for epoch in epochs}
+        assert orientations == {"BHZ": (0, -90), "BHN": (0, 0), "BHE": (90, 0)}
+
     def test_single_epoch_still_returns_a_list(self) -> None:
         epochs = StationXML.all_from_bytes(SINGLE_EPOCH_FIXTURE.read_bytes())
         assert len(epochs) == 1

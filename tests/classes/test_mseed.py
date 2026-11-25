@@ -127,6 +127,43 @@ class TestGaps:
         assert z_segments[0].begin_time < z_segments[1].begin_time
 
 
+type ThreeComponentAssets = dict[str, dict[str, dict[str, dict[str, Path]]]]
+
+AK_PAX = ("FDSN:AK_PAX__B_H_E", "FDSN:AK_PAX__B_H_N", "FDSN:AK_PAX__B_H_Z")
+AK_KNK = ("FDSN:AK_KNK__B_H_E", "FDSN:AK_KNK__B_H_N", "FDSN:AK_KNK__B_H_Z")
+
+
+class TestRealMultiChannel:
+    def test_multiplexed(
+        self, three_component_events_assets: ThreeComponentAssets
+    ) -> None:
+        site = three_component_events_assets["special"]["multiplexed"]["AK.PAX.--"]
+        segments = MSeed.all_from_file(site["mseed"])
+        assert tuple(s.sourceid for s in segments) == AK_PAX
+        assert {s.begin_time for s in segments} == {
+            pd.Timestamp("2014-11-01T19:07:17.7484Z")
+        }
+        assert {s.delta for s in segments} == {pd.Timedelta(seconds=0.02)}
+        assert {s.sample_count for s in segments} == {44954}
+
+    def test_multiplexed_from_file_raises(
+        self, three_component_events_assets: ThreeComponentAssets
+    ) -> None:
+        site = three_component_events_assets["special"]["multiplexed"]["AK.PAX.--"]
+        with pytest.raises(ValueError, match="all_from_file"):
+            MSeed.from_file(site["mseed"])
+
+    def test_gappy(self, three_component_events_assets: ThreeComponentAssets) -> None:
+        site = three_component_events_assets["special"]["gappy"]["AK.KNK.--"]
+        segments = MSeed.all_from_file(site["mseed"])
+        assert tuple(s.sourceid for s in segments) == tuple(
+            sourceid for sourceid in AK_KNK for _ in range(2)
+        )
+        for first, second in zip(segments[::2], segments[1::2]):
+            gap = second.begin_time - first.end_time
+            assert pd.Timedelta(seconds=10) < gap < pd.Timedelta(seconds=10.1)
+
+
 class TestFetch:
     @pytest.fixture()
     def station(self) -> MiniStation:
