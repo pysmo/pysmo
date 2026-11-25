@@ -383,6 +383,19 @@ class TestSacOrientationProperties:
         assert sac.native.cmpinc == 0
 
 
+@pytest.mark.parametrize("channel", ["BHZ", "BHN", "BHE"])
+def test_real_missing_orientation_raises(
+    three_component_events_assets: dict[str, dict[str, dict[str, dict[str, Path]]]],
+    channel: str,
+) -> None:
+    site = three_component_events_assets["special"]["missing_orientation"]
+    orientation = SAC.from_file(site["AK.BAL.--"][channel]).orientation
+    with pytest.raises(MissingValueError, match="cmpaz"):
+        orientation.azimuth
+    with pytest.raises(MissingValueError, match="cmpinc"):
+        orientation.dip
+
+
 class TestFetch:
     def test_fetches_and_parses_single_member(
         self,

@@ -3,10 +3,10 @@ revision = 5
 requires-python = ">=3.13, <3.16"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
@@ -1631,7 +1631,7 @@ test = [
     { name = "ruff", specifier = ">=0.17.4" },
     { name = "sybil", extras = ["pytest"], specifier = ">=9.2.0" },
     { name = "syrupy", specifier = ">=4.9.1" },
-    { name = "testkit", git = "https://github.com/pysmo/testkit?tag=v0.3.0" },
+    { name = "testkit", git = "https://github.com/pysmo/testkit?tag=v0.5.0" },
 ]
 
 [[package]]
@@ -1961,8 +1961,8 @@ wheels = [
 
 [[package]]
 name = "testkit"
-version = "0.3.0"
-source = { git = "https://github.com/pysmo/testkit?tag=v0.3.0#b5e75b7883ba3c1e125d79609d538ab3b10cde61" }
+version = "0.5.0"
+source = { git = "https://github.com/pysmo/testkit?tag=v0.5.0#2a655144802166c1a09bd2defd77923e02546a03" }
 
 [[package]]
 name = "tomli"

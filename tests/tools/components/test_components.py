@@ -12,6 +12,7 @@ from hypothesis import strategies as st
 from pysmo import MiniOrientation, MiniSeismogram, Orientation, Seismogram
 from pysmo.classes import SAC
 from pysmo.exceptions import MissingValueError
+from pysmo.tools.azdist import backazimuth
 from pysmo.tools.components import (
     Components,
     lqt_orientations,
@@ -312,6 +313,31 @@ class TestNamedRotations:
         z, n, _ = _random_zne()
         with pytest.raises(ValueError, match="outside the plane"):
             rotate_to_rt(Components([(z, Z), (n, N)]), backazimuth=0)
+
+
+@pytest.mark.parametrize(
+    ("key", "horizontals"),
+    [("AK.CCB.--", ("BHN", "BHE")), ("IU.COLA.00", ("BH1", "BH2"))],
+)
+def test_real_rt_from_sac_headers(
+    three_component_events_assets: dict[str, dict[str, dict[str, dict[str, Path]]]],
+    key: str,
+    horizontals: tuple[str, str],
+) -> None:
+    """Horizontals not at 0 and 90 deg, rotated with the orientations in their headers.
+
+    The reference R and T are a direct projection computed outside pysmo.
+    """
+    site = three_component_events_assets["events"]["central_peru"][key]
+    sacs = [SAC.from_file(site[channel]) for channel in ("BHZ", *horizontals)]
+    components = Components([(sac.seismogram, sac.orientation) for sac in sacs])
+    r, t = rotate_to_rt(components, backazimuth(sacs[0].event, sacs[0].station))
+    reference = three_component_events_assets["special"]["reference_rt"][key]
+    for computed, channel in ((r, "BHR"), (t, "BHT")):
+        expected = SAC.from_file(reference[channel]).seismogram
+        assert computed.begin_time == expected.begin_time
+        scale = np.abs(expected.data).max()
+        np.testing.assert_allclose(computed.data, expected.data, atol=1e-6 * scale)
 
 
 def test_accepts_any_seismogram(seismogram: Seismogram) -> None:
