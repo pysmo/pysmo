@@ -161,6 +161,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** Replace undocumented fixture, fix abs_max test, rework ex… ([#287](https://github.com/pysmo/pysmo/issues/287))
 - Expand hypothesis property tests and refactor sac header tests
 - Parallelise the test suite with pytest-xdist
+- Add real-data tests for orientation, rotation and miniSEED
 
 ## [1.0.0.dev0](https://github.com/pysmo/pysmo/compare/v0.8.0...v1.0.0.dev0) - 2026-02-17
 
