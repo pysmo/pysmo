@@ -153,6 +153,7 @@ All notable changes to the **pysmo** project will be documented in this file.
 - **(iccs)** [**breaking**] Report run outcomes as data on result types
 - **(traveltime)** Check phase names against the IASPEI standard list
 - Add MissingValueError for unset protocol attributes
+- Add Orientation protocol and pysmo.tools.components
 
 ### 🧪 Testing
 
