@@ -4,10 +4,13 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from pysmo import MiniStation
 from pysmo.classes import StationXML, resolve_epochs
 from pysmo.exceptions import MissingValueError
+from pysmo.lib.converters import to_azimuth
 
 SINGLE_EPOCH_FIXTURE = (
     Path(__file__).parent.parent
@@ -206,6 +209,28 @@ NO_RESPONSE = _document(
     )
 )
 
+STATION_LEVEL = _document(
+    _network_block(
+        "IU",
+        '    <Station code="ANMO" startDate="2000-01-01T00:00:00.0000">\n'
+        "      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>\n"
+        "    </Station>\n",
+    )
+)
+
+EAST_COMPONENT = _document(
+    _network_block(
+        "IU",
+        '    <Station code="ANMO">\n'
+        "      <Latitude>34.9</Latitude><Longitude>-106.5</Longitude>\n"
+        '      <Channel code="BH1" locationCode="00" '
+        'startDate="2000-01-01T00:00:00.0000">\n'
+        "        <Azimuth>-90</Azimuth><Dip>0</Dip>\n"
+        "      </Channel>\n"
+        "    </Station>\n",
+    )
+)
+
 
 class TestFromBytes:
     def test_single_epoch_fixture(self) -> None:
@@ -218,6 +243,8 @@ class TestFromBytes:
         assert epoch.location == "00"
         assert epoch.channel == "BHZ"
         assert epoch.latitude == pytest.approx(34.94591)
+        assert epoch.azimuth == 0
+        assert epoch.dip == -90
 
         response = epoch.response
         assert response.input_units == "m/s"
@@ -228,6 +255,47 @@ class TestFromBytes:
         assert not epoch.has_response
         with pytest.raises(MissingValueError, match="no <Response>"):
             epoch.response
+
+    def test_missing_orientation_raises(self) -> None:
+        epoch = StationXML.from_bytes(NO_RESPONSE)
+        with pytest.raises(MissingValueError, match="no <Azimuth>"):
+            epoch.azimuth
+        with pytest.raises(MissingValueError, match="no <Dip>"):
+            epoch.dip
+
+    def test_station_level_epoch_has_no_orientation(self) -> None:
+        epoch = StationXML.from_bytes(STATION_LEVEL)
+        assert epoch.channel == ""
+        with pytest.raises(MissingValueError):
+            epoch.azimuth
+        with pytest.raises(MissingValueError):
+            epoch.dip
+
+    def test_parsed_azimuth_is_wrapped(self) -> None:
+        epoch = StationXML.from_bytes(EAST_COMPONENT)
+        assert epoch.azimuth == 270  # <Azimuth>-90</Azimuth>
+        assert epoch.dip == 0
+
+    @given(st.floats(allow_nan=False, allow_infinity=False))
+    def test_azimuth_setter_wraps(self, value: float) -> None:
+        epoch = StationXML.from_bytes(EAST_COMPONENT)
+        epoch.azimuth = value
+        assert epoch.azimuth == to_azimuth(value)
+
+    @given(st.floats(min_value=-90, max_value=90))
+    def test_dip_setter_keeps_valid_dip(self, value: float) -> None:
+        epoch = StationXML.from_bytes(EAST_COMPONENT)
+        epoch.dip = value
+        assert epoch.dip == value
+
+    @given(
+        st.floats(min_value=90, exclude_min=True)
+        | st.floats(max_value=-90, exclude_max=True)
+    )
+    def test_dip_setter_rejects_out_of_range(self, value: float) -> None:
+        epoch = StationXML.from_bytes(EAST_COMPONENT)
+        with pytest.raises(ValueError):
+            epoch.dip = value
 
     def test_reference_sensitivity_excludes_a0(self) -> None:
         """reference_sensitivity must be the plain InstrumentSensitivity

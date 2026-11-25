@@ -38,6 +38,7 @@ nav = [
       "api/pysmo/tools/index.md",
       "api/pysmo/tools/azdist.md",
       "api/pysmo/tools/cache.md",
+      "api/pysmo/tools/components.md",
       "api/pysmo/tools/iccs.md",
       "api/pysmo/tools/noise.md",
       "api/pysmo/tools/plotutils.md",

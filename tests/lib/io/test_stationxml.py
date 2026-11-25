@@ -75,6 +75,8 @@ class TestParseStationxml:
         assert epoch.start_date == pd.Timestamp("2014-12-17T18:40:00Z")
         assert epoch.end_date == pd.Timestamp("2018-07-09T20:45:00Z")
         assert epoch.latitude == pytest.approx(34.94591)
+        assert epoch.azimuth == 0
+        assert epoch.dip == -90
 
         response = epoch.response
         assert response is not None
@@ -343,6 +345,8 @@ class TestParseStationxml:
         (epoch,) = parse_stationxml(xml)
         assert epoch.response is None
         assert epoch.channel == "BHZ"
+        assert epoch.azimuth is None
+        assert epoch.dip is None
 
     def test_missing_instrument_sensitivity_raises(self) -> None:
         xml = b"""\

@@ -14,6 +14,13 @@ is_longitude = validators.and_(validators.gt(-180), validators.le(180))
 """`attrs` validator for a geographic longitude in degrees, paired with
 `converters.to_longitude`."""
 
+is_azimuth = validators.and_(validators.ge(0), validators.lt(360))
+"""`attrs` validator for an azimuth in degrees, paired with
+`converters.to_azimuth` (which wraps any finite value into range)."""
+
+is_dip = validators.and_(validators.ge(-90), validators.le(90))
+"""`attrs` validator for a dip: -90 to 90 degrees down from horizontal, inclusive."""
+
 is_positive_timedelta = validators.and_(
     validators.instance_of(pd.Timedelta), validators.gt(pd.Timedelta(0))
 )

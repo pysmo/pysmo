@@ -17,6 +17,7 @@ HEAVY_MODULES = ("scipy.signal", "matplotlib", "pysmo.tools.iccs")
         "pysmo.tools",
         "pysmo.tools.azdist",
         "pysmo.tools.cache",
+        "pysmo.tools.components",
         "pysmo.tools.noise",
         "pysmo.tools.traveltime",
         "pysmo.tools.utils",

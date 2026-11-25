@@ -71,6 +71,8 @@ class _RawStationEpoch:
     latitude: float
     longitude: float
     elevation: float | None
+    azimuth: float | None
+    dip: float | None
     response: _RawResponse | None
 
 
@@ -406,7 +408,7 @@ def _epoch_coords(
 
 
 def parse_stationxml(xml: bytes, *, strict: bool = True) -> list[_RawStationEpoch]:
-    """Parse station identity, coordinates and response from a StationXML document.
+    """Parse station identity, coordinates, orientation, and response from StationXML.
 
     Walks the document once and returns one entry per `<Channel>` epoch (or
     per `<Station>` for a channel-less `level=station` document), in document
@@ -531,6 +533,8 @@ def parse_stationxml(xml: bytes, *, strict: bool = True) -> list[_RawStationEpoc
                             latitude=latitude,
                             longitude=longitude,
                             elevation=elevation,
+                            azimuth=_optional_child_float(elem, "Azimuth"),
+                            dip=_optional_child_float(elem, "Dip"),
                             response=(
                                 None
                                 if response_elem is None

@@ -14,7 +14,7 @@ from attrs import define, field, setters
 from pysmo import Station
 from pysmo._types.seismogram import SeismogramEndtimeMixin
 from pysmo.exceptions import MissingValueError
-from pysmo.lib.converters import to_utc_timestamp
+from pysmo.lib.converters import to_azimuth, to_utc_timestamp
 from pysmo.lib.defaults import SeismogramDefaults
 from pysmo.lib.io import SacIO
 from pysmo.lib.io._sacio import SAC_OPTIONAL_TIME_HEADERS, SAC_REQUIRED_TIME_HEADERS
@@ -27,6 +27,7 @@ from pysmo.typing import PositiveTimedelta, UtcTimestamp
 __all__ = [
     "SAC",
     "SacEvent",
+    "SacOrientation",
     "SacSeismogram",
     "SacStation",
     "SacTimestamps",
@@ -439,6 +440,72 @@ class SacEvent(_SacNested):
         self._set_sac_from_timestamp(SAC_OPTIONAL_TIME_HEADERS.o, value)
 
 
+@define(kw_only=True)
+class SacOrientation(_SacNested):
+    """Expose a SAC file's headers as a pysmo `Orientation`.
+
+    Maps the `cmpaz` and `cmpinc` headers to the
+    [`Orientation`][pysmo.Orientation] attributes. SAC measures `cmpinc`
+    from the upward vertical, so `dip` is `cmpinc - 90`. An instance is
+    created for each new [`SAC`][pysmo.classes.SAC] instance.
+
+    Examples:
+        ```python
+        >>> from pysmo.classes import SAC
+        >>> sac = SAC.from_file("example.sac")
+        >>> sac.orientation.azimuth, sac.orientation.dip
+        (0.0, -90.0)
+        >>>
+        ```
+
+    Note: Orientation is optional
+        Not all SAC files contain orientation information.
+    """
+
+    @property
+    def azimuth(self) -> float:
+        """Component azimuth in degrees clockwise from north, in [0, 360).
+
+        `cmpaz` is wrapped into range on read; the raw value stays available
+        as `SAC.native.cmpaz`.
+
+        Raises:
+            MissingValueError: If `cmpaz` is not set.
+        """
+
+        if self._parent.cmpaz is None:
+            raise MissingValueError("SAC object component azimuth 'cmpaz' is None.")
+        return to_azimuth(self._parent.cmpaz)
+
+    @azimuth.setter
+    def azimuth(self, value: float) -> None:
+        setattr(self._parent, "cmpaz", value)
+
+    @property
+    def dip(self) -> float:
+        """Component dip in degrees down from horizontal.
+
+        Setting it writes `cmpinc = dip + 90`.
+
+        Raises:
+            MissingValueError: If `cmpinc` is not set.
+            ValueError: If a value outside -90 to 90 is set.
+        """
+
+        if self._parent.cmpinc is None:
+            raise MissingValueError(
+                "SAC object component inclination 'cmpinc' is None."
+            )
+        return self._parent.cmpinc - 90
+
+    @dip.setter
+    def dip(self, value: float) -> None:
+        # SacIO doesn't range-check cmpinc, unlike stla/stlo/evla/evlo.
+        if not -90 <= value <= 90:
+            raise ValueError(f"dip must be between -90 and 90, got {value}.")
+        setattr(self._parent, "cmpinc", value + 90)
+
+
 class RequiredSacTimestamp:
     """Descriptor for SAC headers that must exist and cannot be None.
 
@@ -690,7 +757,8 @@ class SAC:
         directly (file I/O, and the pysmo-typed
         [`station`][pysmo.classes.SAC.station],
         [`event`][pysmo.classes.SAC.event],
-        [`seismogram`][pysmo.classes.SAC.seismogram] and
+        [`orientation`][pysmo.classes.SAC.orientation],
+        [`seismogram`][pysmo.classes.SAC.seismogram], and
         [`timestamps`][pysmo.classes.SAC.timestamps] helpers) rather than
         the full raw SAC header set. Seismogram data and sampling interval
         are available via [`seismogram`][pysmo.classes.SAC.seismogram].
@@ -709,8 +777,9 @@ class SAC:
 
     Fixed for the lifetime of the instance:
     [`seismogram`][pysmo.classes.SAC.seismogram],
-    [`station`][pysmo.classes.SAC.station], [`event`][pysmo.classes.SAC.event]
-    and [`timestamps`][pysmo.classes.SAC.timestamps] are bound to this object
+    [`station`][pysmo.classes.SAC.station], [`event`][pysmo.classes.SAC.event],
+    [`orientation`][pysmo.classes.SAC.orientation], and
+    [`timestamps`][pysmo.classes.SAC.timestamps] are bound to this object
     at construction time, so reassigning it would silently orphan them. To
     load different data into an existing instance, use
     [`read`][pysmo.classes.SAC.read]/[`read_bytes`][pysmo.classes.SAC.read_bytes],
@@ -727,6 +796,9 @@ class SAC:
     event: SacEvent = field(init=False)
     """This SAC object exposed as an [`Event`][pysmo.Event]."""
 
+    orientation: SacOrientation = field(init=False)
+    """This SAC object exposed as an [`Orientation`][pysmo.Orientation]."""
+
     timestamps: SacTimestamps = field(init=False)
     """This SAC object's time headers (B, E, O, T0-T9, and so on) exposed as
     [`Timestamp`][pandas.Timestamp] objects."""
@@ -735,6 +807,7 @@ class SAC:
         self.seismogram = SacSeismogram(parent=self.native)
         self.station = SacStation(parent=self.native)
         self.event = SacEvent(parent=self.native)
+        self.orientation = SacOrientation(parent=self.native)
         self.timestamps = SacTimestamps(parent=self.native)
 
     @classmethod
